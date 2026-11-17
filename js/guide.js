@@ -12,16 +12,16 @@
 // One entry per early objective (same index as GOALS).
 // act/zone: what the objective wants running. nav: how to get there. start: what to click. run: tip while it runs.
 const GUIDE = [
-  { skill: 'herbalism', nav: 'Open <b>Herbalism</b>. Herbs are the base of everything in the Shinobi Lands.', start: 'Click <b>Healing Leaf</b> to start gathering.', run: 'Gathering repeats on its own, even while the game is closed. At level 5, an old medic will teach you something new.' },
-  { act: 'arts:soldier_pill', nav: '<b>Shinobi Arts</b> is now open. Open it.', start: 'Click <b>Soldier Pill</b>. Each one uses 2 Healing Leaves.', run: 'Pills heal you in battle. Brew 5 and the Training Grounds will open.' },
-  { zone: 0, nav: 'The <b>Battlefield</b> is open. Go fight!', start: 'Pick <b>Training Grounds</b>. It is an Easy stage.', run: 'Combat is automatic. You swallow a pill on your own when your HP gets low. Win 10 fights and someone may teach you chakra.' },
-  { act: 'chakra:chakra_shard', nav: 'You learned to mould chakra. Open <b>Chakra Focus</b>.', start: 'Click <b>Chakra Shard</b> to meditate.', run: 'Chakra crystals become kunai, pills and armor.' },
-  { act: 'arts:crystal_kunai', nav: 'Back to <b>Shinobi Arts</b> to craft your first weapon.', start: 'Click <b>Crystal Kunai</b>. It uses 5 Chakra Shards.', run: 'Your kunai will appear in your Bank.' },
-  { equip: true, nav: 'Open your <b>Bank</b> to equip the kunai.' },
-  { zone: 1, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in the <b>Misty Forest</b>.', run: 'Mist Assassins sometimes drop a <b>schematic</b>: it teaches you a legendary weapon.' },
+  { skill: 'fishing', nav: 'Open <b>Fishing</b>. Fish are the start of everything here.', start: 'Click <b>Minnow</b> to start fishing.', run: 'Fishing repeats on its own, even while the game is closed. At level 5, the ship cook will want your catch.' },
+  { act: 'cooking:grilled_minnow', nav: '<b>Cooking</b> is now open. Open it.', start: 'Click <b>Grilled Minnow</b>. Each one uses 1 Minnow.', run: 'Food heals you in battle. Cook 5 and the Battlefield opens.' },
+  { zone: 0, nav: 'The <b>Battlefield</b> is open. Go fight!', start: 'Pick <b>Rookie Shoals</b>. It is an Easy stage.', run: 'Combat is automatic. You eat on your own when your HP gets low: fish → cook → fight is the core loop.' },
+  { equip: true, nav: 'Open your <b>Bank</b> and equip the Rusty Cutlass.' },
+  { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook whatever you can.', run: 'At Cooking level 10, a captain will take you on voyages.' },
+  { act: 'voyaging:coastal', nav: '<b>Voyaging</b> is open. Ships bring back gold, chests and relics.', start: 'Click <b>Coastal Run</b>. Each voyage uses 2 Grilled Minnows as supplies.', run: 'Voyages are slow but pay well.' },
   { market: true, nav: 'The <b>Market</b> is open. Spend your gold there.' },
-  { skill: 'chakra', nav: 'Open <b>Chakra Focus</b>.', start: 'Pick any chakra to meditate on.', run: 'At level 15, your <b>Inner Power</b> awakens.' },
-  { power: true, nav: '<b>Inner Power</b> is now unlocked. Open it.' },
+  { zone: 1, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in <b>Merfolk Reef</b>.', run: 'Every world ends with a guardian. Beat the Admiral to reach a new world.' },
+  { zone: 3, nav: 'Time for the guardian: open the <b>Battlefield</b>.', start: 'Challenge the <b>Admiral\'s Flagship</b>. Bring plenty of food.', run: 'Its relic, the Heart of the Tide, is part of the gate offering.' },
+  { gate: true, nav: 'Open the <b>Overview</b>: the gate to the next world is there.' },
 ];
 
 /* ------------------------------------------------------------ feature gates */
@@ -84,6 +84,10 @@ function guideStep() {
   if (G.power) {
     if (S.ui.view !== 'power') return nav;
     return { sels: ['[data-alloc="chakra:1"]'], text: 'Click <b>+</b> to put energy into a training. Trainings level up forever, even offline.' };
+  }
+  if (G.gate) {
+    if (S.ui.view !== 'home') return nav;
+    return { sels: ['.gate [data-gate]', '.gate'], text: 'Gather the offering, then click <b>Open the gate</b>. Hover a tile to see where it comes from.' };
   }
   if (G.market) {
     if (S.ui.view !== 'market') return nav;
@@ -159,19 +163,19 @@ function showWelcome() {
     <div class="wl-ic">${ui('hero')}</div>
     <small>Tri-Realm Idle</small>
     <h2>Welcome, Wanderer</h2>
-    <p>Three worlds have collided: ninja lands, the afterlife and the endless sea. You start in the Shinobi Lands with nothing but your hands. Each world is sealed behind a guardian: beat it to cross over.</p>
+    <p>Worlds have collided: the endless sea, ninja lands, the afterlife, and more beyond. You wash ashore in the Endless Blue with a rusty cutlass. Each world is sealed behind a guardian: beat it to cross over.</p>
     <ul class="wl-points">
       <li><i>${ui('play')}</i><span><b>Pick an activity.</b> It repeats on its own and earns items and XP.</span></li>
       <li><i>${ui('time')}</i><span><b>Progress never stops.</b> It keeps going while the game is closed, up to 12 hours.</span></li>
       <li><i>${ui('quest')}</i><span><b>Follow the Objective.</b> Each one pays gold and shows you what to do next.</span></li>
       <li><i>${ui('lock')}</i><span><b>Unlock as you go.</b> New skills, menus and worlds open one at a time.</span></li>
     </ul>
-    <div class="wl-cta">${gbtn('Start gathering', 'play', 'data-welcome="go"')}${gbtn('Look around first', '', 'data-welcome="skip"', 'dark')}</div>
+    <div class="wl-cta">${gbtn('Start fishing', 'play', 'data-welcome="go"')}${gbtn('Look around first', '', 'data-welcome="skip"', 'dark')}</div>
   </div>`, null, true);
 }
 function welcomeChoice(go) {
   S.ui.welcomed = 1;
   $('#modal').classList.remove('show', 'nofoot');
-  if (go) { setView('realm:shinobi:herbalism'); startAction('herbalism', 'healing_leaf'); }
+  if (go) { setView('realm:seas:fishing'); startAction('fishing', 'minnow'); }
   else setView('home');
 }

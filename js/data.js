@@ -5,10 +5,12 @@
    ========================================================================== */
 
 const REALMS = {
-  shinobi: { name: 'Shinobi Lands',   icon: '🍃', color: '#ff7a1a', tagline: 'Hidden villages, chakra and cold steel.' },  // starting world
-  soul:    { name: 'Soul Afterlands', icon: '🌙', color: '#9b6bff', tagline: 'Spirit blades, masked husks and restless souls.' },
-  seas:    { name: 'Endless Blue',    icon: '⚓', color: '#14a8ff', tagline: 'Pirates, bounties and cursed fruit.' },
+  seas:    { name: 'Endless Blue',    icon: '⚓', color: '#14a8ff', tagline: 'Pirates, bounties and cursed fruit.' },          // world 1: the starting sea
+  shinobi: { name: 'Shinobi Lands',   icon: '🍃', color: '#ff7a1a', tagline: 'Hidden villages, chakra and cold steel.' },     // world 2
+  soul:    { name: 'Soul Afterlands', icon: '🌙', color: '#9b6bff', tagline: 'Spirit blades, masked husks and restless souls.' }, // world 3
 };
+// Worlds in the order they open. Later worlds append themselves (worlds.js).
+const WORLD_ORDER = ['seas', 'shinobi', 'soul'];
 
 /* ------------------------------------------------------------------ items */
 // type: res (material) · food · equip · fruit · gem · chest (openable)
@@ -88,6 +90,7 @@ defItem('storm_pill',      'Storm Pill',       '🟣', 200, food(520));
 // Equipment
 const eq = (slot, stats) => ({ type: 'equip', slot, stats });
 // crafted weapons
+defItem('rusty_cutlass',   'Rusty Cutlass',    '🗡️', 5,     eq('weapon', { atk: 4 }));
 defItem('iron_wakizashi',  'Iron Wakizashi',   '🔪', 15,    eq('weapon', { atk: 6 }));
 defItem('spirit_katana',   'Spirit Katana',    '🗡️', 80,    eq('weapon', { atk: 15 }));
 defItem('awakened_blade',  'Awakened Blade',   '⚔️', 300,   eq('weapon', { atk: 32 }));
@@ -111,27 +114,27 @@ defItem('ruby_crest',      'Ruby Crest',       '🏵️', 900,   eq('accessory',
 defItem('void_band',       'Void Diamond Band','💫', 3500,  eq('accessory', { atk: 45, def: 25, hp: 220 }));
 // drop-only gear (see ZONES / chests for rates)
 defItem('old_compass',     'Old Compass',      '🧭', 120,   eq('accessory', { atk: 2, def: 2, gold: 0.10 }));
-defItem('sea_charm',       'Sea Charm',        '🐚', 400,   eq('accessory', { hp: 120, def: 10 }));
-defItem('senbon',          'Senbon Needles',   '🥢', 90,    eq('weapon', { atk: 10 }));
-defItem('puppet_plating',  'Puppet Plating',   '🪵', 110,   eq('armor', { def: 12, hp: 45 }));
-defItem('wolf_fang',       'Wolf Fang Charm',  '🐾', 160,   eq('accessory', { atk: 9, hp: 30 }));
-defItem('golem_heart',     'Golem Heart',      '🫀', 180,   eq('accessory', { def: 12, hp: 70 }));
-defItem('fox_tail_charm',  'Fox Tail Charm',   '🦊', 900,   eq('accessory', { atk: 20, hp: 100 }));
-defItem('husk_claw',       'Husk Claw',        '🦴', 350,   eq('weapon', { atk: 30 }));
-defItem('reaper_scarf',    'Reaper Scarf',     '🧣', 400,   eq('accessory', { atk: 10, def: 10, hp: 60 }));
-defItem('husk_carapace',   'Husk Carapace',    '🦂', 700,   eq('armor', { def: 40, hp: 200 }));
-defItem('wraith_sickle',   'Wraith Sickle',    '🌘', 800,   eq('weapon', { atk: 48 }));
-defItem('bone_lance',      'Bone Lance',       '🦯', 1200,  eq('weapon', { atk: 58 }));
-defItem('prayer_beads',    'Prayer Beads',     '📿', 1100,  eq('accessory', { def: 20, hp: 150 }));
-defItem('sovereign_mask',  'Sovereign Mask',   '👺', 2500,  eq('accessory', { atk: 40, def: 15, hp: 150 }));
-defItem('sovereign_cloak', 'Sovereign Cloak',  '🦇', 2800,  eq('armor', { def: 70, hp: 400 }));
-defItem('marine_coat',     'Marine Coat',      '👕', 2000,  eq('armor', { def: 55, hp: 300 }));
-defItem('hand_cannon',     'Hand Cannon',      '💥', 2600,  eq('weapon', { atk: 80 }));
-defItem('shark_tooth',     'Shark Tooth Necklace', '🦷', 2400, eq('accessory', { atk: 35, hp: 100 }));
-defItem('leviathan_mail',  'Leviathan Scalemail', '🛡️', 6000, eq('armor', { def: 90, hp: 500 }));
-defItem('corsair_cutlass', 'Corsair Cutlass',  '🪝', 6500,  eq('weapon', { atk: 100 }));
-defItem('admiral_coat',    "Admiral's Greatcoat", '🪖', 12000, eq('armor', { def: 120, hp: 700 }));
-defItem('storm_crown',     'Storm Crown',      '👑', 8000,  eq('accessory', { atk: 60, def: 30, hp: 300, gold: 0.25 }));
+defItem('sea_charm',       'Sea Charm',        '🐚', 400,   eq('accessory', { hp: 50, def: 4 }));
+defItem('senbon',          'Senbon Needles',   '🥢', 90,    eq('weapon', { atk: 30 }));
+defItem('puppet_plating',  'Puppet Plating',   '🪵', 110,   eq('armor', { def: 40, hp: 200 }));
+defItem('wolf_fang',       'Wolf Fang Charm',  '🐾', 160,   eq('accessory', { atk: 12, def: 10, hp: 60 }));
+defItem('golem_heart',     'Golem Heart',      '🫀', 180,   eq('accessory', { def: 20, hp: 150 }));
+defItem('fox_tail_charm',  'Fox Tail Charm',   '🦊', 900,   eq('accessory', { atk: 40, def: 15, hp: 150 }));
+defItem('husk_claw',       'Husk Claw',        '🦴', 350,   eq('weapon', { atk: 80 }));
+defItem('reaper_scarf',    'Reaper Scarf',     '🧣', 400,   eq('accessory', { atk: 35, hp: 110 }));
+defItem('husk_carapace',   'Husk Carapace',    '🦂', 700,   eq('armor', { def: 58, hp: 320 }));
+defItem('wraith_sickle',   'Wraith Sickle',    '🌘', 800,   eq('weapon', { atk: 98 }));
+defItem('bone_lance',      'Bone Lance',       '🦯', 1200,  eq('weapon', { atk: 104 }));
+defItem('prayer_beads',    'Prayer Beads',     '📿', 1100,  eq('accessory', { def: 32, hp: 320 }));
+defItem('sovereign_mask',  'Sovereign Mask',   '👺', 2500,  eq('accessory', { atk: 62, def: 30, hp: 300, gold: 0.25 }));
+defItem('sovereign_cloak', 'Sovereign Cloak',  '🦇', 2800,  eq('armor', { def: 122, hp: 720 }));
+defItem('marine_coat',     'Marine Coat',      '👕', 2000,  eq('armor', { def: 8, hp: 30 }));
+defItem('hand_cannon',     'Hand Cannon',      '💥', 2600,  eq('weapon', { atk: 9 }));
+defItem('shark_tooth',     'Shark Tooth Necklace', '🦷', 2400, eq('accessory', { atk: 8, hp: 25 }));
+defItem('leviathan_mail',  'Leviathan Scalemail', '🛡️', 6000, eq('armor', { def: 14, hp: 70 }));
+defItem('corsair_cutlass', 'Corsair Cutlass',  '🪝', 6500,  eq('weapon', { atk: 18 }));
+defItem('admiral_coat',    "Admiral's Greatcoat", '🪖', 12000, eq('armor', { def: 24, hp: 130 }));
+defItem('storm_crown',     'Storm Crown',      '👑', 8000,  eq('accessory', { atk: 18, hp: 90, gold: 0.15 }));
 defItem('rift_eye',        'Eye of the Rift',  '🌌', 30000, eq('accessory', { atk: 90, def: 40, hp: 400 }));
 
 // World relics: rare combat drops. Every world's iconic gear is forged from its own relics.
@@ -324,11 +327,11 @@ SKILLS.fishing.actions = [
 SKILLS.cooking.actions = [
   craft('grilled_minnow', 1, 2, { minnow: 1 }),
   craft('bass_stew', 10, 2.5, { reef_bass: 1 }),
-  craft('crab_dumplings', 20, 2.5, { sea_crab: 1, healing_leaf: 1 }),
+  craft('crab_dumplings', 20, 2.5, { sea_crab: 1 }),
   craft('spirit_ramen', 25, 3, { reef_bass: 1, moonpetal: 1, wisp_flame: 1 }),
   craft('marlin_steak', 30, 3, { blue_marlin: 1 }),
-  craft('eel_bowl', 45, 3, { tidal_eel: 1, shadowroot: 1 }),
-  craft('takoyaki', 58, 3.5, { giant_octopus: 1, wisp_flame: 1 }),
+  craft('eel_bowl', 45, 3, { tidal_eel: 1 }),
+  craft('takoyaki', 58, 3.5, { giant_octopus: 1 }),
   craft('angler_feast', 70, 3.5, { abyss_angler: 1, sage_lotus: 1 }),
   craft('sea_king_curry', 88, 4, { sea_king: 1, world_tree_leaf: 1 }),
 ];
@@ -403,56 +406,56 @@ const COMBAT_STAT = { strength: 'damage', defense: 'defense', vitality: 'max HP'
 const en = (name, icon, hp, atk, def, spd, xp, gold, drops) => ({ name, icon, hp, atk, def, spd, xp, gold, drops: drops || [] });
 
 const ZONES = [
-  { id: 'training', name: 'Training Grounds', realm: 'shinobi', rec: 1, enemies: [
-    en('Bandit Thug', '🗡️', 25, 4, 0, 3, 10, [2, 6], [['healing_leaf', 0.4, [1, 3]], ['soldier_pill', 0.08, [1, 2]], ['old_compass', 1 / 400, [1, 1]]]),
-    en('Rogue Apprentice', '🥷', 35, 5, 2, 2.8, 15, [4, 9], [['chakra_shard', 0.3, [1, 3]], ['soldier_pill', 0.05, [1, 1]], ['shinobi_headband', 1 / 150, [1, 1]]]),
+  { id: 'shoals', name: 'Rookie Shoals', realm: 'seas', rec: 1, enemies: [
+    en('Navy Recruit', '⚓', 25, 4, 0, 3, 10, [2, 6], [['reef_bass', 0.4, [2, 4]], ['marine_coat', 1 / 40, [1, 1]], ['rusty_cutlass', 1 / 30, [1, 1]]]),
+    en('Cannon Brute', '💣', 35, 5, 2, 2.8, 15, [4, 9], [['minnow', 0.4, [2, 4]], ['hand_cannon', 1 / 40, [1, 1]]]),
   ] },
-  { id: 'mist', name: 'Misty Forest', realm: 'shinobi', rec: 10, enemies: [
-    en('Mist Assassin', '🌫️', 100, 14, 8, 2.6, 32, [10, 22], [['moonpetal', 0.3, [1, 3]], ['mist_steel', 0.12, [1, 2]], ['senbon', 1 / 60, [1, 1]], ['schem_fog_cleaver', 1 / 80, [1, 1]]]),
-    en('Puppet Drone', '🪆', 130, 12, 15, 3, 36, [12, 24], [['chakra_orb', 0.25, [1, 2]], ['mist_steel', 0.18, [1, 2]], ['puppet_plating', 1 / 60, [1, 1]]]),
+  { id: 'reef', name: 'Merfolk Reef', realm: 'seas', rec: 10, enemies: [
+    en('Merfolk Brawler', '🧜', 100, 14, 8, 2.6, 32, [10, 22], [['blue_marlin', 0.4, [2, 4]], ['tide_pearl', 0.15, [1, 1]], ['sea_charm', 1 / 40, [1, 1]], ['sunken_chest', 1 / 40, [1, 1]], ['schem_kraken_compass', 1 / 100, [1, 1]]]),
+    en('Reef Shark', '🦈', 130, 12, 15, 3, 36, [12, 24], [['tidal_eel', 0.3, [1, 3]], ['tide_pearl', 0.1, [1, 1]], ['shark_tooth', 1 / 50, [1, 1]]]),
   ] },
-  { id: 'ravine', name: 'Fang Ravine', realm: 'shinobi', rec: 22, enemies: [
-    en('Ninken Alpha', '🐺', 220, 24, 18, 2.4, 65, [20, 40], [['shadowroot', 0.3, [1, 3]], ['beast_fang', 0.15, [1, 2]], ['wolf_fang', 1 / 80, [1, 1]], ['herb_pouch', 1 / 40, [1, 1]], ['schem_sealing_talisman', 1 / 100, [1, 1]]]),
-    en('Stone Golem', '🗿', 320, 22, 35, 3.2, 80, [25, 45], [['storm_chakra', 0.25, [1, 2]], ['mist_steel', 0.15, [1, 3]], ['jade', 1 / 30, [1, 1]], ['golem_heart', 1 / 80, [1, 1]]]),
+  { id: 'storm', name: 'The Storm Belt', realm: 'seas', rec: 22, enemies: [
+    en('Sea Leviathan', '🐉', 220, 24, 18, 2.4, 65, [20, 40], [['abyss_angler', 0.3, [1, 3]], ['leviathan_scale', 0.2, [1, 2]], ['leviathan_mail', 1 / 60, [1, 1]], ['FRUIT', 1 / 200, [1, 1]]]),
+    en('Storm Corsair', '🏴‍☠️', 320, 22, 35, 3.2, 80, [25, 45], [['sea_crab', 0.3, [1, 3]], ['leviathan_scale', 0.1, [1, 1]], ['treasure_map', 1 / 60, [1, 1]], ['corsair_cutlass', 1 / 60, [1, 1]], ['schem_stormcaller', 1 / 150, [1, 1]]]),
   ] },
-  { id: 'fox', name: 'Den of the Ashen Fox', realm: 'shinobi', rec: 32, boss: true, enemies: [
-    en('Ashen Fox Beast', '🦊', 1600, 45, 35, 2.5, 700, [300, 600], [['beast_ember', 1, [2, 4]], ['nature_essence', 0.5, [2, 4]], ['sealed_scroll', 0.25, [1, 2]], ['ashen_tail', 0.6, [1, 2]], ['fox_tail_charm', 1 / 8, [1, 1]], ['schem_ashen_fang', 1 / 6, [1, 1]]]),
+  { id: 'admiral', name: "Admiral's Flagship", realm: 'seas', rec: 32, boss: true, enemies: [
+    en('Admiral of the Tide', '🎖️', 1600, 45, 35, 2.5, 700, [300, 600], [['tide_heart', 0.5, [1, 1]], ['treasure_map', 0.1, [1, 1]], ['admiral_coat', 1 / 8, [1, 1]], ['storm_crown', 1 / 8, [1, 1]], ['FRUIT', 1 / 25, [1, 1]], ['schem_tide_mantle', 1 / 6, [1, 1]], ['schem_rift_cleaver', 1 / 5, [1, 1]]]),
   ] },
-  { id: 'districts', name: 'Outer Districts', realm: 'soul', rec: 38, enemies: [
-    en('Lesser Husk', '👹', 420, 35, 30, 2.6, 95, [30, 60], [['soul_fragment', 0.5, [2, 5]], ['husk_heart', 0.1, [1, 1]], ['husk_claw', 1 / 120, [1, 1]]]),
-    en('Lurking Husk', '👺', 540, 40, 40, 2.6, 115, [35, 70], [['spirit_core', 0.2, [1, 2]], ['husk_heart', 0.12, [1, 1]], ['reaper_scarf', 1 / 120, [1, 1]], ['lost_lantern', 1 / 50, [1, 1]], ['schem_reapers_edge', 1 / 120, [1, 1]]]),
+  { id: 'training', name: 'Training Grounds', realm: 'shinobi', rec: 38, enemies: [
+    en('Bandit Thug', '🗡️', 420, 35, 30, 2.6, 95, [30, 60], [['healing_leaf', 0.4, [1, 3]], ['soldier_pill', 0.08, [1, 2]], ['old_compass', 1 / 400, [1, 1]]]),
+    en('Rogue Apprentice', '🥷', 540, 40, 40, 2.6, 115, [35, 70], [['chakra_shard', 0.3, [1, 3]], ['soldier_pill', 0.05, [1, 1]], ['shinobi_headband', 1 / 150, [1, 1]]]),
   ] },
-  { id: 'desert', name: 'Desert of Endless Night', realm: 'soul', rec: 46, enemies: [
-    en('Towering Husk', '🏜️', 950, 60, 50, 3, 190, [50, 90], [['husk_mask', 0.2, [1, 2]], ['husk_heart', 0.15, [1, 2]], ['husk_carapace', 1 / 150, [1, 1]]]),
-    en('Sand Wraith', '🌪️', 780, 70, 45, 2.2, 180, [50, 90], [['void_stone', 0.3, [1, 3]], ['sapphire', 1 / 60, [1, 1]], ['wraith_sickle', 1 / 150, [1, 1]]]),
+  { id: 'mist', name: 'Misty Forest', realm: 'shinobi', rec: 46, enemies: [
+    en('Mist Assassin', '🌫️', 950, 60, 50, 3, 190, [50, 90], [['moonpetal', 0.3, [1, 3]], ['mist_steel', 0.12, [1, 2]], ['senbon', 1 / 60, [1, 1]], ['schem_fog_cleaver', 1 / 80, [1, 1]]]),
+    en('Puppet Drone', '🪆', 780, 70, 45, 2.2, 180, [50, 90], [['chakra_orb', 0.25, [1, 2]], ['mist_steel', 0.18, [1, 2]], ['puppet_plating', 1 / 60, [1, 1]]]),
   ] },
-  { id: 'spire', name: 'The Bone Spire', realm: 'soul', rec: 55, enemies: [
-    en('Masked Lancer', '💀', 1400, 90, 70, 2.4, 290, [80, 140], [['husk_mask', 0.3, [1, 3]], ['bone_ivory', 0.15, [1, 2]], ['bone_lance', 1 / 200, [1, 1]]]),
-    en('Bone Priest', '☠️', 1250, 100, 60, 2.5, 280, [80, 140], [['grave_dust', 0.15, [1, 2]], ['bone_ivory', 0.15, [1, 2]], ['ruby', 1 / 80, [1, 1]], ['prayer_beads', 1 / 200, [1, 1]], ['schem_ferryman_robe', 1 / 120, [1, 1]]]),
+  { id: 'ravine', name: 'Fang Ravine', realm: 'shinobi', rec: 55, enemies: [
+    en('Ninken Alpha', '🐺', 1400, 90, 70, 2.4, 290, [80, 140], [['shadowroot', 0.3, [1, 3]], ['beast_fang', 0.15, [1, 2]], ['wolf_fang', 1 / 80, [1, 1]], ['herb_pouch', 1 / 40, [1, 1]], ['schem_sealing_talisman', 1 / 100, [1, 1]]]),
+    en('Stone Golem', '🗿', 1250, 100, 60, 2.5, 280, [80, 140], [['storm_chakra', 0.25, [1, 2]], ['mist_steel', 0.15, [1, 3]], ['jade', 1 / 30, [1, 1]], ['golem_heart', 1 / 80, [1, 1]]]),
   ] },
-  { id: 'sovereign', name: 'Throne of Masks', realm: 'soul', rec: 64, boss: true, enemies: [
-    en('Masked Sovereign', '🎭', 9000, 160, 110, 2.4, 2800, [1500, 3000], [['abyssal_essence', 1, [3, 6]], ['lost_lantern', 0.5, [1, 3]], ['sovereign_shard', 0.6, [1, 2]], ['sovereign_mask', 1 / 10, [1, 1]], ['sovereign_cloak', 1 / 12, [1, 1]], ['schem_eclipse_blade', 1 / 6, [1, 1]]]),
+  { id: 'fox', name: 'Den of the Ashen Fox', realm: 'shinobi', rec: 64, boss: true, enemies: [
+    en('Ashen Fox Beast', '🦊', 9000, 160, 110, 2.4, 2800, [1500, 3000], [['beast_ember', 1, [2, 4]], ['nature_essence', 0.5, [2, 4]], ['sealed_scroll', 0.25, [1, 2]], ['ashen_tail', 0.6, [1, 2]], ['fox_tail_charm', 1 / 8, [1, 1]], ['schem_ashen_fang', 1 / 6, [1, 1]]]),
   ] },
-  { id: 'shoals', name: 'Rookie Shoals', realm: 'seas', rec: 68, enemies: [
-    en('Navy Recruit', '⚓', 2000, 130, 100, 2.5, 380, [120, 220], [['reef_bass', 0.4, [2, 4]], ['marine_coat', 1 / 150, [1, 1]]]),
-    en('Cannon Brute', '💣', 2600, 150, 120, 3, 440, [150, 260], [['starsteel', 0.1, [1, 2]], ['hand_cannon', 1 / 180, [1, 1]]]),
+  { id: 'districts', name: 'Outer Districts', realm: 'soul', rec: 68, enemies: [
+    en('Lesser Husk', '👹', 2000, 130, 100, 2.5, 380, [120, 220], [['soul_fragment', 0.5, [2, 5]], ['husk_heart', 0.1, [1, 1]], ['husk_claw', 1 / 120, [1, 1]]]),
+    en('Lurking Husk', '👺', 2600, 150, 120, 3, 440, [150, 260], [['spirit_core', 0.2, [1, 2]], ['husk_heart', 0.12, [1, 1]], ['reaper_scarf', 1 / 120, [1, 1]], ['lost_lantern', 1 / 50, [1, 1]], ['schem_reapers_edge', 1 / 120, [1, 1]]]),
   ] },
-  { id: 'reef', name: 'Merfolk Reef', realm: 'seas', rec: 74, enemies: [
-    en('Merfolk Brawler', '🧜', 3400, 200, 150, 2.3, 620, [200, 350], [['blue_marlin', 0.4, [2, 4]], ['tide_pearl', 0.15, [1, 1]], ['sea_charm', 1 / 80, [1, 1]], ['sunken_chest', 1 / 40, [1, 1]], ['schem_kraken_compass', 1 / 100, [1, 1]]]),
-    en('Reef Shark', '🦈', 3000, 240, 130, 2.1, 600, [200, 350], [['tidal_eel', 0.3, [1, 3]], ['tide_pearl', 0.1, [1, 1]], ['shark_tooth', 1 / 150, [1, 1]]]),
+  { id: 'desert', name: 'Desert of Endless Night', realm: 'soul', rec: 74, enemies: [
+    en('Towering Husk', '🏜️', 3400, 200, 150, 2.3, 620, [200, 350], [['husk_mask', 0.2, [1, 2]], ['husk_heart', 0.15, [1, 2]], ['husk_carapace', 1 / 150, [1, 1]]]),
+    en('Sand Wraith', '🌪️', 3000, 240, 130, 2.1, 600, [200, 350], [['void_stone', 0.3, [1, 3]], ['sapphire', 1 / 60, [1, 1]], ['wraith_sickle', 1 / 150, [1, 1]]]),
   ] },
-  { id: 'storm', name: 'The Storm Belt', realm: 'seas', rec: 82, enemies: [
-    en('Sea Leviathan', '🐉', 6500, 320, 200, 3, 1100, [350, 600], [['abyss_angler', 0.3, [1, 3]], ['leviathan_scale', 0.2, [1, 2]], ['leviathan_mail', 1 / 250, [1, 1]], ['FRUIT', 1 / 200, [1, 1]]]),
-    en('Storm Corsair', '🏴‍☠️', 5200, 360, 190, 2.2, 1050, [350, 600], [['starsteel', 0.3, [1, 3]], ['leviathan_scale', 0.1, [1, 1]], ['treasure_map', 1 / 60, [1, 1]], ['corsair_cutlass', 1 / 250, [1, 1]], ['schem_stormcaller', 1 / 150, [1, 1]]]),
+  { id: 'spire', name: 'The Bone Spire', realm: 'soul', rec: 82, enemies: [
+    en('Masked Lancer', '💀', 6500, 320, 200, 3, 1100, [350, 600], [['husk_mask', 0.3, [1, 3]], ['bone_ivory', 0.15, [1, 2]], ['bone_lance', 1 / 200, [1, 1]]]),
+    en('Bone Priest', '☠️', 5200, 360, 190, 2.2, 1050, [350, 600], [['grave_dust', 0.15, [1, 2]], ['bone_ivory', 0.15, [1, 2]], ['ruby', 1 / 80, [1, 1]], ['prayer_beads', 1 / 200, [1, 1]], ['schem_ferryman_robe', 1 / 120, [1, 1]]]),
   ] },
-  { id: 'admiral', name: "Admiral's Flagship", realm: 'seas', rec: 90, boss: true, enemies: [
-    en('Admiral of the Tide', '🎖️', 22000, 520, 280, 2.4, 9000, [6000, 12000], [['tide_heart', 0.5, [1, 1]], ['treasure_map', 0.5, [1, 2]], ['admiral_coat', 1 / 12, [1, 1]], ['storm_crown', 1 / 12, [1, 1]], ['FRUIT', 1 / 4, [1, 1]], ['schem_tide_mantle', 1 / 6, [1, 1]], ['schem_rift_cleaver', 1 / 5, [1, 1]]]),
+  { id: 'sovereign', name: 'Throne of Masks', realm: 'soul', rec: 90, boss: true, enemies: [
+    en('Masked Sovereign', '🎭', 22000, 520, 280, 2.4, 9000, [6000, 12000], [['abyssal_essence', 1, [3, 6]], ['lost_lantern', 0.5, [1, 3]], ['sovereign_shard', 0.6, [1, 2]], ['sovereign_mask', 1 / 10, [1, 1]], ['sovereign_cloak', 1 / 12, [1, 1]], ['schem_eclipse_blade', 1 / 6, [1, 1]]]),
   ] },
   { id: 'convergence', name: 'The Convergence', realm: 'rift', rec: 99, boss: true, enemies: [
     en('Rift Emperor', '👁️', 60000, 900, 400, 2.2, 30000, [30000, 60000], [['rift_shard', 1, [1, 1]], ['rift_eye', 1 / 25, [1, 1]], ['FRUIT', 1 / 2, [1, 1]]]),
   ] },
 ];
-REALMS.rift = { name: 'The Rift', icon: '🔱', color: '#ff3fb4', tagline: 'Where the three worlds tear into one.', hidden: true };
+REALMS.rift = { name: 'The Rift', icon: '🔱', color: '#ff3fb4', tagline: 'Where every world tears into one.', hidden: true };
 
 const BOUNTY_RANKS = [
   [0, 'Nobody'], [5e3, 'Rookie Outlaw'], [5e4, 'Rising Star'], [5e5, 'Warlord'],
@@ -495,38 +498,75 @@ const SHOP = [
 // prog() returns [current]; go = view the GO button opens. Append only: saves store the index.
 const made = (id) => () => [S.stats.made[id] || 0];
 const kills = (zone) => () => [S.combat.kills[zone] || 0];
-const lvl = (k) => () => [skillLv(k)];
+const lvl = (k) => () => [S.skills[k] ? skillLv(k) : 0];
 const gate = (r) => () => [S.gates[r] ? 1 : 0];
-// v2 (world order Shinobi → Soul → Seas → Rift). Older saves are fast-forwarded on load.
+// v3: Endless Blue → Shinobi → Soul → Ki → Hexbound → Hunter's Wilds → Echo Quarter → Rift.
+// Older saves are reset to the first objective they have not done yet (no double rewards).
+const G = (text, go, n, prog, reward) => ({ text, go, n, prog, reward });
 const GOALS = [
-  { text: 'Reach Herbalism level 5',            go: 'realm:shinobi:herbalism', n: 5,   prog: lvl('herbalism'), reward: 40 },
-  { text: 'Brew 5 Soldier Pills',               go: 'realm:shinobi:arts',      n: 5,   prog: made('soldier_pill'), reward: 60 },
-  { text: 'Defeat 10 foes at the Training Grounds', go: 'battle',              n: 10,  prog: kills('training'), reward: 120 },
-  { text: 'Condense 10 Chakra Shards',          go: 'realm:shinobi:chakra',    n: 10,  prog: made('chakra_shard'), reward: 120 },
-  { text: 'Craft a Crystal Kunai',              go: 'realm:shinobi:arts',      n: 1,   prog: made('crystal_kunai'), reward: 150 },
-  { text: 'Equip a weapon',                     go: 'hero',                    n: 1,   prog: () => [S.equip.weapon ? 1 : 0], reward: 150 },
-  { text: 'Defeat 10 foes in the Misty Forest', go: 'battle',                  n: 10,  prog: kills('mist'), reward: 250 },
-  { text: 'Buy any upgrade in the Market',      go: 'market',                  n: 1,   prog: () => [['tools_shinobi', 'tools_soul', 'tools_seas', 'abundance', 'satchel', 'lucky_coin'].reduce((a, k) => a + (S.shop[k] || 0), 0)], reward: 300 },
-  { text: 'Reach Chakra Focus level 15',        go: 'realm:shinobi:chakra',    n: 15,  prog: lvl('chakra'), reward: 400 },
-  { text: 'Put energy into any training',       go: 'power',                   n: 1,   prog: () => [energyUsed() > 0 ? 1 : 0], reward: 300 },
-  { text: 'Learn a schematic from a defeated foe', go: 'battle',               n: 1,   prog: () => [Object.keys(S.known).length], reward: 600 },
-  { text: 'Reach Strength level 25',            go: 'battle',                  n: 25,  prog: lvl('strength'), reward: 800 },
-  { text: 'Defeat the Ashen Fox Beast',         go: 'battle',                  n: 1,   prog: kills('fox'), reward: 2000 },
-  { text: 'Break the Ashen Seal',               go: 'home',                    n: 1,   prog: gate('soul'), reward: 2500 },
-  { text: 'Mine 20 Spirit Ore',                 go: 'realm:soul:mining',       n: 20,  prog: made('spirit_ore'), reward: 1000 },
-  { text: 'Defeat 10 foes in the Outer Districts', go: 'battle',               n: 10,  prog: kills('districts'), reward: 1500 },
-  { text: 'Forge a Spirit Katana',              go: 'realm:soul:smithing',     n: 1,   prog: made('spirit_katana'), reward: 2000 },
-  { text: 'Rebirth for the first time',         go: 'power',                   n: 1,   prog: () => [S.rebirths], reward: 3000 },
-  { text: 'Defeat the Masked Sovereign',        go: 'battle',                  n: 1,   prog: kills('sovereign'), reward: 10000 },
-  { text: "Pay the Ferryman's toll",            go: 'home',                    n: 1,   prog: gate('seas'), reward: 12000 },
-  { text: 'Cook 20 Grilled Minnows',            go: 'realm:seas:cooking',      n: 20,  prog: made('grilled_minnow'), reward: 4000 },
-  { text: 'Return from 5 voyages',              go: 'realm:seas:voyaging',     n: 5,   prog: () => [S.stats.voyages], reward: 6000 },
-  { text: 'Eat an Abyss Fruit',                 go: 'hero',                    n: 1,   prog: () => [S.fruit ? 1 : 0], reward: 10000 },
-  { text: 'Defeat the Admiral of the Tide',     go: 'battle',                  n: 1,   prog: kills('admiral'), reward: 40000 },
-  { text: 'Tear open the Convergence',          go: 'home',                    n: 1,   prog: gate('rift'), reward: 50000 },
-  { text: 'Defeat the Rift Emperor',            go: 'battle',                  n: 1,   prog: kills('convergence'), reward: 100000 },
-  { text: 'Forge the Rift Cleaver',             go: 'realm:soul:smithing',     n: 1,   prog: made('rift_cleaver'), reward: 150000 },
-  { text: 'Fill 75% of the Collection Log',     go: 'hero:collection',         n: 75,  prog: () => [Math.floor(collectionPct() * 100)], reward: 150000 },
+  // Endless Blue
+  G('Reach Fishing level 5', 'realm:seas:fishing', 5, lvl('fishing'), 40),
+  G('Cook 5 Grilled Minnows', 'realm:seas:cooking', 5, made('grilled_minnow'), 60),
+  G('Defeat 10 foes at Rookie Shoals', 'battle', 10, kills('shoals'), 120),
+  G('Equip a weapon', 'hero', 1, () => [S.equip.weapon ? 1 : 0], 120),
+  G('Reach Cooking level 10', 'realm:seas:cooking', 10, lvl('cooking'), 200),
+  G('Return from 3 voyages', 'realm:seas:voyaging', 3, () => [S.stats.voyages], 250),
+  G('Buy any upgrade in the Market', 'market', 1, () => [['tools_shinobi', 'tools_soul', 'tools_seas', 'abundance', 'satchel', 'lucky_coin'].reduce((a, k) => a + (S.shop[k] || 0), 0)], 300),
+  G('Defeat 10 foes in Merfolk Reef', 'battle', 10, kills('reef'), 400),
+  G('Defeat the Admiral of the Tide', 'battle', 1, kills('admiral'), 1000),
+  G('Open the Fog Lighthouse', 'home', 1, gate('shinobi'), 1200),
+  // Shinobi Lands
+  G('Reach Herbalism level 5', 'realm:shinobi:herbalism', 5, lvl('herbalism'), 600),
+  G('Brew 5 Soldier Pills', 'realm:shinobi:arts', 5, made('soldier_pill'), 600),
+  G('Defeat 10 foes at the Training Grounds', 'battle', 10, kills('training'), 800),
+  G('Condense 10 Chakra Shards', 'realm:shinobi:chakra', 10, made('chakra_shard'), 800),
+  G('Equip a technique', 'battle', 1, () => [S.tech && S.tech.slots.filter(Boolean).length ? 1 : 0], 1000),
+  G('Reach Chakra Focus level 15', 'realm:shinobi:chakra', 15, lvl('chakra'), 1200),
+  G('Put energy into any training', 'power', 1, () => [energyUsed() > 0 ? 1 : 0], 1000),
+  G('Learn a schematic from a defeated foe', 'battle', 1, () => [Object.keys(S.known).length], 1500),
+  G('Defeat the Ashen Fox Beast', 'battle', 1, kills('fox'), 3000),
+  G('Break the Ashen Seal', 'home', 1, gate('soul'), 3500),
+  // Soul Afterlands
+  G('Mine 20 Spirit Ore', 'realm:soul:mining', 20, made('spirit_ore'), 2000),
+  G('Defeat 10 foes in the Outer Districts', 'battle', 10, kills('districts'), 2500),
+  G('Forge a Spirit Katana', 'realm:soul:smithing', 1, made('spirit_katana'), 3000),
+  G('Awaken a weapon (First Release)', 'hero', 1, () => [Object.values(S.gear || {}).some((g) => g.rel > 0) ? 1 : 0], 4000),
+  G('Rebirth for the first time', 'power', 1, () => [S.rebirths], 5000),
+  G('Reach Renown 25 in any world', 'home', 25, () => [Math.max(0, ...WORLD_ORDER.map(renownLv))], 6000),
+  G('Defeat the Masked Sovereign', 'battle', 1, kills('sovereign'), 10000),
+  G('Climb the Throne Stair', 'home', 1, gate('ki'), 12000),
+  // Ki Frontier
+  G('Reach Gravity Training level 10', 'realm:ki:gravity', 10, lvl('gravity'), 8000),
+  G('Harvest your first crop', 'realm:ki:farming', 1, () => [S.stats.harvests || 0], 8000),
+  G('Craft a tool in Tinkering', 'realm:ki:tinkering', 1, () => [Object.keys(S.tools || {}).length], 10000),
+  G('Transform in battle', 'battle', 1, () => [S.stats.transforms || 0], 12000),
+  G('Defeat the Crimson Tyrant', 'battle', 1, kills('tyrant'), 25000),
+  G('Open the Hex Gate', 'home', 1, gate('hex'), 30000),
+  // Hexbound City
+  G('Reach Exorcism level 10', 'realm:hex:exorcism', 10, lvl('exorcism'), 20000),
+  G('Place 3 sigils in your Domain', 'domain', 3, () => [(S.domain ? S.domain.cells.filter(Boolean).length : 0)], 25000),
+  G('Hold a Pact for 30 minutes', 'realm:hex:pacts', 1800, () => [Math.floor(S.stats.pactTime || 0)], 25000),
+  G('Defeat the Cursed Matriarch', 'battle', 1, kills('matriarch'), 50000),
+  G("Open the Hunter's Trail", 'home', 1, gate('hunter'), 60000),
+  // Hunter's Wilds
+  G('Reach Tracking level 10', 'realm:hunter:tracking', 10, lvl('tracking'), 40000),
+  G('Tame your first beast', 'realm:hunter:taming', 1, () => [Object.keys(S.beasts || {}).length], 45000),
+  G('Complete 3 contracts', 'contracts', 3, () => [S.stats.contracts || 0], 50000),
+  G('Defeat the Chimera King', 'battle', 1, kills('chimera'), 90000),
+  G('Open the Echo Door', 'home', 1, gate('echo'), 100000),
+  // Echo Quarter
+  G('Reach Archaeology level 10', 'realm:echo:archaeology', 10, lvl('archaeology'), 70000),
+  G('Awaken an Echo', 'realm:echo:bonding', 1, () => [S.echo && S.echo.id ? 1 : 0], 80000),
+  G('Give your Echo a task', 'realm:echo:bonding', 1, () => [S.echo && S.echo.task ? 1 : 0], 80000),
+  G('Restore an artifact', 'realm:echo:restoration', 1, () => [Object.keys(S.museum || {}).length], 90000),
+  G('Defeat the Pillar Lord', 'battle', 1, kills('pillar'), 150000),
+  G('Tear open the Convergence', 'home', 1, gate('rift'), 200000),
+  // The Rift and beyond
+  G('Make a wish with the 7 Wish Stones', 'realm:ki:gravity', 1, () => [Object.values(S.wishes || {}).reduce((a, b) => a + b, 0)], 150000),
+  G('Eat an Abyss Fruit', 'hero', 1, () => [S.fruit ? 1 : 0], 100000),
+  G('Defeat the Rift Emperor', 'battle', 1, kills('convergence'), 400000),
+  G('Forge the Rift Cleaver', 'realm:soul:smithing', 1, made('rift_cleaver'), 500000),
+  G('Fill 75% of the Collection Log', 'hero:collection', 75, () => [Math.floor(collectionPct() * 100)], 500000),
 ];
 
 /* ------------------------------------------------------------- synergies */
@@ -549,54 +589,63 @@ const SYNERGIES = [
 ];
 
 /* ------------------------------------------------------------------ gates */
-// A new world opens only after its guardian falls AND you make an offering built from
-// every skill you have so far. Opening a gate is a deliberate click, from the Overview.
+// Keyed by the world they open. A world opens only after the previous world's guardian falls
+// AND you make an offering built from the skills you already have (Overview → Open the gate).
 const GATES = {
+  shinobi: { name: 'The Fog Lighthouse', boss: 'admiral',
+    lore: 'Beyond the Admiral\'s waters, an old lighthouse shines into a fog that smells of pine. Feed its fire and the fog will part.',
+    offer: { tide_heart: 1, tide_pearl: 3, bass_stew: 20, blue_marlin: 10 } },
   soul: { name: 'The Ashen Seal', boss: 'fox',
     lore: 'The Ashen Fox guarded a seal between the living and the dead. Feed it relics, pills and chakra and it will break.',
     offer: { ashen_tail: 2, shadow_pill: 10, storm_chakra: 20, shadowroot: 20 } },
-  seas: { name: "The Ferryman's Crossing", boss: 'sovereign',
-    lore: 'Past the Throne of Masks, a ferryman waits on a black river that ends in salt water. He wants a toll.',
-    offer: { sovereign_shard: 2, black_iron: 25, grave_dust: 15, sage_pill: 10 } },
-  rift: { name: 'The Convergence', boss: 'admiral',
-    lore: 'The three worlds touch at a single point. A relic from each will tear it open.',
+  rift: { name: 'The Convergence', boss: 'sovereign',
+    lore: 'Every world touches at a single point. A relic from each will tear it open.',
     offer: { tide_heart: 1, sovereign_shard: 2, ashen_tail: 3, sunstone: 20, lightning_core: 8 } },
 };
-const GATE_ORDER = ['soul', 'seas', 'rift'];
+// Order gates are met in. New worlds insert themselves before the Rift (worlds.js).
+const GATE_ORDER = ['shinobi', 'soul', 'rift'];
 
 /* ---------------------------------------------------------------- unlocks */
 // Worlds, skills and menus open one at a time, each from something that happens in the world.
 // Listed in the order a player meets them; the first locked one is shown as "Next unlock".
 // need(): condition. Already-used content always counts as unlocked (older saves).
-const usedSkill = (...ks) => ks.some((k) => S.skills[k].xp > 0);
+const usedSkill = (...ks) => ks.some((k) => S.skills[k] && S.skills[k].xp > 0);
 const bossName = (zone) => ZONES.find((z) => z.id === zone).enemies[0].name;
 const gateHint = (r) => () => `Defeat the ${bossName(GATES[r].boss)}, then make the offering at ${GATES[r].name} (Overview)`;
+const worldUnlock = (r, name) => ({ id: 'realm:' + r, name, need: () => !!S.gates[r], hint: gateHint(r) });
 const UNLOCKS = [
-  { id: 'realm:shinobi',      name: 'Shinobi Lands',   need: () => true },
-  { id: 'skill:herbalism',    name: 'Herbalism',       need: () => true },
-  { id: 'skill:arts',         name: 'Shinobi Arts',    need: () => skillLv('herbalism') >= 5 || usedSkill('arts'),
-    hint: () => 'Reach Herbalism level 5', why: 'An old village medic shows you how to turn herbs into pills.' },
-  { id: 'feature:battle',     name: 'Battlefield',     need: () => (S.stats.made.soldier_pill || 0) >= 5 || S.stats.kills > 0,
-    hint: () => 'Brew 5 Soldier Pills', why: 'With pills in your pouch, the Training Grounds will take you.' },
-  { id: 'skill:chakra',       name: 'Chakra Focus',    need: () => (S.combat.kills.training || 0) >= 10 || usedSkill('chakra'),
-    hint: () => 'Defeat 10 foes at the Training Grounds', why: 'A beaten rogue apprentice teaches you to mould chakra.' },
+  { id: 'realm:seas',         name: 'Endless Blue',    need: () => true },
+  { id: 'skill:fishing',      name: 'Fishing',         need: () => true },
+  { id: 'skill:cooking',      name: 'Cooking',         need: () => skillLv('fishing') >= 5 || usedSkill('cooking'),
+    hint: () => 'Reach Fishing level 5', why: 'A ship cook trades you a pan for a good catch.' },
+  { id: 'feature:battle',     name: 'Battlefield',     need: () => (S.stats.made.grilled_minnow || 0) >= 5 || S.stats.kills > 0,
+    hint: () => 'Cook 5 Grilled Minnows', why: 'With food in your bag, the harbour guards let you fight at the shoals.' },
+  { id: 'skill:voyaging',     name: 'Voyaging',        need: () => skillLv('cooking') >= 10 || usedSkill('voyaging'),
+    hint: () => 'Reach Cooking level 10', why: 'With proper provisions, a captain agrees to take you aboard.' },
   { id: 'feature:collection', name: 'Collection Log',  need: () => Object.keys(S.found).length >= 12,
     hint: () => 'Discover 12 different items', why: 'You start keeping a journal of everything you find.' },
   { id: 'feature:market',     name: 'Market',          need: () => S.gold >= 300 || Object.keys(S.shop).length > 0,
     hint: () => 'Carry 300 gold', why: 'A travelling merchant noticed your heavy purse.' },
+  worldUnlock('shinobi', 'Shinobi Lands'),
+  { id: 'skill:herbalism',    name: 'Herbalism',       need: () => !!S.gates.shinobi || usedSkill('herbalism') },
+  { id: 'skill:arts',         name: 'Shinobi Arts',    need: () => skillLv('herbalism') >= 5 || usedSkill('arts'),
+    hint: () => 'Reach Herbalism level 5', why: 'An old village medic shows you how to turn herbs into pills.' },
+  { id: 'skill:chakra',       name: 'Chakra Focus',    need: () => (S.combat.kills.training || 0) >= 10 || usedSkill('chakra'),
+    hint: () => 'Defeat 10 foes at the Training Grounds', why: 'A beaten rogue apprentice teaches you to mould chakra.' },
+  { id: 'feature:techniques', name: 'Techniques',      need: () => skillLv('chakra') >= 5 || (S.tech && S.tech.slots.some(Boolean)),
+    hint: () => 'Reach Chakra Focus level 5', why: 'Your chakra is steady enough to shape it into techniques. Brew their scrolls in Shinobi Arts.' },
   { id: 'feature:power',      name: 'Inner Power',     need: () => skillLv('chakra') >= 15 || S.rebirths > 0 || S.karma > 0,
     hint: () => 'Reach Chakra Focus level 15', why: 'Your chakra runs deep enough to train your inner power.' },
-  { id: 'realm:soul',         name: 'Soul Afterlands', need: () => !!S.gates.soul, hint: gateHint('soul') },
+  worldUnlock('soul', 'Soul Afterlands'),
   { id: 'skill:mining',       name: 'Reishi Mining',   need: () => !!S.gates.soul || usedSkill('mining') },
   { id: 'skill:smithing',     name: 'Bladesmithing',   need: () => skillLv('mining') >= 5 || usedSkill('smithing'),
     hint: () => 'Reach Reishi Mining level 5', why: 'A soul smith offers you his spare anvil for your ore.' },
   { id: 'skill:harvest',      name: 'Soul Harvest',    need: () => (S.combat.kills.districts || 0) >= 10 || usedSkill('harvest'),
     hint: () => 'Defeat 10 foes in the Outer Districts', why: 'Freed husks leave wandering souls behind. Someone has to guide them.' },
-  { id: 'realm:seas',         name: 'Endless Blue',    need: () => !!S.gates.seas, hint: gateHint('seas') },
-  { id: 'skill:fishing',      name: 'Fishing',         need: () => !!S.gates.seas || usedSkill('fishing') },
-  { id: 'skill:cooking',      name: 'Cooking',         need: () => skillLv('fishing') >= 5 || usedSkill('cooking'),
-    hint: () => 'Reach Fishing level 5', why: 'A ship cook trades you a pan for a good catch.' },
-  { id: 'skill:voyaging',     name: 'Voyaging',        need: () => skillLv('cooking') >= 10 || usedSkill('voyaging'),
-    hint: () => 'Reach Cooking level 10', why: 'With proper provisions, a captain agrees to take you aboard.' },
-  { id: 'realm:rift',         name: 'The Rift',        need: () => !!S.gates.rift, hint: gateHint('rift') },
+  { id: 'feature:awakening',  name: 'Weapon Awakening', need: () => skillLv('smithing') >= 15 || Object.values(S.gear || {}).some((g) => g.rel > 0),
+    hint: () => 'Reach Bladesmithing level 15', why: 'Your blades start to answer you. Awaken, socket and reforge them from the Bank.' },
+  { id: 'feature:renown',     name: 'Renown & Ascension', need: () => !!S.gates.soul,
+    hint: () => 'Open the Soul Afterlands', why: 'Word of you spreads across worlds. Every world now tracks your Renown.' },
 ];
+const UNLOCK_TAIL = [{ id: 'realm:rift', name: 'The Rift', need: () => !!S.gates.rift, hint: gateHint('rift') }];
+// worlds.js pushes each new world's unlocks, then the Rift closes the list.

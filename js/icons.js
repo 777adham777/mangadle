@@ -523,14 +523,20 @@ const ICONS = {
   },
 };
 // GOALS has no ids: mapped by index.
-ICONS.goal = ['herbs-bundle', 'medicine-pills', 'target-dummy', 'concentration-orb', 'broad-dagger', 'broadsword', 'fog', 'shop', 'meditation', 'battery-100',
-  'scroll-unfurled', 'biceps', 'fox', 'portal', 'war-pick', 'cracked-mask', 'katana', 'recycle', 'drama-masks', 'boat-horizon',
-  'cooking-pot', 'sailboat', 'shiny-apple', 'pirate-captain', 'vortex', 'third-eye', 'war-axe', 'bookshelf'];
+ICONS.goal = [
+  'fishing-pole', 'cooking-pot', 'island', 'broadsword', 'bowl-of-rice', 'sailboat', 'shop', 'coral', 'pirate-captain', 'paper-lantern',
+  'herbs-bundle', 'medicine-pills', 'target-dummy', 'concentration-orb', 'scroll-unfurled', 'meditation', 'battery-100', 'tied-scroll', 'fox', 'portal',
+  'war-pick', 'spooky-house', 'katana', 'shining-sword', 'recycle', 'trophy', 'drama-masks', 'stone-throne',
+  'biceps', 'plant-roots', 'cog', 'aura', 'crown', 'portal',
+  'smoking-orb', 'magic-swirl', 'yin-yang', 'oni', 'portal',
+  'paw', 'wolf-howl', 'notebook', 'claw', 'portal',
+  'stone-block', 'spark-spirit', 'all-seeing-eye', 'open-book', 'stone-tower', 'vortex',
+  'falling-star', 'shiny-apple', 'third-eye', 'war-axe', 'bookshelf'];
 // World relics, new pills, iconic gear and their schematics.
 Object.assign(ICONS.item, {
   mist_steel: 'metal-bar', beast_fang: 'fangs', ashen_tail: 'fox-tail', husk_heart: 'mineral-heart', bone_ivory: 'horned-skull',
   sovereign_shard: 'cracked-mask', tide_pearl: 'spiral-shell', leviathan_scale: 'fish-scales', tide_heart: 'waves',
-  moon_pill: 'pill', shadow_pill: 'pill-drop',
+  moon_pill: 'pill', shadow_pill: 'pill-drop', rusty_cutlass: 'broadsword',
   crystal_kunai: 'broad-dagger', chakra_blade: 'shining-sword', fog_cleaver: 'crescent-blade', sealing_talisman: 'tied-scroll',
   ashen_fang: 'katana', reapers_edge: 'reaper-scythe', ferryman_robe: 'cloak', eclipse_blade: 'swords-power',
   kraken_compass: 'compass', stormcaller: 'saber-and-pistol', tide_mantle: 'wing-cloak',
@@ -545,3 +551,8 @@ ICONS.ui.plus = 'plain-plus';
 ICONS.ui.minus = 'plain-minus';
 GI['plain-menu'] = 'M64 104h384v64H64zM64 224h384v64H64zM64 344h384v64H64z';
 ICONS.ui.menu = 'plain-menu';
+
+// Technique scrolls
+for (const id in ITEMS) if (ITEMS[id].type === 'scroll') ICONS.item[id] = 'tied-scroll';
+ICONS.technique = { shadow_strike: 'hooded-assassin', healing_palm: 'heart-plus', mist_step: 'fog', iron_skin: 'mailed-fist', sealing_mark: 'yin-yang', fire_lotus: 'fire' };
+Object.assign(ICONS.ui, { technique: 'shuriken', awaken: 'shining-sword', socket: 'gems', reforge: 'anvil-impact', chakra: 'concentration-orb' });

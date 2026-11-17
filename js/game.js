@@ -14,8 +14,11 @@ const XP_TABLE = (() => {
   for (let l = 1; l < 120; l++) { pts += Math.floor(l + 300 * Math.pow(2, l / 7)); t[l + 1] = Math.floor(pts / 4); }
   return t;
 })();
-function levelOf(xp) {
-  let lo = 1, hi = MAX_LEVEL;
+// Combat skills climb to 120: the later worlds need the headroom. Every other skill caps at 99.
+const COMBAT_MAX = 120;
+const maxLv = (id) => (SKILLS[id] && SKILLS[id].type === 'combat' ? COMBAT_MAX : MAX_LEVEL);
+function levelOf(xp, max) {
+  let lo = 1, hi = max || MAX_LEVEL;
   while (lo < hi) { const mid = (lo + hi + 1) >> 1; if (xp >= XP_TABLE[mid]) lo = mid; else hi = mid - 1; }
   return lo;
 }
@@ -30,15 +33,15 @@ function defaultState() {
   const skills = {};
   for (const id in SKILLS) skills[id] = { xp: 0 };
   return {
-    v: 2,
+    v: 3,
     gold: 50,
     bounty: 0,
-    items: {},
+    items: { rusty_cutlass: 1 },
     skills,
     mastery: {},
     action: null,                       // { skill, id, prog }
     combat: { zone: null, enemy: null, eHp: 0, pT: 0, eT: 0, respawn: 0, hp: 50,
-              style: 'strength', food: 'soldier_pill', kills: {}, log: [] },
+              style: 'strength', food: 'grilled_minnow', kills: {}, log: [] },
     equip: { weapon: null, armor: null, accessory: null },
     fruit: null,
     shop: {},
@@ -51,6 +54,21 @@ function defaultState() {
     unlocked: {},                       // unlock id -> 1 (see UNLOCKS)
     gates: {},                          // world id -> 1 once its gate is opened (see GATES)
     known: {},                          // schematic id -> 1 once learned
+    renown: {},                         // world id -> renown points (see systems.js)
+    asc: {},                            // world id -> chosen Ascension tier for its zones
+    gear: {},                           // equipment id -> { xp, rel, gems: [], tier } (awakening, sockets, reforge)
+    tech: { slots: [null, null, null], rank: {} },
+    ki: { form: null, stamina: 100 },
+    farm: { plots: [] },
+    tools: {},                          // skill id -> Tinkering tool tier
+    wishes: {},
+    domain: { cells: [null, null, null, null, null, null, null, null, null] },
+    pacts: { active: [] },
+    contracts: { list: [], next: 0, stars: 0 },
+    beasts: {}, companion: null,
+    cards: {},
+    echo: { id: null, grades: null, bond: 0, task: null, prog: 0 },
+    museum: {},
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),
   };
@@ -130,8 +148,8 @@ function canAfford(inputs) { for (const k in inputs) if (count(k) < inputs[k]) r
 function findAction(skill, id) { return SKILLS[skill].actions.find((a) => a.id === id); }
 
 /* ------------------------------------------------------------- levels */
-const skillLv = (id) => levelOf(S.skills[id].xp);
-const skillXpMult = (id) => xpMult() * (hasPetFor(id) ? 1.05 : 1) * (1 + synergyBonus('xp', id));
+const skillLv = (id) => levelOf(S.skills[id].xp, maxLv(id));
+const skillXpMult = (id) => xpMult() * (hasPetFor(id) ? 1.05 : 1) * (1 + synergyBonus('xp', id)) * hmul('xp', id);
 function addXp(id, amt) {
   const before = skillLv(id);
   S.skills[id].xp += amt * skillXpMult(id);
@@ -139,11 +157,28 @@ function addXp(id, amt) {
   if (after > before) { emit('levelup', { skill: id, level: after }); dirty = true; }
 }
 
+/* -------------------------------------------------------------- hooks */
+// World systems (systems.js) plug in here instead of editing the core engine.
+// Multiplier hooks return a factor (1 = no change); 'double' hooks return an added chance.
+const HOOKS = { dmg: [], hp: [], def: [], gold: [], xp: [], speed: [], double: [], rare: [], taken: [], dodge: [], edef: [],
+                tick: [], combat: [], action: [], kill: [], spawn: [], block: [] };
+// Why an action cannot run right now ('' = it can). Systems add reasons (max rank reached, no free plot...).
+const actionBlock = (skill, act) => { for (const f of HOOKS.block) { const r = f(skill, act); if (r) return r; } return ''; };
+const hook = (name, fn) => HOOKS[name].push(fn);
+function hmul(name, ...a) { let m = 1; for (const f of HOOKS[name]) m *= f(...a); return m; }
+function hadd(name, ...a) { let m = 0; for (const f of HOOKS[name]) m += f(...a); return m; }
+function hrun(name, ...a) { for (const f of HOOKS[name]) f(...a); }
+// Per-item stats: systems.js wraps this to add reforge tiers, awakening and gems.
+let itemStat = (id, k) => ITEMS[id].stats[k] || 0;
+// Enemy as fought: systems.js wraps this to scale Ascended zones.
+let scaleEnemy = (zi, e) => e;
+const enemyAt = (zi, i) => scaleEnemy(zi, ZONES[zi].enemies[i]);
+
 /* -------------------------------------------------------- multipliers */
 const fruitFx = () => (S.fruit ? ITEMS[S.fruit].fx : {});
 function gearStat(k) {
   let s = 0;
-  for (const slot in S.equip) { const id = S.equip[slot]; if (id && ITEMS[id].stats[k]) s += ITEMS[id].stats[k]; }
+  for (const slot in S.equip) { const id = S.equip[slot]; if (id) s += itemStat(id, k); }
   return s;
 }
 const tl = (t) => S.energy.lvl[t] || 0;
@@ -161,16 +196,16 @@ function milestoneFx(skill) {
 }
 const combatMilestones = (skill) => COMBAT_MILESTONES.filter((lv) => skillLv(skill) >= lv).length;
 const luckMult = () => 1 + 0.15 * (S.shop.lucky_coin || 0);
-const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult() * (1 + synergyBonus('rare', skill));
+const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult() * (1 + synergyBonus('rare', skill)) * hmul('rare', skill);
 function collectionPct() {
   const total = Object.keys(ITEMS).length + PETS.length;
   return (Object.keys(S.found).length + Object.keys(S.pets).length) / total;
 }
 
-function dmgMult()  { return (1 + synergyBonus('dmg', 'combat')) * (1 + 0.01 * tl('chakra')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones('strength')) * (1 + 0.03 * bossPets()); }
-function hpMult()   { return (1 + synergyBonus('hp', 'combat')) * (1 + 0.01 * tl('reiatsu')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().hp || 0)) * (1 + 0.04 * combatMilestones('vitality')) * (1 + 0.03 * bossPets()); }
-function defMult()  { return (1 + 0.01 * tl('will')) * (1 + 0.04 * combatMilestones('defense')); }
-function goldMult() { return (1 + 0.01 * tl('fortune')) * (1 + 0.15 * pl('merchant')) * (1 + (fruitFx().gold || 0)) * (1 + gearStat('gold')); }
+function dmgMult()  { return hmul('dmg') * (1 + synergyBonus('dmg', 'combat')) * (1 + 0.01 * tl('chakra')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones('strength')) * (1 + 0.03 * bossPets()); }
+function hpMult()   { return hmul('hp') * (1 + synergyBonus('hp', 'combat')) * (1 + 0.01 * tl('reiatsu')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().hp || 0)) * (1 + 0.04 * combatMilestones('vitality')) * (1 + 0.03 * bossPets()); }
+function defMult()  { return hmul('def') * (1 + 0.01 * tl('will')) * (1 + 0.04 * combatMilestones('defense')); }
+function goldMult() { return hmul('gold') * (1 + 0.01 * tl('fortune')) * (1 + 0.15 * pl('merchant')) * (1 + (fruitFx().gold || 0)) * (1 + gearStat('gold')); }
 function xpMult()   { return (1 + 0.005 * tl('wisdom')) * (1 + 0.1 * pl('mentor')); }
 
 // Mastery: per-action level from how many times you've done it. Lv L needs (L/2)^2 completions (Lv 99 ~ 2450).
@@ -188,6 +223,7 @@ function skillSpeed(skillId, actId) {
   if (sk.type !== 'combat') m *= 1 + milestoneFx(skillId).speed;
   if (hasPetFor(skillId)) m *= 1.05;
   m *= 1 + synergyBonus('speed', skillId);
+  m *= hmul('speed', skillId);
   if (skillId === 'fishing' && S.fruit) m *= 0.6;
   return m;
 }
@@ -197,6 +233,7 @@ function doubleChance(skillId, actId) {
   if (SKILLS[skillId].type === 'gather') c += 0.05 * (S.shop.abundance || 0);
   c += milestoneFx(skillId).dbl;
   c += synergyBonus('double', skillId);
+  c += hadd('double', skillId);
   return Math.min(1, c);
 }
 
@@ -235,16 +272,16 @@ const pMaxHit = () => (8 + 1.5 * skillLv('strength') + gearStat('atk')) * dmgMul
 const pDef    = () => (1.5 * skillLv('defense') + gearStat('def')) * defMult();
 const pMaxHp  = () => Math.floor((40 + 10 * skillLv('vitality') + gearStat('hp')) * hpMult());
 const pSpeed  = () => 2.4 * (1 + (fruitFx().atkSpeed || 0));
-const pDodge  = () => fruitFx().dodge || 0;
+const pDodge  = () => Math.min(0.9, (fruitFx().dodge || 0) + hadd('dodge'));
 const mitig   = (def) => 100 / (100 + def);
 const autoEatThreshold = () => [0.4, 0.55, 0.7][S.shop.satchel || 0];
 const foodHeal = (id) => Math.floor(ITEMS[id].heal * hpMult() * (1 + synergyBonus('heal', 'cooking')));
 
-function timeToKill(e) { return e.hp / (0.75 * pMaxHit() * mitig(e.def) / pSpeed()); }
-function timeToDie(e)  { return pMaxHp() / (0.75 * e.atk * mitig(pDef()) * (1 - pDodge()) / e.spd); }
+function timeToKill(e) { return e.hp / (0.75 * pMaxHit() * mitig(e.def * hmul('edef')) / pSpeed()); }
+function timeToDie(e)  { return pMaxHp() / (0.75 * e.atk * hmul('taken') * mitig(pDef()) * (1 - pDodge()) / e.spd); }
 function zoneDanger(zi) {
   let worst = 0;
-  for (const e of ZONES[zi].enemies) worst = Math.max(worst, timeToKill(e) / timeToDie(e));
+  for (const e of ZONES[zi].enemies.map((_, i) => enemyAt(zi, i))) worst = Math.max(worst, timeToKill(e) / timeToDie(e));
   if (worst < 0.35) return ['Easy', 'easy'];
   if (worst < 0.8) return ['Fair', 'fair'];
   if (worst < 1.6) return ['Risky', 'risky'];
@@ -266,6 +303,7 @@ const perkCost = (p) => pl(p) + 1;
 
 /* ========================================================== simulation */
 function step(dt) {
+  hrun('tick', dt);
   tickAction(dt);
   tickCombat(dt);
   tickEnergy(dt);
@@ -285,6 +323,8 @@ function startAction(skill, id) {
   if (act.schem && !S.known[act.schem]) return toast(`Requires the ${ITEMS[act.schem].name}`, 'bad');
   if (skillLv(skill) < act.level) return toast(`Requires ${SKILLS[skill].name} level ${act.level}`, 'bad');
   if (act.in && !canAfford(act.in)) return toast('Not enough materials.', 'bad');
+  const why = actionBlock(skill, act);
+  if (why) return toast(why, 'bad');
   stopCombat();
   S.action = { skill, id, prog: 0 };
   dirty = true;
@@ -301,6 +341,8 @@ function tickAction(dt) {
   let guard = 0;
   while (a.prog >= T && guard++ < 100) {
     if (act.in && !canAfford(act.in)) { stopAction(`Out of materials for ${act.name}.`); return; }
+    const why = actionBlock(a.skill, act);
+    if (why) { stopAction(why); return; }
     a.prog -= T;
     completeAction(a.skill, act);
     T = actionTime(a.skill, act);
@@ -316,6 +358,8 @@ function completeAction(skill, act) {
     addItem(k, n); gains[k] = n;
     S.stats.made[k] = (S.stats.made[k] || 0) + n;
   }
+  // secondary outputs: [[item, chance, [min, max]]], e.g. what an exorcised spirit leaves behind
+  for (const [k, ch, q] of act.extra || []) if (Math.random() < ch) { const n = randInt(q[0], q[1]) * mult; addItem(k, n); gains[k] = (gains[k] || 0) + n; }
   let gold = 0;
   if (act.loot) { gold = rollLoot(act.loot, mult, gains); S.stats.voyages++; }
   rollRareFinds(skill, act, gains);
@@ -323,6 +367,7 @@ function completeAction(skill, act) {
   const key = skill + ':' + act.id;
   S.mastery[key] = (S.mastery[key] || 0) + 1;
   S.stats.actions++;
+  hrun('action', skill, act, mult, gains);
   emit('action', { skill, act, gains, gold, xp: act.xp * skillXpMult(skill), double: mult > 1 });
 }
 
@@ -407,7 +452,7 @@ function stopCombat() {
   C.zone = null; C.enemy = null;
   dirty = true;
 }
-const curEnemy = () => { const C = S.combat; return C.zone != null && C.enemy != null ? ZONES[C.zone].enemies[C.enemy] : null; };
+const curEnemy = () => { const C = S.combat; return C.zone != null && C.enemy != null ? enemyAt(C.zone, C.enemy) : null; };
 function clog(m, c) { if (SIM) return; const L = S.combat.log; L.unshift({ m, c }); if (L.length > 40) L.pop(); logVer++; }
 
 function tickCombat(dt) {
@@ -422,6 +467,8 @@ function tickCombat(dt) {
     return;
   }
   const e = curEnemy();
+  hrun('combat', dt, e);
+  if (C.enemy == null || C.zone == null) return;
   C.pT -= dt; C.eT -= dt;
   let guard = 0;
   while ((C.pT <= 0 || C.eT <= 0) && guard++ < 50) {
@@ -432,16 +479,23 @@ function tickCombat(dt) {
 function spawnEnemy() {
   const C = S.combat, z = ZONES[C.zone];
   C.enemy = Math.floor(Math.random() * z.enemies.length);
-  const e = z.enemies[C.enemy];
+  const e = curEnemy();
   C.eHp = e.hp; C.pT = 0.4; C.eT = e.spd * 0.8;
+  hrun('spawn', e);
   emit('spawn', e);
 }
 function playerHit(e) {
   const C = S.combat;
   const roll = rand(0.5, 1);
-  const dmg = Math.max(1, Math.round(pMaxHit() * roll * mitig(e.def)));
+  const dmg = Math.max(1, Math.round(pMaxHit() * roll * mitig(e.def * hmul('edef'))));
+  dealDamage(e, dmg, roll > 0.9);
+}
+// Any damage to the current enemy (auto-attacks, techniques, Domain release...).
+function dealDamage(e, dmg, crit, label) {
+  const C = S.combat;
+  if (C.enemy == null) return;
   C.eHp -= dmg;
-  emit('hit', { target: 'enemy', dmg, crit: roll > 0.9 });
+  emit('hit', { target: 'enemy', dmg, crit, label });
   if (C.eHp <= 0) killEnemy(e);
 }
 function killEnemy(e) {
@@ -469,6 +523,7 @@ function killEnemy(e) {
     }
   }
   C.kills[z.id] = (C.kills[z.id] || 0) + 1;
+  hrun('kill', e, z, loot, dropped);
   const pet = PETS.find((p) => p.zone === z.id);
   if (pet && !S.pets[pet.id] && Math.random() < pet.chance * luckMult()) givePet(pet);
   S.stats.kills++;
@@ -479,8 +534,8 @@ function killEnemy(e) {
 }
 function enemyHit(e) {
   const C = S.combat;
-  if (Math.random() < pDodge()) { clog(`You mist-step past ${e.name}'s attack.`, 'sys'); emit('hit', { target: 'player', dodge: true }); return; }
-  const dmg = Math.max(1, Math.round(e.atk * rand(0.5, 1) * mitig(pDef())));
+  if (Math.random() < pDodge()) { clog(`You slip past ${e.name}'s attack.`, 'sys'); emit('hit', { target: 'player', dodge: true }); return; }
+  const dmg = Math.max(1, Math.round(e.atk * hmul('taken') * rand(0.5, 1) * mitig(pDef())));
   C.hp -= dmg;
   emit('hit', { target: 'player', dmg });
   autoEat();
@@ -640,7 +695,19 @@ function loadFrom(json) {
   S = mergeDefaults(d, defaultState());
   sanitize();
   if (oldV < 2) migrateV2();
-  if (legacy || oldV < 2) checkUnlocks();   // open what older saves already reached, quietly
+  if (oldV < 3) migrateV3();
+  if (legacy || oldV < 3) checkUnlocks();   // open what older saves already reached, quietly
+}
+// v3: Endless Blue first, then Shinobi, Soul and the new worlds. Every world a save already used stays open.
+function migrateV3() {
+  for (const r of WORLD_ORDER.slice(1)) {
+    const used = Object.keys(SKILLS).some((k) => SKILLS[k].realm === r && S.skills[k].xp > 0);
+    if (used || S.unlocked['realm:' + r]) S.gates[r] = 1;
+  }
+  if (S.combat.food && !ITEMS[S.combat.food]) S.combat.food = 'grilled_minnow';
+  S.v = 3;
+  S.goal = 0;
+  skipDoneGoals();
 }
 // v2 moved the start to the Shinobi Lands and put worlds behind gates. Keep everything a player already had.
 function migrateV2() {
@@ -652,8 +719,6 @@ function migrateV2() {
   for (const id in ITEMS) if (ITEMS[id].type === 'schematic' && (S.stats.made[ITEMS[id].teaches] || S.found[ITEMS[id].teaches])) S.known[id] = 1;
   if (S.combat.food && !ITEMS[S.combat.food]) S.combat.food = 'soldier_pill';
   S.v = 2;
-  S.goal = 0;
-  skipDoneGoals();
 }
 // New objective list: skip the ones an older save has already done (no reward, they were paid before).
 function skipDoneGoals() { let st; while ((st = goalState()) && st.done) S.goal++; }

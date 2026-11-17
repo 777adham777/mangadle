@@ -1041,3 +1041,46 @@ button.nx:hover { background: var(--panel2); }
   .gt-offer { margin-left: 0; width: 100%; }
   .gt-t h2 { font-size: 20px; }
 }
+
+/* ---------------------------------------------------------------- renown + ascension */
+.renown .rn-top { display: flex; align-items: center; gap: 12px; }
+.renown .rn-top > b { font: 700 34px/1 var(--display); color: var(--rc); min-width: 46px; text-align: center; }
+.rn-bar { flex: 1; display: flex; flex-direction: column; gap: 4px; }
+.rn-bar small { font-size: 11.5px; color: var(--mute); }
+.rn-bar .pbar i { background: var(--rc); }
+.rn-list { list-style: none; margin: 10px 0 6px; padding: 0; display: flex; flex-direction: column; gap: 3px; font-size: 13px; }
+.rn-list li { display: flex; justify-content: space-between; color: var(--dim); }
+.rn-list b { color: var(--text); font: 600 14px var(--display); }
+.asc-pick { margin-left: auto; display: inline-flex; gap: 3px; letter-spacing: 0.04em; }
+.asc-pick button { padding: 2px 8px; border-radius: 6px; font: 600 11px var(--display); text-transform: uppercase; color: var(--dim); background: var(--panel2); border: 1px solid var(--line); }
+.asc-pick button.on { color: #120c02; background: var(--rc); border-color: var(--rc); }
+.asc-pick button.t2.on { background: #ffcf5a; border-color: #ffcf5a; }
+.asc-pick button.t3.on { background: #ff6fd8; border-color: #ff6fd8; color: #fff; }
+.asc-tag { display: inline-block; margin-right: 6px; padding: 0 6px; border-radius: 4px; font: 600 10.5px/1.6 var(--display); font-style: normal; letter-spacing: 0.08em; text-transform: uppercase; vertical-align: 2px; color: #120c02; background: var(--rc); }
+.asc-tag.t2 { background: #ffcf5a; }
+.asc-tag.t3 { background: #ff6fd8; color: #fff; }
+
+/* ---------------------------------------------------------------- techniques */
+.tslots { display: flex; flex-direction: column; gap: 6px; }
+.tslot { display: grid; grid-template-columns: 30px minmax(0, 1fr); column-gap: 8px; align-items: center; padding: 6px 8px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); }
+.tslot.on { border-color: color-mix(in srgb, #ff9a4d 45%, var(--line)); }
+.tslot.locked { display: flex; gap: 8px; color: var(--mute); font-size: 12.5px; border-style: dashed; background: transparent; }
+.ts-ic { grid-row: span 2; width: 30px; height: 30px; display: grid; place-items: center; font-size: 17px; border-radius: 7px; background: var(--panel3); color: #ff9a4d; }
+.tslot select { width: 100%; background: var(--panel3); color: var(--text); border: 1px solid var(--line2); border-radius: 6px; padding: 3px 6px; font: inherit; font-size: 13px; }
+.tslot small { grid-column: 2; margin-top: 3px; font-size: 11.5px; color: var(--dim); }
+.chakrabar { position: relative; height: 8px; margin-top: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+.chakrabar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #3f9bff, #7fd4ff); transition: width 0.2s; }
+.chakrabar span { position: absolute; right: 4px; top: -3px; font-size: 9.5px; color: #cfe8ff; }
+.tech-note { display: flex; flex-direction: column; gap: 2px; font-size: 12px; }
+.tech-note span:first-child { display: flex; align-items: center; gap: 5px; color: #ff9a4d; font-weight: 600; }
+
+/* ---------------------------------------------------------------- awakening / sockets / reforge */
+.forge-box { display: flex; flex-direction: column; gap: 6px; }
+.aw-row { display: flex; flex-direction: column; gap: 3px; }
+.aw-row small { font-size: 11.5px; color: var(--mute); }
+.aw-row .pbar i { background: linear-gradient(90deg, #8f6bff, #c9b8ff); }
+.aw-cost { display: flex; flex-wrap: wrap; gap: 5px; }
+.sockets { display: flex; flex-direction: column; gap: 5px; }
+.sock { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--dim); flex-wrap: wrap; }
+.sock-pick { margin-left: auto; display: flex; gap: 4px; }
+.sock-pick .mini-btn .gi { font-size: 14px; }

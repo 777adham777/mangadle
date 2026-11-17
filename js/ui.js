@@ -14,12 +14,12 @@ const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const skillsOf = (realm) => Object.keys(SKILLS).filter((k) => SKILLS[k].realm === realm);
 const openSkillsOf = (realm) => skillsOf(realm).filter(skillOpen);
-const openRealms = () => ['shinobi', 'soul', 'seas'].filter(realmOpen);   // in the order they open
+const openRealms = () => WORLD_ORDER.filter(realmOpen);   // in the order they open
 const totalLevel = () => Object.keys(SKILLS).reduce((a, k) => a + skillLv(k), 0);
 
 // UI accent per world
 const RC = { shinobi: '#ff9a4d', soul: '#a98bff', seas: '#4cc3ff', combat: '#ff5d73', rift: '#ff5bd8', hub: '#f4c66a' };
-const rc = (r) => RC[r] || RC.hub;
+const rc = (r) => RC[r] || (REALMS[r] && REALMS[r].ui) || RC.hub;
 
 /* =============================================================== icons */
 const hasIcons = () => typeof ICONS !== 'undefined' && typeof GI !== 'undefined';
@@ -152,7 +152,7 @@ function navRow(key, icon, label, o) {
 }
 function renderRail() {
   const groups = [];
-  const quick = [['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['hero:collection', 'collection', 'Collection'], ['market', 'market', 'Market'], ['power', 'power', 'Power'], ['settings', 'settings', 'Settings']];
+  const quick = [['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['hero:collection', 'collection', 'Collection'], ['market', 'market', 'Market'], ['power', 'power', 'Power'], ...UIX.quick.flatMap((f) => f()), ['settings', 'settings', 'Settings']];
   groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => {
     const f = featureOfView(k);
     if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
@@ -175,6 +175,27 @@ function renderRail() {
         return `<button class="tab-btn ${isOn(k) ? 'on' : ''}" data-nav="${k}">${ui(icn)}<span>${l}</span></button>`;
       }),
   ].join('');
+}
+
+/* =============================================================== renown + ascension */
+function renownHTML(r) {
+  const P = renownProg(r), t = renownTier(r);
+  const nextAsc = [25, 50, 75].find((x) => x > P.L);
+  return `<section class="win renown" style="--rc:${rc(r)}">${hdr('Renown', `${REALMS[r].name}`)}
+    <div class="rn-top"><b>${P.L}</b><span class="rn-bar"><span class="pbar"><i style="width:${P.p * 100}%"></i></span><small>${P.need ? fmt(P.need) + ' to next level' : 'Max renown'}</small></span></div>
+    <ul class="rn-list">
+      <li><span>Skill speed here</span><b>+${t * 3}%</b></li>
+      <li><span>Damage & defense in its zones</span><b>+${t * 3}%</b></li>
+      <li><span>Ascension tiers</span><b>${maxAsc(r)} / 3</b></li>
+    </ul>
+    <p class="muted small">${nextAsc ? `Renown ${nextAsc}: Ascension tier ${[25, 50, 75].indexOf(nextAsc) + 1} for this world's stages.` : 'Every Ascension tier is open.'} Every Renown level anywhere also gives +0.2% XP to all skills (now +${fmt(totalRenown() * 0.2)}%).</p>
+  </section>`;
+}
+function ascPicker(r) {
+  const m = maxAsc(r);
+  if (!m) return '';
+  const cur = ascTier(r);
+  return `<span class="asc-pick" title="Ascension: replay these stages harder for more XP, gold, Renown and the newest world's relics">${[0, 1, 2, 3].slice(0, m + 1).map((t) => `<button class="${t === cur ? 'on' : ''} t${t}" data-asc="${r}:${t}">${t ? ASC[t].name : 'Normal'}</button>`).join('')}</span>`;
 }
 
 /* =============================================================== unlocks + synergies */
@@ -233,9 +254,10 @@ function synergyHTML(into, from) {
 
 /* =============================================================== shared bits */
 function xpInfo(id) {
-  const xp = S.skills[id].xp, L = levelOf(xp);
+  const xp = S.skills[id].xp, L = levelOf(xp, maxLv(id));
   const lo = XP_TABLE[L], hi = XP_TABLE[L + 1];
-  return { L, p: L >= MAX_LEVEL ? 1 : (xp - lo) / (hi - lo), xp, need: L >= MAX_LEVEL ? 0 : hi - xp };
+  const M = maxLv(id);
+  return { L, p: L >= M ? 1 : (xp - lo) / (hi - lo), xp, need: L >= M ? 0 : hi - xp };
 }
 const xpText = (b) => (b.need ? `${fmt(b.xp)} XP <em>· ${fmt(b.need)} to next level</em>` : 'MAX LEVEL');
 function statRows(st) {
@@ -337,6 +359,9 @@ function farmPanel() {
 
 /* =============================================================== VIEWS */
 const VIEWS = {};
+// Extension points filled by ui-systems.js: each entry returns HTML (or '').
+const UIX = { quick: [], homeTop: [], realmSide: [], realmTop: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], actLines: [] };
+const uix = (k, ...a) => UIX[k].map((f) => f(...a) || '').join('');
 
 /* ------------------------------------------------------------- overview */
 VIEWS.home = () => {
@@ -356,6 +381,7 @@ VIEWS.home = () => {
     <section class="win quest-win">${goalHTML()}</section>
   </div>
   ${gateHTML()}
+  ${uix('homeTop')}
   ${hdr('Skills', `Total level ${totalLevel()} · ${UNLOCKS.filter((u) => S.unlocked[u.id]).length} / ${UNLOCKS.length} discovered`)}
   <div class="ov-grid">${[...openRealms(), ...(featureOpen('battle') ? ['combat'] : [])].map((r) => `
     <section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${r === 'combat' ? ui('battle') : ic('realm', r)}${r === 'combat' ? 'Combat' : REALMS[r].name}</h3>
@@ -388,6 +414,8 @@ VIEWS.realm = (realm, skill) => {
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
   ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}
   </div><aside class="sk-side">
+  ${uix('realmSide', realm, skill)}
+  ${renownOn() ? renownHTML(realm) : ''}
   <section class="win">${hdr('Milestones')}<div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${b.L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b><i>${m.lv}</i></b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div></section>
   <section class="win">${hdr('Rare finds', `per action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}<div class="tiles rare-row">${rareTiles(skill).join('')}</div></section>
   <section class="win syn-win" style="--rc:${rc(realm)}">${synergyHTML(synergiesInto(skill), synergiesFrom(skill))}</section>
@@ -398,12 +426,14 @@ function actState(skill, a) {
   if (skillLv(skill) < a.level) return 'locked';
   if (S.action && S.action.skill === skill && S.action.id === a.id) return 'active';
   if (a.in && !canAfford(a.in)) return 'missing';
+  if (actionBlock(skill, a)) return 'blocked';
   return 'ready';
 }
 function ctaLabel(skill, a, st) {
   st = st || actState(skill, a);
   if (st === 'active') return `${ui('stop')}Stop`;
   if (st === 'missing') return `${ui('close')}Missing items`;
+  if (st === 'blocked') return `${ui('check')}${esc(actionBlock(skill, a).split('.')[0])}`;
   if (st === 'locked') return `${ui('lock')}Lv ${a.level}`;
   return `${ui('play')}${SKILLS[skill].type === 'voyage' ? 'Set sail' : SKILLS[skill].type === 'craft' ? 'Craft' : 'Start'}`;
 }
@@ -428,6 +458,7 @@ function actCard(skill, a) {
     lines.push(`<div class="ac-io"><small>Rare</small>${a.loot.rare.map(([k, c]) => tile(k, fmtRate(c * luckMult()), { cls: 'xs' })).join('')}</div>`);
   }
   if (it && it.type === 'equip') lines.push(`<div class="ac-note">${statInline(it.stats)}</div>`);
+  lines.push(uix('actLines', skill, a));
   if (it && it.type === 'food') lines.push(`<div class="ac-note"><span>${ui('hp')}Heals ${foodHeal(outId)} HP</span></div>`);
   return `<button class="acard" data-act="${skill}:${a.id}" data-card="${skill}:${a.id}" data-state="${st}">
     <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>${a.loot ? 'Voyage' : typeLabel(outId)} · Lv ${a.level}</small></div><span class="ac-cta" data-cta2>${ctaLabel(skill, a, st)}</span></div>
@@ -465,7 +496,7 @@ VIEWS.battle = () => {
       lastRealm = z.realm;
       groups += sealed
         ? `<div class="chapter sealed" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ui('lock')}</span><b>${REALMS[z.realm].name}</b><small>Sealed · ${GATES[z.realm] ? esc(GATES[z.realm].name) : ''}</small></div>`
-        : `<div class="chapter" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ic('realm', z.realm)}</span><b>${REALMS[z.realm].name}</b></div>`;
+        : `<div class="chapter" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ic('realm', z.realm)}</span><b>${REALMS[z.realm].name}</b>${ascPicker(z.realm)}</div>`;
     }
     if (!sealed) groups += zoneRow(z, i);
   });
@@ -484,6 +515,7 @@ VIEWS.battle = () => {
             <select data-food>${foods.length ? '' : '<option value="">No food — cook some first</option>'}${foods.map((f) => `<option value="${f}" ${C.food === f ? 'selected' : ''}>${ITEMS[f].name} ×${fmt(count(f))} (+${foodHeal(f)} HP)</option>`).join('')}</select></div></div>
           <div class="muted small">Eats below ${pct(autoEatThreshold())} HP. Vitality always gains XP.</div>
         </section>
+        ${uix('battleSide')}
         <section class="win log-win">${hdr('Battle log')}<div class="log" id="clog">${logHTML()}</div></section>
       </div>
       <section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), ['strength', 'defense', 'vitality'].flatMap(synergiesFrom))}</section>
@@ -500,7 +532,7 @@ function zoneRow(z, i) {
   const [dl, dc] = zoneDanger(i);
   return `<button class="zrow ${z.boss ? 'boss' : ''} ${C.zone === i ? 'on' : ''}" data-zone="${i}" style="--rc:${rc(z.realm)}">
     <span class="z-ic">${ic('enemy', z.enemies[z.enemies.length - 1].name)}</span>
-    <span class="z-main"><b>${z.name}</b><small>${z.boss ? 'Boss · ' : ''}Rec. Lv ${z.rec} · ${z.enemies.map((e) => e.name).join(' · ')}</small></span>
+    <span class="z-main"><b>${ascTier(z.realm) ? `<em class="asc-tag t${ascTier(z.realm)}">${ASC[ascTier(z.realm)].name}</em>` : ''}${z.name}</b><small>${z.boss ? 'Boss · ' : ''}Rec. Lv ${z.rec} · ${z.enemies.map((e) => e.name).join(' · ')}</small></span>
     <span class="z-tail"><span class="danger ${dc}">${dl}</span><span class="z-k">${ui('skull')}<b data-kills="${z.id}">${fmt(C.kills[z.id] || 0)}</b></span></span></button>`;
 }
 function stageHTML() {
@@ -508,7 +540,7 @@ function stageHTML() {
   const me = `<div class="fighter me">
     <div class="f-art" data-portrait="player">${ui('hero')}</div>
     <div class="f-body"><div class="f-name"><b>You</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(pMaxHit())}</span><span title="Defense">${ui('def')}${fmt(pDef())}</span><span title="Attack speed">${ui('spd')}${pSpeed().toFixed(1)}s</span>${pDodge() ? `<span title="Dodge">${ui('dodge')}${pct(pDodge())}</span>` : ''}</span></div>
-      <div class="hpbar"><i data-php></i><span data-phptext></span></div><div class="atkbar"><i data-patk></i></div></div>
+      <div class="hpbar"><i data-php></i><span data-phptext></span></div><div class="atkbar"><i data-patk></i></div>${uix('stageMe')}</div>
   </div>`;
   let right;
   if (C.zone == null) right = `<div class="f-empty">${ui('map')}<b>Choose a stage</b><small>Start with an <em>Easy</em> one in the list.</small></div>`;
@@ -516,7 +548,7 @@ function stageHTML() {
   else {
     const boss = ZONES[C.zone].boss;
     right = `<div class="fighter enemy enter ${boss ? 'boss' : ''}">
-      <div class="f-art" data-portrait="enemy">${ic('enemy', e.name)}</div>
+      <div class="f-art" data-portrait="enemy">${ic('enemy', e.base || e.name)}</div>
       <div class="f-body"><div class="f-name"><b>${boss ? '<span class="boss-tag">Boss</span>' : ''}${e.name}</b><span class="f-stats"><span title="Max hit">${ui('atk')}${e.atk}</span><span title="Defense">${ui('def')}${e.def}</span><span title="Attack speed">${ui('spd')}${e.spd}s</span></span></div>
         <div class="hpbar enemy"><i data-ehp></i><span data-ehptext></span></div><div class="atkbar"><i data-eatk></i></div>
         <div class="drops">${e.drops.map(([id, ch]) => tile(id, fmtRate(ch < 0.2 ? ch * luckMult() : ch), { cls: 'xs ' + (id !== 'FRUIT' && !S.found[id] ? 'dim' : '') })).join('')}${tile(null, fmt(e.gold[0]) + '+', { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}</div></div>
@@ -568,7 +600,7 @@ function inspectorHTML() {
   if (!selItem || (!count(selItem) && !Object.values(S.equip).includes(selItem))) return `<div class="empty-note big">${ui('info')}<span>Select an item to see its details.</span></div>`;
   const it = ITEMS[selItem], n = count(selItem), equipped = !n;
   const body = [], acts = [];
-  if (it.type === 'equip') { body.push(attrList(statRows(it.stats))); if (!equipped) acts.push(gbtn('Equip', 'check', `data-equip="${selItem}"`)); }
+  if (it.type === 'equip') { body.push(attrList(statRows(Object.fromEntries(Object.keys(it.stats).map((k) => [k, itemStat(selItem, k)]))))); body.push(uix('inspector', selItem)); if (!equipped) acts.push(gbtn('Equip', 'check', `data-equip="${selItem}"`)); }
   else if (it.type === 'food') { body.push(attrList([['hp', 'Heals in battle', foodHeal(selItem) + ' HP']])); body.push('<p class="muted">Also used as voyage supplies.</p>'); acts.push(gbtn('Use as battle food', 'eat', `data-setfood="${selItem}"`)); }
   else if (it.type === 'fruit') { body.push(`<p class="lore">${it.desc}</p><p class="muted">Only one fruit at a time — eating replaces the old one. Fruit eaters fish 40% slower.</p>`); acts.push(gbtn('Eat', 'fruit', `data-eat="${selItem}"`)); }
   else if (it.type === 'chest') {
@@ -841,7 +873,7 @@ on('hit', (d) => {
   const el = $(`[data-portrait="${d.target}"]`);
   if (!el) return;
   if (d.dodge) { floatAt(el, 'Dodge', 'miss'); return; }
-  if (d.target === 'enemy') floatAt(el, (d.crit ? '<small>Crit</small>' : '') + fmt(d.dmg), d.crit ? 'dmg crit' : 'dmg');
+  if (d.target === 'enemy') floatAt(el, (d.label ? `<small>${esc(d.label)}</small>` : d.crit ? '<small>Crit</small>' : '') + fmt(d.dmg), d.crit || d.label ? 'dmg crit' : 'dmg');
   else floatAt(el, '-' + fmt(d.dmg), 'hurt');
   retrigger(el.closest('.fighter'), 'shake');
 });
@@ -891,6 +923,10 @@ on('schematic', (id) => {
   burst('Schematic learned', `${it.name} · ${SKILLS[rec.skill].name} Lv ${rec.act.level}`, itemIc(id), 'var(--gold)');
   toast(`You can now craft the ${it.name} in ${SKILLS[rec.skill].name} (Lv ${rec.act.level}).`, 'rare');
   dirty = true;
+});
+on('renown', (d) => {
+  if (d.level % 25 === 0) burst('Ascension unlocked', `${REALMS[d.realm].name} · ${ASC[d.level / 25].name} stages`, ic('realm', d.realm), rc(d.realm));
+  else if (d.level % 10 === 0) toast(`${REALMS[d.realm].name} Renown ${d.level}: +3% speed, damage and defense there.`, 'rare');
 });
 on('goal', (g) => { burst('Objective complete', `${g.text} · +${fmt(g.reward)} gold`, ic('goal', GOALS.indexOf(g)), 'var(--gold)'); });
 
@@ -1059,8 +1095,11 @@ function update() {
   for (const el of $$('[data-cost]')) el.disabled = S.gold < +el.dataset.cost;
   for (const el of $$('[data-gate]')) { const ok = gateState(el.dataset.gate).ready; if (el.disabled === ok) dirty = true; }
 
+  for (const f of UPD) f();
   updateCoach();
 }
+// Per-frame updaters registered by ui-systems.js.
+const UPD = [];
 
 /* =============================================================== input */
 document.addEventListener('click', (ev) => {
@@ -1084,6 +1123,7 @@ document.addEventListener('click', (ev) => {
   }
   else if ('stop' in d) stopAction();
   else if (d.zone !== undefined) startCombat(+d.zone);
+  else if (d.asc) { const [r, t] = d.asc.split(':'); setAsc(r, +t); }
   else if ('stopcombat' in d) stopCombat();
   else if (d.style) { S.combat.style = d.style; dirty = true; }
   else if (d.sel) { selItem = d.sel; dirty = true; }
@@ -1239,5 +1279,3 @@ let installPrompt = null;
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; dirty = true; });
 window.addEventListener('appinstalled', () => { installPrompt = null; toast('Installed! Launch Tri-Realm from your home screen.', 'good'); dirty = true; });
-
-boot();
