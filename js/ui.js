@@ -260,11 +260,12 @@ function xpInfo(id) {
   return { L, p: L >= M ? 1 : (xp - lo) / (hi - lo), xp, need: L >= M ? 0 : hi - xp };
 }
 const xpText = (b) => (b.need ? `${fmt(b.xp)} XP <em>· ${fmt(b.need)} to next level</em>` : 'MAX LEVEL');
+const sgn = (v) => (v > 0 ? '+' : '') + fmt(v);
 function statRows(st) {
   const rows = [];
-  if (st.atk) rows.push(['atk', 'Attack', `+${st.atk}`]);
-  if (st.def) rows.push(['def', 'Defense', `+${st.def}`]);
-  if (st.hp) rows.push(['hp', 'Max HP', `+${st.hp}`]);
+  if (st.atk) rows.push(['atk', 'Attack', sgn(st.atk)]);
+  if (st.def) rows.push(['def', 'Defense', sgn(st.def)]);
+  if (st.hp) rows.push(['hp', 'Max HP', sgn(st.hp)]);
   if (st.gold) rows.push(['gold', 'Gold bonus', `+${pct(st.gold)}`]);
   if (st.rare) rows.push(['rare', 'Rare finds', `+${pct(st.rare)}`]);
   if (st.cxp) rows.push(['xp', 'Combat XP', `+${pct(st.cxp)}`]);

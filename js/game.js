@@ -550,6 +550,7 @@ function enemyHit(e) {
   }
 }
 function autoEat() {
+  if (typeof pactOn === 'function' && pactOn('fast')) return;
   const C = S.combat, max = pMaxHp(), thr = autoEatThreshold() * max;
   let n = 0;
   while (C.hp < thr && C.food && count(C.food) > 0 && n++ < 10) {

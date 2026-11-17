@@ -227,5 +227,122 @@ const EXTRA_SOURCES = [];
   });
 })();
 
+/* ====================================================== WORLD 5: HEXBOUND CITY */
+// Exorcism purifies spirits from every world (cursed essence + that world's materials).
+// Sigilcraft binds essence into sigils for your Domain (a 3×3 board of rules) and cursed gear.
+// Pacts: self-imposed restrictions for big bonuses that grow the longer you hold them.
+const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
+(() => {
+  const h = (id, name, v) => defItem(id, name, '🕯️', v);
+  h('hex_ash', 'Curse Ash', 70); h('hex_residue', 'Curse Residue', 120); h('hex_ember', 'Grudge Ember', 190); h('hex_shade', 'Shade Essence', 280);
+  h('hex_core', 'Curse Core', 400); h('hex_void', 'Void Grudge', 560); h('hex_crown', 'Crown of Grudges', 800);
+  defItem('bound_talisman', 'Bound Talisman', '🧧', 3000, relic('hex'));
+  defItem('veil_shard', 'Veil Shard', '🔷', 4500, relic('hex'));
+  defItem('matriarch_eye', "Matriarch's Eye", '👁️', 15000, relic('hex'));
+
+  SKILLS.exorcism = { name: 'Exorcism', realm: 'hex', icon: '🕯️', type: 'gather',
+    desc: 'Purify restless spirits from every world. They leave cursed essence and the materials of the world they came from.' };
+  SKILLS.sigilcraft = { name: 'Sigilcraft', realm: 'hex', icon: '🔯', type: 'craft',
+    desc: 'Bind cursed essence and materials into sigils for your Domain, and forge cursed gear with a price.' };
+  SKILLS.pacts = { name: 'Pacts', realm: 'hex', icon: '📿', type: 'pact',
+    desc: 'Swear binding vows: a restriction for a big bonus. The longer you hold them, the more this skill grows, and the stronger they get.' };
+  const X = (item, level, time, name, extra) => Object.assign(gather(item, level, time), { name, extra });
+  SKILLS.exorcism.actions = [
+    X('hex_ash', 1, 3, 'Harbor Wraiths', [['reef_bass', 0.4, [1, 2]], ['tide_pearl', 0.02, [1, 1]]]),
+    X('hex_residue', 12, 3.5, 'Village Phantoms', [['moonpetal', 0.4, [1, 2]], ['chakra_orb', 0.3, [1, 2]], ['mist_steel', 0.03, [1, 1]]]),
+    X('hex_ember', 24, 4, 'Lost Souls', [['spirit_core', 0.4, [1, 2]], ['void_stone', 0.3, [1, 2]], ['husk_heart', 0.03, [1, 1]]]),
+    X('hex_shade', 36, 4.5, 'Plateau Ghosts', [['ki_core', 0.35, [1, 2]], ['gravity_plate', 0.02, [1, 1]]]),
+    X('hex_core', 50, 5, 'Alley Curses', [['bound_talisman', 0.03, [1, 1]], ['grave_dust', 0.3, [1, 2]]]),
+    X('hex_void', 64, 5.5, 'Shrine Specters', [['phantom_silk', 0.3, [1, 2]], ['veil_shard', 0.03, [1, 1]]]),
+    X('hex_crown', 78, 6.5, 'Abyss Grudges', [['echo_soul', 0.25, [1, 1]], ['sunstone', 0.3, [1, 2]], ['veil_shard', 0.05, [1, 1]]]),
+  ];
+  // Sigils: world sigils speed up that world's skills; Hexbound sigils boost you. Same-world neighbours amplify each other.
+  const sig = (id, name, tag, kind, val, desc) => { defItem(id, name, '🔯', 300, { type: 'sigil' }); SIGILS[id] = { tag, kind, target: kind === 'speed' ? tag : null, val, desc }; };
+  sig('sigil_tide', 'Tide Sigil', 'seas', 'speed', 0.10, 'Endless Blue skills');
+  sig('sigil_leaf', 'Leaf Sigil', 'shinobi', 'speed', 0.10, 'Shinobi Lands skills');
+  sig('sigil_soul', 'Soul Sigil', 'soul', 'speed', 0.10, 'Soul Afterlands skills');
+  sig('sigil_ki', 'Ki Sigil', 'ki', 'speed', 0.10, 'Ki Frontier skills');
+  sig('sigil_hex', 'Hex Sigil', 'hex', 'speed', 0.10, 'Hexbound City skills');
+  sig('sigil_blade', 'Blade Sigil', 'hex', 'dmg', 0.08, 'damage');
+  sig('sigil_ward', 'Ward Sigil', 'hex', 'def', 0.08, 'defense');
+  sig('sigil_heart', 'Heart Sigil', 'hex', 'hp', 0.08, 'max HP');
+  sig('sigil_coin', 'Coin Sigil', 'hex', 'gold', 0.10, 'gold');
+  sig('sigil_lore', 'Lore Sigil', 'hex', 'xp', 0.05, 'XP on every skill');
+  sig('sigil_luck', 'Luck Sigil', 'hex', 'rare', 0.08, 'rare finds');
+  // cursed gear: huge stats with a price
+  defItem('cursed_cleaver', 'Cursed Cleaver', '🪓', 30000, eq('weapon', { atk: 225, hp: -300 }));
+  defItem('grudge_mail', 'Grudge Mail', '🥋', 30000, eq('armor', { def: 240, hp: 1300, atk: -25 }));
+  defItem('hex_eye', 'Hex Eye', '🧿', 30000, eq('accessory', { atk: 120, hp: 520, def: -40, rare: 0.10 }));
+  defItem('schem_cursed_cleaver', 'Schematic: Cursed Cleaver', '📜', 20000, schem('cursed_cleaver'));
+  defItem('schem_grudge_mail', 'Schematic: Grudge Mail', '📜', 20000, schem('grudge_mail'));
+  defItem('schem_hex_eye', 'Schematic: Hex Eye', '📜', 20000, schem('hex_eye'));
+  SKILLS.sigilcraft.actions = [
+    craft('sigil_tide', 3, 5, { hex_ash: 10, blue_marlin: 10, tide_pearl: 1 }),
+    craft('sigil_blade', 8, 5, { hex_ash: 15, chakra_orb: 10 }),
+    craft('sigil_leaf', 15, 5.5, { hex_residue: 10, storm_chakra: 10, shadowroot: 8 }),
+    craft('sigil_ward', 20, 5.5, { hex_residue: 15, void_stone: 10 }),
+    craft('sigil_soul', 28, 6, { hex_ember: 10, void_stone: 12, spirit_core: 8 }),
+    craft('sigil_heart', 34, 6, { hex_ember: 15, vital_bean: 5, wisp_flame: 10 }),
+    craft('sigil_ki', 40, 6.5, { hex_shade: 10, ki_core: 10, gravity_plate: 1 }),
+    craft('sigil_coin', 46, 6.5, { hex_shade: 15, sapphire: 2, tide_pearl: 2 }),
+    craft('sigil_hex', 52, 7, { hex_core: 12, bound_talisman: 1, grave_dust: 10 }),
+    needs('schem_cursed_cleaver', craft('cursed_cleaver', 55, 9, { hex_core: 20, bound_talisman: 3, starsteel: 15, ashen_tail: 2 })),
+    craft('sigil_lore', 60, 7, { hex_void: 12, sage_lotus: 10, ki_flare: 6 }),
+    needs('schem_grudge_mail', craft('grudge_mail', 66, 10, { hex_void: 20, veil_shard: 3, phantom_silk: 10, warrior_sash: 2 })),
+    craft('sigil_luck', 72, 7.5, { hex_void: 15, void_diamond: 1, ruby: 2 }),
+    needs('schem_hex_eye', craft('hex_eye', 80, 10, { hex_crown: 12, matriarch_eye: 1, void_diamond: 1, tyrant_horn: 1 })),
+  ];
+  SKILLS.pacts.actions = [];
+  for (const s of ['exorcism', 'sigilcraft', 'pacts']) RARE_FINDS[s] = [];
+  SHOP.push({ id: 'tools_hex', cat: 'Tools', realm: 'hex', name: 'Warded Satchel', icon: '🛠️', desc: '+10% speed for Hexbound City skills per tier.', costs: [50000, 200000, 800000, 3e6, 9e6] });
+  SYNERGIES.push(
+    { from: 'exorcism',   to: 'harvest', kind: 'speed',    per: 0.003, name: 'Spirit Sense',  desc: 'Soul Harvest goes faster' },
+    { from: 'sigilcraft', to: 'chakra',  kind: 'techcost', per: 0.003, name: 'Sealed Script', desc: 'Techniques cost less chakra' },
+    { from: 'pacts',      to: 'gravity', kind: 'speed',    per: 0.003, name: 'Iron Vow',      desc: 'Gravity Training goes faster' },
+  );
+  // Tinkering learns a tool for Exorcism too
+  [1, 2, 3].forEach((t) => {
+    const id = `tool_exorcism_${t}`;
+    defItem(id, `Spirit Bell Mk ${'I'.repeat(t)}`, '🔧', 300 * t, { type: 'tool', toolFor: 'exorcism', tier: t });
+    SKILLS.tinkering.actions.push(craft(id, [20, 50, 80][t - 1], 5 + t, { [['ki_orb', 'ki_flare', 'ki_star'][t - 1]]: 8 * t, [['hex_ash', 'hex_core', 'hex_crown'][t - 1]]: 12 * t }));
+  });
+  SKILLS.tinkering.actions.sort((a, b) => a.level - b.level);
+
+  const E = (name, hp, atk, def, spd, xp, gold, drops) => en(name, '', hp, atk, def, spd, xp, gold, drops);
+  addWorld({
+    id: 'hex',
+    realm: { name: 'Hexbound City', icon: '🕯️', color: '#36d6a8', ui: '#4fe3b8', tagline: 'Neon alleys, sealed shrines and curses that feed on fear.' },
+    zones: [
+      { id: 'alleys', name: 'Shadow Alleys', realm: 'hex', rec: 108, enemies: [
+        E('Grudge Spirit', 18000, 1100, 420, 2.4, 4000, [1200, 2200], [['hex_residue', 0.3, [2, 4]], ['bound_talisman', 0.08, [1, 1]]]),
+        E('Hollow Sorcerer', 21000, 1050, 460, 2.7, 4300, [1300, 2400], [['hex_ember', 0.25, [1, 3]], ['bound_talisman', 0.1, [1, 1]], ['schem_cursed_cleaver', 1 / 150, [1, 1]]]),
+      ] },
+      { id: 'shrine', name: 'Collapsed Shrine', realm: 'hex', rec: 111, enemies: [
+        E('Shrine Specter', 24000, 1300, 470, 2.2, 5200, [1600, 2800], [['hex_shade', 0.25, [1, 3]], ['veil_shard', 0.08, [1, 1]]]),
+        E('Bound Corpse', 28000, 1250, 520, 2.6, 5600, [1700, 3000], [['hex_core', 0.2, [1, 2]], ['veil_shard', 0.1, [1, 1]], ['schem_grudge_mail', 1 / 150, [1, 1]]]),
+      ] },
+      { id: 'veil', name: 'Behind the Veil', realm: 'hex', rec: 114, enemies: [
+        E('Veil Walker', 32000, 1550, 520, 2.3, 7000, [2200, 3800], [['hex_void', 0.2, [1, 2]], ['veil_shard', 0.12, [1, 2]]]),
+        E('Elder Curse', 36000, 1500, 560, 2.7, 7500, [2300, 4000], [['hex_crown', 0.15, [1, 2]], ['bound_talisman', 0.12, [1, 2]]]),
+      ] },
+      { id: 'matriarch', name: 'The Grudge Cathedral', realm: 'hex', rec: 117, boss: true, enemies: [
+        E('Cursed Matriarch', 150000, 2100, 600, 2.3, 40000, [25000, 50000], [['matriarch_eye', 0.6, [1, 1]], ['hex_crown', 1, [2, 4]], ['schem_hex_eye', 1 / 6, [1, 1]], ['FRUIT', 1 / 8, [1, 1]]]),
+      ] },
+    ],
+    gate: { name: 'The Hex Gate', boss: 'tyrant',
+      lore: "The Crimson Tyrant's horn hummed with a curse not of this world. Offer it, with what your farm and your training made, and a gate of black paper will open.",
+      offer: { tyrant_horn: 1, gravity_plate: 5, ki_nova: 20, fire_pepper: 10 } },
+    unlocks: [
+      { id: 'skill:exorcism', name: 'Exorcism', need: () => !!S.gates.hex || usedSkill('exorcism') },
+      { id: 'skill:sigilcraft', name: 'Sigilcraft', need: () => skillLv('exorcism') >= 5 || usedSkill('sigilcraft'),
+        hint: () => 'Reach Exorcism level 5', why: 'An old sorcerer shows you how to bind cursed essence into sigils.' },
+      { id: 'feature:domain', name: 'Your Domain', need: () => skillLv('sigilcraft') >= 5 || S.domain.cells.some(Boolean),
+        hint: () => 'Reach Sigilcraft level 5', why: 'You can now shape a Domain of your own: place sigils on its board (menu: Domain).' },
+      { id: 'skill:pacts', name: 'Pacts', need: () => (S.combat.kills.alleys || 0) >= 10 || usedSkill('pacts'),
+        hint: () => 'Defeat 10 foes in the Shadow Alleys', why: 'A dying sorcerer teaches you the oldest trick: binding vows.' },
+    ],
+  });
+})();
+
 /* ====================================================================== end */
 finalizeWorlds();

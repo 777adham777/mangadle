@@ -581,3 +581,23 @@ for (const id in ITEMS) {
 Object.assign(ICONS.shop, { buy_beans: 'leaf-swirl', buy_wheat: 'fern', tools_ki: 'cog' });
 Object.assign(ICONS.ui, { form: 'aura', stamina: 'lightning-trio', wish: 'crystal-ball', farm: 'plant-roots', gadget: 'cog', meal: 'bowl-of-rice' });
 ICONS.form = { surge: 'aura', ascended: 'lightning-trio', limit: 'falling-star' };
+
+// ---- Hexbound City
+ICONS.realm.hex = 'oni';
+Object.assign(ICONS.skill, { exorcism: 'candle-flame', sigilcraft: 'magic-swirl', pacts: 'prayer-beads' });
+Object.assign(ICONS.zone, { alleys: 'spooky-house', shrine: 'paper-lantern', veil: 'portal', matriarch: 'tombstone' });
+Object.assign(ICONS.enemy, { 'Grudge Spirit': 'floating-ghost', 'Hollow Sorcerer': 'warlock-hood', 'Shrine Specter': 'ghost', 'Bound Corpse': 'skull-mask',
+  'Veil Walker': 'evil-eyes', 'Elder Curse': 'devil-mask', 'Cursed Matriarch': 'oni' });
+Object.assign(ICONS.item, {
+  hex_ash: 'smoking-orb', hex_residue: 'spider-web', hex_ember: 'candle-flame', hex_shade: 'floating-ghost', hex_core: 'crystal-ball', hex_void: 'vortex', hex_crown: 'crown',
+  bound_talisman: 'tied-scroll', veil_shard: 'crystal-shine', matriarch_eye: 'all-seeing-eye',
+  cursed_cleaver: 'war-axe', grudge_mail: 'spiked-armor', hex_eye: 'evil-eyes',
+});
+for (const id in ITEMS) {
+  const t = ITEMS[id].type;
+  if (t === 'sigil') ICONS.item[id] = 'magic-swirl';
+  else if (t === 'tool') ICONS.item[id] = 'cog';
+  else if (t === 'schematic') ICONS.item[id] = 'scroll-unfurled';
+}
+Object.assign(ICONS.shop, { tools_hex: 'tied-scroll' });
+Object.assign(ICONS.ui, { domain: 'magic-swirl', pact: 'prayer-beads' });

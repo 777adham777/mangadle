@@ -85,6 +85,7 @@ const techRank = (id) => S.tech.rank[id] || 0;
 const techSlots = () => 1 + (skillLv('chakra') >= 30 ? 1 : 0) + (skillLv('chakra') >= 60 ? 1 : 0);
 const chakraMax = () => 40 + 2 * skillLv('chakra');
 const chakraRegen = () => 2 + 0.05 * skillLv('chakra');
+const techCost = (id) => Math.round(TECHNIQUES[id].cost * Math.max(0.5, 1 - synergyBonus('techcost', 'chakra')));
 const RT = { chakra: 0, cd: {}, fx: {} };     // combat runtime (not saved)
 function equipTech(slot, id) {
   if (slot >= techSlots() || (id && !techRank(id))) return;
@@ -115,15 +116,15 @@ const CAST = {
 };
 const TECH_WHEN = { healing_palm: () => S.combat.hp < 0.6 * pMaxHp() };
 hook('combat', (dt, e) => {
-  if (!techOn() || !e) return;
+  if (!techOn() || !e || (typeof pactOn === 'function' && pactOn('silence'))) return;
   RT.chakra = Math.min(chakraMax(), RT.chakra + chakraRegen() * dt);
   for (const k in RT.cd) RT.cd[k] -= dt;
   for (const k in RT.fx) RT.fx[k] -= dt;
   for (const id of S.tech.slots.slice(0, techSlots())) {
     if (!id || !techRank(id) || (RT.cd[id] || 0) > 0) continue;
-    const T = TECHNIQUES[id];
-    if (RT.chakra < T.cost || (TECH_WHEN[id] && !TECH_WHEN[id]())) continue;
-    RT.chakra -= T.cost; RT.cd[id] = T.cd;
+    const T = TECHNIQUES[id], cost = techCost(id);
+    if (RT.chakra < cost || (TECH_WHEN[id] && !TECH_WHEN[id]())) continue;
+    RT.chakra -= cost; RT.cd[id] = T.cd;
     S.stats.techUses = (S.stats.techUses || 0) + 1;
     CAST[id](e, techRank(id));
     if (S.combat.enemy == null) return;
@@ -357,3 +358,93 @@ const wishVal = (stat) => WISHES.reduce((a, w) => a + (w.stat === stat ? w.val *
 for (const st of ['dmg', 'hp', 'gold', 'rare']) hook(st, () => 1 + wishVal(st));
 hook('speed', () => 1 + wishVal('speed'));
 hook('xp', () => 1 + wishVal('xp'));
+
+/* ================================================================ HEX: DOMAIN */
+// A 3×3 board of sigils. Cells open with Sigilcraft (3, +1 every 12 levels). Each sigil gets
+// +25% per orthogonal neighbour from the same world, +50% if its whole row or column is one world.
+// Sigilcraft level adds up to +50% to everything. With 3+ sigils, every fight opens with a Domain Release.
+const domainOn = () => isUnlocked('feature:domain');
+const domainCells = () => (domainOn() ? Math.min(9, 3 + Math.floor(skillLv('sigilcraft') / 12)) : 0);
+const cellOpen = (i) => i < domainCells();
+function sigilPower(i) {
+  const C = S.domain.cells, id = C[i], sg = id && SIGILS[id];
+  if (!sg || !cellOpen(i)) return 0;
+  const tagAt = (j) => (cellOpen(j) && C[j] && SIGILS[C[j]] ? SIGILS[C[j]].tag : null);
+  const r = Math.floor(i / 3), c = i % 3;
+  let m = 1;
+  for (const [dr, dc] of [[-1, 0], [1, 0], [0, -1], [0, 1]]) {
+    const rr = r + dr, cc = c + dc;
+    if (rr >= 0 && rr < 3 && cc >= 0 && cc < 3 && tagAt(rr * 3 + cc) === sg.tag) m += 0.25;
+  }
+  const row = [0, 1, 2].every((k) => tagAt(r * 3 + k) === sg.tag), col = [0, 1, 2].every((k) => tagAt(k * 3 + c) === sg.tag);
+  if (row || col) m += 0.5;
+  return sg.val * m * (1 + Math.min(0.5, skillLv('sigilcraft') / 200));
+}
+function domainTotals() {
+  const t = {};
+  S.domain.cells.forEach((id, i) => { const sg = id && SIGILS[id]; if (!sg) return; const k = sg.kind === 'speed' ? 'speed:' + sg.target : sg.kind; t[k] = (t[k] || 0) + sigilPower(i); });
+  return t;
+}
+let DOMAIN_CACHE = null, DOMAIN_SIG = '';
+function domainFx(k) {
+  const sig = S.domain.cells.join(',') + '|' + (S.skills.sigilcraft ? skillLv('sigilcraft') : 0) + '|' + domainCells();
+  if (sig !== DOMAIN_SIG) { DOMAIN_SIG = sig; DOMAIN_CACHE = domainTotals(); }
+  return DOMAIN_CACHE[k] || 0;
+}
+function placeSigil(i, id) {
+  if (!cellOpen(i) || !SIGILS[id] || count(id) < 1) return false;
+  if (S.domain.cells[i]) addItem(S.domain.cells[i], 1);
+  removeItem(id, 1);
+  S.domain.cells[i] = id;
+  dirty = true;
+  return true;
+}
+function removeSigil(i) { const id = S.domain.cells[i]; if (!id) return; addItem(id, 1); S.domain.cells[i] = null; dirty = true; }
+hook('speed', (skill) => 1 + domainFx('speed:' + SKILLS[skill].realm));
+for (const k of ['dmg', 'def', 'hp', 'gold', 'rare']) hook(k, () => 1 + domainFx(k));
+hook('xp', () => 1 + domainFx('xp'));
+const domainSigils = () => S.domain.cells.filter((id, i) => id && cellOpen(i)).length;
+const releaseMult = () => 1 + 0.5 * domainSigils();
+hook('spawn', () => { RT.release = domainOn() && domainSigils() >= 3; });
+hook('combat', (dt, e) => {
+  if (!RT.release || !e) return;
+  RT.release = false;
+  dealDamage(e, Math.round(pMaxHit() * releaseMult() * mitig(e.def * hmul('edef'))), false, 'Domain Release');
+});
+
+/* ================================================================ HEX: PACTS */
+// Restrictions you choose for big bonuses. 1 slot, 2 at Pacts 40, 3 at Pacts 80.
+// Holding pacts trains the Pacts skill, and every Pacts level makes their bonuses 1% stronger.
+const PACTS = [
+  { id: 'fast',    name: 'Empty Stomach',  vow: 'You never eat in battle.',                 gift: (m) => `+${Math.round(40 * m)}% damage` },
+  { id: 'glass',   name: 'Glass Body',     vow: '−35% max HP.',                             gift: (m) => `+${Math.round(60 * m)}% damage` },
+  { id: 'silence', name: 'Vow of Silence', vow: 'Your techniques are sealed.',               gift: (m) => `+${Math.round(35 * m)}% max HP, +${Math.round(20 * m)}% defense` },
+  { id: 'poverty', name: 'Vow of Poverty', vow: '−60% gold from every source.',              gift: (m) => `+${Math.round(40 * m)}% rare finds` },
+  { id: 'focus',   name: 'Single Focus',   vow: 'Combat XP −50%.',                          gift: (m) => `+${Math.round(30 * m)}% skill speed` },
+  { id: 'blind',   name: 'Blindfold',      vow: 'Rare finds −50%.',                         gift: (m) => `+${Math.round(25 * m)}% XP on every skill` },
+];
+const pactsOn = () => skillOpen('pacts');
+const pactSlots = () => (pactsOn() ? 1 + (skillLv('pacts') >= 40 ? 1 : 0) + (skillLv('pacts') >= 80 ? 1 : 0) : 0);
+const pactOn = (id) => pactsOn() && S.pacts.active.slice(0, pactSlots()).includes(id);
+const pactMult = () => 1 + skillLv('pacts') / 100;
+function togglePact(id) {
+  const A = S.pacts.active;
+  if (A.includes(id)) S.pacts.active = A.filter((x) => x !== id);
+  else if (A.length < pactSlots()) A.push(id);
+  else return false;
+  dirty = true;
+  return true;
+}
+hook('tick', (dt) => {
+  const n = S.pacts.active.slice(0, pactSlots()).length;
+  if (!n) return;
+  S.stats.pactTime = (S.stats.pactTime || 0) + dt;
+  addXp('pacts', xpFor(skillLv('pacts'), 1) * 0.5 * n * dt);
+});
+hook('dmg', () => (pactOn('fast') ? 1 + 0.4 * pactMult() : 1) * (pactOn('glass') ? 1 + 0.6 * pactMult() : 1));
+hook('hp', () => (pactOn('glass') ? 0.65 : 1) * (pactOn('silence') ? 1 + 0.35 * pactMult() : 1));
+hook('def', () => (pactOn('silence') ? 1 + 0.2 * pactMult() : 1));
+hook('gold', () => (pactOn('poverty') ? 0.4 : 1));
+hook('rare', () => (pactOn('poverty') ? 1 + 0.4 * pactMult() : 1) * (pactOn('blind') ? 0.5 : 1));
+hook('speed', () => (pactOn('focus') ? 1 + 0.3 * pactMult() : 1));
+hook('xp', (skill) => (pactOn('focus') && SKILLS[skill].type === 'combat' ? 0.5 : 1) * (pactOn('blind') ? 1 + 0.25 * pactMult() : 1));
