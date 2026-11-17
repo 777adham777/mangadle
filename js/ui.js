@@ -335,7 +335,7 @@ VIEWS.home = () => {
   <div class="ov-grid">${[...openRealms(), ...(featureOpen('battle') ? ['combat'] : [])].map((r) => `
     <section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${r === 'combat' ? ui('battle') : ic('realm', r)}${r === 'combat' ? 'Combat' : REALMS[r].name}</h3>
       ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
-    ${nextUnlockHTML('win ov-next')}</div>
+    ${gateHTML() ? '' : nextUnlockHTML('win ov-next')}</div>
   <section class="win">${hdr('Adventurer')}
     <div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Rebirths', fmt(S.rebirths))}</div>
   </section>`;
@@ -361,7 +361,7 @@ VIEWS.realm = (realm, skill) => {
   ${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
   ${hdr(s.type === 'voyage' ? 'Voyages' : s.type === 'craft' ? 'Recipes' : 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`)}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
-  ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="locked" title="${esc(x.name)}: requires ${s.name} level ${x.level}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}
+  ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}
   </div><aside class="sk-side">
   <section class="win">${hdr('Milestones')}<div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${b.L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b><i>${m.lv}</i></b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div></section>
   <section class="win">${hdr('Rare finds', `per action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}<div class="tiles rare-row">${rareTiles(skill).join('')}</div></section>

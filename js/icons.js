@@ -523,7 +523,21 @@ const ICONS = {
   },
 };
 // GOALS has no ids: mapped by index.
-ICONS.goal = ['fishing-pole', 'cooking-pot', 'crossed-swords', 'war-pick', 'anvil-impact', 'broadsword', 'battery-100', 'sailboat', 'fog', 'shop', 'biceps', 'fox', 'progression', 'recycle', 'drama-masks', 'shiny-apple', 'pirate-captain', 'third-eye', 'bookshelf'];
+ICONS.goal = ['herbs-bundle', 'medicine-pills', 'target-dummy', 'concentration-orb', 'broad-dagger', 'broadsword', 'fog', 'shop', 'meditation', 'battery-100',
+  'scroll-unfurled', 'biceps', 'fox', 'portal', 'war-pick', 'cracked-mask', 'katana', 'recycle', 'drama-masks', 'boat-horizon',
+  'cooking-pot', 'sailboat', 'shiny-apple', 'pirate-captain', 'vortex', 'third-eye', 'war-axe', 'bookshelf'];
+// World relics, new pills, iconic gear and their schematics.
+Object.assign(ICONS.item, {
+  mist_steel: 'metal-bar', beast_fang: 'fangs', ashen_tail: 'fox-tail', husk_heart: 'mineral-heart', bone_ivory: 'horned-skull',
+  sovereign_shard: 'cracked-mask', tide_pearl: 'spiral-shell', leviathan_scale: 'fish-scales', tide_heart: 'waves',
+  moon_pill: 'pill', shadow_pill: 'pill-drop',
+  crystal_kunai: 'broad-dagger', chakra_blade: 'shining-sword', fog_cleaver: 'crescent-blade', sealing_talisman: 'tied-scroll',
+  ashen_fang: 'katana', reapers_edge: 'reaper-scythe', ferryman_robe: 'cloak', eclipse_blade: 'swords-power',
+  kraken_compass: 'compass', stormcaller: 'saber-and-pistol', tide_mantle: 'wing-cloak',
+});
+for (const id in ITEMS) if (ITEMS[id].type === 'schematic') ICONS.item[id] = 'scroll-unfurled';
+Object.assign(ICONS.shop, { buy_pills: 'medicine-pills', buy_shards: 'crystal-cluster' });
+Object.assign(ICONS.ui, { gate: 'portal', schematic: 'scroll-unfurled', relic: 'crystal-shine' });
 // Plain plus / minus (drawn here: the set's path-only variants are heart badges).
 GI['plain-plus'] = 'M216 96h80v120h120v80H296v120h-80V296H96v-80h120z';
 GI['plain-minus'] = 'M96 216h320v80H96z';

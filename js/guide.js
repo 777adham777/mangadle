@@ -12,16 +12,16 @@
 // One entry per early objective (same index as GOALS).
 // act/zone: what the objective wants running. nav: how to get there. start: what to click. run: tip while it runs.
 const GUIDE = [
-  { act: 'fishing:minnow', nav: 'Open <b>Fishing</b>. This is where you catch fish.', start: 'Click <b>Minnow</b> to start fishing.', run: 'Fishing repeats on its own. It keeps going even while the game is closed.' },
-  { act: 'cooking:grilled_minnow', nav: 'Open <b>Cooking</b> to turn your fish into food.', start: 'Click <b>Grilled Minnow</b> to cook. Each one uses 1 Minnow.', run: 'Food heals you in battle, so stock up.' },
-  { zone: 0, nav: 'Time to fight! Open the <b>Battlefield</b>.', start: 'Pick <b>Training Grounds</b>. It is an Easy stage.', run: 'Combat is automatic. You eat food on your own when your HP gets low.' },
-  { act: 'mining:spirit_ore', nav: 'Open <b>Reishi Mining</b>, in the Soul Afterlands.', start: 'Click <b>Spirit Ore</b> to start mining.', run: 'Ore is used to forge weapons and armor.' },
-  { act: 'smithing:iron_wakizashi', nav: 'Open <b>Bladesmithing</b> to forge your first weapon.', start: 'Click <b>Iron Wakizashi</b>. It uses 5 Spirit Ore.', run: 'Your new blade will appear in your Bank.' },
-  { equip: true, nav: 'Open your <b>Bank</b> to equip the blade.' },
+  { skill: 'herbalism', nav: 'Open <b>Herbalism</b>. Herbs are the base of everything in the Shinobi Lands.', start: 'Click <b>Healing Leaf</b> to start gathering.', run: 'Gathering repeats on its own, even while the game is closed. At level 5, an old medic will teach you something new.' },
+  { act: 'arts:soldier_pill', nav: '<b>Shinobi Arts</b> is now open. Open it.', start: 'Click <b>Soldier Pill</b>. Each one uses 2 Healing Leaves.', run: 'Pills heal you in battle. Brew 5 and the Training Grounds will open.' },
+  { zone: 0, nav: 'The <b>Battlefield</b> is open. Go fight!', start: 'Pick <b>Training Grounds</b>. It is an Easy stage.', run: 'Combat is automatic. You swallow a pill on your own when your HP gets low. Win 10 fights and someone may teach you chakra.' },
+  { act: 'chakra:chakra_shard', nav: 'You learned to mould chakra. Open <b>Chakra Focus</b>.', start: 'Click <b>Chakra Shard</b> to meditate.', run: 'Chakra crystals become kunai, pills and armor.' },
+  { act: 'arts:crystal_kunai', nav: 'Back to <b>Shinobi Arts</b> to craft your first weapon.', start: 'Click <b>Crystal Kunai</b>. It uses 5 Chakra Shards.', run: 'Your kunai will appear in your Bank.' },
+  { equip: true, nav: 'Open your <b>Bank</b> to equip the kunai.' },
+  { zone: 1, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in the <b>Misty Forest</b>.', run: 'Mist Assassins sometimes drop a <b>schematic</b>: it teaches you a legendary weapon.' },
+  { market: true, nav: 'The <b>Market</b> is open. Spend your gold there.' },
+  { skill: 'chakra', nav: 'Open <b>Chakra Focus</b>.', start: 'Pick any chakra to meditate on.', run: 'At level 15, your <b>Inner Power</b> awakens.' },
   { power: true, nav: '<b>Inner Power</b> is now unlocked. Open it.' },
-  { act: 'voyaging:coastal', nav: 'Open <b>Voyaging</b>. Ships bring back gold and loot.', start: 'Click <b>Coastal Run</b>. Each voyage uses 2 Grilled Minnows as supplies.', run: 'Voyages are slow but pay well.' },
-  { zone: 0, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight at <b>Training Grounds</b> again.', run: 'Defeat 10 foes here to unlock the next stage, the Misty Forest.' },
-  { market: true, nav: 'The <b>Market</b> is now open. Spend your gold there.' },
 ];
 
 /* ------------------------------------------------------------ feature gates */
@@ -42,7 +42,7 @@ function onGoalView(go) { const v = S.ui.view; return go === 'hero' ? v === 'her
 function guideSkill() {
   if (!guideOn()) return null;
   const G = GUIDE[S.goal];
-  return G && G.act ? G.act.split(':')[0] : null;
+  return G && G.act ? G.act.split(':')[0] : G && G.skill ? G.skill : null;
 }
 function guideStep() {
   if (!guideOn() || $('#modal').classList.contains('show')) return null;
@@ -62,6 +62,12 @@ function guideStep() {
       return { sels: [`[data-card="${G.act}"]`], text: `You need <b>${need}</b> first. Look at the item's sources in the Bank, or check the objective list.` };
     }
     return { sels: [`[data-card="${G.act}"]`], text: G.start };
+  }
+  if (G.skill) {
+    if (S.action && S.action.skill === G.skill) return run(G.run);
+    if (!onGoalView(go)) return nav;
+    const best = SKILLS[G.skill].actions.filter((a) => actState(G.skill, a) === 'ready').pop();
+    return best ? { sels: [`[data-card="${G.skill}:${best.id}"]`], text: G.start } : null;
   }
   if (G.zone != null) {
     if (S.combat.zone === G.zone) return run(G.run);
@@ -153,18 +159,19 @@ function showWelcome() {
     <div class="wl-ic">${ui('hero')}</div>
     <small>Tri-Realm Idle</small>
     <h2>Welcome, Wanderer</h2>
-    <p>Three worlds have collided: ninja lands, the afterlife and the endless sea. You wash ashore in the Endless Blue. The other worlds open up as you grow.</p>
+    <p>Three worlds have collided: ninja lands, the afterlife and the endless sea. You start in the Shinobi Lands with nothing but your hands. Each world is sealed behind a guardian: beat it to cross over.</p>
     <ul class="wl-points">
       <li><i>${ui('play')}</i><span><b>Pick an activity.</b> It repeats on its own and earns items and XP.</span></li>
       <li><i>${ui('time')}</i><span><b>Progress never stops.</b> It keeps going while the game is closed, up to 12 hours.</span></li>
       <li><i>${ui('quest')}</i><span><b>Follow the Objective.</b> Each one pays gold and shows you what to do next.</span></li>
+      <li><i>${ui('lock')}</i><span><b>Unlock as you go.</b> New skills, menus and worlds open one at a time.</span></li>
     </ul>
-    <div class="wl-cta">${gbtn('Start fishing', 'play', 'data-welcome="go"')}${gbtn('Look around first', '', 'data-welcome="skip"', 'dark')}</div>
+    <div class="wl-cta">${gbtn('Start gathering', 'play', 'data-welcome="go"')}${gbtn('Look around first', '', 'data-welcome="skip"', 'dark')}</div>
   </div>`, null, true);
 }
 function welcomeChoice(go) {
   S.ui.welcomed = 1;
   $('#modal').classList.remove('show', 'nofoot');
-  if (go) { setView('realm:seas:fishing'); startAction('fishing', 'minnow'); }
+  if (go) { setView('realm:shinobi:herbalism'); startAction('herbalism', 'healing_leaf'); }
   else setView('home');
 }

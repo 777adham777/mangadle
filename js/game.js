@@ -30,15 +30,15 @@ function defaultState() {
   const skills = {};
   for (const id in SKILLS) skills[id] = { xp: 0 };
   return {
-    v: 1,
+    v: 2,
     gold: 50,
     bounty: 0,
-    items: { grilled_minnow: 20 },
+    items: {},
     skills,
     mastery: {},
     action: null,                       // { skill, id, prog }
     combat: { zone: null, enemy: null, eHp: 0, pT: 0, eT: 0, respawn: 0, hp: 50,
-              style: 'strength', food: 'grilled_minnow', kills: {}, log: [] },
+              style: 'strength', food: 'soldier_pill', kills: {}, log: [] },
     equip: { weapon: null, armor: null, accessory: null },
     fruit: null,
     shop: {},
@@ -49,6 +49,8 @@ function defaultState() {
     pets: {},                           // pet id -> 1
     goal: 0,
     unlocked: {},                       // unlock id -> 1 (see UNLOCKS)
+    gates: {},                          // world id -> 1 once its gate is opened (see GATES)
+    known: {},                          // schematic id -> 1 once learned
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),
   };
@@ -76,6 +78,8 @@ function sanitize() {
   if (S.fruit) S.found[S.fruit] = 1;
   for (const id in S.found) if (!ITEMS[id]) delete S.found[id];
   for (const id in S.pets) if (!PET_BY[id]) delete S.pets[id];
+  for (const id in S.known) if (!ITEMS[id] || ITEMS[id].type !== 'schematic') delete S.known[id];
+  for (const id in S.items) if (ITEMS[id].type === 'schematic') { learnSchematic(id, true); delete S.items[id]; }
 }
 
 /* ------------------------------------------------------------ helpers */
@@ -278,6 +282,7 @@ function startAction(skill, id) {
   if (!act) return;
   if (S.action && S.action.skill === skill && S.action.id === id) { stopAction(); return; }
   if (!skillOpen(skill)) return;
+  if (act.schem && !S.known[act.schem]) return toast(`Requires the ${ITEMS[act.schem].name}`, 'bad');
   if (skillLv(skill) < act.level) return toast(`Requires ${SKILLS[skill].name} level ${act.level}`, 'bad');
   if (act.in && !canAfford(act.in)) return toast('Not enough materials.', 'bad');
   stopCombat();
@@ -382,6 +387,7 @@ function giveDrop(id, n, announce) {
 
 /* ------------------------------------------------------------- combat */
 function zoneUnlocked(zi) {
+  if (!realmOpen(ZONES[zi].realm)) return false;   // other worlds wait behind their gate
   if (zi === 0) return true;
   const prev = ZONES[zi - 1];
   return (S.combat.kills[prev.id] || 0) >= (prev.boss ? 1 : 10);
@@ -450,6 +456,10 @@ function killEnemy(e) {
   S.bounty += e.xp * 10;
   const dropped = [], loot = {};
   for (const [id, ch, q] of e.drops) {
+    if (ITEMS[id] && ITEMS[id].type === 'schematic') {
+      if (!S.known[id] && Math.random() < ch * luckMult()) { learnSchematic(id); dropped.push(ITEMS[id].name); }
+      continue;
+    }
     if (Math.random() < (ch < 0.2 ? ch * luckMult() : ch)) {
       const real = id === 'FRUIT' ? pick(FRUITS) : id;
       const n = randInt(q[0], q[1]);
@@ -491,6 +501,34 @@ function autoEat() {
     emit('eat', { id: C.food, heal: foodHeal(C.food) });
     removeItem(C.food, 1);
   }
+}
+
+/* ------------------------------------------------- schematics + gates */
+// The recipe a schematic teaches: { skill, act }.
+function schemRecipe(id) {
+  for (const k in SKILLS) for (const a of SKILLS[k].actions) if (a.schem === id) return { skill: k, act: a };
+  return null;
+}
+function learnSchematic(id, quiet) {
+  if (S.known[id]) return;
+  S.known[id] = 1;
+  S.found[id] = 1;
+  if (!quiet) emit('schematic', id);
+  dirty = true;
+}
+function gateState(r) {
+  const g = GATES[r];
+  const boss = (S.combat.kills[g.boss] || 0) > 0, items = canAfford(g.offer);
+  return { g, boss, items, ready: boss && items && !S.gates[r], open: !!S.gates[r] };
+}
+const nextGate = () => GATE_ORDER.find((r) => !S.gates[r]);
+function openGate(r) {
+  const st = gateState(r);
+  if (!st.ready) return false;
+  for (const k in st.g.offer) removeItem(k, st.g.offer[k]);
+  S.gates[r] = 1;
+  dirty = true;
+  return true;
 }
 
 /* ---------------------------------------------------------- equipment */
@@ -598,11 +636,27 @@ function serialize() { S.last = Date.now(); return JSON.stringify(S); }
 function loadFrom(json) {
   const d = JSON.parse(json);
   if (!isObj(d) || !d.skills) throw new Error('Not a valid save');
-  const legacy = !d.unlocked;
+  const legacy = !d.unlocked, oldV = d.v || 1;
   S = mergeDefaults(d, defaultState());
   sanitize();
-  if (legacy) checkUnlocks();   // saves from before unlocks: open what they already reached, quietly
+  if (oldV < 2) migrateV2();
+  if (legacy || oldV < 2) checkUnlocks();   // open what older saves already reached, quietly
 }
+// v2 moved the start to the Shinobi Lands and put worlds behind gates. Keep everything a player already had.
+function migrateV2() {
+  const used = (r) => Object.keys(SKILLS).some((k) => SKILLS[k].realm === r && S.skills[k].xp > 0) || S.unlocked['realm:' + r];
+  const kz = (z) => (S.combat.kills[z] || 0) > 0;
+  if (used('soul') || kz('districts')) S.gates.soul = 1;
+  if (used('seas') || kz('shoals')) S.gates.seas = 1;
+  if (kz('admiral')) S.gates.rift = 1;
+  for (const id in ITEMS) if (ITEMS[id].type === 'schematic' && (S.stats.made[ITEMS[id].teaches] || S.found[ITEMS[id].teaches])) S.known[id] = 1;
+  if (S.combat.food && !ITEMS[S.combat.food]) S.combat.food = 'soldier_pill';
+  S.v = 2;
+  S.goal = 0;
+  skipDoneGoals();
+}
+// New objective list: skip the ones an older save has already done (no reward, they were paid before).
+function skipDoneGoals() { let st; while ((st = goalState()) && st.done) S.goal++; }
 
 
 /* --------------------------------------------------------------- goals */

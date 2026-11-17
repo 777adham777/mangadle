@@ -4,7 +4,9 @@ An idle RPG in the spirit of Melvor Idle and NGU Idle, set across three collided
 the **Shinobi Lands**, the **Soul Afterlands** and the **Endless Blue**.
 
 - 12 skills (gathering, crafting, voyages, combat), 6-12 unlocks each up to level 90, milestone perks at 10/25/50/75/99
-- Worlds, skills and menus open one at a time (Endless Blue → Soul Afterlands → Shinobi Lands → The Rift), always with a single "Next unlock" shown
+- Start in the Shinobi Lands; each next world (Soul Afterlands → Endless Blue → The Rift) opens only after you defeat its guardian boss and make an offering at its gate, built from every skill you have
+- Skills and menus open from in-world events (a level reached, a stage cleared), always with a single "Next unlock" shown
+- Iconic weapons and armor per world: their schematics drop from that world's enemies, and crafting them needs that world's rare relics
 - Synergies: every profession boosts another one (e.g. Fishing → Cooking double output, Bladesmithing → all gathering speed)
 - 13 battle zones with bosses; 110+ items with visible drop rates, gems, openable chests, 13 pets and a Collection Log
 - Inner Power energy training, Rebirth and Karma perks, rare Abyss Fruits
