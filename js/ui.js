@@ -615,7 +615,7 @@ function burst(title, sub, icon, color) {
 }
 function flash() { const f = document.createElement('div'); f.className = 'flash'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); }
 
-const SFX_WORDS = ['BAM!', 'ZAN!', 'DOON!', 'SLASH!', 'KRAK!', 'GOGOGO!'];
+const SFX_WORDS = ['Critical'];
 function inBattleView() { return S.ui.view === 'battle'; }
 
 on('action', (d) => {
@@ -636,7 +636,7 @@ on('action', (d) => {
 });
 on('levelup', (d) => {
   const s = SKILLS[d.skill];
-  burst('LEVEL UP!', `${s.name} → ${d.level}`, s.icon, realmColor(s.realm) || 'var(--hot)');
+  burst('Level Up', `${s.name} → ${d.level}`, s.icon, realmColor(s.realm) || 'var(--hot)');
   const unlocked = s.actions.find((a) => a.level === d.level);
   if (unlocked) toast(`New in ${s.name}: ${actionIcon(unlocked)} ${unlocked.name}!`, 'good');
 });
@@ -657,16 +657,16 @@ on('kill', (d) => {
   feedAdd('🪙', 'Gold', d.gold, 'g');
   if (inBattleView()) {
     const f = $('.fighter.enemy');
-    if (f) { const s = document.createElement('div'); s.className = 'ko-stamp'; s.textContent = 'K.O.!'; f.appendChild(s); floatAt($('[data-portrait="enemy"]', f), `+${fmt(d.gold)} 🪙`, 'gold', 0, 30); }
+    if (f) { const s = document.createElement('div'); s.className = 'ko-stamp'; s.textContent = 'Defeated'; f.appendChild(s); floatAt($('[data-portrait="enemy"]', f), `+${fmt(d.gold)} 🪙`, 'gold', 0, 30); }
   }
   const unlocked = ZONES.filter((z, i) => zoneUnlocked(i)).length;
   if (unlocked > lastUnlocked) {
     lastUnlocked = unlocked;
     const z = ZONES[unlocked - 1];
-    burst('NEW AREA!', z.name, REALMS[z.realm].icon, REALMS[z.realm].color);
+    burst('New Area Unlocked', z.name, REALMS[z.realm].icon, REALMS[z.realm].color);
     dirty = true;
   }
-  if (d.boss) burst('BOSS DOWN!', d.enemy.name, d.enemy.icon, 'var(--gold)');
+  if (d.boss) burst('Boss Defeated', d.enemy.name, d.enemy.icon, 'var(--gold)');
   sideDirty = true;
 });
 on('spawn', () => {
@@ -681,17 +681,17 @@ on('rare', (d) => {
   setTimeout(() => rareThisTick.delete(d.id), 0);
   const it = ITEMS[d.id];
   toast(`${it.icon} Rare find: ${it.name}! (${d.source})`, 'rare');
-  if (it.type === 'fruit' || it.value >= 2000) burst('RARE DROP!', it.name, it.icon, 'var(--gold)');
+  if (it.type === 'fruit' || it.value >= 2000) burst('Rare Drop', it.name, it.icon, 'var(--gold)');
   sideDirty = true;
 });
 on('pet', (pet) => {
-  burst('PET FOUND!', `${pet.name} joins you · ${petBonus(pet)}`, pet.icon, 'var(--gold)');
+  burst('Pet Found', `${pet.name} joins you · ${petBonus(pet)}`, pet.icon, 'var(--gold)');
   toast(`${pet.icon} ${pet.name} is now your companion! ${petBonus(pet)}.`, 'rare');
 });
 on('newitem', (id) => {
   setTimeout(() => { if (!rareThisTick.has(id)) toast(`📖 New in your Collection: ${ITEMS[id].icon} ${ITEMS[id].name}`, 'good'); }, 0);
 });
-on('goal', (g) => { burst('OBJECTIVE!', `${g.text} · +${fmt(g.reward)} 🪙`, g.icon, 'var(--gold)'); });
+on('goal', (g) => { burst('Objective Complete', `${g.text} · +${fmt(g.reward)} 🪙`, g.icon, 'var(--gold)'); });
 
 /* =============================================================== render + update */
 let lastUnlocked = 0, sideDirty = false, bankSig = '', lastLogVer = -1, lastFoodSig = '';
@@ -841,7 +841,7 @@ document.addEventListener('click', (ev) => {
   else if (d.bankf) { S.ui.bank = d.bankf; dirty = true; }
   else if (d.equip) { equip(d.equip); toast(`Equipped ${ITEMS[d.equip].name}!`, 'good'); }
   else if (d.unequip) unequip(d.unequip);
-  else if (d.eat) { if (!S.fruit || confirm(`Replace your ${ITEMS[S.fruit].name}? Its power will be lost.`)) { eatFruit(d.eat); burst('POWER!', ITEMS[d.eat].desc, ITEMS[d.eat].icon, 'var(--gold)'); } }
+  else if (d.eat) { if (!S.fruit || confirm(`Replace your ${ITEMS[S.fruit].name}? Its power will be lost.`)) { eatFruit(d.eat); burst('Power Awakened', ITEMS[d.eat].desc, ITEMS[d.eat].icon, 'var(--gold)'); } }
   else if (d.setfood) { S.combat.food = d.setfood; toast(`${ITEMS[d.setfood].name} will be eaten in battle.`, 'good'); dirty = true; }
   else if (d.sell) {
     const [id, q] = d.sell.split(':');
@@ -856,7 +856,7 @@ document.addEventListener('click', (ev) => {
   else if ('releaseall' in d) releaseAll();
   else if ('buycap' in d) buyCap();
   else if ('buypow' in d) buyPow();
-  else if ('rebirth' in d) { if (confirm('Rebirth? All Inner Power training will reset.')) { const g = karmaGain(); if (rebirth()) burst('REBORN!', `+${fmt(g)} Karma`, '♻️', 'var(--soul)'); } }
+  else if ('rebirth' in d) { if (confirm('Rebirth? All Inner Power training will reset.')) { const g = karmaGain(); if (rebirth()) burst('Reborn', `+${fmt(g)} Karma`, '♻️', 'var(--soul)'); } }
   else if (d.perk) buyPerk(d.perk);
   else if ('claim' in d) claimGoal();
   else if (d.open) {
