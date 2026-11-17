@@ -584,7 +584,7 @@ textarea { width: 100%; font: 12px monospace; background: var(--paper); color: v
 @media (max-width: 1250px) {
   .doors { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .battle-row { grid-template-columns: 1fr; }
-  .hero-grid { grid-template-columns: 1fr; }
+  .hero-grid { grid-template-columns: minmax(0, 1fr); }
 }
 @media (max-width: 1050px) {
   body { grid-template-columns: 84px minmax(0, 1fr); grid-template-areas: "top top" "rail main"; }
@@ -657,4 +657,68 @@ textarea { width: 100%; font: 12px monospace; background: var(--paper); color: v
   .btn:hover:not(:disabled) { transform: skew(-8deg); box-shadow: 4px 4px 0 rgba(0,0,0,.45); }
   .card[data-state="ready"]:hover { box-shadow: 5px 5px 0 rgba(0,0,0,.55); }
   .card:active, .door:active, .zone:active:not(:disabled), .bitem:active { transform: scale(.97); }
+}
+
+/* --------------------------------------------------------------- progression: milestones */
+.ms-track { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 8px; }
+.ms { position: relative; display: flex; flex-direction: column; gap: 1px; padding: 6px 10px 6px 40px; min-height: 52px;
+  background: var(--paper2); border: 2px solid var(--paper3); border-radius: 3px; color: var(--dimp); }
+.ms b { position: absolute; left: 6px; top: 50%; transform: translateY(-50%) skew(-8deg); font-family: var(--display); font-size: 17px;
+  font-weight: 400; background: var(--paper3); color: var(--dimp); padding: 1px 5px 0; min-width: 28px; text-align: center; }
+.ms span { font-family: var(--display); letter-spacing: .8px; font-size: 15px; line-height: 1.1; }
+.ms small { font-size: 11px; font-weight: 600; line-height: 1.2; }
+.ms.on { background: #fff; border-color: var(--line); color: var(--line); box-shadow: 3px 3px 0 var(--realm); }
+.ms.on b { background: var(--realm); color: #fff; }
+.ms.on small { color: #2a6b4a; }
+
+/* --------------------------------------------------------------- progression: rare finds */
+.rare-panel { padding: 12px 14px; }
+.rare-panel .mini-title { margin-bottom: 10px; }
+.rfinds { display: flex; flex-wrap: wrap; gap: 8px; }
+.rfind { display: inline-flex; align-items: center; gap: 7px; padding: 4px 10px 4px 6px; background: var(--ink3); border: 2px solid var(--ink4); border-radius: 999px; font-size: 13px; }
+.rfind i { font-style: normal; font-size: 18px; filter: grayscale(.8) brightness(.8); }
+.rfind span { color: var(--dim); }
+.rfind b { color: var(--gold); font-weight: 900; }
+.rfind.got { border-color: #6b5a1d; }
+.rfind.got i { filter: none; }
+.rfind.got span { color: var(--text); }
+.rfind.pet { border-style: dashed; }
+.rfind.pet.got { border-style: solid; border-color: var(--hp); }
+.rfind.pet.got b { color: var(--hp); }
+
+/* --------------------------------------------------------------- progression: mastery */
+.mastery { display: flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 700; color: var(--dimp); margin-top: 2px; }
+.mastery b { color: var(--line); }
+.bar.mini { flex: 1; height: 7px; border-width: 1.5px; }
+.bar.mini .fill { background: var(--gold); }
+.card[data-state="locked"] .mastery { display: none; }
+.chip.unseen { border-style: dashed; }
+
+/* --------------------------------------------------------------- loot lists */
+.sources { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-direction: column; gap: 2px; }
+.sources li { display: flex; justify-content: space-between; gap: 10px; padding: 4px 0; border-bottom: 2px dashed var(--paper3); font-size: 13.5px; font-weight: 600; }
+.sources li:last-child { border-bottom: 0; }
+.sources b { color: #b0102f; white-space: nowrap; }
+.sources b.g { color: #2a6b4a; }
+.sources.loot { margin: 6px 0 4px; }
+.bitem.t-gem { background: #e9e1ff; }
+.bitem.t-chest { background: #ffe6c7; box-shadow: 3px 3px 0 var(--gold); }
+
+/* --------------------------------------------------------------- collection log */
+.col-layout { grid-template-columns: 340px minmax(0, 1fr); }
+.col-detail { position: sticky; top: 0; }
+.col-groups { display: flex; flex-direction: column; gap: 16px; }
+.col-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); gap: 8px; }
+.ctile { aspect-ratio: 1; display: grid; place-items: center; font-size: 26px; background: var(--paper2); border: 2px dashed var(--paper3); border-radius: 4px; filter: grayscale(1); opacity: .55; transition: transform .1s; }
+.ctile.got { background: #fff; border: 3px solid var(--line); filter: none; opacity: 1; box-shadow: 2px 2px 0 rgba(0,0,0,.25); }
+.ctile.pet.got { background: #dcf9ea; }
+.ctile:hover { transform: translateY(-2px); }
+.ctile.on { outline: 3px solid var(--hot); outline-offset: 2px; opacity: 1; }
+@media (max-width: 1250px) { .col-layout { grid-template-columns: minmax(0, 1fr); } .col-detail { position: static; } }
+@media (max-width: 760px) {
+  .ms-track { grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 4px; }
+  .ms { padding: 4px; min-height: 0; text-align: center; }
+  .ms b { position: static; transform: skew(-8deg); align-self: center; }
+  .ms span, .ms small { display: none; }
+  .col-grid { grid-template-columns: repeat(auto-fill, minmax(44px, 1fr)); }
 }

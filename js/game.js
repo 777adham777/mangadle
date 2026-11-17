@@ -44,7 +44,9 @@ function defaultState() {
     shop: {},
     energy: { capLv: 0, powLv: 0, alloc: {}, lvl: {}, prog: {}, step: '10' },
     karma: 0, karmaTotal: 0, perks: {}, rebirths: 0,
-    stats: { kills: 0, actions: 0, playtime: 0, deaths: 0, bossKills: 0, made: {}, voyages: 0 },
+    stats: { kills: 0, actions: 0, playtime: 0, deaths: 0, bossKills: 0, made: {}, voyages: 0, opened: 0 },
+    found: {},                          // collection log: item id -> 1 once ever obtained
+    pets: {},                           // pet id -> 1
     goal: 0,
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),
@@ -67,6 +69,12 @@ function sanitize() {
   const C = S.combat;
   if (C.zone != null && !ZONES[C.zone]) { C.zone = null; C.enemy = null; }
   if (C.food && !ITEMS[C.food]) C.food = null;
+  // collection log: anything you already own counts as found (older saves)
+  for (const id in S.items) S.found[id] = 1;
+  for (const slot in S.equip) if (S.equip[slot]) S.found[S.equip[slot]] = 1;
+  if (S.fruit) S.found[S.fruit] = 1;
+  for (const id in S.found) if (!ITEMS[id]) delete S.found[id];
+  for (const id in S.pets) if (!PET_BY[id]) delete S.pets[id];
 }
 
 /* ------------------------------------------------------------ helpers */
@@ -107,7 +115,11 @@ function emit(ev, d) { if (!SIM && BUS[ev]) for (const fn of BUS[ev]) fn(d); }
 
 /* -------------------------------------------------------------- items */
 const count = (id) => S.items[id] || 0;
-function addItem(id, n) { if (n <= 0) return; S.items[id] = (S.items[id] || 0) + n; }
+function addItem(id, n) {
+  if (n <= 0) return;
+  S.items[id] = (S.items[id] || 0) + n;
+  if (!S.found[id]) { S.found[id] = 1; emit('newitem', id); }
+}
 function removeItem(id, n) { S.items[id] = count(id) - n; if (S.items[id] <= 0) delete S.items[id]; }
 function canAfford(inputs) { for (const k in inputs) if (count(k) < inputs[k]) return false; return true; }
 function findAction(skill, id) { return SKILLS[skill].actions.find((a) => a.id === id); }
@@ -116,7 +128,7 @@ function findAction(skill, id) { return SKILLS[skill].actions.find((a) => a.id =
 const skillLv = (id) => levelOf(S.skills[id].xp);
 function addXp(id, amt) {
   const before = skillLv(id);
-  S.skills[id].xp += amt * xpMult();
+  S.skills[id].xp += amt * xpMult() * (hasPetFor(id) ? 1.05 : 1);
   const after = skillLv(id);
   if (after > before) { emit('levelup', { skill: id, level: after }); dirty = true; }
 }
@@ -132,17 +144,43 @@ const tl = (t) => S.energy.lvl[t] || 0;
 const pl = (p) => S.perks[p] || 0;
 function bountyRank() { let r = 0; BOUNTY_RANKS.forEach((b, i) => { if (S.bounty >= b[0]) r = i; }); return r; }
 
-function dmgMult()  { return (1 + 0.01 * tl('chakra')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()); }
-function hpMult()   { return (1 + 0.01 * tl('reiatsu')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().hp || 0)); }
-function defMult()  { return 1 + 0.01 * tl('will'); }
+/* --------------------------------------------- milestones, pets, luck */
+const PET_BY = Object.fromEntries(PETS.map((p) => [p.id, p]));
+const hasPetFor = (skill) => PETS.some((p) => p.skill === skill && S.pets[p.id]);
+const bossPets = () => PETS.filter((p) => p.zone && S.pets[p.id]).length;
+function milestoneFx(skill) {
+  const L = skillLv(skill), fx = { speed: 0, dbl: 0, rare: 0 };
+  for (const m of MILESTONES) if (L >= m.lv) { fx.speed += m.speed || 0; fx.dbl += m.dbl || 0; fx.rare += m.rare || 0; }
+  return fx;
+}
+const combatMilestones = (skill) => COMBAT_MILESTONES.filter((lv) => skillLv(skill) >= lv).length;
+const luckMult = () => 1 + 0.15 * (S.shop.lucky_coin || 0);
+const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult();
+function collectionPct() {
+  const total = Object.keys(ITEMS).length + PETS.length;
+  return (Object.keys(S.found).length + Object.keys(S.pets).length) / total;
+}
+
+function dmgMult()  { return (1 + 0.01 * tl('chakra')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones('strength')) * (1 + 0.03 * bossPets()); }
+function hpMult()   { return (1 + 0.01 * tl('reiatsu')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().hp || 0)) * (1 + 0.04 * combatMilestones('vitality')) * (1 + 0.03 * bossPets()); }
+function defMult()  { return (1 + 0.01 * tl('will')) * (1 + 0.04 * combatMilestones('defense')); }
 function goldMult() { return (1 + 0.01 * tl('fortune')) * (1 + 0.15 * pl('merchant')) * (1 + (fruitFx().gold || 0)) * (1 + gearStat('gold')); }
 function xpMult()   { return (1 + 0.005 * tl('wisdom')) * (1 + 0.1 * pl('mentor')); }
 
+// Mastery: per-action level from how many times you've done it. Lv L needs (L/2)^2 completions (Lv 99 ~ 2450).
 function masteryLv(skill, act) { return Math.min(99, Math.floor(Math.sqrt(S.mastery[skill + ':' + act] || 0) * 2)); }
+function masteryProg(skill, act) {
+  const n = S.mastery[skill + ':' + act] || 0, L = masteryLv(skill, act);
+  if (L >= 99) return { L, p: 1, need: 0 };
+  const lo = Math.pow(L / 2, 2), hi = Math.pow((L + 1) / 2, 2);
+  return { L, p: (n - lo) / (hi - lo), need: Math.ceil(hi - n) };
+}
 function skillSpeed(skillId, actId) {
   const sk = SKILLS[skillId];
   let m = (1 + 0.002 * tl('swift')) * (1 + 0.1 * (S.shop['tools_' + sk.realm] || 0)) * (1 + (fruitFx().skill || 0));
   if (actId) m *= 1 + 0.003 * masteryLv(skillId, actId);
+  if (sk.type !== 'combat') m *= 1 + milestoneFx(skillId).speed;
+  if (hasPetFor(skillId)) m *= 1.05;
   if (skillId === 'fishing' && S.fruit) m *= 0.6;
   return m;
 }
@@ -150,7 +188,8 @@ const actionTime = (skillId, act) => act.time / skillSpeed(skillId, act.id);
 function doubleChance(skillId, actId) {
   let c = 0.002 * masteryLv(skillId, actId);
   if (SKILLS[skillId].type === 'gather') c += 0.05 * (S.shop.abundance || 0);
-  return c;
+  c += milestoneFx(skillId).dbl;
+  return Math.min(1, c);
 }
 
 /* ------------------------------------------------------- combat stats */
@@ -239,10 +278,7 @@ function completeAction(skill, act) {
   }
   let gold = 0;
   if (act.loot) { gold = rollLoot(act.loot, mult, gains); S.stats.voyages++; }
-  if (skill === 'fishing' && Math.random() < 1 / 2500) {
-    const f = pick(FRUITS); addItem(f, 1);
-    toast(`A strange fruit drifts onto your line... ${ITEMS[f].icon} ${ITEMS[f].name}!`, 'rare');
-  }
+  rollRareFinds(skill, act, gains);
   addXp(skill, act.xp);
   const key = skill + ':' + act.id;
   S.mastery[key] = (S.mastery[key] || 0) + 1;
@@ -250,17 +286,63 @@ function completeAction(skill, act) {
   emit('action', { skill, act, gains, gold, xp: act.xp * xpMult(), double: mult > 1 });
 }
 
+function rollRareFinds(skill, act, gains) {
+  const m = rareMult(skill);
+  for (const [id, ch] of (RARE_FINDS[skill] || []).concat(GLOBAL_RARE)) {
+    if (Math.random() < ch * m) {
+      const real = id === 'GEM' ? rollWeighted(GEM_TABLE) : id === 'FRUIT' ? pick(FRUITS) : id;
+      addItem(real, 1); gains[real] = (gains[real] || 0) + 1;
+      emit('rare', { id: real, source: SKILLS[skill].name });
+    }
+  }
+  const pet = PETS.find((p) => p.skill === skill);
+  if (pet && !S.pets[pet.id] && Math.random() < (act.time / (PET_HOURS * 3600)) * luckMult()) givePet(pet);
+}
+function givePet(pet) {
+  S.pets[pet.id] = 1;
+  emit('pet', pet);
+  dirty = true;
+}
+function weightedIndex(table) {
+  const total = table.reduce((a, t) => a + t[1], 0);
+  let r = Math.random() * total;
+  for (let i = 0; i < table.length; i++) { r -= table[i][1]; if (r < 0) return i; }
+  return table.length - 1;
+}
+const rollWeighted = (table) => table[weightedIndex(table)][0];
+
+/* ------------------------------------------------------------- chests */
+// Opens up to 1000 at a time so huge stacks stay instant. Returns { n, gold, items: {id: qty} }.
+function openChest(id, n) {
+  const it = ITEMS[id];
+  n = Math.min(n, count(id), 1000);
+  if (!it || it.type !== 'chest' || n <= 0) return null;
+  removeItem(id, n);
+  const res = { gold: 0, items: {}, n };
+  for (let i = 0; i < n; i++) {
+    res.gold += Math.floor(randInt(it.gold[0], it.gold[1]) * goldMult());
+    const [lid, , q] = it.loot[weightedIndex(it.loot)];
+    const real = lid === 'FRUIT' ? pick(FRUITS) : lid === 'GEM' ? rollWeighted(GEM_TABLE) : lid;
+    res.items[real] = (res.items[real] || 0) + randInt(q[0], q[1]);
+  }
+  S.gold += res.gold;
+  for (const k in res.items) addItem(k, res.items[k]);
+  S.stats.opened += n;
+  dirty = true;
+  return res;
+}
+
 function rollLoot(l, mult, gains) {
   const g = Math.floor(randInt(l.gold[0], l.gold[1]) * goldMult());
   S.gold += g;
   if (l.table) { const [id, q] = pick(l.table); const n = randInt(q[0], q[1]) * mult; addItem(id, n); gains[id] = (gains[id] || 0) + n; }
-  for (const [id, ch] of l.rare || []) if (Math.random() < ch) giveDrop(id, 1, true);
+  for (const [id, ch] of l.rare || []) if (Math.random() < ch * luckMult()) giveDrop(id, 1, true);
   return g;
 }
 function giveDrop(id, n, announce) {
   if (id === 'FRUIT') { id = pick(FRUITS); announce = true; }
   addItem(id, n);
-  if (announce) toast(`Rare find: ${ITEMS[id].icon} ${ITEMS[id].name}!`, 'rare');
+  if (announce) emit('rare', { id, source: 'Voyage' });
 }
 
 /* ------------------------------------------------------------- combat */
@@ -333,15 +415,17 @@ function killEnemy(e) {
   S.bounty += e.xp * 10;
   const dropped = [], loot = {};
   for (const [id, ch, q] of e.drops) {
-    if (Math.random() < ch) {
+    if (Math.random() < (ch < 0.2 ? ch * luckMult() : ch)) {
       const real = id === 'FRUIT' ? pick(FRUITS) : id;
       const n = randInt(q[0], q[1]);
       addItem(real, n); loot[real] = n;
       dropped.push(`${ITEMS[real].icon}${n > 1 ? '×' + n : ''}`);
-      if (ITEMS[real].type === 'fruit' || (ITEMS[real].type === 'equip' && ch < 0.2)) toast(`Rare drop: ${ITEMS[real].icon} ${ITEMS[real].name}!`, 'rare');
+      if (ch < 0.2) emit('rare', { id: real, source: e.name });
     }
   }
   C.kills[z.id] = (C.kills[z.id] || 0) + 1;
+  const pet = PETS.find((p) => p.zone === z.id);
+  if (pet && !S.pets[pet.id] && Math.random() < pet.chance * luckMult()) givePet(pet);
   S.stats.kills++;
   if (z.boss) { S.stats.bossKills++; if (C.kills[z.id] === 1) toast(`${e.icon} ${e.name} defeated! A new path opens...`, 'rare'); }
   clog(`Defeated ${e.icon} ${e.name}: +${fmt(g)}g${dropped.length ? ' ' + dropped.join(' ') : ''}`, 'win');

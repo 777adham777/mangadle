@@ -3,7 +3,8 @@
 An idle RPG in the spirit of Melvor Idle and NGU Idle, set across three collided anime-inspired worlds:
 the **Shinobi Lands**, the **Soul Afterlands** and the **Endless Blue**.
 
-- 12 skills (gathering, crafting, voyages, combat) and 13 battle zones with bosses
+- 12 skills (gathering, crafting, voyages, combat), 6-12 unlocks each up to level 90, milestone perks at 10/25/50/75/99
+- 13 battle zones with bosses; 110+ items with visible drop rates, gems, openable chests, 13 pets and a Collection Log
 - Inner Power energy training, Rebirth and Karma perks, rare Abyss Fruits
 - Guided objectives, offline progress, autosave
 - Plays in any modern browser, on desktop and mobile; installable as an app and playable offline (PWA)

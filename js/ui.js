@@ -89,7 +89,49 @@ function statLine(st) {
   if (st.gold) p.push(`🪙 +${pct(st.gold)}`);
   return p.join('  ');
 }
-const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Abyss Fruit' : ITEMS[id].name);
+const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Abyss Fruit' : id === 'GEM' ? 'Random gem' : ITEMS[id].name);
+// Drop rates: common ones as %, rare ones as "1/N" (easier to read for long odds).
+const fmtRate = (p) => (p >= 0.1 ? pct(Math.min(1, p)) : '1/' + Math.max(1, Math.round(1 / p)).toLocaleString('en-US'));
+
+// Where every item comes from, with rates. Built once from the data tables.
+let SOURCES = null;
+function sourcesOf(id) {
+  if (!SOURCES) {
+    SOURCES = {};
+    const add = (item, icon, text, rate) => {
+      if (item === 'FRUIT') { FRUITS.forEach((f) => add(f, icon, text, rate == null ? null : rate / FRUITS.length)); return; }
+      if (item === 'GEM') { const tot = GEM_TABLE.reduce((a, g) => a + g[1], 0); GEM_TABLE.forEach(([g, w]) => add(g, icon, text, rate * w / tot)); return; }
+      (SOURCES[item] = SOURCES[item] || []).push({ icon, text, rate });
+    };
+    for (const k in SKILLS) for (const a of SKILLS[k].actions) {
+      for (const o in a.out || {}) add(o, SKILLS[k].icon, `${SKILLS[k].name} Lv ${a.level}`, null);
+      if (a.loot) {
+        a.loot.table.forEach(([t]) => add(t, a.icon, `Voyage: ${a.name}`, 1 / a.loot.table.length));
+        a.loot.rare.forEach(([t, c]) => add(t, a.icon, `Voyage: ${a.name}`, c));
+      }
+    }
+    for (const k in RARE_FINDS) RARE_FINDS[k].forEach(([t, c]) => add(t, SKILLS[k].icon, `${SKILLS[k].name} (any action)`, c));
+    GLOBAL_RARE.forEach(([t, c]) => add(t, '✨', 'Any skill action', c));
+    for (const z of ZONES) for (const e of z.enemies) e.drops.forEach(([t, c]) => add(t, e.icon, `${e.name} · ${z.name}`, c));
+    for (const k in ITEMS) if (ITEMS[k].type === 'chest') {
+      const tot = ITEMS[k].loot.reduce((a, l) => a + l[1], 0);
+      ITEMS[k].loot.forEach(([t, w]) => add(t, ITEMS[k].icon, ITEMS[k].name, w / tot));
+    }
+    SHOP.forEach((sh) => { if (sh.give) add(sh.give[0], sh.icon, 'Market', null); });
+  }
+  return SOURCES[id] || [];
+}
+function petSource(pet) {
+  if (pet.skill) return `${SKILLS[pet.skill].icon} ${SKILLS[pet.skill].name}: about 1 per ${PET_HOURS}h of training`;
+  const z = ZONES.find((x) => x.id === pet.zone);
+  return `${z.enemies[0].icon} ${z.enemies[0].name}: ${fmtRate(pet.chance)} per kill`;
+}
+const petBonus = (pet) => (pet.skill ? `+5% ${SKILLS[pet.skill].name} speed & XP` : '+3% damage & max HP');
+function sourcesHTML(id) {
+  const src = sourcesOf(id);
+  if (!src.length) return '<div class="small" style="color:var(--dimp)">No known source.</div>';
+  return `<ul class="sources">${src.slice(0, 8).map((x) => `<li><span>${x.icon} ${esc(x.text)}</span>${x.rate != null ? `<b>${fmtRate(x.rate)}</b>` : '<b class="g">guaranteed</b>'}</li>`).join('')}</ul>`;
+}
 const fruitIcon = (id) => (id === 'FRUIT' ? '🍎?' : ITEMS[id].icon);
 
 /* =============================================================== VIEWS */
@@ -154,9 +196,29 @@ VIEWS.realm = (realm, skill) => {
       <div class="bar xp tall"><div class="fill" data-xpbar="${skill}"></div><span class="txt" data-xptext="${skill}">${xpText(b)}</span></div>
     </div>
     <div class="skill-mods">${mods.join('')}</div>
+    <div class="ms-track">${MILESTONES.map((m) => `<div class="ms ${b.L >= m.lv ? 'on' : ''}"><b>${m.lv}</b><span>${m.name}</span><small>${m.desc}</small></div>`).join('')}</div>
   </div>
+  ${rarePanelHTML(skill)}
   <div class="cards" style="--realm:${R.color}">${s.actions.map((a) => actionCard(skill, a)).join('')}</div>`;
 };
+
+function rarePanelHTML(skill) {
+  const m = rareMult(skill), rows = [];
+  for (const [id, c] of (RARE_FINDS[skill] || []).concat(GLOBAL_RARE)) {
+    if (id === 'GEM') {
+      const tot = GEM_TABLE.reduce((a, g) => a + g[1], 0);
+      GEM_TABLE.forEach(([g, w]) => rows.push(rareChip(g, c * m * w / tot)));
+    } else if (id === 'FRUIT') rows.push(`<span class="rfind" title="Random Abyss Fruit"><i>🍎</i><span>Abyss Fruit</span><b>${fmtRate(c * m)}</b></span>`);
+    else rows.push(rareChip(id, c * m));
+  }
+  const pet = PETS.find((x) => x.skill === skill);
+  if (pet) rows.push(`<span class="rfind pet ${S.pets[pet.id] ? 'got' : ''}" title="${esc(petBonus(pet))}"><i>${S.pets[pet.id] ? pet.icon : '❔'}</i><span>${S.pets[pet.id] ? pet.name : 'Pet'}</span><b>${S.pets[pet.id] ? '✓ owned' : '~1 / ' + PET_HOURS + 'h'}</b></span>`);
+  return `<div class="panel dark rare-panel"><h3 class="mini-title">Rare finds <span class="small dim">· per action${m > 1 ? ` · luck ×${m.toFixed(2)}` : ''}</span></h3><div class="rfinds">${rows.join('')}</div></div>`;
+}
+function rareChip(id, rate) {
+  const got = S.found[id];
+  return `<span class="rfind ${got ? 'got' : ''}" title="${esc(ITEMS[id].name)}"><i>${ITEMS[id].icon}</i><span>${esc(ITEMS[id].name)}</span><b>${fmtRate(rate)}</b></span>`;
+}
 
 function actionIcon(a) { return a.icon || ITEMS[Object.keys(a.out)[0]].icon; }
 function actionCard(skill, a) {
@@ -165,7 +227,7 @@ function actionCard(skill, a) {
   if (a.out) rows.push(`<div class="io"><label>GETS</label>${Object.entries(a.out).map(([k, n]) => chip(k, n)).join('')}</div>`);
   if (a.loot) {
     rows.push(`<div class="io"><label>LOOT</label><span class="chip">🪙 ${fmt(a.loot.gold[0] * goldMult())}–${fmt(a.loot.gold[1] * goldMult())}</span>${a.loot.table.map(([k]) => `<span class="chip" title="${esc(ITEMS[k].name)}">${ITEMS[k].icon}</span>`).join('')}</div>`);
-    rows.push(`<div class="io"><label>RARE</label>${a.loot.rare.map(([k, c]) => `<span class="chip rare" title="${esc(fruitLabel(k))}">${fruitIcon(k)} <i>${pct(c)}</i></span>`).join('')}</div>`);
+    rows.push(`<div class="io"><label>RARE</label>${a.loot.rare.map(([k, c]) => `<span class="chip rare" title="${esc(fruitLabel(k))}">${fruitIcon(k)} <i>${fmtRate(c * luckMult())}</i></span>`).join('')}</div>`);
   }
   const it = ITEMS[a.id];
   if (it && it.type === 'equip') rows.push(`<div class="card-note">${it.slot.toUpperCase()} · ${statLine(it.stats)}</div>`);
@@ -174,8 +236,9 @@ function actionCard(skill, a) {
   return `<button class="card" data-act="${skill}:${a.id}" data-state="${actState(skill, a)}">
     <div class="card-top"><div class="card-ico">${actionIcon(a)}</div>
       <div><div class="card-name">${esc(a.name)}</div>
-      <div class="card-sub"><span>⏱ ${fmtTime(actionTime(skill, a))}</span><span>✦ ${a.xp} XP</span>${ml ? `<span title="Mastery: faster and a chance to double output">★ ${ml}</span>` : ''}</div></div></div>
-    <div class="card-body">${rows.join('')}</div>
+      <div class="card-sub"><span>⏱ ${fmtTime(actionTime(skill, a))}</span><span>✦ ${fmt(a.xp)} XP</span></div></div></div>
+    <div class="card-body">${rows.join('')}
+      <div class="mastery" title="Mastery: each level makes this action 0.3% faster and adds 0.2% chance to double"><span>★ <b data-mlv="${skill}:${a.id}">${ml}</b></span><div class="bar mini"><div class="fill" data-mfill="${skill}:${a.id}"></div></div></div></div>
     <div class="card-foot"><span class="cta" data-cta>${ctaText(skill, a)}</span>${it ? `<span class="own">Owned <b data-count="${a.id}">${fmt(count(a.id))}</b></span>` : ''}</div>
     <div class="bar prog"><div class="fill" data-actfill></div></div>
   </button>`;
@@ -257,7 +320,7 @@ function stageHTML() {
         <div><div class="f-name">${e.name}</div><div class="f-stats"><span class="chip">⚔ ${e.atk}</span><span class="chip">🛡 ${e.def}</span><span class="chip">⏱ ${e.spd}s</span></div></div></div>
       <div class="bar ehp tall"><div class="fill" data-ehp></div><span class="txt" data-ehptext></span></div>
       <div class="bar timer"><div class="fill" data-eatk></div></div>
-      <div class="f-stats">${e.drops.map(([id, ch]) => `<span class="chip ${ch < 0.2 ? 'rare' : ''}" title="${esc(fruitLabel(id))}">${fruitIcon(id)} <i>${pct(ch)}</i></span>`).join('')}<span class="chip">🪙 ${fmt(e.gold[0])}+</span></div>
+      <div class="f-stats">${e.drops.map(([id, ch]) => `<span class="chip ${ch < 0.2 ? 'rare' : ''} ${id !== 'FRUIT' && !S.found[id] ? 'unseen' : ''}" title="${esc(fruitLabel(id))}">${fruitIcon(id)} <i>${fmtRate(ch < 0.2 ? ch * luckMult() : ch)}</i></span>`).join('')}<span class="chip">🪙 ${fmt(e.gold[0])}+</span></div>
     </div>`;
   }
   return `${me}<div class="vs">VS</div>${right}`;
@@ -265,8 +328,14 @@ function stageHTML() {
 function logHTML() { return S.combat.log.map((l) => `<div class="${l.c}">${esc(l.m)}</div>`).join('') || '<div class="sys">Nothing yet.</div>'; }
 
 /* ------------------------------------------------------------- hero */
-VIEWS.hero = () => {
-  const filters = [['all', 'All'], ['res', 'Materials'], ['food', 'Food'], ['equip', 'Gear'], ['fruit', 'Fruit']];
+function heroTabs(tab) {
+  return `<div class="tabs" style="--realm:#14a8ff">
+    <button class="tab ${tab !== 'collection' ? 'on' : ''}" data-nav="hero"><span class="ti">🎒</span><b>Gear &amp; Bank</b></button>
+    <button class="tab ${tab === 'collection' ? 'on' : ''}" data-nav="hero:collection"><span class="ti">📖</span><b>Collection</b><i>${Math.floor(collectionPct() * 100)}%</i></button></div>`;
+}
+VIEWS.hero = (tab) => {
+  if (tab === 'collection') return collectionHTML();
+  const filters = [['all', 'All'], ['res', 'Materials'], ['gem', 'Gems'], ['chest', 'Chests'], ['food', 'Food'], ['equip', 'Gear'], ['fruit', 'Fruit']];
   const ids = Object.keys(S.items).filter((k) => S.ui.bank === 'all' || ITEMS[k].type === S.ui.bank);
   const slot = (s, label, icon) => {
     const id = S.equip[s];
@@ -274,7 +343,8 @@ VIEWS.hero = () => {
     return `<div class="slot filled"><div class="slot-ico">${ITEMS[id].icon}</div><div class="grow"><div class="slot-kind">${label}</div><div class="slot-name">${ITEMS[id].name}</div><div class="slot-stats">${statLine(ITEMS[id].stats)}</div></div><button class="btn sm ghost" data-unequip="${s}">${sk('Remove')}</button></div>`;
   };
   return `
-  <div class="banner" style="--realm:#14a8ff"><div class="banner-ico">🎒</div><div><div class="kicker">HERO</div><h1>Gear &amp; Bank</h1><p>Equip what you craft, eat what you cook, sell what you don't need.</p></div></div>
+  <div class="banner" style="--realm:#14a8ff"><div class="banner-ico">🎒</div><div><div class="kicker">HERO</div><h1>Gear &amp; Bank</h1><p>Equip what you craft, eat what you cook, open your chests, sell what you don't need.</p></div></div>
+  ${heroTabs(tab)}
   <div class="hero-grid">
     <div class="panel">
       <h3 class="mini-title">Equipped</h3>
@@ -302,12 +372,66 @@ function inspectorHTML() {
   if (it.type === 'equip') { what = `${it.slot.toUpperCase()} · ${statLine(it.stats)}`; main = `<button class="btn hot" data-equip="${selItem}">${sk('Equip')}</button>`; }
   else if (it.type === 'food') { what = `Heals ${foodHeal(selItem)} HP in battle. Also used as voyage supplies.`; main = `<button class="btn hot" data-setfood="${selItem}">${sk('Use as battle food')}</button>`; }
   else if (it.type === 'fruit') { what = `${it.desc} Only one fruit at a time — eating replaces the old one. Fruit eaters fish 40% slower.`; main = `<button class="btn hot" data-eat="${selItem}">${sk('Eat fruit')}</button>`; }
-  else what = 'Crafting material. Check the skill pages to see what it makes.';
+  else if (it.type === 'chest') {
+    const tot = it.loot.reduce((a, l) => a + l[1], 0);
+    what = `Open it for 🪙 ${fmt(it.gold[0])}–${fmt(it.gold[1])} and one of:</p><ul class="sources loot">${it.loot.map(([id, w, q]) => `<li><span>${fruitIcon(id)} ${esc(fruitLabel(id))}${q[1] > 1 ? ` ×${q[0]}–${q[1]}` : ''}</span><b>${fmtRate(w / tot)}</b></li>`).join('')}</ul><p>`;
+    main = `<button class="btn hot" data-open="${selItem}:1">${sk('Open 1')}</button>${n > 1 ? `<button class="btn hot" data-open="${selItem}:all">${sk(`Open all · ${fmt(Math.min(n, 1000))}`)}</button>` : ''}`;
+  }
+  else {
+    const uses = [];
+    for (const k in SKILLS) for (const a of SKILLS[k].actions) if (a.in && a.in[selItem]) uses.push(`${SKILLS[k].icon} ${a.name}`);
+    what = uses.length ? `Used in: ${uses.slice(0, 6).join(', ')}${uses.length > 6 ? '…' : ''}.` : 'Sell it for gold.';
+  }
+  what += `</p><div class="mini-title" style="margin:6px 0 0;font-size:15px">Where to find</div>${sourcesHTML(selItem)}<p>`;
   return `<div class="panel inspector">
     <div class="insp-head"><div class="insp-ico">${it.icon}</div><div><h2>${it.name}</h2><div class="small" style="color:var(--dimp);font-weight:600">Owned <b data-count="${selItem}">${fmt(n)}</b> · sells for 🪙 ${fmt(it.value)} each</div></div></div>
     <p>${what}</p>
     <div class="insp-actions">${main}<button class="btn ghost sm" data-sell="${selItem}:1">${sk('Sell 1')}</button><button class="btn ghost sm" data-sell="${selItem}:half">${sk('Sell half')}</button><button class="btn sm" data-sell="${selItem}:all">${sk(`Sell all · 🪙 ${fmt(it.value * n)}`)}</button></div>
   </div>`;
+}
+
+/* ------------------------------------------------------------- collection log */
+let selCol = null;
+const COL_GROUPS = [['res', 'Materials'], ['gem', 'Gems'], ['chest', 'Chests'], ['food', 'Food'], ['equip', 'Gear'], ['fruit', 'Abyss Fruits']];
+function collectionHTML() {
+  const pctAll = collectionPct();
+  const tile = (id) => {
+    const got = S.found[id];
+    return `<button class="ctile ${got ? 'got' : ''} ${selCol === id ? 'on' : ''}" data-col="${id}" title="${esc(ITEMS[id].name)}">${got ? ITEMS[id].icon : '❔'}</button>`;
+  };
+  const groups = COL_GROUPS.map(([type, label]) => {
+    const ids = Object.keys(ITEMS).filter((k) => ITEMS[k].type === type);
+    const n = ids.filter((k) => S.found[k]).length;
+    return `<div class="panel col-group"><h3 class="mini-title">${label} <span class="small" style="color:var(--dimp)">${n} / ${ids.length}</span></h3><div class="col-grid">${ids.map(tile).join('')}</div></div>`;
+  }).join('');
+  const petsN = PETS.filter((pt) => S.pets[pt.id]).length;
+  const pets = `<div class="panel col-group"><h3 class="mini-title">Pets <span class="small" style="color:var(--dimp)">${petsN} / ${PETS.length}</span></h3><div class="col-grid">${PETS.map((pt) =>
+    `<button class="ctile pet ${S.pets[pt.id] ? 'got' : ''} ${selCol === 'pet:' + pt.id ? 'on' : ''}" data-col="pet:${pt.id}" title="${esc(pt.name)}">${S.pets[pt.id] ? pt.icon : '❔'}</button>`).join('')}</div></div>`;
+  let detail = '<div class="empty-note">👆 Tap any tile to see where it drops and how rare it is.</div>';
+  if (selCol && selCol.startsWith('pet:')) {
+    const pt = PET_BY[selCol.slice(4)], got = S.pets[pt.id];
+    detail = `<div class="insp-head"><div class="insp-ico">${got ? pt.icon : '❔'}</div><div><h2>${pt.name}</h2><div class="small" style="color:var(--dimp);font-weight:600">${got ? '✓ In your party' : 'Not found yet'} · Pet</div></div></div>
+      <p><b>Bonus:</b> ${petBonus(pt)}</p><ul class="sources"><li><span>${petSource(pt)}</span></li></ul>`;
+  } else if (selCol && ITEMS[selCol]) {
+    const it = ITEMS[selCol], got = S.found[selCol];
+    detail = `<div class="insp-head"><div class="insp-ico">${got ? it.icon : '❔'}</div><div><h2>${it.name}</h2><div class="small" style="color:var(--dimp);font-weight:600">${got ? '✓ Found' : 'Not found yet'}${it.type === 'equip' ? ' · ' + statLine(it.stats) : ''}</div></div></div>
+      <div class="mini-title" style="margin:4px 0 0;font-size:15px">Where to find</div>${sourcesHTML(selCol)}`;
+  }
+  return `
+  <div class="banner" style="--realm:#e0a100"><div class="banner-ico">📖</div><div><div class="kicker">COLLECTION LOG</div><h1>${Math.floor(pctAll * 100)}% complete</h1><p>Every item and pet in the multiverse. Tap one to see where it drops and the odds.</p></div></div>
+  ${heroTabs('collection')}
+  <div class="panel"><div class="bar tall" style="--realm:var(--gold)"><div class="fill" style="width:${pctAll * 100}%"></div><span class="txt">${Object.keys(S.found).length + Object.keys(S.pets).length} / ${Object.keys(ITEMS).length + PETS.length} discovered</span></div></div>
+  <div class="hero-grid col-layout">
+    <div class="panel inspector col-detail">${detail}</div>
+    <div class="col-groups">${groups}${pets}</div>
+  </div>`;
+}
+function showLoot(title, res) {
+  const lines = Object.entries(res.items).sort((a, b) => ITEMS[b[0]].value * b[1] - ITEMS[a[0]].value * a[1])
+    .map(([id, n]) => `<div><span>${ITEMS[id].icon} ${ITEMS[id].name}</span><b class="pos">+${fmt(n)}</b></div>`);
+  if (res.gold) lines.unshift(`<div><span>🪙 Gold</span><b class="pos">+${fmt(res.gold)}</b></div>`);
+  $('#modal-body').innerHTML = `<div class="kicker" style="--realm:var(--hot)">LOOT</div><h2>${esc(title)}</h2><div class="offline-list">${lines.join('')}</div>`;
+  $('#modal').classList.add('show');
 }
 
 /* ------------------------------------------------------------- power */
@@ -551,6 +675,22 @@ on('spawn', () => {
   if (st) { st.innerHTML = stageHTML(); st.classList.add('fighting'); }
 });
 on('death', () => { flash(); dirty = true; });
+const rareThisTick = new Set();
+on('rare', (d) => {
+  rareThisTick.add(d.id);
+  setTimeout(() => rareThisTick.delete(d.id), 0);
+  const it = ITEMS[d.id];
+  toast(`${it.icon} Rare find: ${it.name}! (${d.source})`, 'rare');
+  if (it.type === 'fruit' || it.value >= 2000) burst('RARE DROP!', it.name, it.icon, 'var(--gold)');
+  sideDirty = true;
+});
+on('pet', (pet) => {
+  burst('PET FOUND!', `${pet.name} joins you · ${petBonus(pet)}`, pet.icon, 'var(--gold)');
+  toast(`${pet.icon} ${pet.name} is now your companion! ${petBonus(pet)}.`, 'rare');
+});
+on('newitem', (id) => {
+  setTimeout(() => { if (!rareThisTick.has(id)) toast(`📖 New in your Collection: ${ITEMS[id].icon} ${ITEMS[id].name}`, 'good'); }, 0);
+});
 on('goal', (g) => { burst('OBJECTIVE!', `${g.text} · +${fmt(g.reward)} 🪙`, g.icon, 'var(--gold)'); });
 
 /* =============================================================== render + update */
@@ -604,6 +744,15 @@ function update() {
     const a = findAction(s, id), st = actState(s, a);
     if (card.dataset.state !== st) { card.dataset.state = st; $('[data-cta]', card).textContent = ctaText(s, a); }
     if (st === 'active') $('[data-actfill]', card).style.width = Math.min(100, (S.action.prog / actionTime(s, a)) * 100) + '%';
+  }
+
+  // mastery bars on action cards
+  for (const el of $$('[data-mfill]')) {
+    const [sk2, id] = el.dataset.mfill.split(':');
+    const mp = masteryProg(sk2, id);
+    el.style.width = mp.p * 100 + '%';
+    const lv = $(`[data-mlv="${el.dataset.mfill}"]`);
+    if (lv && lv.textContent !== String(mp.L)) lv.textContent = mp.L;
   }
 
   // now panel
@@ -710,6 +859,17 @@ document.addEventListener('click', (ev) => {
   else if ('rebirth' in d) { if (confirm('Rebirth? All Inner Power training will reset.')) { const g = karmaGain(); if (rebirth()) burst('REBORN!', `+${fmt(g)} Karma`, '♻️', 'var(--soul)'); } }
   else if (d.perk) buyPerk(d.perk);
   else if ('claim' in d) claimGoal();
+  else if (d.open) {
+    const [id, q] = d.open.split(':');
+    const res = openChest(id, q === 'all' ? count(id) : 1);
+    if (res) {
+      showLoot(`Opened ${res.n} × ${ITEMS[id].name}`, res);
+      feedAdd('🪙', 'Gold', res.gold, 'g');
+      for (const k in res.items) feedAdd(ITEMS[k].icon, ITEMS[k].name, res.items[k]);
+      if (!count(id)) selItem = null;
+    }
+  }
+  else if (d.col) { selCol = d.col; dirty = true; }
   else if ('install' in d && installPrompt) { installPrompt.prompt(); installPrompt.userChoice.finally(() => { installPrompt = null; dirty = true; }); }
   else if ('save' in d) { saveGame(); toast('Game saved.', 'good'); }
   else if ('export' in d) { const b = $('#savebox'); b.value = btoa(unescape(encodeURIComponent(serialize()))); b.select(); toast('Save exported — copy the text.', 'good'); }
