@@ -592,3 +592,125 @@ hook('speed', (skill) => (pageDone(SKILLS[skill].realm) ? 1.1 : 1));
 const cardZoneFx = () => { const z = zoneOfFight(); return z && pageDone(z.realm) ? 1.05 : 1; };
 hook('dmg', cardZoneFx);
 hook('def', cardZoneFx);
+
+/* ================================================================ ECHO: MUSEUM */
+// Each artifact restored once = a permanent bonus (it goes to the museum, not the bank).
+hook('action', (skill, act) => {
+  const o = act.out && Object.keys(act.out)[0];
+  if (!o || !ARTIFACTS[o]) return;
+  removeItem(o, count(o));
+  if (!S.museum[o]) { S.museum[o] = 1; emit('artifact', o); dirty = true; }
+});
+hook('block', (skill, act) => { const o = act.out && Object.keys(act.out)[0]; return o && ARTIFACTS[o] && S.museum[o] ? 'In the museum. Already restored.' : ''; });
+const museumFx = (kind, realm) => Object.keys(S.museum).reduce((a, id) => { const A = ARTIFACTS[id]; return a + (A && A.kind === kind && (kind !== 'speed' || A.realm === realm) ? A.val : 0); }, 0);
+hook('speed', (skill) => 1 + museumFx('speed', SKILLS[skill].realm));
+for (const k of ['dmg', 'hp', 'gold']) hook(k, () => 1 + museumFx(k));
+hook('xp', () => 1 + museumFx('xp'));
+
+/* ================================================================ ECHO: YOUR ECHO */
+// Awaken (3 Awakening Shards) rolls an Echo with 6 grades (E..A). Communing deepens the bond: every 10 bond
+// levels raises every grade by one (max A). Give it a task: it runs that action in parallel, at its own speed.
+//   Power: +5% damage per grade · Speed: its action speed · Range: which worlds it can work in
+//   Durability: +4% max HP per grade · Precision: +5% double chance per grade · Potential: faster bond growth
+const GRADES = ['E', 'D', 'C', 'B', 'A'];
+const ESTATS = [['pow', 'Power'], ['spd', 'Speed'], ['rng', 'Range'], ['dur', 'Durability'], ['prc', 'Precision'], ['pot', 'Potential']];
+const ECHO_BY = Object.fromEntries(ECHOES.map((e) => [e.id, e]));
+const echoOn = () => !!(S.echo && S.echo.id);
+const bondLv = () => Math.min(40, Math.floor(Math.sqrt((S.echo.bond || 0) / 30)));
+const grade = (st) => (echoOn() ? Math.min(4, (S.echo.grades[st] || 0) + Math.floor(bondLv() / 10)) : 0);
+const echoAbility = (id) => echoOn() && S.echo.id === id;
+const echoRange = () => 2 + Math.round(grade('rng') * 1.5);           // number of worlds (in order) it can reach
+const echoCanWork = (skill) => { const r = SKILLS[skill].realm; return r === 'echo' || worldIndex(r) < echoRange(); };
+const echoSpeedMult = (skill) => [0.3, 0.45, 0.6, 0.8, 1][grade('spd')] * (echoAbility('silent_tide') && SKILLS[skill].realm === 'seas' ? 1.5 : 1) * (1 + compFx('echo'));
+function rollEcho() {
+  const e = pick(ECHOES), g = {};
+  for (const [k] of ESTATS) g[k] = Math.min(4, randInt(0, 2) + (Math.random() < 0.1 ? 1 : 0));
+  S.echo = { id: e.id, grades: g, bond: 0, task: null, prog: 0 };
+  emit('echo', e);
+  dirty = true;
+}
+function releaseEcho() { S.echo = { id: null, grades: null, bond: 0, task: null, prog: 0 }; dirty = true; }
+hook('action', (skill, act) => {
+  if (skill !== 'bonding') return;
+  if (act.id === 'awaken') { rollEcho(); if (S.action && S.action.id === 'awaken') S.action = null; }
+  else if (echoOn()) S.echo.bond += (act.id === 'deep_commune' ? 4 : 1) * (1 + 0.25 * grade('pot'));
+});
+hook('block', (skill, act) => {
+  if (skill !== 'bonding') return '';
+  if (act.id === 'awaken' && echoOn()) return 'You already have an Echo. Release it first to awaken another.';
+  if (act.id !== 'awaken' && !echoOn()) return 'Awaken an Echo first.';
+  return '';
+});
+function setEchoTask(skill, id) {
+  if (!echoOn()) return false;
+  if (!skill) { S.echo.task = null; dirty = true; return true; }
+  const a = findAction(skill, id);
+  if (!a || !skillOpen(skill) || skill === 'bonding' || SKILLS[skill].type === 'farm' || skillLv(skill) < a.level || (a.schem && !S.known[a.schem]) || !echoCanWork(skill)) return false;
+  S.echo.task = { skill, id }; S.echo.prog = 0;
+  dirty = true;
+  return true;
+}
+function echoTaskBlock() {
+  const t = S.echo.task, a = t && findAction(t.skill, t.id);
+  if (!a) return 'No task';
+  if (!echoCanWork(t.skill)) return 'Out of range';
+  if (a.in && !canAfford(a.in)) return 'Out of materials';
+  return actionBlock(t.skill, a);
+}
+hook('tick', (dt) => {
+  if (!echoOn() || !S.echo.task) return;
+  const t = S.echo.task, a = findAction(t.skill, t.id);
+  if (!a || echoTaskBlock()) return;
+  S.echo.prog += dt * echoSpeedMult(t.skill);
+  const T = actionTime(t.skill, a);
+  let guard = 0;
+  while (S.echo.prog >= T && guard++ < 50) {
+    if (echoTaskBlock()) break;
+    S.echo.prog -= T;
+    const refund = a.in && echoAbility('rewind') && Math.random() < 0.15 ? Object.assign({}, a.in) : null;
+    ECHO_ACTING = true;
+    completeAction(t.skill, a);
+    ECHO_ACTING = false;
+    if (refund) for (const k in refund) addItem(k, refund[k]);
+    if (echoAbility('gilded_hand')) S.gold += a.xp * 5;
+    S.stats.echoActions = (S.stats.echoActions || 0) + 1;
+  }
+});
+let ECHO_ACTING = false;
+hook('double', (skill) => (ECHO_ACTING ? 0.05 * grade('prc') : 0));
+hook('dmg', () => 1 + 0.05 * grade('pow') * (echoAbility('star_fist') ? 2 : 1));
+hook('hp', () => 1 + 0.04 * grade('dur') * (echoAbility('iron_bloom') ? 2 : 1));
+hook('def', () => (echoAbility('iron_bloom') ? 1.1 : 1));
+hook('rare', () => (echoAbility('paper_moon') ? 1.1 : 1));
+
+/* ================================================================ RIFT: TEARS */
+// The Rift Tear changes every hour: one foe from each of two worlds you have opened, torn to Rift strength,
+// with their world's drops (doubled) and relics.
+const TEAR = ZONES.find((z) => z.tear);
+let TEAR_KEY = '';
+function tearWorlds(hour) {
+  const ws = WORLD_ORDER.filter((r) => r !== 'rift');
+  const a = hour % ws.length, b = (a + 1 + (Math.floor(hour / ws.length) % (ws.length - 1))) % ws.length;
+  return [ws[a], ws[b]];
+}
+function updateTear() {
+  if (!TEAR) return;
+  const hour = Math.floor(Date.now() / 3600000), key = String(hour);
+  if (key === TEAR_KEY) return;
+  TEAR_KEY = key;
+  TEAR.worlds = tearWorlds(hour);
+  TEAR.until = (hour + 1) * 3600000;
+  TEAR.name = `Rift Tear: ${REALMS[TEAR.worlds[0]].name} × ${REALMS[TEAR.worlds[1]].name}`;
+  TEAR.enemies = TEAR.worlds.map((r, i) => {
+    const pool = ZONES.filter((z) => z.realm === r && !z.boss).flatMap((z) => z.enemies);
+    const e = pool[(hour * 7 + i * 3) % pool.length];
+    const drops = e.drops.filter(([d]) => !(ITEMS[d] && ITEMS[d].type === 'schematic')).map(([d, ch, q]) => [d, Math.min(1, ch * 2), q]);
+    const rl = relicsOf(r); if (rl.length) drops.push([rl[0], 0.2, [1, 2]]);
+    return en(`Torn ${e.name}`, '', 160000, Math.round(6800 * ATK_SCALE.rift), 1100, 2.3, 60000, [40000, 70000], drops);
+  });
+  TEAR.enemies.forEach((x, i) => { x.base = TEAR.enemies[i].name.replace('Torn ', ''); });
+  const C = S && S.combat;
+  if (C && C.zone != null && ZONES[C.zone] === TEAR) { C.enemy = null; C.respawn = 1; }
+}
+updateTear();
+hook('tick', updateTear);

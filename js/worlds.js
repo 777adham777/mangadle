@@ -21,8 +21,13 @@ function addWorld(def) {
 
 /* ------------------------------------------------------------ finalize */
 // Runs after every world registered (bottom of this file).
+// Late worlds stack many multipliers (techniques, awakening, forms, Domain, companions, Echo) on HP and defense,
+// so their foes hit much harder. Tuned with a simulation: each guardian is about as dangerous at world entry
+// as the Crimson Tyrant (time-to-kill / time-to-die ~0.9).
+const ATK_SCALE = { hex: 4.5, hunter: 9, echo: 30, rift: 30 };
 function finalizeWorlds() {
   UNLOCKS.push(...UNLOCK_TAIL);
+  for (const z of ZONES) if (ATK_SCALE[z.realm]) for (const e of z.enemies) e.atk = Math.round(e.atk * ATK_SCALE[z.realm]);
   // The Rift opens after the last world's guardian.
   const ri = ZONES.findIndex((z) => z.realm === 'rift');
   GATES.rift.boss = ZONES[ri - 1].id;
@@ -467,6 +472,146 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
         hint: () => 'Defeat 10 foes in the Exam Thicket', why: 'You passed the Hunter Exam. Contracts now come in from every world (menu: Contracts).' },
     ],
   });
+})();
+
+/* ======================================================= WORLD 7: ECHO QUARTER */
+// Archaeology digs one site per world; Restoration rebuilds artifacts (permanent museum bonuses)
+// and ancient versions of iconic gear; Echo Bonding awakens an Echo that runs a second activity in parallel.
+const ARTIFACTS = {};   // id -> { realm, desc, kind, val }
+const ECHOES = [
+  { id: 'gilded_hand', name: 'Gilded Hand', ability: 'Each action your Echo finishes also pays gold (5× its XP).' },
+  { id: 'rewind',      name: 'Rewind',      ability: 'Crafts done by your Echo have a 15% chance to give their materials back.' },
+  { id: 'star_fist',   name: 'Star Fist',   ability: 'Power counts double in combat.' },
+  { id: 'silent_tide', name: 'Silent Tide', ability: 'Works 50% faster on Endless Blue skills.' },
+  { id: 'paper_moon',  name: 'Paper Moon',  ability: '+10% rare finds on everything you do.' },
+  { id: 'iron_bloom',  name: 'Iron Bloom',  ability: 'Durability counts double, +10% defense.' },
+];
+(() => {
+  const f = (id, name, v) => defItem(id, name, '🏺', v);
+  f('clay_fragment', 'Clay Fragment', 120); f('bronze_fragment', 'Bronze Fragment', 200); f('jade_fragment', 'Jade Fragment', 300);
+  f('gold_fragment', 'Gold Fragment', 430); f('obsidian_fragment', 'Obsidian Fragment', 600); f('starmetal_fragment', 'Starmetal Fragment', 820); f('pillar_fragment', 'Pillar Fragment', 1100);
+  defItem('awakening_shard', 'Awakening Shard', '💠', 4000);
+  defItem('echo_dust', 'Echo Dust', '✨', 900, relic('echo'));
+  defItem('pillar_glyph', 'Pillar Glyph', '🗿', 14000, relic('echo'));
+  defItem('lord_visage', "Pillar Lord's Visage", '🗿', 45000, relic('echo'));
+  // museum artifacts: restore each once for a permanent bonus
+  const art = (id, name, realm, kind, val, desc) => { defItem(id, name, '🏺', 20000, { type: 'artifact' }); ARTIFACTS[id] = { realm, kind, val, desc }; };
+  art('mermaid_compass', "Mermaid's Compass", 'seas', 'speed', 0.08, 'Endless Blue skills +8% speed');
+  art('founders_scroll', "Founder's Scroll", 'shinobi', 'speed', 0.08, 'Shinobi Lands skills +8% speed');
+  art('reaper_hourglass', "Reaper's Hourglass", 'soul', 'speed', 0.08, 'Soul Afterlands skills +8% speed');
+  art('gravity_seal', 'Ancient Gravity Seal', 'ki', 'dmg', 0.05, '+5% damage');
+  art('sealed_grimoire', 'Sealed Grimoire', 'hex', 'xp', 0.05, '+5% XP on every skill');
+  art('first_licence', 'The First Licence', 'hunter', 'gold', 0.10, '+10% gold');
+  art('sunstone_visage', 'Sunstone Visage', 'echo', 'hp', 0.06, '+6% max HP');
+  // ancient iconic gear (Restoration): the original + fragments + relics -> a tier above everything
+  defItem('ancient_fog_cleaver', 'Ancient Fog Cleaver', '🪓', 120000, eq('weapon', { atk: 400 }));
+  defItem('ancient_ferryman_robe', "Ancient Ferryman's Robe", '🧥', 120000, eq('armor', { def: 420, hp: 2400 }));
+  defItem('ancient_stormcaller', 'Ancient Stormcaller', '⚡', 150000, eq('weapon', { atk: 440 }));
+  defItem('ancient_gravity_bracer', 'Ancient Gravity Bracer', '⭕', 130000, eq('accessory', { atk: 230, def: 100, hp: 1100 }));
+
+  SKILLS.archaeology = { name: 'Archaeology', realm: 'echo', icon: '⛏️', type: 'gather',
+    desc: 'Dig one site in every world. Fragments, that world\'s materials, and rare Awakening Shards.' };
+  SKILLS.restoration = { name: 'Restoration', realm: 'echo', icon: '🏺', type: 'craft',
+    desc: 'Restore artifacts for permanent museum bonuses, and rebuild ancient versions of iconic gear.' };
+  SKILLS.bonding = { name: 'Echo Bonding', realm: 'echo', icon: '👤', type: 'bond',
+    desc: 'Awaken an Echo, a spirit that stands beside you. It runs a second activity in parallel and grows as your bond deepens.' };
+  const D = (item, level, time, name, extra) => Object.assign(gather(item, level, time), { name, extra });
+  SKILLS.archaeology.actions = [
+    D('clay_fragment', 1, 3.5, 'Dig: Sunken Wreck', [['tide_pearl', 0.03, [1, 1]], ['reef_bass', 0.3, [1, 2]], ['awakening_shard', 0.01, [1, 1]]]),
+    D('bronze_fragment', 12, 4, 'Dig: Hidden Village', [['mist_steel', 0.04, [1, 1]], ['chakra_orb', 0.3, [1, 2]], ['awakening_shard', 0.012, [1, 1]]]),
+    D('jade_fragment', 24, 4.5, 'Dig: Grave of Kings', [['husk_heart', 0.04, [1, 1]], ['spirit_core', 0.3, [1, 2]], ['awakening_shard', 0.015, [1, 1]]]),
+    D('gold_fragment', 36, 5, 'Dig: Crater Field', [['gravity_plate', 0.03, [1, 1]], ['ki_core', 0.3, [1, 2]], ['awakening_shard', 0.018, [1, 1]]]),
+    D('obsidian_fragment', 50, 5.5, 'Dig: Sealed Archive', [['bound_talisman', 0.03, [1, 1]], ['hex_core', 0.3, [1, 2]], ['awakening_shard', 0.022, [1, 1]]]),
+    D('starmetal_fragment', 64, 6, 'Dig: Fossil Canyon', [['trail_stone', 0.03, [1, 1]], ['lynx_pelt', 0.3, [1, 2]], ['awakening_shard', 0.026, [1, 1]]]),
+    D('pillar_fragment', 78, 7, 'Dig: Pillar Temple', [['echo_dust', 0.08, [1, 2]], ['pillar_glyph', 0.02, [1, 1]], ['awakening_shard', 0.03, [1, 1]]]),
+  ];
+  SKILLS.restoration.actions = [
+    craft('mermaid_compass', 5, 8, { clay_fragment: 40, tide_heart: 1, sapphire: 2 }),
+    craft('founders_scroll', 18, 9, { bronze_fragment: 40, ashen_tail: 2, sage_lotus: 10 }),
+    craft('reaper_hourglass', 30, 10, { jade_fragment: 40, sovereign_shard: 2, echo_soul: 5 }),
+    craft('ancient_fog_cleaver', 38, 12, { fog_cleaver: 1, bronze_fragment: 60, mist_steel: 30, pillar_glyph: 1 }),
+    craft('gravity_seal', 44, 10, { gold_fragment: 40, tyrant_horn: 1, ki_nova: 10 }),
+    craft('ancient_ferryman_robe', 52, 12, { ferryman_robe: 1, jade_fragment: 80, bone_ivory: 20, pillar_glyph: 2 }),
+    craft('sealed_grimoire', 58, 11, { obsidian_fragment: 40, matriarch_eye: 1, hex_crown: 6 }),
+    craft('ancient_stormcaller', 66, 13, { stormcaller: 1, clay_fragment: 120, leviathan_scale: 20, lord_visage: 1 }),
+    craft('first_licence', 72, 11, { starmetal_fragment: 40, chimera_heart: 1, beastlord_claw: 3 }),
+    craft('ancient_gravity_bracer', 80, 13, { gravity_bracer: 1, gold_fragment: 100, tyrant_horn: 2, lord_visage: 1 }),
+    craft('sunstone_visage', 86, 12, { pillar_fragment: 40, lord_visage: 1, echo_dust: 20 }),
+  ];
+  // Echo Bonding: awaken (3 shards) and commune (bond XP)
+  SKILLS.bonding.actions = [
+    { id: 'commune', name: 'Commune with your Echo', level: 1, time: 6, xp: xpFor(1, 6, true) * 2, icon: ['ui', 'echo'], kind: 'Ritual' },
+    { id: 'awaken', name: 'Awaken an Echo', level: 1, time: 15, xp: xpFor(10, 15, true), in: { awakening_shard: 3 }, icon: ['ui', 'awaken2'], kind: 'Ritual' },
+    { id: 'deep_commune', name: 'Deep Communion', level: 40, time: 10, xp: xpFor(40, 10, true) * 2, in: { echo_dust: 1 }, icon: ['ui', 'echo'], kind: 'Ritual' },
+  ];
+  for (const s of ['archaeology', 'restoration', 'bonding']) RARE_FINDS[s] = [];
+  SHOP.push({ id: 'tools_echo', cat: 'Tools', realm: 'echo', name: "Curator's Kit", icon: '🛠️', desc: '+10% speed for Echo Quarter skills per tier.', costs: [300000, 1.2e6, 5e6, 2e7, 6e7] });
+  SYNERGIES.push(
+    { from: 'archaeology', to: 'mining',   kind: 'rare', per: 0.004, name: 'Strata Reading', desc: 'More gems and rare finds while mining' },
+    { from: 'restoration', to: 'smithing', kind: 'xp',   per: 0.003, name: 'Old Techniques', desc: 'More Bladesmithing XP' },
+    { from: 'bonding',     to: 'all',      kind: 'xp',   per: 0.001, name: 'Shared Will',    desc: 'A little more XP on every skill' },
+  );
+  defItem('sigil_echo', 'Echo Sigil', '🔯', 300, { type: 'sigil' });
+  SIGILS.sigil_echo = { tag: 'echo', kind: 'speed', target: 'echo', val: 0.10, desc: 'Echo Quarter skills' };
+  SKILLS.sigilcraft.actions.push(craft('sigil_echo', 76, 7.5, { hex_crown: 8, echo_dust: 4, pillar_fragment: 10 }));
+  SKILLS.sigilcraft.actions.sort((a, b) => a.level - b.level);
+  [1, 2, 3].forEach((tier) => {
+    const id = `tool_archaeology_${tier}`;
+    defItem(id, `Brush & Pick Mk ${'I'.repeat(tier)}`, '🔧', 300 * tier, { type: 'tool', toolFor: 'archaeology', tier });
+    SKILLS.tinkering.actions.push(craft(id, [30, 60, 88][tier - 1], 5 + tier, { [['ki_core', 'ki_nova', 'ki_star'][tier - 1]]: 8 * tier, [['clay_fragment', 'obsidian_fragment', 'pillar_fragment'][tier - 1]]: 12 * tier }));
+  });
+  SKILLS.tinkering.actions.sort((a, b) => a.level - b.level);
+  BEASTS.stone_owl = { name: 'Stone Owl', realm: 'echo', level: 80, trap: 'chimera_trap', kind: 'echo', base: 0.10, per: 0.008, desc: 'Echo speed' };
+  SKILLS.taming.actions.push({ id: 'tame_stone_owl', name: 'Hunt: Stone Owl', level: 80, time: 16, xp: xpFor(80, 16, true), in: { chimera_trap: 1 }, beast: 'stone_owl', icon: ['beast', 'stone_owl'], kind: 'Beast hunt' });
+
+  const E = (name, hp, atk, def, spd, xp, gold, drops) => en(name, '', hp, atk, def, spd, xp, gold, drops);
+  addWorld({
+    id: 'echo',
+    realm: { name: 'Echo Quarter', icon: '🗿', color: '#ef7cff', ui: '#f08cff', tagline: 'Ancient pillars, striking poses and spirits that stand beside you.' },
+    zones: [
+      { id: 'plaza', name: 'Marble Plaza', realm: 'echo', rec: 120, enemies: [
+        E('Masked Vampire', 85000, 3900, 880, 2.3, 22000, [7000, 11000], [['pillar_fragment', 0.2, [1, 2]], ['echo_dust', 0.12, [1, 2]]]),
+        E('Sunlight Monk', 92000, 3800, 920, 2.6, 23000, [7500, 11500], [['starmetal_fragment', 0.3, [1, 2]], ['echo_dust', 0.12, [1, 2]], ['awakening_shard', 0.02, [1, 1]]]),
+      ] },
+      { id: 'museum', name: 'Haunted Museum', realm: 'echo', rec: 120, enemies: [
+        E('Living Statue', 105000, 4300, 980, 2.8, 27000, [9000, 14000], [['pillar_glyph', 0.06, [1, 1]], ['obsidian_fragment', 0.3, [1, 2]]]),
+        E('Echo Thief', 98000, 4500, 920, 2.1, 26000, [9000, 14000], [['awakening_shard', 0.04, [1, 1]], ['echo_dust', 0.15, [1, 2]]]),
+      ] },
+      { id: 'pillars', name: 'Hall of Pillars', realm: 'echo', rec: 120, enemies: [
+        E('Pillar Warrior', 125000, 4900, 1020, 2.5, 33000, [11000, 17000], [['pillar_glyph', 0.08, [1, 1]], ['pillar_fragment', 0.3, [1, 2]]]),
+        E('Wind Pillar Guard', 118000, 5100, 990, 2.2, 32000, [11000, 17000], [['pillar_glyph', 0.08, [1, 1]], ['awakening_shard', 0.03, [1, 1]]]),
+      ] },
+      { id: 'pillar', name: 'The Pillar Throne', realm: 'echo', rec: 120, boss: true, enemies: [
+        E('Pillar Lord', 520000, 6200, 1080, 2.3, 160000, [120000, 220000], [['lord_visage', 0.6, [1, 1]], ['pillar_glyph', 1, [1, 3]], ['awakening_shard', 0.5, [1, 2]], ['FRUIT', 1 / 5, [1, 1]]]),
+      ] },
+    ],
+    gate: { name: 'The Echo Door', boss: 'chimera',
+      lore: "The Chimera King's heart still beats. Behind its nest, a stone door carved with strange poses is waiting for it.",
+      offer: { chimera_heart: 1, beastlord_claw: 3, chimera_mane: 10, trail_stone: 5 } },
+    unlocks: [
+      { id: 'skill:archaeology', name: 'Archaeology', need: () => !!S.gates.echo || usedSkill('archaeology') },
+      { id: 'skill:restoration', name: 'Restoration', need: () => skillLv('archaeology') >= 5 || usedSkill('restoration'),
+        hint: () => 'Reach Archaeology level 5', why: 'A curator offers to teach you how to restore what you dig up.' },
+      { id: 'skill:bonding', name: 'Echo Bonding', need: () => skillLv('archaeology') >= 10 || usedSkill('bonding') || !!S.echo.id,
+        hint: () => 'Reach Archaeology level 10', why: 'Among the fragments, a shard hums with a will of its own. Three of them could wake an Echo.' },
+    ],
+  });
+
+  /* --------------------------------------------------------------- THE RIFT: finale */
+  // The Convergence (Rift Emperor), then the Rift Tear (rotating foes from two worlds), then the Unbound.
+  GATES.rift.offer = { tide_heart: 1, ashen_tail: 2, sovereign_shard: 2, tyrant_horn: 1, matriarch_eye: 1, chimera_heart: 1, lord_visage: 1 };
+  GATES.rift.lore = 'Every world touches at a single point. A relic from each of the seven will tear it open.';
+  const rz = ZONES.find((z) => z.id === 'convergence');
+  rz.rec = 120;
+  rz.enemies = [E('Rift Emperor', 1200000, 8000, 1150, 2.2, 400000, [400000, 700000], [['rift_shard', 1, [1, 2]], ['rift_eye', 1 / 12, [1, 1]], ['awakening_shard', 0.5, [1, 2]], ['FRUIT', 1 / 3, [1, 1]]])];
+  ZONES.push(
+    { id: 'tear', name: 'Rift Tear', realm: 'rift', rec: 120, tear: true, enemies: [] },
+    { id: 'unbound', name: 'Heart of the Rift', realm: 'rift', rec: 120, boss: true, enemies: [
+      E('The Unbound', 3000000, 11000, 1300, 2.2, 1200000, [1.2e6, 2e6], [['rift_shard', 1, [2, 4]], ['rift_eye', 1 / 6, [1, 1]], ['FRUIT', 1 / 2, [1, 1]], ['lord_visage', 0.5, [1, 1]]]),
+    ] },
+  );
+  defItem('rift_eye', 'Eye of the Rift', '🌌', 30000, eq('accessory', { atk: 260, def: 120, hp: 1400, rare: 0.10 }));
+  defItem('rift_cleaver', 'Rift Cleaver', '🪓', 300000, eq('weapon', { atk: 520 }));
 })();
 
 /* ====================================================================== end */

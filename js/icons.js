@@ -624,3 +624,26 @@ Object.assign(ICONS.shop, { tools_hunter: 'knapsack' });
 Object.assign(ICONS.ui, { contracts: 'notebook', card: 'open-book', beast: 'wolf-head', bait: 'flying-trout', star2: 'round-star' });
 ICONS.beast = { reef_turtle: 'juggling-seal', storm_gull: 'seagull', ninken_pup: 'wolf-head', ghost_cat: 'cat', thunder_ape: 'troll',
   cursed_toad: 'frog', great_stag: 'horned-skull', sky_lynx: 'paw' };
+
+// ---- Echo Quarter + Rift finale
+ICONS.realm.echo = 'spark-spirit';
+Object.assign(ICONS.skill, { archaeology: 'war-pick', restoration: 'open-book', bonding: 'aura' });
+Object.assign(ICONS.zone, { plaza: 'stone-block', museum: 'bookshelf', pillars: 'stone-tower', pillar: 'stone-throne', tear: 'portal', unbound: 'galaxy' });
+Object.assign(ICONS.enemy, { 'Masked Vampire': 'devil-mask', 'Sunlight Monk': 'meditation', 'Living Statue': 'rock-golem', 'Echo Thief': 'hooded-assassin',
+  'Pillar Warrior': 'mailed-fist', 'Wind Pillar Guard': 'wing-cloak', 'Pillar Lord': 'imperial-crown', 'The Unbound': 'galaxy' });
+Object.assign(ICONS.item, {
+  clay_fragment: 'stone-block', bronze_fragment: 'metal-bar', jade_fragment: 'emerald', gold_fragment: 'coins-pile', obsidian_fragment: 'cut-diamond', starmetal_fragment: 'falling-star', pillar_fragment: 'stone-tower',
+  awakening_shard: 'crystal-shine', echo_dust: 'sparkles', pillar_glyph: 'scroll-quill', lord_visage: 'drama-masks',
+  mermaid_compass: 'compass', founders_scroll: 'scroll-unfurled', reaper_hourglass: 'hourglass', gravity_seal: 'stone-block', sealed_grimoire: 'open-book', first_licence: 'notebook', sunstone_visage: 'cracked-mask',
+  ancient_fog_cleaver: 'crescent-blade', ancient_ferryman_robe: 'cloak', ancient_stormcaller: 'saber-and-pistol', ancient_gravity_bracer: 'ring', sigil_echo: 'magic-swirl',
+});
+for (const id in ITEMS) {
+  const t = ITEMS[id].type;
+  if (t === 'tool') ICONS.item[id] = 'cog';
+  else if (t === 'schematic') ICONS.item[id] = 'scroll-unfurled';
+  else if (t === 'sigil') ICONS.item[id] = 'magic-swirl';
+}
+Object.assign(ICONS.shop, { tools_echo: 'open-book' });
+Object.assign(ICONS.ui, { echo: 'aura', awaken2: 'crystal-shine', museum: 'bookshelf' });
+ICONS.beast.stone_owl = 'evil-eyes';
+ICONS.echo = { gilded_hand: 'two-coins', rewind: 'hourglass', star_fist: 'mailed-fist', silent_tide: 'waves', paper_moon: 'night-sleep', iron_bloom: 'flower-twirl' };

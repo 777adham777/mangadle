@@ -418,7 +418,7 @@ VIEWS.realm = (realm, skill) => {
   </section>
   ${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
   ${uix('realmTop', realm, skill)}
-  ${s.actions.length ? hdr(s.type === 'voyage' ? 'Voyages' : s.type === 'craft' ? 'Recipes' : 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
+  ${s.actions.length ? hdr({ voyage: 'Voyages', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
   ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}
   </div><aside class="sk-side">

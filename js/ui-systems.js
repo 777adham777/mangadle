@@ -337,6 +337,67 @@ document.addEventListener('click', (ev) => {
 });
 document.addEventListener('change', (ev) => { if ('usebait' in ev.target.dataset) { S.useBait = ev.target.checked; dirty = true; } });
 
+/* ============================================================ ECHO: YOUR ECHO */
+COL_GROUPS.push(['artifact', 'Artifacts']);
+const echoTaskName = () => { const t = S.echo.task, a = t && findAction(t.skill, t.id); return a ? `${SKILLS[t.skill].name} · ${a.name}` : 'Idle'; };
+function echoTaskOptions() {
+  const out = [];
+  for (const k of Object.keys(SKILLS)) {
+    const s = SKILLS[k];
+    if (!skillOpen(k) || k === 'bonding' || s.type === 'farm' || s.type === 'pact' || s.type === 'combat' || !s.actions.length) continue;
+    const ok = echoCanWork(k);
+    const acts = s.actions.filter((a) => skillLv(k) >= a.level && (!a.schem || S.known[a.schem]));
+    if (acts.length) out.push(`<optgroup label="${esc(s.name)}${ok ? '' : ' (out of range)'}">${acts.map((a) => `<option value="${k}:${a.id}" ${ok ? '' : 'disabled'} ${S.echo.task && S.echo.task.skill === k && S.echo.task.id === a.id ? 'selected' : ''}>${esc(a.name)}</option>`).join('')}</optgroup>`);
+  }
+  return out.join('');
+}
+UIX.realmTop.push((realm, skill) => {
+  if (skill !== 'bonding') return '';
+  if (!echoOn()) return `<section class="win echo-none">${ui('echo')}<div><b>No Echo yet</b><p class="muted small">Gather 3 Awakening Shards (Archaeology, Echo Quarter foes, the Rift) and use <b>Awaken an Echo</b> below. Each Echo has its own grades and ability.</p></div></section>`;
+  const E = ECHO_BY[S.echo.id], bl = bondLv(), bp = Math.sqrt((S.echo.bond || 0) / 30) - bl;
+  const why = S.echo.task ? echoTaskBlock() : '';
+  return `<section class="win echo-card" style="--rc:${rc('echo')}">
+    <div class="ec-head"><span class="ec-ic">${ic('echo', E.id)}</span><div><small>Your Echo</small><h2>${E.name}</h2><p class="muted small">${E.ability}</p></div>
+      <div class="ec-bond"><small>Bond</small><b>${bl}</b><span class="pbar"><i style="width:${Math.min(100, bp * 100)}%"></i></span></div></div>
+    <div class="grades">${ESTATS.map(([k, l]) => `<div class="grade g${grade(k)}"><b>${GRADES[grade(k)]}</b><small>${l}</small></div>`).join('')}</div>
+    <p class="muted small">Every 10 bond levels raises all grades by one. Power +5% damage/grade · Speed: how fast it works · Range: reaches the first ${echoRange()} worlds · Durability +4% max HP/grade · Precision +5% double/grade · Potential: faster bond.</p>
+    ${hdr('Task', 'runs in parallel with what you do')}
+    <div class="ec-task"><select data-echotask><option value="">— Idle —</option>${echoTaskOptions()}</select>
+      <span class="pbar"><i data-echofill></i></span><small data-echostate>${S.echo.task ? (why || `${echoTaskName()} · ${pct(echoSpeedMult(S.echo.task.skill))} speed`) : 'Give your Echo something to do.'}</small></div>
+    <div class="btn-row">${gbtn('Release this Echo', 'close', 'data-echorelease', 'dark sm')}</div>
+  </section>`;
+});
+UPD.push(() => {
+  const f = $('[data-echofill]');
+  if (!f || !echoOn() || !S.echo.task) return;
+  const a = findAction(S.echo.task.skill, S.echo.task.id);
+  if (a) f.style.width = Math.min(100, (S.echo.prog / actionTime(S.echo.task.skill, a)) * 100) + '%';
+});
+UIX.homeTop.push(() => (echoOn() ? `<div class="echo-chip">${ic('echo', S.echo.id)}<span>${ECHO_BY[S.echo.id].name}: <b>${esc(echoTaskName())}</b></span>${gbtn('Echo', 'play', 'data-nav="realm:echo:bonding"', 'dark sm')}</div>` : ''));
+UIX.realmSide.push((realm, skill) => {
+  if (skill !== 'restoration') return '';
+  const ids = Object.keys(ARTIFACTS);
+  return `<section class="win">${hdr('Museum', `${Object.keys(S.museum).length} / ${ids.length}`)}<ul class="rn-list">${ids.map((id) => `<li><span>${S.museum[id] ? ITEMS[id].name : '???'}</span><b class="${S.museum[id] ? '' : 'muted'}">${ARTIFACTS[id].desc}</b></li>`).join('')}</ul></section>`;
+});
+UIX.actLines.push((skill, a) => {
+  const o = a.out && Object.keys(a.out)[0];
+  if (o && ARTIFACTS[o]) return `<div class="ac-note"><span>${ui('museum')}${S.museum[o] ? 'In the museum' : 'Museum: ' + ARTIFACTS[o].desc}</span></div>`;
+  return '';
+});
+on('echo', (e) => burst('Echo awakened', `${e.name} · ${e.ability}`, ic('echo', e.id), rc('echo')));
+on('artifact', (id) => burst('Artifact restored', `${ITEMS[id].name} · ${ARTIFACTS[id].desc}`, itemIc(id), rc('echo')));
+
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest('button');
+  if (!t || t.disabled) return;
+  if ('echorelease' in t.dataset && confirm('Release your Echo? Its bond and grades are lost.')) releaseEcho();
+});
+document.addEventListener('change', (ev) => {
+  if (!('echotask' in ev.target.dataset)) return;
+  const v = ev.target.value; ev.target.blur();
+  if (!v) setEchoTask(null); else { const [k, id] = v.split(':'); if (!setEchoTask(k, id)) toast('Your Echo cannot do that.', 'bad'); }
+});
+
 /* ======================================================= input for systems */
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('button');

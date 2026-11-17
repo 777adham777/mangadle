@@ -1,17 +1,22 @@
 # Tri-Realm Idle
 
-An idle RPG in the spirit of Melvor Idle and NGU Idle, set across three collided anime-inspired worlds:
-the **Shinobi Lands**, the **Soul Afterlands** and the **Endless Blue**.
+An idle RPG in the spirit of Melvor Idle and NGU Idle, across seven collided anime-inspired worlds.
+Each world adds one new system, and every system also applies to the worlds before it, so nothing goes stale.
 
-- 12 skills (gathering, crafting, voyages, combat), 6-12 unlocks each up to level 90, milestone perks at 10/25/50/75/99
-- Start in the Shinobi Lands; each next world (Soul Afterlands → Endless Blue → The Rift) opens only after you defeat its guardian boss and make an offering at its gate, built from every skill you have
-- Skills and menus open from in-world events (a level reached, a stage cleared), always with a single "Next unlock" shown
-- Iconic weapons and armor per world: their schematics drop from that world's enemies, and crafting them needs that world's rare relics
-- Synergies: every profession boosts another one (e.g. Fishing → Cooking double output, Bladesmithing → all gathering speed)
-- 13 battle zones with bosses; 110+ items with visible drop rates, gems, openable chests, 13 pets and a Collection Log
-- Inner Power energy training, Rebirth and Karma perks, rare Abyss Fruits
-- Guided objectives, offline progress, autosave
-- Plays in any modern browser, on desktop and mobile; installable as an app and playable offline (PWA)
+| # | World | Skills | System it adds |
+| --- | --- | --- | --- |
+| 1 | Endless Blue | Fishing, Cooking, Voyaging | The core loop: fish → cook → fight; voyages |
+| 2 | Shinobi Lands | Herbalism, Chakra Focus, Shinobi Arts | Techniques: 3 combat slots paid with chakra |
+| 3 | Soul Afterlands | Soul Harvest, Reishi Mining, Bladesmithing | Weapon awakening, gem sockets, reforging any gear |
+| 4 | Ki Frontier | Gravity Training, Farming, Tinkering | Transformations, real-time farm plots, tools for every gathering skill, gadgets, Wish Stones |
+| 5 | Hexbound City | Exorcism, Sigilcraft, Pacts | Your Domain (a 3×3 sigil board) and binding vows |
+| 6 | Hunter's Wilds | Tracking, Trapcraft, Beast Taming | Hunter Licence contracts across every world, companions, the Card Book |
+| 7 | Echo Quarter | Archaeology, Restoration, Echo Bonding | An Echo that runs a second activity in parallel; museum; ancient gear |
+| ∞ | The Rift | — | Final bosses and an hourly Rift Tear mixing two worlds |
+
+- Worlds open after their guardian falls and you make an offering at the gate; skills and menus open from in-world events, one "Next unlock" at a time
+- Renown per world (bonuses, then Ascension tiers that replay old stages for the newest relics), synergies between professions, schematics and world relics for iconic gear
+- Combat skills to 120, everything else to 99; 55 guided objectives; offline progress, autosave, installable PWA
 
 ## Run locally
 
@@ -33,11 +38,14 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | --- | --- |
 | `index.html` | Page shell |
 | `css/style.css` | All styling |
-| `js/data.js` | Game content: items, skills, zones, shop, objectives, synergies, unlock order |
+| `js/data.js` | Core content: worlds 1-3, items, zones, shop, objectives, synergies, gates, unlock order |
+| `js/worlds.js` | Worlds 4-7 and the Rift finale, registered with `addWorld()`; content for techniques and awakening |
+| `js/systems.js` | World systems (Renown, Ascension, techniques, awakening, farming, transformations, Domain, pacts, contracts, beasts, cards, Echo...), plugged into engine hooks |
+| `js/ui-systems.js` | Interface for those systems; boots the game |
 | `js/icons.js` | Game icon set (SVG paths) and which icon each item, skill, enemy and screen uses |
 | `js/guide.js` | New-player onboarding: welcome screen, coach bubbles for the first 10 objectives, menu unlocks |
 | `js/scene.js` | Generated background scenes for each world |
-| `js/game.js` | Game engine (no DOM) |
+| `js/game.js` | Core engine (no DOM) with hooks for the world systems |
 | `js/ui.js` | Interface: sidebar with every skill, activity bar, skill pages, bank, battle; rendering, input, save/load |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable app + offline support |
 
