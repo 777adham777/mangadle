@@ -30,6 +30,14 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `index.html` | Page shell |
 | `css/style.css` | All styling |
 | `js/data.js` | Game content: items, skills, zones, shop, objectives |
+| `js/icons.js` | Game icon set (SVG paths) and which icon each item, skill, enemy and screen uses |
+| `js/scene.js` | Generated background scenes for each world |
 | `js/game.js` | Game engine (no DOM) |
-| `js/ui.js` | Rendering, animations, input, save/load |
+| `js/ui.js` | Interface (gacha / JRPG style): rendering, animations, input, save/load |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable app + offline support |
+
+## Credits
+
+Icons from [game-icons.net](https://game-icons.net) by Lorc, Delapouite, Skoll, Caro Asercion, sbed, Cathelineau,
+DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue and Zeromancer,
+licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).

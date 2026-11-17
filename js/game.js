@@ -419,7 +419,7 @@ function killEnemy(e) {
       const real = id === 'FRUIT' ? pick(FRUITS) : id;
       const n = randInt(q[0], q[1]);
       addItem(real, n); loot[real] = n;
-      dropped.push(`${ITEMS[real].icon}${n > 1 ? '×' + n : ''}`);
+      dropped.push(`${ITEMS[real].name}${n > 1 ? " ×" + n : ""}`);
       if (ch < 0.2) emit('rare', { id: real, source: e.name });
     }
   }
@@ -427,8 +427,8 @@ function killEnemy(e) {
   const pet = PETS.find((p) => p.zone === z.id);
   if (pet && !S.pets[pet.id] && Math.random() < pet.chance * luckMult()) givePet(pet);
   S.stats.kills++;
-  if (z.boss) { S.stats.bossKills++; if (C.kills[z.id] === 1) toast(`${e.icon} ${e.name} defeated! A new path opens...`, 'rare'); }
-  clog(`Defeated ${e.icon} ${e.name}: +${fmt(g)}g${dropped.length ? ' ' + dropped.join(' ') : ''}`, 'win');
+  if (z.boss) { S.stats.bossKills++; if (C.kills[z.id] === 1) toast(`${e.name} defeated! A new path opens...`, 'rare'); }
+  clog(`Defeated ${e.name}: +${fmt(g)} gold${dropped.length ? ", " + dropped.join(", ") : ""}`, 'win');
   C.enemy = null; C.respawn = z.boss ? 3 : 1.2;
   emit('kill', { enemy: e, gold: g, loot, boss: !!z.boss });
 }
@@ -442,7 +442,7 @@ function enemyHit(e) {
   if (C.hp <= 0) {
     C.hp = 0;
     S.stats.deaths++;
-    clog(`You were defeated by ${e.icon} ${e.name}. Retreating to recover...`, 'lose');
+    clog(`You were defeated by ${e.name}. Retreating to recover...`, 'lose');
     toast(`Defeated by ${e.name}! Train harder or bring more food.`, 'bad');
     emit('death', e);
     stopCombat();

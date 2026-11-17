@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <title>Tri-Realm Idle</title>
   <meta name="description" content="An idle RPG across three collided anime-inspired worlds: ninjas, soul reapers and pirates. Plays in your browser on desktop and mobile.">
-  <meta name="theme-color" content="#0f1218">
+  <meta name="theme-color" content="#05060d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -18,33 +18,27 @@
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Saira+Condensed:wght@500;600;700&family=Saira:wght@400;500;600&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  <header id="top">
-    <div class="logo"><span class="l1">TRI-REALM</span><span class="l2">IDLE</span></div>
-    <div class="res">
-      <div class="res-item gold" title="Gold — buys upgrades in the Market"><span>🪙</span><b id="r-gold">0</b></div>
-      <div class="res-item bounty" title="Bounty — earned by defeating enemies. Higher ranks give bonus damage."><span>🏴‍☠️</span><b id="r-bounty">0</b><small id="r-rank"></small></div>
-      <div class="res-item karma" title="Karma — earned by Rebirth, spent on permanent perks"><span>☯</span><b id="r-karma">0</b></div>
-    </div>
-    <button class="icon-btn" data-nav="settings" title="Settings">⚙️</button>
-  </header>
-
-  <nav id="rail"></nav>
-  <main id="main"></main>
+  <div id="scene"></div>
+  <header id="hud"></header>
   <aside id="side">
-    <section id="now" class="panel now"></section>
-    <section id="goal" class="panel goal"></section>
-    <section class="panel dark feed"><h3 class="mini-title">Recent loot</h3><div id="feed"></div></section>
+    <section id="now" class="win"></section>
+    <section id="goal" class="win"></section>
   </aside>
+  <main id="main"></main>
+  <nav id="rail"></nav>
 
+  <div id="feed"></div>
   <div id="fx"></div>
   <div id="toasts"></div>
-  <div id="modal" class="modal"><div class="panel modal-card"><div id="modal-body"></div><button id="modal-close" class="btn hot big">Let's go!</button></div></div>
+  <div id="modal" class="modal"><div class="modal-card"><div id="modal-body"></div><button id="modal-close" class="gbtn">Continue</button></div></div>
 
   <script src="js/data.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/scene.js"></script>
   <script src="js/game.js"></script>
   <script src="js/ui.js"></script>
   <script>
