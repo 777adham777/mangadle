@@ -556,3 +556,28 @@ ICONS.ui.menu = 'plain-menu';
 for (const id in ITEMS) if (ITEMS[id].type === 'scroll') ICONS.item[id] = 'tied-scroll';
 ICONS.technique = { shadow_strike: 'hooded-assassin', healing_palm: 'heart-plus', mist_step: 'fog', iron_skin: 'mailed-fist', sealing_mark: 'yin-yang', fire_lotus: 'fire' };
 Object.assign(ICONS.ui, { technique: 'shuriken', awaken: 'shining-sword', socket: 'gems', reforge: 'anvil-impact', chakra: 'concentration-orb' });
+
+// ---- Ki Frontier
+ICONS.realm.ki = 'falling-star';
+Object.assign(ICONS.skill, { gravity: 'aura', farming: 'plant-roots', tinkering: 'cog' });
+Object.assign(ICONS.zone, { plains: 'sandstorm', canyon: 'lightning-storm', citadel: 'stone-tower', tyrant: 'stone-throne' });
+Object.assign(ICONS.enemy, { 'Wasteland Brawler': 'mailed-fist', 'Raging Ape': 'troll', 'Sprout Fiend': 'vine-flower', 'Elite Soldier': 'spiked-armor',
+  'Armored Commander': 'battle-gear', 'Horned Mutant': 'horned-skull', 'Crimson Tyrant': 'imperial-crown' });
+Object.assign(ICONS.item, {
+  ki_dust: 'spark-spirit', ki_spark: 'lightning-electron', ki_orb: 'concentration-orb', ki_core: 'smoking-orb', ki_flare: 'fire', ki_nova: 'falling-star', ki_star: 'round-star',
+  gravity_plate: 'stone-block', warrior_sash: 'headband-knot', tyrant_horn: 'horned-skull',
+  vital_bean: 'elderberry', sun_wheat: 'fern', moon_rice: 'bowl-of-rice', fire_pepper: 'fire-tail', frost_melon: 'watermelon', thunder_root: 'plant-roots', star_fruit: 'shiny-apple',
+  sunbread: 'bubbling-bowl', moon_onigiri: 'sushis', pepper_stew: 'cooking-pot', melon_sorbet: 'lemon', thunder_ramen: 'noodles', star_feast: 'meat',
+  power_scanner: 'all-seeing-eye', weighted_bands: 'mailed-fist', jet_boots: 'wingfoot', drone_buddy: 'compass', barrier_belt: 'shield', hyper_capsule: 'smoking-orb',
+  power_gauntlets: 'mailed-fist', battle_armor: 'spiked-armor', gravity_bracer: 'ring',
+});
+for (const id in ITEMS) {
+  const t = ITEMS[id].type;
+  if (t === 'seed') ICONS.item[id] = 'leaf-swirl';
+  else if (t === 'tool') ICONS.item[id] = 'cog';
+  else if (t === 'wish') ICONS.item[id] = 'crystal-ball';
+  else if (t === 'schematic') ICONS.item[id] = 'scroll-unfurled';
+}
+Object.assign(ICONS.shop, { buy_beans: 'leaf-swirl', buy_wheat: 'fern', tools_ki: 'cog' });
+Object.assign(ICONS.ui, { form: 'aura', stamina: 'lightning-trio', wish: 'crystal-ball', farm: 'plant-roots', gadget: 'cog', meal: 'bowl-of-rice' });
+ICONS.form = { surge: 'aura', ascended: 'lightning-trio', limit: 'falling-star' };

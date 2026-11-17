@@ -1084,3 +1084,45 @@ button.nx:hover { background: var(--panel2); }
 .sock { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--dim); flex-wrap: wrap; }
 .sock-pick { margin-left: auto; display: flex; gap: 4px; }
 .sock-pick .mini-btn .gi { font-size: 14px; }
+
+/* ---------------------------------------------------------------- ki: farming */
+.plots { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.plot { display: flex; flex-direction: column; gap: 8px; padding: 12px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); }
+.plot.ready { border-color: var(--ok); box-shadow: 0 0 0 1px color-mix(in srgb, var(--ok) 30%, transparent); }
+.plot.empty { border-style: dashed; background: transparent; }
+.pl-head { display: flex; align-items: center; gap: 8px; }
+.pl-head > .gi { font-size: 18px; color: var(--mute); }
+.pl-head small { margin-left: auto; font: 600 13px var(--display); color: var(--dim); }
+.plot.ready .pl-head small { color: var(--ok); }
+.plot .pbar i { background: linear-gradient(90deg, #5fbf5a, #b6f07a); }
+.pl-seeds { display: flex; flex-direction: column; gap: 4px; }
+.pl-seed { display: flex; align-items: center; gap: 8px; padding: 4px 6px; border-radius: 7px; text-align: left; font-size: 13px; color: var(--text); background: var(--panel2); border: 1px solid var(--line); }
+.pl-seed:hover { border-color: var(--rc); }
+.pl-seed span { display: flex; flex-direction: column; line-height: 1.2; }
+.pl-seed small { font-size: 11px; color: var(--mute); }
+.farm-tools { margin-bottom: 8px; }
+.tog { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dim); cursor: pointer; }
+.tog input { accent-color: var(--rc); width: 16px; height: 16px; }
+.crop-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 6px; }
+.crop { display: flex; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 8px; background: var(--panel2); font-size: 13px; }
+.crop.locked { opacity: 0.5; }
+.crop span { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+.crop small { font-size: 11px; color: var(--mute); }
+.crop em { margin-left: auto; font-style: normal; font-size: 11.5px; color: var(--dim); text-align: right; }
+
+/* ---------------------------------------------------------------- ki: buffs, forms, wishes */
+.buffs { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.buff { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 999px; font: 600 13px var(--display); color: #ffe7b0; background: rgba(255, 185, 61, 0.12); border: 1px solid rgba(255, 185, 61, 0.4); }
+.buff small { font: 500 11.5px var(--body); color: var(--dim); }
+.form-seg { flex-wrap: wrap; }
+.form-seg button.locked { opacity: 0.45; }
+.stambar { position: relative; height: 8px; margin-top: 4px; border-radius: 4px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+.stambar i { position: absolute; inset: 0 auto 0 0; background: linear-gradient(90deg, #c98a1d, #ffd36a); transition: width 0.2s; }
+.stambar.on i { background: linear-gradient(90deg, #ff9d2e, #fff1a8); box-shadow: 0 0 10px #ffc65a; }
+.stambar span { position: absolute; right: 4px; top: -3px; font-size: 9.5px; color: #fff3cf; }
+.stones { display: flex; gap: 5px; flex-wrap: wrap; }
+.wish-list { display: flex; flex-direction: column; gap: 5px; margin-top: 8px; }
+.wish { display: flex; flex-direction: column; align-items: flex-start; padding: 7px 10px; border-radius: 8px; text-align: left; background: var(--panel2); border: 1px solid rgba(255, 185, 61, 0.5); }
+.wish:hover { background: rgba(255, 185, 61, 0.12); }
+.wish small { font-size: 12px; color: var(--dim); }
+.rn-list .gi { font-size: 13px; vertical-align: -2px; margin-right: 3px; }

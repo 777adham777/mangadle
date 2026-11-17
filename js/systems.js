@@ -209,3 +209,151 @@ function reforge(id) {
   dirty = true;
   return true;
 }
+
+/* ================================================================ KI: TOOLS + GADGETS */
+// Tinkering tools upgrade a gathering skill for good (+15% speed per tier). Gadgets fill a new gear slot.
+const toolTier = (skill) => S.tools[skill] || 0;
+hook('speed', (skill) => 1 + 0.15 * toolTier(skill));
+hook('action', (skill, act) => {
+  const o = act.out && Object.keys(act.out)[0], it = o && ITEMS[o];
+  if (!it || it.type !== 'tool') return;
+  removeItem(o, count(o));
+  if (it.tier > toolTier(it.toolFor)) { S.tools[it.toolFor] = it.tier; emit('tool', { id: o }); dirty = true; }
+});
+hook('block', (skill, act) => {
+  const it = act.out && ITEMS[Object.keys(act.out)[0]];
+  if (!it || it.type !== 'tool') return '';
+  if (toolTier(it.toolFor) >= it.tier) return 'Built. You already have this tool.';
+  if (toolTier(it.toolFor) < it.tier - 1) return `Build Mk ${'I'.repeat(it.tier - 1)} first.`;
+  return '';
+});
+hook('rare', () => 1 + gearStat('rare'));
+hook('speed', () => 1 + gearStat('speed'));
+hook('xp', (skill) => (SKILLS[skill].type === 'combat' ? 1 + gearStat('cxp') : 1));
+hook('dodge', () => gearStat('dodge'));
+
+/* ================================================================ KI: MEAL BUFFS */
+// Meals (Cooking + crops) give a timed buff when eaten from the Bank. One buff per stat; eating again refreshes.
+const buffVal = (stat) => { const b = S.buffs[stat]; return b && b.t > 0 ? b.v : 0; };
+const buffAll = () => buffVal('all');
+function eatMeal(id) {
+  const it = ITEMS[id];
+  if (!it || it.type !== 'meal' || count(id) < 1) return false;
+  removeItem(id, 1);
+  const mins = it.buff.mins * (1 + synergyBonus('buff', 'cooking'));
+  S.buffs[it.buff.stat] = { v: it.buff.val, t: mins * 60 };
+  dirty = true;
+  return true;
+}
+hook('tick', (dt) => { for (const k in S.buffs) { S.buffs[k].t -= dt; if (S.buffs[k].t <= 0) { delete S.buffs[k]; dirty = true; } } });
+hook('speed', () => 1 + buffVal('speed') + buffAll());
+hook('xp', () => 1 + buffVal('xp') + buffAll());
+hook('dmg', () => 1 + buffVal('dmg') + buffAll());
+hook('gold', () => 1 + buffVal('gold') + buffAll());
+hook('rare', () => 1 + buffVal('rare') + buffAll());
+
+/* ================================================================ KI: FARMING */
+// Plots grow in real time, in parallel with whatever you are doing. 3 plots, +1 per 20 Farming levels.
+// Auto-tend (Farming 15): harvest and replant on its own, offline too.
+const CROP_BY = Object.fromEntries(CROPS.map((c) => [c.id, c]));
+const plotCount = () => (skillOpen('farming') ? Math.min(7, 3 + Math.floor(skillLv('farming') / 20)) : 0);
+const autoTendOn = () => skillLv('farming') >= 15;
+function plots() { const P = S.farm.plots; while (P.length < plotCount()) P.push(null); return P.slice(0, plotCount()); }
+function plant(i, cropId) {
+  const c = CROP_BY[cropId], P = plots();
+  if (!c || i >= P.length || P[i] || skillLv('farming') < c.level || count(c.seed) < 1) return false;
+  removeItem(c.seed, 1);
+  S.farm.plots[i] = { crop: cropId, t: 0 };
+  dirty = true;
+  return true;
+}
+function harvest(i) {
+  const p = S.farm.plots[i], c = p && CROP_BY[p.crop];
+  if (!c || p.t < c.mins * 60) return null;
+  const dbl = Math.random() < doubleChance('farming', c.id) ? 2 : 1;
+  const n = randInt(c.yield[0], c.yield[1]) * dbl, seeds = Math.random() < 0.6 ? randInt(1, 2) : 0;
+  addItem(c.id, n); if (seeds) addItem(c.seed, seeds);
+  S.stats.made[c.id] = (S.stats.made[c.id] || 0) + n;
+  S.stats.harvests = (S.stats.harvests || 0) + 1;
+  addXp('farming', c.xp);
+  addRenown('ki', 5);
+  S.farm.plots[i] = null;
+  if (S.farm.auto && autoTendOn() && count(c.seed) > 0) plant(i, c.id);
+  emit('harvest', { crop: c.id, n, seeds });
+  dirty = true;
+  return { n, seeds };
+}
+hook('tick', (dt) => {
+  plots().forEach((p, i) => {
+    if (!p) return;
+    const c = CROP_BY[p.crop];
+    if (!c) { S.farm.plots[i] = null; return; }
+    const was = p.t < c.mins * 60;
+    p.t = Math.min(c.mins * 60, p.t + dt * hmul('speed', 'farming'));
+    if (p.t >= c.mins * 60) { if (S.farm.auto && autoTendOn()) harvest(i); else if (was) dirty = true; }
+  });
+});
+
+/* ================================================================ KI: TRANSFORMATIONS */
+// Pick a form on the Battlefield. In combat it multiplies your power but drains stamina;
+// at 0 you drop out of it until stamina is back to 60%. Gravity Training grows stamina and unlocks forms.
+const FORMS = [
+  { id: 'surge',    name: 'Ki Surge',         grav: 10, dmg: 1.3, hp: 1.0, drain: 2 },
+  { id: 'ascended', name: 'Ascended Warrior', grav: 40, dmg: 1.7, hp: 1.2, drain: 4 },
+  { id: 'limit',    name: 'Limit Break',      grav: 75, dmg: 2.5, hp: 1.4, drain: 8 },
+];
+const FORM_BY = Object.fromEntries(FORMS.map((f) => [f.id, f]));
+const transformOn = () => isUnlocked('feature:transform');
+const staminaMax = () => 100 + 2 * (S.skills.gravity ? skillLv('gravity') : 0);
+const formOpen = (f) => transformOn() && skillLv('gravity') >= f.grav;
+const activeForm = () => (S.ki.on && S.ki.form && FORM_BY[S.ki.form]) || null;
+function chooseForm(id) { S.ki.form = id && FORM_BY[id] && formOpen(FORM_BY[id]) ? id : null; if (!S.ki.form) S.ki.on = false; dirty = true; }
+hook('tick', (dt) => {
+  const K = S.ki, max = staminaMax(), fighting = S.combat.zone != null;
+  if (K.stamina == null) K.stamina = max;
+  const f = K.form && FORM_BY[K.form];
+  if (f && fighting && formOpen(f)) {
+    if (!K.on && K.stamina >= max * 0.6) { K.on = true; S.stats.transforms = (S.stats.transforms || 0) + 1; emit('transform', f); }
+    if (K.on) { K.stamina -= f.drain * dt; if (K.stamina <= 0) { K.stamina = 0; K.on = false; emit('transform', null); } }
+  } else if (K.on) K.on = false;
+  if (!K.on) K.stamina = Math.min(max, K.stamina + 3 * dt);
+});
+hook('dmg', () => { const f = activeForm(); return f ? f.dmg : 1; });
+hook('hp', () => { const f = activeForm(); return f ? f.hp : 1; });
+// Gravity Training also deepens Inner Power: +2% energy power per level.
+hook('energy', () => (S.skills.gravity && skillOpen('gravity') ? 1 + 0.02 * skillLv('gravity') : 1));
+
+/* ================================================================ KI: WISH STONES */
+// One stone hides in each world (rare find from its skills and foes). All 7: make a permanent wish.
+const WISHES = [
+  { id: 'power',   name: 'Boundless Power', desc: '+10% damage',              stat: 'dmg',   val: 0.10 },
+  { id: 'body',    name: 'Iron Body',       desc: '+10% max HP',              stat: 'hp',    val: 0.10 },
+  { id: 'haste',   name: 'Endless Haste',   desc: '+8% speed on every skill', stat: 'speed', val: 0.08 },
+  { id: 'fortune', name: 'Golden Fortune',  desc: '+15% gold',                stat: 'gold',  val: 0.15 },
+  { id: 'wisdom',  name: 'Ancient Wisdom',  desc: '+8% XP on every skill',    stat: 'xp',    val: 0.08 },
+  { id: 'luck',    name: 'Lucky Star',      desc: '+10% rare finds',          stat: 'rare',  val: 0.10 },
+];
+const wishesOn = () => isUnlocked('feature:wishes');
+const stoneFor = (realm) => { const i = worldIndex(realm); return i >= 0 && i < 7 ? 'wish_stone_' + (i + 1) : null; };
+const hasAllStones = () => [1, 2, 3, 4, 5, 6, 7].every((i) => count('wish_stone_' + i) > 0);
+function tryStone(realm, chance, source) {
+  const id = stoneFor(realm);
+  if (!wishesOn() || !id || count(id) > 0 || Math.random() >= chance * luckMult()) return;
+  addItem(id, 1);
+  emit('rare', { id, source });
+}
+hook('action', (skill) => tryStone(SKILLS[skill].realm, 1 / 1500, SKILLS[skill].name));
+hook('kill', (e, z) => tryStone(z.realm, z.boss ? 1 / 40 : 1 / 900, e.name));
+function makeWish(id) {
+  const w = WISHES.find((x) => x.id === id);
+  if (!w || !hasAllStones()) return false;
+  for (let i = 1; i <= 7; i++) removeItem('wish_stone_' + i, 1);
+  S.wishes[id] = (S.wishes[id] || 0) + 1;
+  emit('wish', w);
+  dirty = true;
+  return true;
+}
+const wishVal = (stat) => WISHES.reduce((a, w) => a + (w.stat === stat ? w.val * (S.wishes[w.id] || 0) : 0), 0);
+for (const st of ['dmg', 'hp', 'gold', 'rare']) hook(st, () => 1 + wishVal(st));
+hook('speed', () => 1 + wishVal('speed'));
+hook('xp', () => 1 + wishVal('xp'));

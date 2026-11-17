@@ -42,7 +42,7 @@ function defaultState() {
     action: null,                       // { skill, id, prog }
     combat: { zone: null, enemy: null, eHp: 0, pT: 0, eT: 0, respawn: 0, hp: 50,
               style: 'strength', food: 'grilled_minnow', kills: {}, log: [] },
-    equip: { weapon: null, armor: null, accessory: null },
+    equip: { weapon: null, armor: null, accessory: null, gadget: null },
     fruit: null,
     shop: {},
     energy: { capLv: 0, powLv: 0, alloc: {}, lvl: {}, prog: {}, step: '10' },
@@ -59,7 +59,8 @@ function defaultState() {
     gear: {},                           // equipment id -> { xp, rel, gems: [], tier } (awakening, sockets, reforge)
     tech: { slots: [null, null, null], rank: {} },
     ki: { form: null, stamina: 100 },
-    farm: { plots: [] },
+    farm: { plots: [], auto: false },
+    buffs: {},                          // meal buffs: stat -> { v, t (seconds left) }
     tools: {},                          // skill id -> Tinkering tool tier
     wishes: {},
     domain: { cells: [null, null, null, null, null, null, null, null, null] },
@@ -161,7 +162,7 @@ function addXp(id, amt) {
 // World systems (systems.js) plug in here instead of editing the core engine.
 // Multiplier hooks return a factor (1 = no change); 'double' hooks return an added chance.
 const HOOKS = { dmg: [], hp: [], def: [], gold: [], xp: [], speed: [], double: [], rare: [], taken: [], dodge: [], edef: [],
-                tick: [], combat: [], action: [], kill: [], spawn: [], block: [] };
+                tick: [], combat: [], action: [], kill: [], spawn: [], block: [], energy: [] };
 // Why an action cannot run right now ('' = it can). Systems add reasons (max rank reached, no free plot...).
 const actionBlock = (skill, act) => { for (const f of HOOKS.block) { const r = f(skill, act); if (r) return r; } return ''; };
 const hook = (name, fn) => HOOKS[name].push(fn);
@@ -290,7 +291,7 @@ function zoneDanger(zi) {
 
 /* ------------------------------------------------------------- energy */
 const energyCap   = () => Math.floor((100 + 25 * S.energy.capLv) * (1 + 0.2 * pl('reserves')));
-const energyPower = () => (1 + 0.1 * S.energy.powLv) * (1 + 0.25 * pl('fire'));
+const energyPower = () => (1 + 0.1 * S.energy.powLv) * (1 + 0.25 * pl('fire')) * hmul('energy');
 const energyUsed  = () => Object.values(S.energy.alloc).reduce((a, b) => a + b, 0);
 const energyIdle  = () => energyCap() - energyUsed();
 const TRAIN_BY = Object.fromEntries(TRAININGS.map((t) => [t.id, t]));

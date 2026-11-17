@@ -266,6 +266,10 @@ function statRows(st) {
   if (st.def) rows.push(['def', 'Defense', `+${st.def}`]);
   if (st.hp) rows.push(['hp', 'Max HP', `+${st.hp}`]);
   if (st.gold) rows.push(['gold', 'Gold bonus', `+${pct(st.gold)}`]);
+  if (st.rare) rows.push(['rare', 'Rare finds', `+${pct(st.rare)}`]);
+  if (st.cxp) rows.push(['xp', 'Combat XP', `+${pct(st.cxp)}`]);
+  if (st.dodge) rows.push(['dodge', 'Dodge', `+${pct(st.dodge)}`]);
+  if (st.speed) rows.push(['spd', 'Skill speed', `+${pct(st.speed)}`]);
   return rows;
 }
 const statInline = (st) => statRows(st).map(([icn, , v]) => `<span>${ui(icn)}${v}</span>`).join('');
@@ -298,6 +302,7 @@ function sourcesOf(id) {
       ITEMS[k].loot.forEach(([t, w]) => add(t, ['item', k], ITEMS[k].name, w / tot));
     }
     SHOP.forEach((sh) => { if (sh.give) add(sh.give[0], ['shop', sh.id], 'Market', null); });
+    if (typeof EXTRA_SOURCES !== 'undefined') EXTRA_SOURCES.forEach(([id, k, ref, text, rate]) => add(id, [k, ref], text, rate));
   }
   return SOURCES[id] || [];
 }
@@ -360,7 +365,7 @@ function farmPanel() {
 /* =============================================================== VIEWS */
 const VIEWS = {};
 // Extension points filled by ui-systems.js: each entry returns HTML (or '').
-const UIX = { quick: [], homeTop: [], realmSide: [], realmTop: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], actLines: [] };
+const UIX = { quick: [], homeTop: [], realmSide: [], realmTop: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [] };
 const uix = (k, ...a) => UIX[k].map((f) => f(...a) || '').join('');
 
 /* ------------------------------------------------------------- overview */
@@ -410,7 +415,8 @@ VIEWS.realm = (realm, skill) => {
     <div class="sk-ring" data-xpring="${skill}" style="--p:${b.p}" title="Progress to the next level"><span><b data-lv="${skill}">${b.L}</b><small>Level</small></span></div>
   </section>
   ${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
-  ${hdr(s.type === 'voyage' ? 'Voyages' : s.type === 'craft' ? 'Recipes' : 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`)}
+  ${uix('realmTop', realm, skill)}
+  ${s.actions.length ? hdr(s.type === 'voyage' ? 'Voyages' : s.type === 'craft' ? 'Recipes' : 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
   ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}
   </div><aside class="sk-side">
@@ -562,7 +568,7 @@ function logHTML() { return S.combat.log.map((l) => `<div class="${l.c}">${esc(l
 const heroTabs = (tab) => `<nav class="seg big-seg">
   <button class="${tab !== 'collection' ? 'on' : ''}" data-nav="hero">${ui('hero')}<span>Bank & Gear</span></button>
   ${featureOpen('collection') ? `<button class="${tab === 'collection' ? 'on' : ''}" data-nav="hero:collection">${ui('collection')}<span>Collection</span><em>${Math.floor(collectionPct() * 100)}%</em></button>` : `<button class="locked" data-locked="collection" title="${esc(lockedNote('collection'))}">${ui('lock')}<span>Collection</span></button>`}</nav>`;
-const BAG_TABS = [['all', 'equip', 'All'], ['res', 'gem', 'Materials'], ['gem', 'gem', 'Gems'], ['chest', 'chest', 'Treasure'], ['food', 'food', 'Food'], ['equip', 'weapon', 'Gear'], ['fruit', 'fruit', 'Fruit']];
+const BAG_TABS = [['all', 'equip', 'All'], ['res', 'gem', 'Materials'], ['gem', 'gem', 'Gems'], ['chest', 'chest', 'Treasure'], ['food', 'food', 'Food'], ['meal', 'meal', 'Meals'], ['seed', 'farm', 'Seeds'], ['equip', 'weapon', 'Gear'], ['fruit', 'fruit', 'Fruit']];
 VIEWS.hero = (tab) => {
   if (tab === 'collection') return collectionHTML();
   const ids = Object.keys(S.items).filter((k) => S.ui.bank === 'all' || ITEMS[k].type === S.ui.bank)
@@ -578,7 +584,7 @@ VIEWS.hero = (tab) => {
   <div class="hero-layout">
     <section class="win equip-win">
       ${hdr('Equipment')}
-      <div class="eslots">${slot('weapon', 'Weapon', 'weapon')}${slot('armor', 'Armor', 'armor')}${slot('accessory', 'Accessory', 'accessory')}
+      <div class="eslots">${slot('weapon', 'Weapon', 'weapon')}${slot('armor', 'Armor', 'armor')}${slot('accessory', 'Accessory', 'accessory')}${skillOpen('tinkering') || S.equip.gadget ? slot('gadget', 'Gadget', 'gadget') : ''}
         ${S.fruit ? `<div class="eslot fruit">${tile(S.fruit, null)}<span class="es-t"><small>Abyss Fruit</small><b>${ITEMS[S.fruit].name}</b></span></div>` : ''}</div>
       ${hdr('Attributes')}
       ${attrList([['atk', 'Max hit', fmt(pMaxHit())], ['def', 'Defense', fmt(pDef())], ['hp', 'Max HP', fmt(pMaxHp())], ['spd', 'Attack speed', pSpeed().toFixed(1) + 's'], ['gold', 'Gold bonus', '×' + goldMult().toFixed(2)], ['xp', 'XP bonus', '×' + xpMult().toFixed(2)]])}
@@ -615,6 +621,7 @@ function inspectorHTML() {
     if (it.relic) body.push(`<p class="lore">A relic of the ${REALMS[it.relic].name}. Iconic gear from that world is forged from it.</p>`);
     if (uses.length) body.push(`${hdr('Used in')}<ul class="srcs">${uses.slice(0, 8).map(([k, a]) => k === 'gate' ? `<li><span><i>${ui('gate')}</i>${esc(a.name)}</span><b>World gate</b></li>` : `<li><span><i>${ic('skill', k)}</i>${esc(a.name)}${a.schem ? ' <em class="muted">· schematic</em>' : ''}</span><b>${SKILLS[k].name} ${a.level}</b></li>`).join('')}</ul>`);
   }
+  body.push(uix('inspectorAny', selItem));
   body.push(`${hdr('Where to find')}${sourcesHTML(selItem)}`);
   return `${itemHead(selItem)}
     <div class="dt-stats">${stat('Owned', fmt(n), `data-count="${selItem}"`)}${stat('Value', fmt(it.value) + ' g')}${stat('Stack value', fmt(it.value * n) + ' g')}</div>
@@ -722,7 +729,7 @@ VIEWS.power = () => {
 /* ------------------------------------------------------------- market */
 VIEWS.market = () => `
   ${ptitle('Merchant', 'Market')}
-  <div class="shop">${SHOP.map((it) => {
+  <div class="shop">${SHOP.filter((it) => !it.realm || realmOpen(it.realm)).map((it) => {
     const tier = S.shop[it.id] || 0, cost = shopCost(it), maxed = cost === undefined;
     const r = it.give ? 2 : it.cat === 'Charms' ? 5 : 4;
     return `<section class="win ware">${tile(it.give ? it.give[0] : null, it.give ? '×' + it.give[1] : (it.costs ? `${tier}/${it.costs.length}` : ''), { r, icon: ic('shop', it.id), title: it.name })}
