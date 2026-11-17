@@ -799,3 +799,31 @@ button.acard:hover { border-color: color-mix(in srgb, var(--rc) 60%, var(--line)
   .syn-v small { display: none; }
   .ro-syn em { display: none; }
 }
+
+/* ---------------------------------------------------------------- width control
+   Wide screens: content keeps a readable width instead of stretching edge to edge,
+   and skill pages put reference info (milestones, rare finds, synergies) in a side column. */
+#main > * { width: 100%; max-width: 1400px; margin-right: auto; }
+.nowbar { max-width: 760px; margin-right: auto; }
+.sk-layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; align-items: start; }
+.sk-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.sk-col > .hdr { margin: 4px 0 -4px; }
+.sk-side { display: flex; flex-direction: column; gap: 14px; min-width: 0; position: sticky; top: 0; }
+.sk-side .win { padding: 14px; }
+.sk-side .ms-row { grid-template-columns: minmax(0, 1fr); gap: 5px; }
+.sk-side .msc { padding: 6px 9px; }
+.sk-side .msc small { display: block; white-space: normal; }
+.sk-side .msc span { display: flex; }
+.sk-side .rare-row .tile { --ts: 54px; }
+.sk-side .syn-grid { grid-template-columns: minmax(0, 1fr); }
+.sk-banner .sk-xp .pbar { max-width: 420px; }
+.act-grid { grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); }
+@media (max-width: 1250px) {
+  .sk-layout { grid-template-columns: minmax(0, 1fr); }
+  .sk-side { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+}
+@media (max-width: 860px) {
+  .sk-side { display: flex; }
+  .sk-side .msc span { display: none; }
+  .sk-side .ms-row { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+}

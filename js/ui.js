@@ -349,7 +349,7 @@ VIEWS.realm = (realm, skill) => {
   if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Abyss Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
   const open = s.actions.filter((x) => x.level <= b.L).length;
   const active = S.action && S.action.skill === skill;
-  return `
+  return `<div class="sk-layout" style="--rc:${rc(realm)}"><div class="sk-col">
   <section class="sk-banner" style="--rc:${rc(realm)}">
     <div class="sk-bg">${sceneHTML(realm, 'mini')}</div>
     <div class="sk-ic">${ic('skill', skill)}</div>
@@ -358,13 +358,14 @@ VIEWS.realm = (realm, skill) => {
       <div class="pills">${mods.join('')}</div></div>
     <div class="sk-lv"><small>Level</small><b data-lv="${skill}">${b.L}</b><span class="muted">/ ${MAX_LEVEL}</span></div>
   </section>
-  <div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${b.L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b>${m.lv}</b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div>
   ${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
   ${hdr(s.type === 'voyage' ? 'Voyages' : s.type === 'craft' ? 'Recipes' : 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`)}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.map((x) => actCard(skill, x)).join('')}</div>
+  </div><aside class="sk-side">
+  <section class="win">${hdr('Milestones')}<div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${b.L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b>${m.lv}</b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div></section>
+  <section class="win">${hdr('Rare finds', `per action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}<div class="tiles rare-row">${rareTiles(skill).join('')}</div></section>
   <section class="win syn-win" style="--rc:${rc(realm)}">${synergyHTML(synergiesInto(skill), synergiesFrom(skill))}</section>
-  ${hdr('Rare finds', `rolled on every action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}
-  <div class="tiles rare-row">${rareTiles(skill).join('')}</div>`;
+  </aside></div>`;
 };
 function actState(skill, a) {
   if (skillLv(skill) < a.level) return 'locked';
