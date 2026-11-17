@@ -140,12 +140,16 @@ function navRow(key, icon, label, o) {
   return `<button class="nav-row ${on ? 'on' : ''} ${o.sub ? 'sub' : ''}" data-nav="${key}" style="--rc:${o.color || rc('hub')}" title="${label}">
     <span class="nr-ic">${icon}</span><span class="nr-name">${label}</span>
     ${o.skill ? `<span class="nr-lv" data-lv="${o.skill}">${skillLv(o.skill)}</span><span class="nr-xp"><i data-xpbar="${o.skill}"></i></span>` : ''}
-    ${o.busy ? '<i class="nr-busy"></i>' : ''}</button>`;
+    ${o.busy ? '<i class="nr-busy"></i>' : ''}${o.skill && o.skill === guideSkill() && !o.busy ? '<i class="nr-goal" title="Current objective">!</i>' : ''}</button>`;
 }
 function renderRail() {
   const groups = [];
   const quick = [['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['hero:collection', 'collection', 'Collection'], ['market', 'market', 'Market'], ['power', 'power', 'Power'], ['settings', 'settings', 'Settings']];
-  groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => `<button class="nq ${isOn(k) ? 'on' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}</button>`).join('')}</div>`);
+  groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => {
+    const f = featureOfView(k);
+    if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
+    return `<button class="nq ${isOn(k) ? 'on' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}</button>`;
+  }).join('')}</div>`);
   groups.push(`<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
     ${navRow('battle', ui('battle'), S.combat.zone != null ? ZONES[S.combat.zone].name : 'Battlefield', { color: rc('combat'), busy: S.combat.zone != null })}
     <div class="nav-cskills">${['strength', 'defense', 'vitality'].map((k) => `<button class="ncs" data-nav="battle" title="${SKILLS[k].name}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><span class="nr-xp"><i data-xpbar="${k}"></i></span></button>`).join('')}</div></div>`);
@@ -157,7 +161,11 @@ function renderRail() {
   $('#tabbar').innerHTML = [
     `<button class="tab-btn" data-menu>${ui('menu')}<span>Menu</span></button>`,
     ...[['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['battle', 'battle', 'Battle'], ['market', 'market', 'Market']]
-      .map(([k, icn, l]) => `<button class="tab-btn ${isOn(k) ? 'on' : ''}" data-nav="${k}">${ui(icn)}<span>${l}</span></button>`),
+      .map(([k, icn, l]) => {
+        const f = featureOfView(k);
+        if (f && !featureOpen(f)) return `<button class="tab-btn locked" data-locked="${f}">${ui('lock')}<span>${l}</span></button>`;
+        return `<button class="tab-btn ${isOn(k) ? 'on' : ''}" data-nav="${k}">${ui(icn)}<span>${l}</span></button>`;
+      }),
   ].join('');
 }
 
@@ -281,7 +289,8 @@ VIEWS.home = () => {
   return `
   ${ptitle('Tri-Realm Idle', 'Overview')}
   <div class="ov-top">
-    <section class="win">${farm || `<div class="idle-big">${ui('sleep')}<div><b>Nothing is farming</b><p class="muted">Idle games only progress while an activity runs. Pick a skill on the left, or follow the objective.</p></div></div>`}</section>
+    <section class="win">${farm || `<div class="idle-big">${ui('sleep')}<div><b>Nothing is farming</b><p class="muted">Idle games only progress while an activity runs. Pick a skill in the menu, or follow the objective.</p>
+      ${goalState() && !goalState().done ? gbtn('Go to: ' + esc(goalState().g.text), 'play', `data-nav="${goalState().g.go}"`, 'sm') : ''}</div></div>`}</section>
     <section class="win quest-win">${goalHTML()}</section>
   </div>
   ${hdr('Skills', `Total level ${totalLevel()}`)}
@@ -442,7 +451,7 @@ function logHTML() { return S.combat.log.map((l) => `<div class="${l.c}">${esc(l
 /* ------------------------------------------------------------- bank & gear */
 const heroTabs = (tab) => `<nav class="seg big-seg">
   <button class="${tab !== 'collection' ? 'on' : ''}" data-nav="hero">${ui('hero')}<span>Bank & Gear</span></button>
-  <button class="${tab === 'collection' ? 'on' : ''}" data-nav="hero:collection">${ui('collection')}<span>Collection</span><em>${Math.floor(collectionPct() * 100)}%</em></button></nav>`;
+  ${featureOpen('collection') ? `<button class="${tab === 'collection' ? 'on' : ''}" data-nav="hero:collection">${ui('collection')}<span>Collection</span><em>${Math.floor(collectionPct() * 100)}%</em></button>` : `<button class="locked" data-locked="collection" title="${esc(lockedNote('collection'))}">${ui('lock')}<span>Collection</span></button>`}</nav>`;
 const BAG_TABS = [['all', 'equip', 'All'], ['res', 'gem', 'Materials'], ['gem', 'gem', 'Gems'], ['chest', 'chest', 'Treasure'], ['food', 'food', 'Food'], ['equip', 'weapon', 'Gear'], ['fruit', 'fruit', 'Fruit']];
 VIEWS.hero = (tab) => {
   if (tab === 'collection') return collectionHTML();
@@ -542,7 +551,8 @@ function showLoot(title, res) {
   if (res.gold) tiles.unshift(tile(null, fmt(res.gold), { r: 3, icon: ui('gold'), title: 'Gold', cls: 'pop-in' }));
   openModal(obtainedHTML('Items obtained', title, tiles));
 }
-function openModal(html, btn) {
+function openModal(html, btn, nofoot) {
+  $('#modal').classList.toggle('nofoot', !!nofoot);
   $('#modal-body').innerHTML = html;
   $$('#modal-body .pop-in').forEach((el, i) => el.style.setProperty('--d', Math.min(i, 24) * 0.04 + 's'));
   $('#modal-close').innerHTML = `<i class="gbtn-ic">${ui('check')}</i><span>${btn || 'Continue'}</span>`;
@@ -611,6 +621,9 @@ VIEWS.settings = () => `
   ${isStandalone() ? '' : `<section class="win install">${tile(null, null, { r: 4, icon: ui('play') })}
     <span class="upg-t"><b>Play it like an app</b><small>Install Tri-Realm on your phone or computer: full screen, its own icon, works offline.${installPrompt ? '' : ' iPhone / iPad: Share → Add to Home Screen. Android / desktop: browser menu → Install app.'}</small></span>
     ${installPrompt ? gbtn('Install', 'check', 'data-install') : ''}</section>`}
+  <section class="win">${hdr('Help')}
+    <div class="btn-row">${gbtn(S.ui.noTips ? 'Turn beginner tips on' : 'Turn beginner tips off', 'info', 'data-toggletips', 'dark')}${gbtn('Show welcome screen', 'hero', 'data-rewelcome', 'dark')}</div>
+    <p class="muted small">Beginner tips point at the next thing to click for the first ${GUIDE.length} objectives.</p></section>
   <section class="win">${hdr('Save data', 'autosaves every 10 seconds')}
     <div class="btn-row">${gbtn('Save now', 'check', 'data-save', 'dark')}${gbtn('Export', 'log', 'data-export', 'dark')}${gbtn('Import', 'open', 'data-import', 'dark')}${gbtn('Hard reset', 'close', 'data-wipe', 'danger')}</div>
     <textarea id="savebox" rows="5" placeholder="Export puts your save here. To import, paste a save here and press Import."></textarea>
@@ -619,6 +632,8 @@ VIEWS.settings = () => `
 
 /* =============================================================== activity bar + objective */
 function nowHTML() {
+  const gs = goalState();
+  const claim = gs && gs.done ? gbtn('Claim', 'check', 'data-claim', 'sm glow nb-claim') : '';
   if (S.action) {
     const skill = S.action.skill, s = SKILLS[skill], a = findAction(skill, S.action.id), f = farmRates(skill, a);
     return `<div class="nb" style="--rc:${rc(s.realm)}">
@@ -626,7 +641,7 @@ function nowHTML() {
         <span class="nb-txt"><small>${s.name} · Lv <em data-lv="${skill}">${skillLv(skill)}</em></small><b>${esc(a.name)}</b></span></button>
       <span class="nb-prog"><span class="pbar"><i data-nowfill></i></span>
         <span class="nb-stats">${a.out ? `<span><b>${fmt(f.itemsh)}</b>/h</span>` : ''}<span><b>${fmt(f.xph)}</b> xp/h</span><span>Lv up <b data-nextlv>—</b></span>${a.in ? `<span>Left <b data-canmake>${fmt(f.can)}</b></span>` : ''}</span></span>
-      <button class="mini-btn hot" data-stop title="Stop">${ui('stop')}</button></div>`;
+      ${claim}<button class="mini-btn hot" data-stop title="Stop">${ui('stop')}</button></div>`;
   }
   if (S.combat.zone != null) {
     const c = combatRates();
@@ -635,10 +650,9 @@ function nowHTML() {
         <span class="nb-txt"><small>Fighting</small><b>${c.z.name}</b></span></button>
       <span class="nb-prog"><span class="pbar hp"><i data-nowhp></i></span>
         <span class="nb-stats"><span>HP <b data-hpnow></b></span><span><b>≈${fmt(c.kph)}</b> kills/h</span><span><b>≈${fmt(c.xph)}</b> xp/h</span></span></span>
-      <button class="mini-btn hot" data-stopcombat title="Retreat">${ui('stop')}</button></div>`;
+      ${claim}<button class="mini-btn hot" data-stopcombat title="Retreat">${ui('stop')}</button></div>`;
   }
-  const g = goalState();
-  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>Nothing is farming</b></span>${g ? gbtn('Start: ' + esc(g.g.text), 'play', `data-nav="${g.g.go}"`, 'sm') : ''}</div>`;
+  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>Nothing is farming</b></span>${claim || (gs ? gbtn('Next: ' + esc(gs.g.text), 'play', `data-nav="${gs.g.go}"`, 'sm') : '')}</div>`;
 }
 function goalHTML() {
   const st = goalState();
@@ -786,6 +800,7 @@ on('pet', (pet) => {
   toast(`${pet.name} joined you! ${petBonus(pet)}.`, 'rare');
 });
 on('newitem', (id) => {
+  if (!featureOpen('collection')) return;   // beginners: the Collection menu is not unlocked yet
   setTimeout(() => { if (!rareThisTick.has(id)) toast(`New in your Collection: ${ITEMS[id].name}`, 'good'); }, 0);
 });
 on('goal', (g) => { burst('Objective complete', `${g.text} · +${fmt(g.reward)} gold`, ic('goal', GOALS.indexOf(g)), 'var(--gold)'); });
@@ -811,6 +826,7 @@ function render() {
   lastLogVer = -1;
   renderSide();
   update();
+  updateCoach(true);
 }
 
 let lastGold = 0;
@@ -822,6 +838,8 @@ function update() {
   if (Math.floor(S.gold) !== lastGold) { if (S.gold > lastGold) retrigger(goldEl.parentElement, 'bump'); lastGold = Math.floor(S.gold); }
   setText($('#r-bounty'), fmt(S.bounty));
   setText($('#r-karma'), fmt(S.karma));
+  $('#r-bounty').parentElement.hidden = !(S.bounty > 0);
+  $('#r-karma').parentElement.hidden = !(S.karma > 0 || S.rebirths > 0);
 
   // levels / xp
   for (const el of $$('[data-lv]')) setText(el, String(skillLv(el.dataset.lv)));
@@ -911,6 +929,8 @@ function update() {
 
   // gold-priced buttons
   for (const el of $$('[data-cost]')) el.disabled = S.gold < +el.dataset.cost;
+
+  updateCoach();
 }
 
 /* =============================================================== input */
@@ -919,7 +939,13 @@ document.addEventListener('click', (ev) => {
   if (!t) { if (ev.target.id === 'scrim') document.body.classList.remove('menu-open'); return; }
   if (t.disabled) return;
   const d = t.dataset;
-  if ('menu' in d) document.body.classList.toggle('menu-open');
+  if ('menu' in d) { document.body.classList.toggle('menu-open'); updateCoach(true); }
+  else if (d.locked) { retrigger(t, 'shake'); toast(lockedNote(d.locked), 'bad'); }
+  else if (d.welcome) welcomeChoice(d.welcome === 'go');
+  else if ('coachok' in d) { coachOk[S.goal] = 1; updateCoach(true); }
+  else if ('skiptips' in d) { S.ui.noTips = 1; clearCoach(); toast('Tips turned off. Turn them back on anytime in Settings.', 'good'); dirty = true; }
+  else if ('toggletips' in d) { S.ui.noTips = S.ui.noTips ? 0 : 1; coachOk = {}; if (S.ui.noTips) clearCoach(); dirty = true; }
+  else if ('rewelcome' in d) showWelcome();
   else if (d.nav) setView(d.nav);
   else if (d.act) {
     const [s, id] = d.act.split(':');
@@ -952,7 +978,11 @@ document.addEventListener('click', (ev) => {
   else if ('buypow' in d) buyPow();
   else if ('rebirth' in d) { if (confirm('Rebirth? All Inner Power training will reset.')) { const g = karmaGain(); if (rebirth()) burst('Reborn', `+${fmt(g)} Karma`, ui('rebirth'), 'var(--soul)'); } }
   else if (d.perk) buyPerk(d.perk);
-  else if ('claim' in d) claimGoal();
+  else if ('claim' in d) {
+    const before = Object.keys(FEATURE_GOAL).filter(featureOpen);
+    claimGoal();
+    Object.keys(FEATURE_GOAL).filter((f) => featureOpen(f) && !before.includes(f)).forEach((f) => toast(`New menu unlocked: ${{ power: 'Inner Power', market: 'Market', collection: 'Collection' }[f]}`, 'rare'));
+  }
   else if (d.open) {
     const [id, q] = d.open.split(':');
     const res = openChest(id, q === 'all' ? count(id) : 1);
@@ -1031,6 +1061,7 @@ function boot() {
   lastGold = Math.floor(S.gold);
   Object.keys(S.items).forEach((k) => seenItems.add(k));
   render();
+  if (isFreshSave()) showWelcome();
 
   function frame() {
     catchUp();
@@ -1060,7 +1091,9 @@ function boot() {
   });
   window.addEventListener('pagehide', saveGame);
   window.addEventListener('beforeunload', saveGame);
-  $('#modal-close').addEventListener('click', () => $('#modal').classList.remove('show'));
+  $('#modal-close').addEventListener('click', () => { $('#modal').classList.remove('show'); updateCoach(true); });
+  addEventListener('resize', () => updateCoach(true));
+  $('#main').addEventListener('scroll', () => updateCoach(true), { passive: true });
 }
 
 // Wall-clock simulation: works no matter how long frames, timers or the whole page were paused.

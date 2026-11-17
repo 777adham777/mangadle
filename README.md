@@ -31,6 +31,7 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `css/style.css` | All styling |
 | `js/data.js` | Game content: items, skills, zones, shop, objectives |
 | `js/icons.js` | Game icon set (SVG paths) and which icon each item, skill, enemy and screen uses |
+| `js/guide.js` | New-player onboarding: welcome screen, coach bubbles for the first 10 objectives, menu unlocks |
 | `js/scene.js` | Generated background scenes for each world |
 | `js/game.js` | Game engine (no DOM) |
 | `js/ui.js` | Interface: sidebar with every skill, activity bar, skill pages, bank, battle; rendering, input, save/load |
