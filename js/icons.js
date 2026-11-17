@@ -647,3 +647,29 @@ Object.assign(ICONS.shop, { tools_echo: 'open-book' });
 Object.assign(ICONS.ui, { echo: 'aura', awaken2: 'crystal-shine', museum: 'bookshelf' });
 ICONS.beast.stone_owl = 'evil-eyes';
 ICONS.echo = { gilded_hand: 'two-coins', rewind: 'hourglass', star_fist: 'mailed-fist', silent_tide: 'waves', paper_moon: 'night-sleep', iron_bloom: 'flower-twirl' };
+
+// ---- Composite item icons: families that used to share one picture now show their subject
+// (the gear a schematic teaches, the skill a tool serves, the crop a seed grows...) and carry
+// a small badge for the family plus an optional tier tag. ICON_MARK: item id -> { b: badge GI, t: tag }.
+const ICON_MARK = {};
+(() => {
+  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+  const SIGIL = { tide: 'waves', leaf: 'leaf-swirl', soul: 'soul', ki: 'falling-star', hex: 'oni', blade: 'broadsword', ward: 'shield',
+    heart: 'heart-plus', coin: 'coins-pile', lore: 'open-book', luck: 'clover', hunt: 'bow-arrow', echo: 'spark-spirit' };
+  const TRAP = { snare: 'paw', net_trap: 'spider-web', cage_trap: 'padlock', spirit_trap: 'lantern-flame', wyrm_trap: 'sea-serpent', chimera_trap: 'claw' };
+  const set = (id, main, badge, tag) => {
+    if (main && GI[main]) ICONS.item[id] = main;
+    ICON_MARK[id] = { b: badge, t: tag || '' };
+  };
+  for (const id in ITEMS) {
+    const it = ITEMS[id];
+    if (it.type === 'schematic') set(id, ICONS.item[it.teaches], 'scroll-unfurled');
+    else if (it.type === 'scroll') set(id, ICONS.technique[it.tech], 'tied-scroll');
+    else if (it.type === 'tool') set(id, ICONS.skill[it.toolFor], 'cog', ROMAN[it.tier]);
+    else if (it.type === 'seed') set(id, ICONS.item[id.slice(5)], 'leaf-swirl');
+    else if (it.type === 'sigil') set(id, SIGIL[id.slice(6)], 'magic-swirl');
+    else if (it.type === 'wish') set(id, 'crystal-ball', null, it.star + '★');
+    else if (it.type === 'trap') set(id, TRAP[id], 'knapsack', ROMAN[it.tier]);
+    else if (id.startsWith('ancient_')) set(id, ICONS.item[id.slice(8)], 'hourglass');
+  }
+})();

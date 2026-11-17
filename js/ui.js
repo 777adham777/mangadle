@@ -35,10 +35,20 @@ const ui = (k, cls) => ic('ui', k, cls);
 const itemIc = (id, cls) => (id === 'FRUIT' ? ui('fruit', cls) : id === 'GEM' ? ui('gem', cls) : ic('item', id, cls));
 // Actions without an item output (beast hunts, echo rituals...) carry their own icon: a.icon = [kind, id].
 const actIc = (skill, a, cls) => (a.loot ? ic('voyage', a.id, cls) : a.icon ? ic(a.icon[0], a.icon[1], cls) : a.out ? itemIc(Object.keys(a.out)[0], cls) : ic('skill', skill, cls));
+// Family badge + tier tag drawn over an item tile (see ICON_MARK in icons.js).
+function itemMark(id) {
+  const m = typeof ICON_MARK !== 'undefined' && ICON_MARK[id];
+  if (!m) return '';
+  return (m.b && GI[m.b] ? `<span class="tile-badge">${gi(m.b)}</span>` : '') + (m.t ? `<span class="tile-tag">${m.t}</span>` : '');
+}
+const actMark = (a) => (!a.loot && !a.icon && a.out ? itemMark(Object.keys(a.out)[0]) : '');
 function installSprite() {
   if (!hasIcons() || $('#gi-sprite')) return;
   const syms = Object.entries(GI).map(([n, d]) => `<symbol id="gi-${n}" viewBox="0 0 512 512"><path d="${d}"/></symbol>`).join('');
-  document.body.insertAdjacentHTML('afterbegin', `<svg id="gi-sprite" width="0" height="0" style="position:absolute" aria-hidden="true">${syms}</svg>`);
+  // Item-art shading: a light-to-tinted fill per rarity (tiles reference these from CSS).
+  const TINT = ['#c9cfdc', '#e4e7ee', '#d3f5e1', '#d6e6ff', '#eadcff', '#fff0cf'];
+  const grads = TINT.map((c, r) => `<linearGradient id="gi-g${r}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="${c}"/></linearGradient>`).join('');
+  document.body.insertAdjacentHTML('afterbegin', `<svg id="gi-sprite" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${grads}</defs>${syms}</svg>`);
 }
 
 /* =============================================================== rarity + tiles */
@@ -65,7 +75,7 @@ function tile(id, n, o) {
   o = o || {};
   const r = o.unknown ? 0 : (o.r || rarity(id));
   const tag = o.tag || 'span';
-  const art = o.unknown ? '<b class="q">?</b>' : (o.icon || itemIc(id));
+  const art = o.unknown ? '<b class="q">?</b>' : (o.icon || itemIc(id)) + (o.mark != null ? o.mark : !o.icon && id ? itemMark(id) : '');
   return `<${tag} class="tile r${r} ${o.cls || ''}" ${o.attrs || ''} title="${esc(o.title || (o.unknown ? 'Undiscovered' : id ? fruitLabel(id) : ''))}">`
     + `<span class="tile-art">${art}${o.corner || ''}</span>`
     + `${n == null || n === '' ? '' : `<span class="tile-n" ${o.nattrs || ''}>${n}</span>`}</${tag}>`;
@@ -339,7 +349,7 @@ function farmPanel() {
     const skill = S.action.skill, s = SKILLS[skill], a = findAction(skill, S.action.id), f = farmRates(skill, a);
     const outId = a.out ? Object.keys(a.out)[0] : null;
     return `<div class="farm" style="--rc:${rc(s.realm)}">
-      <div class="fm-head"><span class="fm-ring" data-nowring>${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), title: a.name })}</span>
+      <div class="fm-head"><span class="fm-ring" data-nowring>${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), mark: actMark(a), title: a.name })}</span>
         <button class="fm-txt" data-nav="${skillView(skill)}"><small>Farming · ${s.name} Lv <em data-lv="${skill}">${skillLv(skill)}</em></small><b>${esc(a.name)}</b></button>
         ${gbtn('Stop', 'stop', 'data-stop', 'dark sm')}</div>
       <div class="fm-bar"><span class="pbar"><i data-nowfill></i></span><span class="fm-time" data-nowtime></span></div>
@@ -447,7 +457,7 @@ function ctaLabel(skill, a, st) {
 }
 function actCard(skill, a) {
   const st = actState(skill, a), r = actRarity(a), outId = a.out ? Object.keys(a.out)[0] : null, it = outId ? ITEMS[outId] : null;
-  const art = tile(null, null, { r, icon: actIc(skill, a), title: a.name, cls: 's' });
+  const art = tile(null, null, { r, icon: actIc(skill, a), mark: actMark(a), title: a.name, cls: 's' });
   if (st === 'schem') {
     const src = sourcesOf(a.schem)[0];
     return `<div class="acard schem" data-card="${skill}:${a.id}" data-state="schem">
@@ -761,7 +771,7 @@ function nowHTML() {
   if (S.action) {
     const skill = S.action.skill, s = SKILLS[skill], a = findAction(skill, S.action.id), f = farmRates(skill, a);
     return `<div class="nb" style="--rc:${rc(s.realm)}">
-      <button class="nb-main" data-nav="${skillView(skill)}" title="Go to ${s.name}">${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), cls: 'xs', title: a.name })}
+      <button class="nb-main" data-nav="${skillView(skill)}" title="Go to ${s.name}">${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), mark: actMark(a), cls: 'xs', title: a.name })}
         <span class="nb-txt"><small>${s.name} · Lv <em data-lv="${skill}">${skillLv(skill)}</em></small><b>${esc(a.name)}</b></span></button>
       <span class="nb-prog"><span class="pbar"><i data-nowfill></i></span>
         <span class="nb-stats">${a.out ? `<span><b>${fmt(f.itemsh)}</b>/h</span>` : ''}<span><b>${fmt(f.xph)}</b> xp/h</span><span>Lv up <b data-nextlv>—</b></span>${a.in ? `<span>Left <b data-canmake>${fmt(f.can)}</b></span>` : ''}</span></span>
