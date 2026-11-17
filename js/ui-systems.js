@@ -248,6 +248,95 @@ document.addEventListener('click', (ev) => {
   else if (d.pact) togglePact(d.pact);
 });
 
+/* ============================================================ HUNTER: CONTRACTS + CARD BOOK */
+VIEW_FEATURE.contracts = 'contracts';
+Object.assign(TYPE_LABEL, { bait: 'Bait' });
+COL_GROUPS.push(['trap', 'Traps'], ['bait', 'Baits']);
+UIX.quick.push(() => (contractsOn() || isUnlocked('realm:hunter') ? [['contracts', 'contracts', 'Contracts']] : []));
+const contractTitle = (c) => (c.kind === 'kill' ? `Defeat ${fmt(c.n)} foes in ${ZONES.find((z) => z.id === c.target).name}` : `${c.kind === 'gather' ? 'Gather' : 'Make'} ${fmt(c.n)} ${ITEMS[c.target].name}`);
+const contractIcon = (c) => (c.kind === 'kill' ? ic('zone', c.target) : itemIc(c.target));
+const contractGo = (c) => (c.kind === 'kill' ? 'battle' : `realm:${c.realm}:${c.skill}`);
+VIEWS.contracts = () => {
+  const L = licence(), next = RANKS[L + 1], C = S.contracts;
+  const card = (c, i) => {
+    const p = contractProg(c), done = p >= c.n;
+    return `<section class="win contract ${done ? 'done' : ''}" style="--rc:${rc(c.realm)}">
+      <div class="ct-head"><span class="ct-ic">${contractIcon(c)}</span><div><small>${REALMS[c.realm].name} · ${'★'.repeat(c.stars)}</small><b>${contractTitle(c)}</b></div></div>
+      <div class="q-prog"><span class="xpbar thin gold"><i data-ctbar="${i}" style="width:${(p / c.n) * 100}%"></i></span><span data-cttxt="${i}">${fmt(Math.max(0, p))} / ${fmt(c.n)}</span></div>
+      <div class="ct-foot">${done ? gbtn('Claim', 'check', `data-ctclaim="${i}"`, 'sm glow') : gbtn('Go', 'play', `data-nav="${contractGo(c)}"`, 'dark sm')}
+        ${done ? '' : gbtn(rerollCost() ? `New contract · ${fmt(rerollCost())}` : 'New contract · free', 'rebirth', `data-ctreroll="${i}" ${rerollCost() && S.gold < rerollCost() ? 'disabled' : ''}`, 'dark sm')}</div>
+    </section>`;
+  };
+  const page = (r) => {
+    const ids = cardsOf(r), got = ids.filter((k) => S.cards[k]).length;
+    return `<section class="win cbook" style="--rc:${rc(r)}">${hdr(REALMS[r].name, `${got} / ${ids.length}${pageDone(r) ? ' · complete: +10% speed here, +5% damage & defense in its zones' : ''}`)}
+      <div class="cards">${ids.map((k) => { const c = CARDS[k], own = S.cards[k]; return `<div class="hcard ${own ? 'own' : ''}" title="${own ? esc(c.name) : 'Unknown card'}">${own ? (c.kind === 'foe' ? ic('enemy', c.ref) : itemIc(c.ref)) : '<b class="q">?</b>'}<small>${own ? esc(c.name) : '???'}</small></div>`; }).join('')}</div></section>`;
+  };
+  return `${ptitle("Hunter's Wilds", 'Contracts')}
+  <section class="win licence"><div class="lc-badge">${ui('star2')}<b>${S.contracts.stars}</b></div>
+    <div><small>Hunter Licence</small><h2>${RANKS[L][1]}</h2><p class="muted small">${next ? `${next[0] - S.contracts.stars} more stars to ${next[1]}. ` : ''}Rewards ×${RANKS[L][2]} · ${contractSlots()} contracts · Silver: a free new contract every refresh · Gold: 5 contracts.</p></div>
+    <div class="lc-next"><small>New contracts in</small><b data-ctnext>${fmtTime(Math.max(0, (C.next - Date.now()) / 1000))}</b></div></section>
+  ${hdr('Board', 'targets in every world you have opened')}
+  <div class="contracts">${C.list.map(card).join('') || '<div class="empty-note">No contracts yet.</div>'}</div>
+  ${hdr('Card Book', 'contracts give a card 70% of the time; foes drop them very rarely')}
+  <div class="cbooks">${WORLD_ORDER.filter(realmOpen).map(page).join('')}</div>`;
+};
+UPD.push(() => {
+  const el = $('[data-ctnext]');
+  if (!el) return;
+  setText(el, fmtTime(Math.max(0, (S.contracts.next - Date.now()) / 1000)));
+  S.contracts.list.forEach((c, i) => {
+    const p = contractProg(c), b = $(`[data-ctbar="${i}"]`);
+    if (b) b.style.width = Math.min(100, (p / c.n) * 100) + '%';
+    setText($(`[data-cttxt="${i}"]`), `${fmt(Math.max(0, p))} / ${fmt(c.n)}`);
+    const sec = b && b.closest('.contract');
+    if (sec && (p >= c.n) !== sec.classList.contains('done')) dirty = true;
+  });
+});
+on('contract', (d) => toast(`Contract done: +${fmt(d.gold)} gold, +${d.stars}★${d.card ? `, card: ${CARDS[d.card].name}` : ''}`, 'rare'));
+on('card', (d) => { if (d.done) burst('Card page complete', REALMS[CARDS[d.id].realm].name, ui('card'), rc(CARDS[d.id].realm)); else toast(`New card: ${CARDS[d.id].name} (${d.source})`, 'good'); });
+
+/* ============================================================ HUNTER: BEASTS */
+UIX.realmTop.push((realm, skill) => {
+  if (skill !== 'taming') return '';
+  const ids = Object.keys(BEASTS);
+  return `${hdr('Companions', 'one active at a time · levels up while active, or with Beast Essence')}
+    <div class="beasts">${ids.map((id) => {
+      const B = BEASTS[id], own = S.beasts[id], on = companion() === id, lv = beastLv(id);
+      if (!own) return `<div class="beast unknown">${ic('beast', id)}<span><b>${B.name}</b><small>${REALMS[B.realm].name} · hunt at Beast Taming ${B.level} with a ${ITEMS[B.trap].name}</small></span><em>+${pct(B.base)} ${B.desc}</em></div>`;
+      const nxt = lv < 20 ? 40 * lv * lv : 0, prog = lv < 20 ? (S.beasts[id].xp - 40 * (lv - 1) ** 2) / (nxt - 40 * (lv - 1) ** 2) : 1;
+      return `<div class="beast ${on ? 'on' : ''}" style="--rc:${rc(B.realm)}">${ic('beast', id)}<span><b>${B.name} · Lv ${lv}</b><small>+${pct(beastVal(id))} ${B.desc}</small>
+        <span class="pbar"><i style="width:${prog * 100}%"></i></span></span>
+        <span class="bt-cta">${on ? '<em class="ok">Active</em>' : gbtn('Make active', 'check', `data-companion="${id}"`, 'sm')}
+        ${lv < 20 && count('beast_essence') ? gbtn(`Feed ×${Math.min(10, count('beast_essence'))}`, 'eat', `data-feed="${id}"`, 'dark sm') : ''}</span></div>`;
+    }).join('')}</div>`;
+});
+UIX.actLines.push((skill, a) => {
+  if (a.beast) return `<div class="ac-note"><span>${ic('beast', a.beast)}${S.beasts[a.beast] ? 'Tamed · gives Beast Essence' : `Capture chance ${pct(captureChance(a))}`}</span></div>`;
+  const it = a.out && ITEMS[Object.keys(a.out)[0]];
+  if (it && it.type === 'trap') return `<div class="ac-note"><span>${ui('beast')}For: ${Object.values(BEASTS).filter((b) => b.trap === it.id || b.trap === Object.keys(a.out)[0]).map((b) => b.name).join(', ')}</span></div>`;
+  if (it && it.type === 'bait') return `<div class="ac-note"><span>${ui('bait')}${SKILLS[it.baitFor].name}: +50% rare finds, +10% double</span></div>`;
+  return '';
+});
+UIX.realmSide.push((realm, skill) => {
+  const b = Object.keys(ITEMS).find((k) => ITEMS[k].type === 'bait' && ITEMS[k].baitFor === skill);
+  if (!b || !skillOpen('trapcraft')) return '';
+  return `<section class="win">${hdr('Bait', `${fmt(count(b))} ${ITEMS[b].name}`)}
+    <label class="tog"><input type="checkbox" data-usebait ${S.useBait !== false ? 'checked' : ''}><span>Use bait: 1 per action, +50% rare finds, +10% double</span></label></section>`;
+});
+on('tamed', (id) => burst('Beast tamed', `${BEASTS[id].name} · +${pct(beastVal(id))} ${BEASTS[id].desc}`, ic('beast', id), rc(BEASTS[id].realm)));
+
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest('button');
+  if (!t || t.disabled) return;
+  const d = t.dataset;
+  if (d.ctclaim !== undefined) claimContract(+d.ctclaim);
+  else if (d.ctreroll !== undefined) rerollContract(+d.ctreroll);
+  else if (d.companion) setCompanion(d.companion);
+  else if (d.feed) feedBeast(d.feed, 10);
+});
+document.addEventListener('change', (ev) => { if ('usebait' in ev.target.dataset) { S.useBait = ev.target.checked; dirty = true; } });
+
 /* ======================================================= input for systems */
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('button');

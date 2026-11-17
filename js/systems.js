@@ -448,3 +448,147 @@ hook('gold', () => (pactOn('poverty') ? 0.4 : 1));
 hook('rare', () => (pactOn('poverty') ? 1 + 0.4 * pactMult() : 1) * (pactOn('blind') ? 0.5 : 1));
 hook('speed', () => (pactOn('focus') ? 1 + 0.3 * pactMult() : 1));
 hook('xp', (skill) => (pactOn('focus') && SKILLS[skill].type === 'combat' ? 0.5 : 1) * (pactOn('blind') ? 1 + 0.25 * pactMult() : 1));
+
+/* ================================================================ HUNTER: BAIT */
+// While you carry bait for a skill (and bait is on), each action uses one: +50% rare finds, +10% double.
+const baitFor = (skill) => Object.keys(ITEMS).find((k) => ITEMS[k].type === 'bait' && ITEMS[k].baitFor === skill && count(k) > 0);
+const baitOn = (skill) => S.useBait !== false && !!baitFor(skill);
+hook('rare', (skill) => (skill && baitOn(skill) ? 1.5 : 1));
+hook('double', (skill) => (baitOn(skill) ? 0.1 : 0));
+hook('action', (skill) => { const b = S.useBait !== false && baitFor(skill); if (b) removeItem(b, 1); });
+
+/* ================================================================ HUNTER: BEASTS */
+// Beast Taming actions use a trap: capture chance 30% + 2% per level above the beast (max 85%).
+// Already tamed: it leaves Beast Essence instead. One companion is active; it gains levels (max 20)
+// over time and from essence, and its bonus grows with them.
+const beastLv = (id) => { const b = S.beasts[id]; return b ? Math.min(20, 1 + Math.floor(Math.sqrt(b.xp / 40))) : 0; };
+const beastVal = (id) => { const B = BEASTS[id]; return B.base + B.per * (beastLv(id) - 1); };
+const companion = () => (S.companion && S.beasts[S.companion] ? S.companion : null);
+const captureChance = (act) => Math.min(0.85, 0.3 + 0.02 * Math.max(0, skillLv('taming') - act.level));
+hook('action', (skill, act) => {
+  if (!act.beast) return;
+  if (S.beasts[act.beast]) { const n = randInt(1, 2); addItem('beast_essence', n); return; }
+  if (Math.random() < captureChance(act) * luckMult()) {
+    S.beasts[act.beast] = { xp: 0 };
+    if (!companion()) S.companion = act.beast;
+    emit('tamed', act.beast);
+    dirty = true;
+  }
+});
+function setCompanion(id) { if (S.beasts[id]) { S.companion = id; dirty = true; } }
+function feedBeast(id, n) {
+  n = Math.min(n, count('beast_essence'));
+  if (!S.beasts[id] || n <= 0 || beastLv(id) >= 20) return false;
+  removeItem('beast_essence', n);
+  S.beasts[id].xp += 25 * n;
+  dirty = true;
+  return true;
+}
+hook('tick', (dt) => { const c = companion(); if (c && beastLv(c) < 20) S.beasts[c].xp += dt / 10; });
+function compFx(kind, skill) {
+  const c = companion();
+  if (!c) return 0;
+  const K = BEASTS[c].kind;
+  if (K === kind) return beastVal(c);
+  if (kind === 'speed' && skill && (K === 'speed:' + skill || (K === 'gather' && SKILLS[skill].type === 'gather'))) return beastVal(c);
+  return 0;
+}
+hook('speed', (skill) => 1 + compFx('speed', skill));
+for (const k of ['dmg', 'hp', 'rare']) hook(k, () => 1 + compFx(k));
+hook('xp', () => 1 + compFx('xp'));
+hook('dodge', () => compFx('dodge'));
+
+/* ================================================================ HUNTER: CONTRACTS */
+// Licence ranks from stars: Bronze 10, Silver 40, Gold 100. 3 contracts (4 at Silver, 5 at Gold),
+// new ones every 4 hours; targets come from every world you have opened.
+const CONTRACT_HOURS = 4;
+const RANKS = [[0, 'Unranked', 1], [10, 'Bronze Hunter', 1.25], [40, 'Silver Hunter', 1.5], [100, 'Gold Hunter', 2]];
+const contractsOn = () => isUnlocked('feature:contracts');
+const licence = () => { let r = 0; RANKS.forEach((x, i) => { if (S.contracts.stars >= x[0]) r = i; }); return r; };
+const contractSlots = () => 3 + (licence() >= 2 ? 1 : 0) + (licence() >= 3 ? 1 : 0);
+function rollContract() {
+  const worlds = WORLD_ORDER.filter(realmOpen);
+  const r = pick(worlds), kinds = ['kill', 'gather', 'craft'];
+  for (let tries = 0; tries < 20; tries++) {
+    const kind = pick(kinds);
+    if (kind === 'kill') {
+      const zs = ZONES.filter((z, i) => z.realm === r && !z.boss && zoneUnlocked(i));
+      if (!zs.length) continue;
+      const z = pick(zs), n = randInt(3, 8) * 10;
+      return { kind, realm: r, target: z.id, n, base: S.combat.kills[z.id] || 0, stars: 1 + (worldIndex(r) >= 3 ? 1 : 0) };
+    }
+    const sks = Object.keys(SKILLS).filter((k) => SKILLS[k].realm === r && skillOpen(k) && SKILLS[k].type === (kind === 'gather' ? 'gather' : 'craft'));
+    if (!sks.length) continue;
+    const sk = pick(sks), acts = SKILLS[sk].actions.filter((a) => a.out && a.level <= skillLv(sk) && !a.schem && ITEMS[Object.keys(a.out)[0]].type !== 'tool' && ITEMS[Object.keys(a.out)[0]].type !== 'scroll');
+    if (!acts.length) continue;
+    const a = pick(acts), item = Object.keys(a.out)[0], n = kind === 'gather' ? randInt(10, 25) * 10 : randInt(2, 6) * 10;
+    return { kind, realm: r, target: item, skill: sk, n, base: S.stats.made[item] || 0, stars: 1 + (a.level >= 50 ? 1 : 0) };
+  }
+  return null;
+}
+function refreshContracts(force) {
+  const C = S.contracts, now = Date.now();
+  if (!contractsOn()) return;
+  if (!force && C.next && now < C.next && C.list.length) { while (C.list.length < contractSlots()) { const c = rollContract(); if (!c) break; C.list.push(c); } return; }
+  C.list = [];
+  for (let i = 0; i < contractSlots(); i++) { const c = rollContract(); if (c) C.list.push(c); }
+  C.next = now + CONTRACT_HOURS * 3600 * 1000;
+  C.rerolls = licence() >= 2 ? 1 : 0;
+  dirty = true;
+}
+const contractProg = (c) => Math.min(c.n, (c.kind === 'kill' ? S.combat.kills[c.target] || 0 : S.stats.made[c.target] || 0) - c.base);
+function claimContract(i) {
+  const C = S.contracts, c = C.list[i];
+  if (!c || contractProg(c) < c.n) return null;
+  const mult = RANKS[licence()][2], gold = Math.round((500 + 400 * worldIndex(c.realm) ** 2) * c.stars * mult * 10);
+  S.gold += gold;
+  C.stars += c.stars;
+  S.stats.contracts = (S.stats.contracts || 0) + 1;
+  addRenown('hunter', 20); addRenown(c.realm, 40);
+  const card = Math.random() < 0.7 ? giveCard(c.realm, 'Contract') : null;
+  C.list.splice(i, 1);
+  const nc = rollContract(); if (nc) C.list.splice(i, 0, nc);
+  emit('contract', { gold, stars: c.stars, card });
+  dirty = true;
+  return { gold, card };
+}
+function rerollContract(i) {
+  const C = S.contracts;
+  if (!C.list[i]) return false;
+  const cost = 5000 * (1 + worldIndex(frontier()));
+  if (C.rerolls > 0) C.rerolls--; else if (S.gold >= cost) S.gold -= cost; else return false;
+  const nc = rollContract(); if (nc) C.list[i] = nc;
+  dirty = true;
+  return true;
+}
+const rerollCost = () => (S.contracts.rerolls > 0 ? 0 : 5000 * (1 + worldIndex(frontier())));
+hook('tick', () => { if (contractsOn() && (!S.contracts.next || Date.now() >= S.contracts.next || S.contracts.list.length < contractSlots())) refreshContracts(); });
+
+/* ================================================================ HUNTER: CARD BOOK */
+// One page per world: a card for each of its foes and relics. Cards come from contracts (70%),
+// and very rarely from that world's foes. A full page: +10% speed for its skills, +5% damage & defense in its zones.
+const CARDS = {};      // id -> { realm, name, kind ('foe' | 'relic'), ref }
+function buildCards() {
+  for (const r of WORLD_ORDER) {
+    const foes = [...new Set(ZONES.filter((z) => z.realm === r).flatMap((z) => z.enemies.map((e) => e.name)))];
+    foes.forEach((n, i) => { CARDS[`card_${r}_f${i}`] = { realm: r, name: n, kind: 'foe', ref: n }; });
+    relicsOf(r).forEach((k, i) => { CARDS[`card_${r}_r${i}`] = { realm: r, name: ITEMS[k].name, kind: 'relic', ref: k }; });
+  }
+}
+buildCards();
+const cardsOf = (r) => Object.keys(CARDS).filter((k) => CARDS[k].realm === r);
+const pageDone = (r) => { const c = cardsOf(r); return c.length > 0 && c.every((k) => S.cards[k]); };
+function giveCard(realm, source) {
+  const pool = cardsOf(realm).filter((k) => !S.cards[k]);
+  if (!pool.length) { S.gold += 2000 * (1 + worldIndex(realm)); return null; }
+  const id = pick(pool);
+  S.cards[id] = 1;
+  emit('card', { id, source, done: pageDone(realm) });
+  dirty = true;
+  return id;
+}
+hook('kill', (e, z) => { if (contractsOn() && Math.random() < 1 / 2500 * luckMult()) giveCard(z.realm, e.name); });
+hook('speed', (skill) => (pageDone(SKILLS[skill].realm) ? 1.1 : 1));
+const cardZoneFx = () => { const z = zoneOfFight(); return z && pageDone(z.realm) ? 1.05 : 1; };
+hook('dmg', cardZoneFx);
+hook('def', cardZoneFx);

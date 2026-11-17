@@ -33,7 +33,8 @@ function icName(kind, id) {
 const ic = (kind, id, cls) => gi(icName(kind, id), cls);
 const ui = (k, cls) => ic('ui', k, cls);
 const itemIc = (id, cls) => (id === 'FRUIT' ? ui('fruit', cls) : id === 'GEM' ? ui('gem', cls) : ic('item', id, cls));
-const actIc = (skill, a, cls) => (a.loot ? ic('voyage', a.id, cls) : itemIc(Object.keys(a.out)[0], cls));
+// Actions without an item output (beast hunts, echo rituals...) carry their own icon: a.icon = [kind, id].
+const actIc = (skill, a, cls) => (a.loot ? ic('voyage', a.id, cls) : a.icon ? ic(a.icon[0], a.icon[1], cls) : a.out ? itemIc(Object.keys(a.out)[0], cls) : ic('skill', skill, cls));
 function installSprite() {
   if (!hasIcons() || $('#gi-sprite')) return;
   const syms = Object.entries(GI).map(([n, d]) => `<symbol id="gi-${n}" viewBox="0 0 512 512"><path d="${d}"/></symbol>`).join('');
@@ -53,7 +54,7 @@ function rarity(id) {
   return v >= 2000 ? 5 : v >= 300 ? 4 : v >= 60 ? 3 : v >= 12 ? 2 : 1;
 }
 const rarityVoy = (a) => (a.level < 25 ? 3 : a.level < 55 ? 4 : 5);
-const actRarity = (a) => (a.loot ? rarityVoy(a) : rarity(Object.keys(a.out)[0]));
+const actRarity = (a) => (a.loot ? rarityVoy(a) : a.out ? rarity(Object.keys(a.out)[0]) : a.level < 30 ? 3 : a.level < 60 ? 4 : 5);
 const TYPE_LABEL = { res: 'Material', food: 'Food', gem: 'Gem', chest: 'Treasure', fruit: 'Abyss Fruit', schematic: 'Schematic' };
 const typeLabel = (id) => { const it = ITEMS[id]; if (it.relic) return `Relic · ${REALMS[it.relic].name}`; if (it.type === 'equip' && SCHEM_OF[id]) return 'Iconic ' + it.slot; return it.type === 'equip' ? it.slot[0].toUpperCase() + it.slot.slice(1) : TYPE_LABEL[it.type] || 'Item'; };
 const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Abyss Fruit' : id === 'GEM' ? 'Random gem' : ITEMS[id].name);
@@ -468,7 +469,7 @@ function actCard(skill, a) {
   lines.push(uix('actLines', skill, a));
   if (it && it.type === 'food') lines.push(`<div class="ac-note"><span>${ui('hp')}Heals ${foodHeal(outId)} HP</span></div>`);
   return `<button class="acard" data-act="${skill}:${a.id}" data-card="${skill}:${a.id}" data-state="${st}">
-    <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>${a.loot ? 'Voyage' : typeLabel(outId)} · Lv ${a.level}</small></div><span class="ac-cta" data-cta2>${ctaLabel(skill, a, st)}</span></div>
+    <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>${a.loot ? 'Voyage' : outId ? typeLabel(outId) : a.kind || SKILLS[skill].name} · Lv ${a.level}</small></div><span class="ac-cta" data-cta2>${ctaLabel(skill, a, st)}</span></div>
     <div class="ac-stats"><span title="Time per action">${ui('time')}<b>${fmtTime(f.T)}</b></span><span title="XP per action">${ui('xp')}<b>${fmt(a.xp)}</b> xp</span><span title="XP per hour"><b>${fmt(f.xph)}</b> xp/h</span></div>
     ${lines.join('')}
     <div class="ac-foot">${it ? `<span class="ac-own">Owned <b data-count="${outId}">${fmt(count(outId))}</b></span>` : `<span class="ac-own">${fmt(f.per)} / hour</span>`}

@@ -601,3 +601,26 @@ for (const id in ITEMS) {
 }
 Object.assign(ICONS.shop, { tools_hex: 'tied-scroll' });
 Object.assign(ICONS.ui, { domain: 'magic-swirl', pact: 'prayer-beads' });
+
+// ---- Hunter's Wilds
+ICONS.realm.hunter = 'wolf-howl';
+Object.assign(ICONS.skill, { tracking: 'paw', trapcraft: 'knapsack', taming: 'wolf-head' });
+Object.assign(ICONS.zone, { thicket: 'leaf-swirl', cliffs: 'mountains', ruins: 'stone-tower', chimera: 'claw' });
+Object.assign(ICONS.enemy, { 'Rival Examinee': 'hooded-assassin', 'Swamp Mimic': 'frog', 'Cliff Wyvern': 'sea-dragon', 'Bandit Hunter': 'bow-arrow',
+  'Ruin Guardian': 'rock-golem', 'Feral Chimera': 'fangs', 'Chimera King': 'claw' });
+Object.assign(ICONS.item, {
+  wild_fur: 'fur-shirt', swift_feather: 'wingfoot', boar_tusk: 'fangs', stag_antler: 'horned-skull', lynx_pelt: 'paw', wyrm_scale: 'fish-scales', chimera_mane: 'fire-tail',
+  trail_stone: 'stone-block', beastlord_claw: 'claw', chimera_heart: 'mineral-heart', beast_essence: 'sparkles',
+  fish_bait: 'flying-trout', scent_lure: 'flower-twirl',
+  hunter_glaive: 'magic-trident', wildhide_coat: 'fur-shirt', star_badge: 'round-star', sigil_hunt: 'magic-swirl',
+});
+for (const id in ITEMS) {
+  const t = ITEMS[id].type;
+  if (t === 'trap') ICONS.item[id] = 'knapsack';
+  else if (t === 'tool') ICONS.item[id] = 'cog';
+  else if (t === 'schematic') ICONS.item[id] = 'scroll-unfurled';
+}
+Object.assign(ICONS.shop, { tools_hunter: 'knapsack' });
+Object.assign(ICONS.ui, { contracts: 'notebook', card: 'open-book', beast: 'wolf-head', bait: 'flying-trout', star2: 'round-star' });
+ICONS.beast = { reef_turtle: 'juggling-seal', storm_gull: 'seagull', ninken_pup: 'wolf-head', ghost_cat: 'cat', thunder_ape: 'troll',
+  cursed_toad: 'frog', great_stag: 'horned-skull', sky_lynx: 'paw' };
