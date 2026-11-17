@@ -803,7 +803,7 @@ button.acard:hover { border-color: color-mix(in srgb, var(--rc) 60%, var(--line)
 /* ---------------------------------------------------------------- width control
    Wide screens: content keeps a readable width instead of stretching edge to edge,
    and skill pages put reference info (milestones, rare finds, synergies) in a side column. */
-#main > * { width: 100%; max-width: 1400px; margin-right: auto; }
+#main > * { width: 100%; max-width: 2400px; margin-right: auto; }
 .nowbar { max-width: 760px; margin-right: auto; }
 .sk-layout { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 16px; align-items: start; }
 .sk-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
@@ -827,3 +827,47 @@ button.acard:hover { border-color: color-mix(in srgb, var(--rc) 60%, var(--line)
   .sk-side .msc span { display: none; }
   .sk-side .ms-row { grid-template-columns: repeat(5, minmax(0, 1fr)); }
 }
+
+/* ---------------------------------------------------------------- dense skill page
+   Fill the width, keep the header and the current farm short so the action cards
+   start high on the screen; locked actions collapse into small chips. */
+#main { padding: 14px 18px 40px; gap: 12px; }
+.sk-layout { grid-template-columns: minmax(0, 1fr) 320px; gap: 14px; }
+.sk-col { gap: 12px; }
+.sk-banner { padding: 12px 18px; gap: 14px; }
+.sk-ic { width: 52px; height: 52px; font-size: 30px; border-radius: 12px; }
+.sk-main { gap: 5px; }
+.sk-main h1 { font-size: 26px; }
+.sk-lv b { font-size: 42px; }
+.farm-win { padding: 12px 14px; }
+.act-grid { grid-template-columns: repeat(auto-fill, minmax(262px, 1fr)); gap: 10px; align-items: start; }
+.lock-strip { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 6px; }
+.lchip { display: flex; align-items: center; gap: 9px; padding: 5px 10px 5px 5px; border-radius: 8px; border: 1px dashed var(--line2); color: var(--mute); min-width: 0; }
+.lchip .tile { filter: grayscale(1) brightness(0.55); }
+.lchip span { display: flex; flex-direction: column; min-width: 0; line-height: 1.2; }
+.lchip b { font: 600 14px var(--display); color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.lchip small { display: flex; align-items: center; gap: 4px; font-size: 11.5px; }
+.lchip small .gi { font-size: 10px; }
+.sk-side { gap: 12px; max-height: calc(100dvh - var(--hud-h) - 28px); overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; }
+.sk-side .win { padding: 12px; }
+.sk-side .hdr { margin-bottom: 8px; }
+.sk-side .msc { padding: 4px 8px; gap: 8px; }
+.sk-side .msc b { width: 30px; height: 22px; font-size: 13px; }
+.sk-side .msc em { font-size: 12px; }
+.sk-side .msc small { font-size: 11px; }
+@media (min-width: 1100px) {
+  .farm-win .farm { display: grid; grid-template-columns: minmax(250px, 320px) minmax(0, 1fr); grid-template-areas: "head bar" "head stats"; column-gap: 18px; row-gap: 8px; align-items: center; }
+  .farm-win .fm-head { grid-area: head; align-self: stretch; padding-right: 16px; border-right: 1px solid var(--line); }
+  .farm-win .fm-txt b { font-size: 19px; }
+  .farm-win .fm-bar { grid-area: bar; }
+  .farm-win .fm-bar .pbar { height: 12px; }
+  .farm-win .fm-stats { grid-area: stats; grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 6px; }
+  .farm-win .stat { padding: 4px 9px; }
+  .farm-win .stat b { font-size: 16px; }
+}
+@media (max-width: 1250px) { .sk-side { max-height: none; overflow: visible; } }
+@media (max-width: 1250px) {
+  .sk-layout { grid-template-columns: minmax(0, 1fr); }
+  .sk-side { position: static; display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+}
+@media (max-width: 860px) { .sk-side { display: flex; } .act-grid { grid-template-columns: minmax(0, 1fr); } }

@@ -360,7 +360,8 @@ VIEWS.realm = (realm, skill) => {
   </section>
   ${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
   ${hdr(s.type === 'voyage' ? 'Voyages' : s.type === 'craft' ? 'Recipes' : 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`)}
-  <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.map((x) => actCard(skill, x)).join('')}</div>
+  <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
+  ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="locked" title="${esc(x.name)}: requires ${s.name} level ${x.level}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}
   </div><aside class="sk-side">
   <section class="win">${hdr('Milestones')}<div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${b.L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b>${m.lv}</b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div></section>
   <section class="win">${hdr('Rare finds', `per action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}<div class="tiles rare-row">${rareTiles(skill).join('')}</div></section>
