@@ -14,7 +14,7 @@ const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const skillsOf = (realm) => Object.keys(SKILLS).filter((k) => SKILLS[k].realm === realm);
 const openSkillsOf = (realm) => skillsOf(realm).filter(skillOpen);
-const openRealms = () => ['seas', 'soul', 'shinobi'].filter(realmOpen);   // in the order they open
+const openRealms = () => ['shinobi', 'soul', 'seas'].filter(realmOpen);   // in the order they open
 const totalLevel = () => Object.keys(SKILLS).reduce((a, k) => a + skillLv(k), 0);
 
 // UI accent per world
@@ -47,14 +47,15 @@ function rarity(id) {
   const it = ITEMS[id];
   if (!it) return 1;
   if (it.type === 'fruit' || id === 'rift_shard') return 5;
+  if (it.type === 'schematic') return 4;
   if (it.type === 'gem') return it.value >= 180 ? 4 : 3;
   const v = it.value;
   return v >= 2000 ? 5 : v >= 300 ? 4 : v >= 60 ? 3 : v >= 12 ? 2 : 1;
 }
 const rarityVoy = (a) => (a.level < 25 ? 3 : a.level < 55 ? 4 : 5);
 const actRarity = (a) => (a.loot ? rarityVoy(a) : rarity(Object.keys(a.out)[0]));
-const TYPE_LABEL = { res: 'Material', food: 'Food', gem: 'Gem', chest: 'Treasure', fruit: 'Abyss Fruit' };
-const typeLabel = (id) => { const it = ITEMS[id]; return it.type === 'equip' ? it.slot[0].toUpperCase() + it.slot.slice(1) : TYPE_LABEL[it.type] || 'Item'; };
+const TYPE_LABEL = { res: 'Material', food: 'Food', gem: 'Gem', chest: 'Treasure', fruit: 'Abyss Fruit', schematic: 'Schematic' };
+const typeLabel = (id) => { const it = ITEMS[id]; if (it.relic) return `Relic · ${REALMS[it.relic].name}`; if (it.type === 'equip' && SCHEM_OF[id]) return 'Iconic ' + it.slot; return it.type === 'equip' ? it.slot[0].toUpperCase() + it.slot.slice(1) : TYPE_LABEL[it.type] || 'Item'; };
 const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Abyss Fruit' : id === 'GEM' ? 'Random gem' : ITEMS[id].name);
 function stars(r) { return `<span class="stars">${'<i></i>'.repeat(r)}</span>`; }
 
@@ -186,8 +187,31 @@ const unlockKind = (u) => ({ realm: 'New world', skill: 'New skill', feature: 'N
 function nextUnlockHTML(cls) {
   const u = nextUnlock();
   if (!u) return '';
-  return `<div class="nx ${cls}"><span class="nx-ic">${unlockIcon(u)}<i>${ui('lock')}</i></span>
-    <span class="nx-t"><small>Next unlock</small><b>${esc(u.name)}</b><em>${esc(u.hint())}</em></span></div>`;
+  const isGate = u.id.startsWith('realm:') && GATES[u.id.slice(6)];
+  const tag = isGate ? 'button' : 'div';
+  return `<${tag} class="nx ${cls}" ${isGate ? 'data-nav="home"' : ''}><span class="nx-ic">${unlockIcon(u)}<i>${ui('lock')}</i></span>
+    <span class="nx-t"><small>Next unlock${isGate ? ' · new world' : ''}</small><b>${esc(u.name)}</b><em>${esc(u.hint())}</em></span></${tag}>`;
+}
+// Iconic item id -> schematic id
+const SCHEM_OF = Object.fromEntries(Object.keys(ITEMS).filter((k) => ITEMS[k].type === 'schematic').map((k) => [ITEMS[k].teaches, k]));
+
+/* ------------------------------------------------------------- gate card */
+// Shown on the Overview once the next world's guardian can be reached.
+function gateHTML() {
+  const r = nextGate();
+  if (!r) return '';
+  const st = gateState(r), g = st.g, bz = ZONES.findIndex((z) => z.id === g.boss), boss = ZONES[bz].enemies[0];
+  if (!st.boss && !zoneUnlocked(bz)) return '';
+  return `<section class="win gate" style="--rc:${rc(r)}">
+    <div class="gt-head"><span class="gt-ic">${ic('realm', r)}</span>
+      <div class="gt-t"><small>Gate to ${REALMS[r].name}</small><h2>${esc(g.name)}</h2><p>${esc(g.lore)}</p></div></div>
+    <div class="gt-req">
+      <div class="gt-step ${st.boss ? 'ok' : ''}"><i>${st.boss ? ui('check') : ic('enemy', boss.name)}</i><span>Defeat the <b>${boss.name}</b></span><em>${st.boss ? 'Done' : 'Not yet'}</em></div>
+      <div class="gt-step ${st.items ? 'ok' : ''}"><i>${st.items ? ui('check') : ui('gate')}</i><span>Make the offering</span>
+        <span class="gt-offer">${Object.entries(g.offer).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(count(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (count(k) < n ? 'short' : ''), title: `${ITEMS[k].name}: ${sourcesOf(k).map((x) => x.text).slice(0, 2).join(', ') || 'see Bank'}` })).join('')}</span></div>
+    </div>
+    <div class="gt-cta">${gbtn('Open the gate', 'gate', `data-gate="${r}" ${st.ready ? '' : 'disabled'}`, st.ready ? 'glow' : '')}</div>
+  </section>`;
 }
 const SYN_KIND = { speed: 'speed', double: 'double output', xp: 'XP', rare: 'rare finds', heal: 'food healing', dmg: 'damage', hp: 'max HP' };
 const synTargetName = (s) => (SKILLS[s.to] ? SKILLS[s.to].name : { gather: 'all gathering', craft: 'all crafting', all: 'every skill', combat: 'Combat' }[s.to]);
@@ -286,7 +310,7 @@ function farmPanel() {
     const skill = S.action.skill, s = SKILLS[skill], a = findAction(skill, S.action.id), f = farmRates(skill, a);
     const outId = a.out ? Object.keys(a.out)[0] : null;
     return `<div class="farm" style="--rc:${rc(s.realm)}">
-      <div class="fm-head">${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), title: a.name })}
+      <div class="fm-head"><span class="fm-ring" data-nowring>${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), title: a.name })}</span>
         <button class="fm-txt" data-nav="${skillView(skill)}"><small>Farming · ${s.name} Lv <em data-lv="${skill}">${skillLv(skill)}</em></small><b>${esc(a.name)}</b></button>
         ${gbtn('Stop', 'stop', 'data-stop', 'dark sm')}</div>
       <div class="fm-bar"><span class="pbar"><i data-nowfill></i></span><span class="fm-time" data-nowtime></span></div>
@@ -301,7 +325,7 @@ function farmPanel() {
   if (S.combat.zone != null) {
     const c = combatRates(), food = S.combat.food;
     return `<div class="farm" style="--rc:${rc('combat')}">
-      <div class="fm-head">${tile(null, null, { r: c.z.boss ? 5 : 3, icon: ic('zone', c.z.id), title: c.z.name })}
+      <div class="fm-head"><span class="fm-ring hp" data-nowring>${tile(null, null, { r: c.z.boss ? 5 : 3, icon: ic('zone', c.z.id), title: c.z.name })}</span>
         <button class="fm-txt" data-nav="battle"><small>Fighting${c.z.boss ? ' · Boss' : ''}</small><b>${c.z.name}</b></button>
         ${gbtn('Retreat', 'stop', 'data-stopcombat', 'dark sm')}</div>
       <div class="fm-bar"><span class="pbar hp"><i data-nowhp></i></span><span class="fm-time" data-hpnow></span></div>
@@ -321,7 +345,7 @@ VIEWS.home = () => {
   const skillCard = (k) => {
     const b = xpInfo(k), busy = (S.action && S.action.skill === k) || (SKILLS[k].realm === 'combat' && S.combat.zone != null);
     return `<button class="ov-skill ${busy ? 'busy' : ''}" data-nav="${skillView(k)}" style="--rc:${rc(SKILLS[k].realm)}">
-      <span class="ovs-ic">${ic('skill', k)}</span><span class="ovs-main"><span class="ovs-top"><b>${SKILLS[k].name}</b><em><small>Lv</small> <span data-lv="${k}">${b.L}</span></em></span>
+      <span class="ovs-ring" data-xpring="${k}" style="--p:${b.p}">${ic('skill', k)}</span><span class="ovs-main"><span class="ovs-top"><b>${SKILLS[k].name}</b><em><small>Lv</small> <span data-lv="${k}">${b.L}</span></em></span>
       <span class="xpbar thin"><i data-xpbar="${k}"></i></span></span></button>`;
   };
   return `
@@ -331,6 +355,7 @@ VIEWS.home = () => {
       ${goalState() && !goalState().done ? gbtn('Go to: ' + esc(goalState().g.text), 'play', `data-nav="${goalState().g.go}"`, 'sm') : ''}</div></div>`}</section>
     <section class="win quest-win">${goalHTML()}</section>
   </div>
+  ${gateHTML()}
   ${hdr('Skills', `Total level ${totalLevel()} · ${UNLOCKS.filter((u) => S.unlocked[u.id]).length} / ${UNLOCKS.length} discovered`)}
   <div class="ov-grid">${[...openRealms(), ...(featureOpen('battle') ? ['combat'] : [])].map((r) => `
     <section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${r === 'combat' ? ui('battle') : ic('realm', r)}${r === 'combat' ? 'Combat' : REALMS[r].name}</h3>
@@ -347,7 +372,7 @@ VIEWS.realm = (realm, skill) => {
   const mods = [`<span class="pill" title="Action speed">${ui('spd')} Speed ×${skillSpeed(skill).toFixed(2)}</span>`, `<span class="pill" title="XP multiplier">${ui('xp')} XP ×${skillXpMult(skill).toFixed(2)}</span>`];
   if (rareMult(skill) > 1) mods.push(`<span class="pill" title="Rare find multiplier">${ui('rare')} Luck ×${rareMult(skill).toFixed(2)}</span>`);
   if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Abyss Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
-  const open = s.actions.filter((x) => x.level <= b.L).length;
+  const open = s.actions.filter((x) => !['locked', 'schem'].includes(actState(skill, x))).length;
   const active = S.action && S.action.skill === skill;
   return `<div class="sk-layout" style="--rc:${rc(realm)}"><div class="sk-col">
   <section class="sk-banner" style="--rc:${rc(realm)}">
@@ -356,19 +381,20 @@ VIEWS.realm = (realm, skill) => {
     <div class="sk-main"><small>${R.name}</small><h1>${s.name}</h1>
       <div class="sk-xp"><span class="pbar"><i data-xpbar="${skill}"></i></span><span class="sk-xpt" data-xptext="${skill}">${xpText(b)}</span></div>
       <div class="pills">${mods.join('')}</div></div>
-    <div class="sk-lv"><small>Level</small><b data-lv="${skill}">${b.L}</b><span class="muted">/ ${MAX_LEVEL}</span></div>
+    <div class="sk-ring" data-xpring="${skill}" style="--p:${b.p}" title="Progress to the next level"><span><b data-lv="${skill}">${b.L}</b><small>Level</small></span></div>
   </section>
   ${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
   ${hdr(s.type === 'voyage' ? 'Voyages' : s.type === 'craft' ? 'Recipes' : 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`)}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
   ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="locked" title="${esc(x.name)}: requires ${s.name} level ${x.level}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}
   </div><aside class="sk-side">
-  <section class="win">${hdr('Milestones')}<div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${b.L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b>${m.lv}</b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div></section>
+  <section class="win">${hdr('Milestones')}<div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${b.L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b><i>${m.lv}</i></b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div></section>
   <section class="win">${hdr('Rare finds', `per action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}<div class="tiles rare-row">${rareTiles(skill).join('')}</div></section>
   <section class="win syn-win" style="--rc:${rc(realm)}">${synergyHTML(synergiesInto(skill), synergiesFrom(skill))}</section>
   </aside></div>`;
 };
 function actState(skill, a) {
+  if (a.schem && !S.known[a.schem]) return 'schem';
   if (skillLv(skill) < a.level) return 'locked';
   if (S.action && S.action.skill === skill && S.action.id === a.id) return 'active';
   if (a.in && !canAfford(a.in)) return 'missing';
@@ -384,9 +410,15 @@ function ctaLabel(skill, a, st) {
 function actCard(skill, a) {
   const st = actState(skill, a), r = actRarity(a), outId = a.out ? Object.keys(a.out)[0] : null, it = outId ? ITEMS[outId] : null;
   const art = tile(null, null, { r, icon: actIc(skill, a), title: a.name, cls: 's' });
+  if (st === 'schem') {
+    const src = sourcesOf(a.schem)[0];
+    return `<div class="acard schem" data-card="${skill}:${a.id}" data-state="schem">
+      <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>${ui('schematic')}Schematic needed · Lv ${a.level}</small></div></div>
+      ${src ? `<div class="ac-src">${ic(src.icon[0], src.icon[1])}<span>Drops from <b>${esc(src.text)}</b></span><em>${fmtRate(src.rate * luckMult())}</em></div>` : ''}</div>`;
+  }
   if (st === 'locked') {
-    return `<div class="acard" data-card="${skill}:${a.id}" data-state="locked">
-      <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>${ui('lock')}Requires level ${a.level}</small></div></div></div>`;
+    return `<div class="acard ${a.schem ? 'learned' : ''}" data-card="${skill}:${a.id}" data-state="locked">
+      <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>${ui('lock')}Requires level ${a.level}${a.schem ? ' · schematic learned' : ''}</small></div></div></div>`;
   }
   const f = farmRates(skill, a), ml = masteryLv(skill, a.id);
   const lines = [];
@@ -428,11 +460,14 @@ VIEWS.battle = () => {
   let lastRealm = null, groups = '';
   ZONES.forEach((z, i) => {
     if (REALMS[z.realm].hidden && !zoneUnlocked(i)) return;
+    const sealed = !realmOpen(z.realm);
     if (z.realm !== lastRealm) {
       lastRealm = z.realm;
-      groups += `<div class="chapter" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ic('realm', z.realm)}</span><b>${REALMS[z.realm].name}</b></div>`;
+      groups += sealed
+        ? `<div class="chapter sealed" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ui('lock')}</span><b>${REALMS[z.realm].name}</b><small>Sealed · ${GATES[z.realm] ? esc(GATES[z.realm].name) : ''}</small></div>`
+        : `<div class="chapter" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ic('realm', z.realm)}</span><b>${REALMS[z.realm].name}</b></div>`;
     }
-    groups += zoneRow(z, i);
+    if (!sealed) groups += zoneRow(z, i);
   });
   const z = C.zone != null ? ZONES[C.zone] : null;
   return `
@@ -544,7 +579,9 @@ function inspectorHTML() {
   } else {
     const uses = [];
     for (const k in SKILLS) for (const a of SKILLS[k].actions) if (a.in && a.in[selItem]) uses.push([k, a]);
-    if (uses.length) body.push(`${hdr('Used in')}<ul class="srcs">${uses.slice(0, 8).map(([k, a]) => `<li><span><i>${ic('skill', k)}</i>${esc(a.name)}</span><b>${SKILLS[k].name} ${a.level}</b></li>`).join('')}</ul>`);
+    for (const r in GATES) if (GATES[r].offer[selItem] && !S.gates[r]) uses.unshift(['gate', { name: GATES[r].name, level: '' }]);
+    if (it.relic) body.push(`<p class="lore">A relic of the ${REALMS[it.relic].name}. Iconic gear from that world is forged from it.</p>`);
+    if (uses.length) body.push(`${hdr('Used in')}<ul class="srcs">${uses.slice(0, 8).map(([k, a]) => k === 'gate' ? `<li><span><i>${ui('gate')}</i>${esc(a.name)}</span><b>World gate</b></li>` : `<li><span><i>${ic('skill', k)}</i>${esc(a.name)}${a.schem ? ' <em class="muted">· schematic</em>' : ''}</span><b>${SKILLS[k].name} ${a.level}</b></li>`).join('')}</ul>`);
   }
   body.push(`${hdr('Where to find')}${sourcesHTML(selItem)}`);
   return `${itemHead(selItem)}
@@ -555,11 +592,12 @@ function inspectorHTML() {
 
 /* ------------------------------------------------------------- collection log */
 let selCol = null;
-const COL_GROUPS = [['res', 'Materials'], ['gem', 'Gems'], ['chest', 'Treasure'], ['food', 'Food'], ['equip', 'Gear'], ['fruit', 'Abyss Fruits']];
+const COL_GROUPS = [['res', 'Materials'], ['relic', 'World relics'], ['gem', 'Gems'], ['chest', 'Treasure'], ['food', 'Food'], ['equip', 'Gear'], ['schematic', 'Schematics'], ['fruit', 'Abyss Fruits']];
+const inColGroup = (k, g) => (g === 'relic' ? !!ITEMS[k].relic : g === 'res' ? ITEMS[k].type === 'res' && !ITEMS[k].relic : ITEMS[k].type === g);
 function collectionHTML() {
   const pctAll = collectionPct();
   const groups = COL_GROUPS.map(([type, label]) => {
-    const ids = Object.keys(ITEMS).filter((k) => ITEMS[k].type === type);
+    const ids = Object.keys(ITEMS).filter((k) => inColGroup(k, type));
     const n = ids.filter((k) => S.found[k]).length;
     return `${hdr(label, `${n} / ${ids.length}`)}<div class="col-grid">${ids.map((id) => tile(id, null, { tag: 'button', unknown: !S.found[id], cls: selCol === id ? 'on' : '', attrs: `data-col="${id}"` })).join('')}</div>`;
   }).join('');
@@ -572,7 +610,9 @@ function collectionHTML() {
       <div class="dt-body">${attrList([['star', 'Bonus', petBonus(pt)]])}${hdr('Where to find')}<ul class="srcs">${petSource(pt)}</ul></div>`;
   } else if (selCol && ITEMS[selCol]) {
     const it = ITEMS[selCol], got = S.found[selCol];
-    detail = `${itemHead(selCol, !got)}<div class="dt-body">${got && it.type === 'equip' ? attrList(statRows(it.stats)) : ''}${hdr('Where to find')}${sourcesHTML(selCol)}</div>`;
+    const rec = it.type === 'schematic' ? schemRecipe(selCol) : null;
+    const teach = rec ? attrList([['star', 'Teaches', `${ITEMS[it.teaches].name} · ${SKILLS[rec.skill].name} Lv ${rec.act.level}`]]) : '';
+    detail = `${itemHead(selCol, !got)}<div class="dt-body">${got && it.type === 'equip' ? attrList(statRows(it.stats)) : ''}${teach}${hdr('Where to find')}${sourcesHTML(selCol)}</div>`;
   }
   const found = Object.keys(S.found).length + Object.keys(S.pets).length, all = Object.keys(ITEMS).length + PETS.length;
   return `
@@ -792,7 +832,7 @@ on('levelup', (d) => {
   const s = SKILLS[d.skill];
   burst('Level up', `${s.name} · Lv ${d.level - 1} → ${d.level}`, ic('skill', d.skill), rc(s.realm));
   const unlocked = s.actions.find((a) => a.level === d.level);
-  if (unlocked) toast(`New in ${s.name}: ${unlocked.name}`, 'good');
+  if (unlocked) toast(`New in ${s.name}: ${unlocked.name}${unlocked.schem && !S.known[unlocked.schem] ? ' (needs its schematic)' : ''}`, 'good');
   if (MILESTONES.some((m) => m.lv === d.level) && s.realm !== 'combat') toast(`${s.name} milestone reached: ${MILESTONES.find((m) => m.lv === d.level).name}`, 'rare');
   dirty = true;
 });
@@ -846,6 +886,12 @@ on('newitem', (id) => {
   if (!featureOpen('collection')) return;   // beginners: the Collection menu is not unlocked yet
   setTimeout(() => { if (!rareThisTick.has(id)) toast(`New in your Collection: ${ITEMS[id].name}`, 'good'); }, 0);
 });
+on('schematic', (id) => {
+  const rec = schemRecipe(id), it = ITEMS[ITEMS[id].teaches];
+  burst('Schematic learned', `${it.name} · ${SKILLS[rec.skill].name} Lv ${rec.act.level}`, itemIc(id), 'var(--gold)');
+  toast(`You can now craft the ${it.name} in ${SKILLS[rec.skill].name} (Lv ${rec.act.level}).`, 'rare');
+  dirty = true;
+});
 on('goal', (g) => { burst('Objective complete', `${g.text} · +${fmt(g.reward)} gold`, ic('goal', GOALS.indexOf(g)), 'var(--gold)'); });
 
 /* =============================================================== unlock announcements */
@@ -862,7 +908,7 @@ function pollUnlocks() {
     const [kind, ref] = u.id.split(':');
     if (kind === 'realm' || (kind === 'skill' && realms.includes(SKILLS[ref].realm))) continue;
     burst(unlockKind(u), u.name, unlockIcon(u), kind === 'skill' ? rc(SKILLS[ref].realm) : 'var(--gold)');
-    toast(`${unlockKind(u)} unlocked: ${u.name}`, 'rare');
+    toast(`${unlockKind(u)}: ${u.name}. ${u.why || ''}`, 'rare');
   }
   if (realms.length) showRealmOpen(realms[0]);
   for (const r of realms.slice(1)) toast(`New world unlocked: ${REALMS[r].name}`, 'rare');
@@ -877,6 +923,8 @@ function showRealmOpen(r) {
     <h2>${R.name}</h2>
     <p>${R.tagline}</p>
     ${ks.length ? `<ul class="wl-points">${ks.map((k) => `<li><i>${ic('skill', k)}</i><span><b>${SKILLS[k].name}.</b> ${SKILLS[k].desc}</span></li>`).join('')}</ul>` : '<p class="muted">A final stage waits at the end of the Battlefield.</p>'}
+    ${r !== 'rift' && skillsOf(r).length > ks.length ? `<p class="muted small">${skillsOf(r).length - ks.length} more skill${skillsOf(r).length - ks.length > 1 ? 's' : ''} hide in this world. Explore to find them.</p>` : ''}
+    <p class="muted small">New enemies, relics and schematics wait on the Battlefield.</p>
     ${links.length ? `<div class="ro-syn"><small>New synergies</small>${links.map((s) => `<span>${ic('skill', s.from)}<b>${s.name}</b><em>${SKILLS[s.from].name} → ${synTargetName(s)}</em></span>`).join('')}</div>` : ''}
     <div class="wl-cta">${gbtn(ks.length ? 'Go to ' + SKILLS[ks[0]].name : 'To the Battlefield', 'play', `data-realmgo="${go}"`)}${gbtn('Later', '', 'data-closemodal', 'dark')}</div>
   </div>`, null, true);
@@ -921,6 +969,9 @@ function update() {
   // levels / xp
   for (const el of $$('[data-lv]')) setText(el, String(skillLv(el.dataset.lv)));
   for (const el of $$('[data-xpbar]')) el.style.width = xpInfo(el.dataset.xpbar).p * 100 + '%';
+  for (const el of $$('[data-xpring]')) el.style.setProperty('--p', xpInfo(el.dataset.xpring).p);
+  const ringP = S.action ? S.action.prog / actionTime(S.action.skill, findAction(S.action.skill, S.action.id)) : S.combat.zone != null ? S.combat.hp / pMaxHp() : 0;
+  for (const el of $$('[data-nowring]')) el.style.setProperty('--p', Math.min(1, ringP));
   for (const el of $$('[data-xptext]')) { const h = xpText(xpInfo(el.dataset.xptext)); if (el.innerHTML !== h) el.innerHTML = h; }
   for (const el of $$('[data-count]')) setText(el, fmt(count(el.dataset.count)));
   for (const el of $$('[data-have]')) {
@@ -933,7 +984,7 @@ function update() {
     const [s, id] = card.dataset.card.split(':');
     const a = findAction(s, id), st = actState(s, a);
     if (card.dataset.state !== st) {
-      if (card.dataset.state === 'locked' || st === 'locked') { dirty = true; continue; }
+      if (['locked', 'schem'].includes(card.dataset.state) || ['locked', 'schem'].includes(st)) { dirty = true; continue; }
       card.dataset.state = st;
       const c = $('[data-cta2]', card); if (c) c.innerHTML = ctaLabel(s, a, st);
     }
@@ -1006,6 +1057,7 @@ function update() {
 
   // gold-priced buttons
   for (const el of $$('[data-cost]')) el.disabled = S.gold < +el.dataset.cost;
+  for (const el of $$('[data-gate]')) { const ok = gateState(el.dataset.gate).ready; if (el.disabled === ok) dirty = true; }
 
   updateCoach();
 }
@@ -1056,6 +1108,7 @@ document.addEventListener('click', (ev) => {
   else if ('rebirth' in d) { if (confirm('Rebirth? All Inner Power training will reset.')) { const g = karmaGain(); if (rebirth()) burst('Reborn', `+${fmt(g)} Karma`, ui('rebirth'), 'var(--soul)'); } }
   else if (d.perk) buyPerk(d.perk);
   else if ('claim' in d) { claimGoal(); lastUnlockPoll = 0; pollUnlocks(); }
+  else if (d.gate) { if (openGate(d.gate)) { flash(); lastUnlockPoll = 0; pollUnlocks(); } }
   else if (d.realmgo) { $('#modal').classList.remove('show', 'nofoot'); setView(d.realmgo); }
   else if ('closemodal' in d) { $('#modal').classList.remove('show', 'nofoot'); updateCoach(true); }
   else if (d.open) {
