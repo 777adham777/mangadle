@@ -13,6 +13,8 @@ const $ = (sel, root) => (root || document).querySelector(sel);
 const $$ = (sel, root) => Array.from((root || document).querySelectorAll(sel));
 const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const skillsOf = (realm) => Object.keys(SKILLS).filter((k) => SKILLS[k].realm === realm);
+const openSkillsOf = (realm) => skillsOf(realm).filter(skillOpen);
+const openRealms = () => ['seas', 'soul', 'shinobi'].filter(realmOpen);   // in the order they open
 const totalLevel = () => Object.keys(SKILLS).reduce((a, k) => a + skillLv(k), 0);
 
 // UI accent per world
@@ -93,9 +95,14 @@ function normalizeView() {
   }
   const [name, realm, skill] = v.split(':');
   if (name === 'realm') {
-    if (!REALMS[realm] || REALMS[realm].hidden) v = 'home';
-    else if (!skill || !SKILLS[skill] || SKILLS[skill].realm !== realm) v = `realm:${realm}:${S.ui.tab[realm] || skillsOf(realm)[0]}`;
+    if (!REALMS[realm] || REALMS[realm].hidden || !realmOpen(realm)) v = 'home';
+    else if (!skill || !SKILLS[skill] || SKILLS[skill].realm !== realm || !skillOpen(skill)) {
+      const k = [S.ui.tab[realm], ...skillsOf(realm)].find((x) => x && SKILLS[x] && SKILLS[x].realm === realm && skillOpen(x));
+      v = k ? `realm:${realm}:${k}` : 'home';
+    }
   }
+  const feat = featureOfView(v);
+  if (feat && !featureOpen(feat)) v = 'home';
   if (!VIEWS[v.split(':')[0]]) v = 'home';
   S.ui.view = v;
 }
@@ -150,14 +157,14 @@ function renderRail() {
     if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
     return `<button class="nq ${isOn(k) ? 'on' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}</button>`;
   }).join('')}</div>`);
-  groups.push(`<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
+  if (featureOpen('battle')) groups.push(`<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
     ${navRow('battle', ui('battle'), S.combat.zone != null ? ZONES[S.combat.zone].name : 'Battlefield', { color: rc('combat'), busy: S.combat.zone != null })}
     <div class="nav-cskills">${['strength', 'defense', 'vitality'].map((k) => `<button class="ncs" data-nav="battle" title="${SKILLS[k].name}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><span class="nr-xp"><i data-xpbar="${k}"></i></span></button>`).join('')}</div></div>`);
-  for (const r of ['shinobi', 'soul', 'seas']) {
+  for (const r of openRealms()) {
     groups.push(`<div class="nav-group"><div class="nav-sec" style="--rc:${rc(r)}">${ic('realm', r)}${REALMS[r].name}</div>
-      ${skillsOf(r).map((k) => navRow(`realm:${r}:${k}`, ic('skill', k), SKILLS[k].name, { skill: k, color: rc(r), busy: S.action && S.action.skill === k })).join('')}</div>`);
+      ${openSkillsOf(r).map((k) => navRow(`realm:${r}:${k}`, ic('skill', k), SKILLS[k].name, { skill: k, color: rc(r), busy: S.action && S.action.skill === k })).join('')}</div>`);
   }
-  $('#rail').innerHTML = `<div class="nav-quest" id="navquest">${goalHTML()}</div>${groups.join('')}`;
+  $('#rail').innerHTML = `<div class="nav-quest" id="navquest">${goalHTML()}</div>${groups.join('')}${nextUnlockHTML('nav-next')}`;
   $('#tabbar').innerHTML = [
     `<button class="tab-btn" data-menu>${ui('menu')}<span>Menu</span></button>`,
     ...[['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['battle', 'battle', 'Battle'], ['market', 'market', 'Market']]
@@ -167,6 +174,37 @@ function renderRail() {
         return `<button class="tab-btn ${isOn(k) ? 'on' : ''}" data-nav="${k}">${ui(icn)}<span>${l}</span></button>`;
       }),
   ].join('');
+}
+
+/* =============================================================== unlocks + synergies */
+function unlockIcon(u) {
+  const [kind, ref] = u.id.split(':');
+  return kind === 'realm' ? ic('realm', ref) : kind === 'skill' ? ic('skill', ref) : ui(ref);
+}
+const unlockKind = (u) => ({ realm: 'New world', skill: 'New skill', feature: 'New menu' }[u.id.split(':')[0]]);
+// The one thing the player is working towards next. Only ever one, to keep the screen calm.
+function nextUnlockHTML(cls) {
+  const u = nextUnlock();
+  if (!u) return '';
+  return `<div class="nx ${cls}"><span class="nx-ic">${unlockIcon(u)}<i>${ui('lock')}</i></span>
+    <span class="nx-t"><small>Next unlock</small><b>${esc(u.name)}</b><em>${esc(u.hint())}</em></span></div>`;
+}
+const SYN_KIND = { speed: 'speed', double: 'double output', xp: 'XP', rare: 'rare finds', heal: 'food healing', dmg: 'damage', hp: 'max HP' };
+const synTargetName = (s) => (SKILLS[s.to] ? SKILLS[s.to].name : { gather: 'all gathering', craft: 'all crafting', all: 'every skill', combat: 'Combat' }[s.to]);
+// dir 'in': shows the skill giving the bonus. dir 'out': shows who receives it.
+function synRow(s, dir) {
+  const otherOpen = dir === 'in' ? skillOpen(s.from) : synTargetOpen(s);
+  if (!otherOpen) return `<div class="syn hidden"><span class="syn-ic">${ui('lock')}</span><span class="syn-t"><b>Undiscovered synergy</b><small>Links to a skill you have not unlocked yet</small></span></div>`;
+  const icon = dir === 'in' ? ic('skill', s.from) : SKILLS[s.to] ? ic('skill', s.to) : s.to === 'combat' ? ui('battle') : ui('star');
+  const v = synValue(s);
+  return `<div class="syn ${v > 0 ? 'on' : ''}"><span class="syn-ic">${icon}</span>
+    <span class="syn-t"><b>${s.name}</b><small>${dir === 'in' ? `From ${SKILLS[s.from].name}` : `To ${synTargetName(s)}`} · ${s.desc}</small></span>
+    <span class="syn-v"><b>+${pct(v)}</b><small>${SYN_KIND[s.kind]} · +${pct(s.per)}/lv</small></span></div>`;
+}
+function synergyHTML(into, from) {
+  const col = (title, list, dir) => `<div class="syn-col"><small class="syn-h">${title}</small>${list.length ? list.map((s) => synRow(s, dir)).join('') : '<div class="muted small">None</div>'}</div>`;
+  return `${hdr('Synergies', 'every level here also helps another skill')}
+  <div class="syn-grid">${col('Boosted by', into, 'in')}${col('Boosts', from, 'out')}</div>`;
 }
 
 /* =============================================================== shared bits */
@@ -232,7 +270,7 @@ function sourcesHTML(id) {
 /* =============================================================== farm numbers */
 function farmRates(skill, a) {
   const T = actionTime(skill, a), per = 3600 / T;
-  const r = { T, per, xph: per * a.xp * xpMult() };
+  const r = { T, per, xph: per * a.xp * skillXpMult(skill) };
   if (a.out) r.itemsh = per * Object.values(a.out)[0] * (1 + doubleChance(skill, a.id));
   if (a.in) { r.can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(count(k) / n))); r.runout = r.can * T; }
   return r;
@@ -293,10 +331,11 @@ VIEWS.home = () => {
       ${goalState() && !goalState().done ? gbtn('Go to: ' + esc(goalState().g.text), 'play', `data-nav="${goalState().g.go}"`, 'sm') : ''}</div></div>`}</section>
     <section class="win quest-win">${goalHTML()}</section>
   </div>
-  ${hdr('Skills', `Total level ${totalLevel()}`)}
-  <div class="ov-grid">${['shinobi', 'soul', 'seas', 'combat'].map((r) => `
+  ${hdr('Skills', `Total level ${totalLevel()} · ${UNLOCKS.filter((u) => S.unlocked[u.id]).length} / ${UNLOCKS.length} discovered`)}
+  <div class="ov-grid">${[...openRealms(), ...(featureOpen('battle') ? ['combat'] : [])].map((r) => `
     <section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${r === 'combat' ? ui('battle') : ic('realm', r)}${r === 'combat' ? 'Combat' : REALMS[r].name}</h3>
-      ${skillsOf(r).map(skillCard).join('')}</section>`).join('')}</div>
+      ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
+    ${nextUnlockHTML('win ov-next')}</div>
   <section class="win">${hdr('Adventurer')}
     <div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Rebirths', fmt(S.rebirths))}</div>
   </section>`;
@@ -305,7 +344,7 @@ VIEWS.home = () => {
 /* ------------------------------------------------------------- skill page */
 VIEWS.realm = (realm, skill) => {
   const R = REALMS[realm], s = SKILLS[skill], b = xpInfo(skill);
-  const mods = [`<span class="pill" title="Action speed">${ui('spd')} Speed ×${skillSpeed(skill).toFixed(2)}</span>`, `<span class="pill" title="XP multiplier">${ui('xp')} XP ×${xpMult().toFixed(2)}</span>`];
+  const mods = [`<span class="pill" title="Action speed">${ui('spd')} Speed ×${skillSpeed(skill).toFixed(2)}</span>`, `<span class="pill" title="XP multiplier">${ui('xp')} XP ×${skillXpMult(skill).toFixed(2)}</span>`];
   if (rareMult(skill) > 1) mods.push(`<span class="pill" title="Rare find multiplier">${ui('rare')} Luck ×${rareMult(skill).toFixed(2)}</span>`);
   if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Abyss Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
   const open = s.actions.filter((x) => x.level <= b.L).length;
@@ -323,6 +362,7 @@ VIEWS.realm = (realm, skill) => {
   ${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
   ${hdr(s.type === 'voyage' ? 'Voyages' : s.type === 'craft' ? 'Recipes' : 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`)}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.map((x) => actCard(skill, x)).join('')}</div>
+  <section class="win syn-win" style="--rc:${rc(realm)}">${synergyHTML(synergiesInto(skill), synergiesFrom(skill))}</section>
   ${hdr('Rare finds', `rolled on every action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}
   <div class="tiles rare-row">${rareTiles(skill).join('')}</div>`;
 };
@@ -409,6 +449,7 @@ VIEWS.battle = () => {
         </section>
         <section class="win log-win">${hdr('Battle log')}<div class="log" id="clog">${logHTML()}</div></section>
       </div>
+      <section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), ['strength', 'defense', 'vitality'].flatMap(synergiesFrom))}</section>
     </div>
     <section class="win stages">${hdr('Stages')}<div class="stage-list">${groups}</div></section>
   </div>`;
@@ -805,6 +846,40 @@ on('newitem', (id) => {
 });
 on('goal', (g) => { burst('Objective complete', `${g.text} · +${fmt(g.reward)} gold`, ic('goal', GOALS.indexOf(g)), 'var(--gold)'); });
 
+/* =============================================================== unlock announcements */
+// New worlds get a full reveal; skills and menus get a banner. Waits for any open modal to close.
+const pendingUnlocks = [];
+let lastUnlockPoll = 0;
+function pollUnlocks() {
+  const now = performance.now();
+  if (now - lastUnlockPoll > 250) { lastUnlockPoll = now; pendingUnlocks.push(...checkUnlocks()); }
+  if (!pendingUnlocks.length || $('#modal').classList.contains('show')) return;
+  const list = pendingUnlocks.splice(0);
+  const realms = list.filter((u) => u.id.startsWith('realm:')).map((u) => u.id.slice(6));
+  for (const u of list) {
+    const [kind, ref] = u.id.split(':');
+    if (kind === 'realm' || (kind === 'skill' && realms.includes(SKILLS[ref].realm))) continue;
+    burst(unlockKind(u), u.name, unlockIcon(u), kind === 'skill' ? rc(SKILLS[ref].realm) : 'var(--gold)');
+    toast(`${unlockKind(u)} unlocked: ${u.name}`, 'rare');
+  }
+  if (realms.length) showRealmOpen(realms[0]);
+  for (const r of realms.slice(1)) toast(`New world unlocked: ${REALMS[r].name}`, 'rare');
+}
+function showRealmOpen(r) {
+  const R = REALMS[r], ks = r === 'rift' ? [] : openSkillsOf(r);
+  const links = SYNERGIES.filter((s) => (ks.includes(s.from) && synTargetOpen(s)) || (ks.includes(s.to) && skillOpen(s.from)));
+  const go = ks.length ? `realm:${r}:${ks[0]}` : 'battle';
+  openModal(`<div class="welcome realm-open" style="--rc:${rc(r)}">
+    <div class="wl-ic">${ic('realm', r)}</div>
+    <small>A new world opens</small>
+    <h2>${R.name}</h2>
+    <p>${R.tagline}</p>
+    ${ks.length ? `<ul class="wl-points">${ks.map((k) => `<li><i>${ic('skill', k)}</i><span><b>${SKILLS[k].name}.</b> ${SKILLS[k].desc}</span></li>`).join('')}</ul>` : '<p class="muted">A final stage waits at the end of the Battlefield.</p>'}
+    ${links.length ? `<div class="ro-syn"><small>New synergies</small>${links.map((s) => `<span>${ic('skill', s.from)}<b>${s.name}</b><em>${SKILLS[s.from].name} → ${synTargetName(s)}</em></span>`).join('')}</div>` : ''}
+    <div class="wl-cta">${gbtn(ks.length ? 'Go to ' + SKILLS[ks[0]].name : 'To the Battlefield', 'play', `data-realmgo="${go}"`)}${gbtn('Later', '', 'data-closemodal', 'dark')}</div>
+  </div>`, null, true);
+}
+
 /* =============================================================== render + update */
 let lastUnlocked = 0, sideDirty = false, bankSig = '', lastLogVer = -1, lastFoodSig = '';
 function render() {
@@ -871,7 +946,7 @@ function update() {
     const a = findAction(S.action.skill, S.action.id), T = actionTime(S.action.skill, a), b = xpInfo(S.action.skill);
     for (const el of $$('[data-nowfill]')) el.style.width = Math.min(100, (S.action.prog / T) * 100) + '%';
     for (const el of $$('[data-nowtime]')) setText(el, `${Math.max(0, T - S.action.prog).toFixed(1)}s`);
-    const nl = b.need ? fmtTime((b.need / (a.xp * xpMult())) * T) : 'MAX';
+    const nl = b.need ? fmtTime((b.need / (a.xp * skillXpMult(S.action.skill))) * T) : 'MAX';
     for (const el of $$('[data-nextlv]')) setText(el, nl);
     if (a.in) {
       const can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(count(k) / n)));
@@ -978,11 +1053,9 @@ document.addEventListener('click', (ev) => {
   else if ('buypow' in d) buyPow();
   else if ('rebirth' in d) { if (confirm('Rebirth? All Inner Power training will reset.')) { const g = karmaGain(); if (rebirth()) burst('Reborn', `+${fmt(g)} Karma`, ui('rebirth'), 'var(--soul)'); } }
   else if (d.perk) buyPerk(d.perk);
-  else if ('claim' in d) {
-    const before = Object.keys(FEATURE_GOAL).filter(featureOpen);
-    claimGoal();
-    Object.keys(FEATURE_GOAL).filter((f) => featureOpen(f) && !before.includes(f)).forEach((f) => toast(`New menu unlocked: ${{ power: 'Inner Power', market: 'Market', collection: 'Collection' }[f]}`, 'rare'));
-  }
+  else if ('claim' in d) { claimGoal(); lastUnlockPoll = 0; pollUnlocks(); }
+  else if (d.realmgo) { $('#modal').classList.remove('show', 'nofoot'); setView(d.realmgo); }
+  else if ('closemodal' in d) { $('#modal').classList.remove('show', 'nofoot'); updateCoach(true); }
   else if (d.open) {
     const [id, q] = d.open.split(':');
     const res = openChest(id, q === 'all' ? count(id) : 1);
@@ -999,7 +1072,7 @@ document.addEventListener('click', (ev) => {
     try { loadFrom(decodeURIComponent(escape(atob($('#savebox').value.trim())))); saveGame(); toast('Save imported!', 'good'); dirty = true; }
     catch (e) { toast('That save data is not valid.', 'bad'); }
   }
-  else if ('wipe' in d) { if (confirm('Erase ALL progress? This cannot be undone.')) { S = defaultState(); S.combat.hp = pMaxHp(); saveGame(); setView('home'); } }
+  else if ('wipe' in d) { if (confirm('Erase ALL progress? This cannot be undone.')) { S = defaultState(); checkUnlocks(); S.combat.hp = pMaxHp(); saveGame(); setView('home'); } }
 });
 document.addEventListener('change', (ev) => {
   if (ev.target.matches('[data-food]')) { S.combat.food = ev.target.value || null; ev.target.blur(); dirty = true; }
@@ -1045,7 +1118,7 @@ function boot() {
   let raw = null;
   try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { /* ignore */ }
   if (raw) { try { loadFrom(raw); } catch (e) { S = defaultState(); } }
-  else { S = defaultState(); S.combat.hp = pMaxHp(); }
+  else { S = defaultState(); checkUnlocks(); S.combat.hp = pMaxHp(); }
   normalizeView();
   renderHud();
 
@@ -1065,6 +1138,7 @@ function boot() {
 
   function frame() {
     catchUp();
+    pollUnlocks();
     const busy = document.activeElement && ['SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
     if (dirty && !busy) render();
     else {

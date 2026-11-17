@@ -25,19 +25,13 @@ const GUIDE = [
 ];
 
 /* ------------------------------------------------------------ feature gates */
-// Menu -> index of the objective that introduces it.
-const FEATURE_GOAL = { collection: 3, power: 6, market: 9 };
-function featureOpen(f) {
-  if (!(f in FEATURE_GOAL)) return true;
-  if (S.goal >= FEATURE_GOAL[f]) return true;
-  if (f === 'power') return energyUsed() > 0 || S.rebirths > 0 || S.karma > 0;
-  if (f === 'market') return Object.keys(S.shop).length > 0;
-  return false;
-}
-const featureOfView = (key) => (key === 'hero:collection' ? 'collection' : key === 'power' ? 'power' : key === 'market' ? 'market' : null);
-function lockedNote(f) {
-  const i = FEATURE_GOAL[f];
-  return `Unlocks with objective ${i + 1}: ${GOALS[i].text}`;
+// Menus open through UNLOCKS (data.js), one at a time, with the objective that introduces them.
+const featureOpen = (f) => isUnlocked('feature:' + f);
+const VIEW_FEATURE = { 'hero:collection': 'collection', power: 'power', market: 'market', battle: 'battle' };
+const featureOfView = (key) => VIEW_FEATURE[key] || null;
+function lockedNote(id) {
+  const u = UNLOCK_BY[id.includes(':') ? id : 'feature:' + id];
+  return u && u.hint ? `Locked. ${u.hint()}` : 'Locked.';
 }
 
 /* ------------------------------------------------------------ what to point at */
@@ -159,7 +153,7 @@ function showWelcome() {
     <div class="wl-ic">${ui('hero')}</div>
     <small>Tri-Realm Idle</small>
     <h2>Welcome, Wanderer</h2>
-    <p>Three worlds have collided: ninja lands, the afterlife and the endless sea. Gather, craft and fight across all of them to grow stronger.</p>
+    <p>Three worlds have collided: ninja lands, the afterlife and the endless sea. You wash ashore in the Endless Blue. The other worlds open up as you grow.</p>
     <ul class="wl-points">
       <li><i>${ui('play')}</i><span><b>Pick an activity.</b> It repeats on its own and earns items and XP.</span></li>
       <li><i>${ui('time')}</i><span><b>Progress never stops.</b> It keeps going while the game is closed, up to 12 hours.</span></li>

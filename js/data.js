@@ -459,3 +459,49 @@ const GOALS = [
   { text: 'Defeat the Rift Emperor',       icon: '👁️', go: 'battle',                  n: 1,   prog: kills('convergence'), reward: 100000 },
   { text: 'Fill 75% of the Collection Log', icon: '📖', go: 'hero:collection',        n: 75,  prog: () => [Math.floor(collectionPct() * 100)], reward: 150000 },
 ];
+
+/* ------------------------------------------------------------- synergies */
+// Every profession feeds at least one other. Bonus = per × (source level − 1), so Lv 99 gives ~98× per.
+// to: a skill id, 'gather' / 'craft' (every skill of that type), 'all', or 'combat'.
+// kind: speed · double (chance for ×2 output) · xp · rare (rare-find chance) · heal (food) · dmg · hp
+const SYNERGIES = [
+  { from: 'fishing',   to: 'cooking',   kind: 'double', per: 0.002, name: 'Fresh Catch',      desc: 'Fat fish: chance to cook two dishes at once' },
+  { from: 'herbalism', to: 'cooking',   kind: 'heal',   per: 0.005, name: 'Seasoning',        desc: 'Herbs make every dish heal more in battle' },
+  { from: 'cooking',   to: 'voyaging',  kind: 'speed',  per: 0.004, name: 'Good Provisions',  desc: 'A well-fed crew sails faster' },
+  { from: 'voyaging',  to: 'all',       kind: 'rare',   per: 0.004, name: "Explorer's Eye",   desc: 'Rare finds are more likely on every skill' },
+  { from: 'mining',    to: 'smithing',  kind: 'double', per: 0.002, name: 'Pure Ore',         desc: 'Chance to forge two items from one batch' },
+  { from: 'smithing',  to: 'gather',    kind: 'speed',  per: 0.002, name: 'Sharp Tools',      desc: 'Every gathering skill works faster' },
+  { from: 'harvest',   to: 'craft',     kind: 'xp',     per: 0.003, name: 'Guiding Spirits',  desc: 'Wandering souls steady your hands: more crafting XP' },
+  { from: 'chakra',    to: 'combat',    kind: 'dmg',    per: 0.003, name: 'Chakra Strikes',   desc: 'Chakra-infused attacks deal more damage' },
+  { from: 'arts',      to: 'combat',    kind: 'hp',     per: 0.003, name: 'Body Seals',       desc: 'Protective seals raise your max HP' },
+  { from: 'strength',  to: 'mining',    kind: 'speed',  per: 0.003, name: 'Heavy Swing',      desc: 'Strong arms break rock faster' },
+  { from: 'defense',   to: 'harvest',   kind: 'speed',  per: 0.003, name: 'Steady Nerves',    desc: 'Spirits trust a calm guardian: faster harvest' },
+  { from: 'vitality',  to: 'herbalism', kind: 'speed',  per: 0.003, name: 'Endurance',        desc: 'Forage longer without rest' },
+];
+
+/* ---------------------------------------------------------------- unlocks */
+// Worlds, skills and menus open one at a time so a new player is never flooded.
+// Listed in the order a player meets them; the first locked one is shown as "Next unlock".
+// need(): condition. Already-used content always counts as unlocked (older saves).
+const usedSkill = (...ks) => ks.some((k) => S.skills[k].xp > 0);
+const afterGoal = (n) => () => S.goal >= n;
+const goalHint = (n) => `Complete objective ${n}: ${GOALS[n - 1].text}`;
+const UNLOCKS = [
+  { id: 'realm:seas',         name: 'Endless Blue',       need: () => true },
+  { id: 'skill:fishing',      name: 'Fishing',            need: () => true },
+  { id: 'skill:cooking',      name: 'Cooking',            need: () => true },
+  { id: 'feature:battle',     name: 'Battlefield',        need: () => S.goal >= 2 || S.stats.kills > 0,               hint: () => goalHint(2) },
+  { id: 'realm:soul',         name: 'Soul Afterlands',    need: () => S.goal >= 3 || usedSkill('mining', 'smithing', 'harvest'), hint: () => goalHint(3) },
+  { id: 'skill:mining',       name: 'Reishi Mining',      need: () => S.goal >= 3 || usedSkill('mining', 'smithing'),  hint: () => goalHint(3) },
+  { id: 'skill:smithing',     name: 'Bladesmithing',      need: () => S.goal >= 3 || usedSkill('mining', 'smithing'),  hint: () => goalHint(3) },
+  { id: 'feature:collection', name: 'Collection Log',     need: () => S.goal >= 5,                                      hint: () => goalHint(5) },
+  { id: 'feature:power',      name: 'Inner Power',        need: () => S.goal >= 6 || S.rebirths > 0 || S.karma > 0,    hint: () => goalHint(6) },
+  { id: 'skill:voyaging',     name: 'Voyaging',           need: () => S.goal >= 7 || usedSkill('voyaging'),            hint: () => goalHint(7) },
+  { id: 'feature:market',     name: 'Market',             need: () => S.goal >= 9 || Object.keys(S.shop).length > 0,  hint: () => goalHint(9) },
+  { id: 'skill:harvest',      name: 'Soul Harvest',       need: () => skillLv('smithing') >= 10 || usedSkill('harvest'), hint: () => 'Reach Bladesmithing level 10' },
+  { id: 'realm:shinobi',      name: 'Shinobi Lands',      need: () => S.goal >= 10 || usedSkill('herbalism', 'chakra', 'arts'), hint: () => goalHint(10) },
+  { id: 'skill:herbalism',    name: 'Herbalism',          need: () => S.goal >= 10 || usedSkill('herbalism', 'chakra', 'arts'), hint: () => goalHint(10) },
+  { id: 'skill:chakra',       name: 'Chakra Focus',       need: () => S.goal >= 10 || usedSkill('herbalism', 'chakra', 'arts'), hint: () => goalHint(10) },
+  { id: 'skill:arts',         name: 'Shinobi Arts',       need: () => skillLv('herbalism') >= 10 || usedSkill('arts'), hint: () => 'Reach Herbalism level 10' },
+  { id: 'realm:rift',         name: 'The Rift',           need: () => (S.combat.kills.admiral || 0) > 0,              hint: () => 'Defeat the Admiral of the Tide' },
+];

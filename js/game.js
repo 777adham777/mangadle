@@ -48,6 +48,7 @@ function defaultState() {
     found: {},                          // collection log: item id -> 1 once ever obtained
     pets: {},                           // pet id -> 1
     goal: 0,
+    unlocked: {},                       // unlock id -> 1 (see UNLOCKS)
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),
   };
@@ -126,9 +127,10 @@ function findAction(skill, id) { return SKILLS[skill].actions.find((a) => a.id =
 
 /* ------------------------------------------------------------- levels */
 const skillLv = (id) => levelOf(S.skills[id].xp);
+const skillXpMult = (id) => xpMult() * (hasPetFor(id) ? 1.05 : 1) * (1 + synergyBonus('xp', id));
 function addXp(id, amt) {
   const before = skillLv(id);
-  S.skills[id].xp += amt * xpMult() * (hasPetFor(id) ? 1.05 : 1);
+  S.skills[id].xp += amt * skillXpMult(id);
   const after = skillLv(id);
   if (after > before) { emit('levelup', { skill: id, level: after }); dirty = true; }
 }
@@ -155,14 +157,14 @@ function milestoneFx(skill) {
 }
 const combatMilestones = (skill) => COMBAT_MILESTONES.filter((lv) => skillLv(skill) >= lv).length;
 const luckMult = () => 1 + 0.15 * (S.shop.lucky_coin || 0);
-const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult();
+const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult() * (1 + synergyBonus('rare', skill));
 function collectionPct() {
   const total = Object.keys(ITEMS).length + PETS.length;
   return (Object.keys(S.found).length + Object.keys(S.pets).length) / total;
 }
 
-function dmgMult()  { return (1 + 0.01 * tl('chakra')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones('strength')) * (1 + 0.03 * bossPets()); }
-function hpMult()   { return (1 + 0.01 * tl('reiatsu')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().hp || 0)) * (1 + 0.04 * combatMilestones('vitality')) * (1 + 0.03 * bossPets()); }
+function dmgMult()  { return (1 + synergyBonus('dmg', 'combat')) * (1 + 0.01 * tl('chakra')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones('strength')) * (1 + 0.03 * bossPets()); }
+function hpMult()   { return (1 + synergyBonus('hp', 'combat')) * (1 + 0.01 * tl('reiatsu')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().hp || 0)) * (1 + 0.04 * combatMilestones('vitality')) * (1 + 0.03 * bossPets()); }
 function defMult()  { return (1 + 0.01 * tl('will')) * (1 + 0.04 * combatMilestones('defense')); }
 function goldMult() { return (1 + 0.01 * tl('fortune')) * (1 + 0.15 * pl('merchant')) * (1 + (fruitFx().gold || 0)) * (1 + gearStat('gold')); }
 function xpMult()   { return (1 + 0.005 * tl('wisdom')) * (1 + 0.1 * pl('mentor')); }
@@ -181,6 +183,7 @@ function skillSpeed(skillId, actId) {
   if (actId) m *= 1 + 0.003 * masteryLv(skillId, actId);
   if (sk.type !== 'combat') m *= 1 + milestoneFx(skillId).speed;
   if (hasPetFor(skillId)) m *= 1.05;
+  m *= 1 + synergyBonus('speed', skillId);
   if (skillId === 'fishing' && S.fruit) m *= 0.6;
   return m;
 }
@@ -189,8 +192,39 @@ function doubleChance(skillId, actId) {
   let c = 0.002 * masteryLv(skillId, actId);
   if (SKILLS[skillId].type === 'gather') c += 0.05 * (S.shop.abundance || 0);
   c += milestoneFx(skillId).dbl;
+  c += synergyBonus('double', skillId);
   return Math.min(1, c);
 }
+
+/* ------------------------------------------------- unlocks + synergies */
+const UNLOCK_BY = Object.fromEntries(UNLOCKS.map((u) => [u.id, u]));
+// Anything not listed in UNLOCKS is always open. Combat skills open with the Battlefield.
+function isUnlocked(id) {
+  if (id.startsWith('skill:') && SKILLS[id.slice(6)] && SKILLS[id.slice(6)].realm === 'combat') id = 'feature:battle';
+  return !UNLOCK_BY[id] || !!S.unlocked[id];
+}
+const skillOpen = (k) => isUnlocked('skill:' + k);
+const realmOpen = (r) => isUnlocked('realm:' + r);
+// Marks every unlock whose condition is now met; returns the newly opened entries (in list order).
+function checkUnlocks() {
+  const fresh = [];
+  for (const u of UNLOCKS) if (!S.unlocked[u.id] && u.need()) { S.unlocked[u.id] = 1; fresh.push(u); }
+  if (fresh.length) dirty = true;
+  return fresh;
+}
+const nextUnlock = () => UNLOCKS.find((u) => !S.unlocked[u.id] && u.hint);
+
+const synHits = (s, target) => s.to === target || s.to === 'all' || (SKILLS[target] && SKILLS[target].type === s.to);
+const synValue = (s) => (skillOpen(s.from) ? s.per * (skillLv(s.from) - 1) : 0);
+function synergyBonus(kind, target) {
+  let b = 0;
+  for (const s of SYNERGIES) if (s.kind === kind && synHits(s, target)) b += synValue(s);
+  return b;
+}
+// Synergies a skill receives / gives. Combat skills share the 'combat' target.
+const synergiesInto = (k) => SYNERGIES.filter((s) => synHits(s, k) || (SKILLS[k].realm === 'combat' && s.to === 'combat'));
+const synergiesFrom = (k) => SYNERGIES.filter((s) => s.from === k);
+const synTargetOpen = (s) => (s.to === 'combat' ? isUnlocked('feature:battle') : SKILLS[s.to] ? skillOpen(s.to) : true);
 
 /* ------------------------------------------------------- combat stats */
 const pMaxHit = () => (8 + 1.5 * skillLv('strength') + gearStat('atk')) * dmgMult();
@@ -200,7 +234,7 @@ const pSpeed  = () => 2.4 * (1 + (fruitFx().atkSpeed || 0));
 const pDodge  = () => fruitFx().dodge || 0;
 const mitig   = (def) => 100 / (100 + def);
 const autoEatThreshold = () => [0.4, 0.55, 0.7][S.shop.satchel || 0];
-const foodHeal = (id) => Math.floor(ITEMS[id].heal * hpMult());
+const foodHeal = (id) => Math.floor(ITEMS[id].heal * hpMult() * (1 + synergyBonus('heal', 'cooking')));
 
 function timeToKill(e) { return e.hp / (0.75 * pMaxHit() * mitig(e.def) / pSpeed()); }
 function timeToDie(e)  { return pMaxHp() / (0.75 * e.atk * mitig(pDef()) * (1 - pDodge()) / e.spd); }
@@ -243,6 +277,7 @@ function startAction(skill, id) {
   const act = findAction(skill, id);
   if (!act) return;
   if (S.action && S.action.skill === skill && S.action.id === id) { stopAction(); return; }
+  if (!skillOpen(skill)) return;
   if (skillLv(skill) < act.level) return toast(`Requires ${SKILLS[skill].name} level ${act.level}`, 'bad');
   if (act.in && !canAfford(act.in)) return toast('Not enough materials.', 'bad');
   stopCombat();
@@ -283,7 +318,7 @@ function completeAction(skill, act) {
   const key = skill + ':' + act.id;
   S.mastery[key] = (S.mastery[key] || 0) + 1;
   S.stats.actions++;
-  emit('action', { skill, act, gains, gold, xp: act.xp * xpMult(), double: mult > 1 });
+  emit('action', { skill, act, gains, gold, xp: act.xp * skillXpMult(skill), double: mult > 1 });
 }
 
 function rollRareFinds(skill, act, gains) {
@@ -352,7 +387,7 @@ function zoneUnlocked(zi) {
   return (S.combat.kills[prev.id] || 0) >= (prev.boss ? 1 : 10);
 }
 function startCombat(zi) {
-  if (!ZONES[zi] || !zoneUnlocked(zi)) return;
+  if (!ZONES[zi] || !zoneUnlocked(zi) || !isUnlocked('feature:battle')) return;
   const C = S.combat;
   if (C.zone === zi) return;
   S.action = null;
@@ -563,8 +598,10 @@ function serialize() { S.last = Date.now(); return JSON.stringify(S); }
 function loadFrom(json) {
   const d = JSON.parse(json);
   if (!isObj(d) || !d.skills) throw new Error('Not a valid save');
+  const legacy = !d.unlocked;
   S = mergeDefaults(d, defaultState());
   sanitize();
+  if (legacy) checkUnlocks();   // saves from before unlocks: open what they already reached, quietly
 }
 
 

@@ -753,3 +753,49 @@ button.acard:hover { border-color: color-mix(in srgb, var(--rc) 60%, var(--line)
 .nb-claim { flex-shrink: 0; }
 @media (max-width: 860px) { .nb-claim span { display: none; } .nb-claim.gbtn.sm { padding: 0 4px; } }
 .seg button.locked { opacity: 0.45; }
+
+/* ---------------------------------------------------------------- next unlock teaser */
+.nx { display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 9px; border: 1px dashed var(--line2); background: rgba(255, 255, 255, 0.02); }
+.nav-next { margin: 4px 0 8px; }
+.nx-ic { position: relative; width: 34px; height: 34px; flex-shrink: 0; display: grid; place-items: center; font-size: 18px; border-radius: 8px; background: var(--panel2); color: var(--mute); }
+.nx-ic > .gi { filter: blur(0.6px); opacity: 0.55; }
+.nx-ic i { position: absolute; right: -4px; bottom: -4px; width: 16px; height: 16px; display: grid; place-items: center; font-size: 10px; border-radius: 50%; background: var(--panel3); color: var(--gold); border: 1px solid var(--line2); }
+.nx-t { display: flex; flex-direction: column; min-width: 0; line-height: 1.25; }
+.nx-t small { font: 600 10.5px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
+.nx-t b { font: 600 15px var(--display); color: var(--text); }
+.nx-t em { font-style: normal; font-size: 12px; color: var(--dim); }
+.ov-next { align-self: start; }
+
+/* ---------------------------------------------------------------- synergies */
+.syn-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+.syn-col { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.syn-h { font: 600 11px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+.syn { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border-radius: 8px; background: var(--panel2); border: 1px solid var(--line); }
+.syn.on { border-color: color-mix(in srgb, var(--rc) 45%, var(--line)); }
+.syn.hidden { background: transparent; border-style: dashed; color: var(--mute); }
+.syn-ic { width: 30px; height: 30px; flex-shrink: 0; display: grid; place-items: center; font-size: 17px; border-radius: 7px; background: var(--panel3); color: var(--rc); }
+.syn.hidden .syn-ic { color: var(--mute); }
+.syn-t { display: flex; flex-direction: column; flex: 1; min-width: 0; line-height: 1.25; }
+.syn-t b { font: 600 14.5px var(--display); color: var(--text); }
+.syn.hidden .syn-t b { color: var(--mute); }
+.syn-t small { font-size: 12px; color: var(--dim); }
+.syn-v { display: flex; flex-direction: column; align-items: flex-end; text-align: right; flex-shrink: 0; line-height: 1.2; }
+.syn-v b { font: 700 17px var(--display); color: var(--ok); }
+.syn:not(.on) .syn-v b { color: var(--mute); }
+.syn-v small { font-size: 11px; color: var(--mute); white-space: nowrap; }
+
+/* ---------------------------------------------------------------- new world reveal */
+.realm-open { border-color: color-mix(in srgb, var(--rc) 55%, var(--line2)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--rc) 20%, transparent), 0 24px 60px rgba(0, 0, 0, 0.6); }
+.realm-open .wl-ic { color: var(--rc); background: color-mix(in srgb, var(--rc) 14%, transparent); border-color: color-mix(in srgb, var(--rc) 50%, transparent); animation: popIn 0.5s ease-out; }
+.realm-open > small, .realm-open .wl-points i { color: var(--rc); }
+.ro-syn { width: 100%; display: flex; flex-direction: column; gap: 4px; text-align: left; }
+.ro-syn small { font: 600 11px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ok); }
+.ro-syn span { display: flex; align-items: center; gap: 8px; font-size: 13px; }
+.ro-syn span .gi { color: var(--ok); }
+.ro-syn em { font-style: normal; color: var(--dim); margin-left: auto; }
+
+@media (max-width: 760px) {
+  .syn-grid { grid-template-columns: minmax(0, 1fr); }
+  .syn-v small { display: none; }
+  .ro-syn em { display: none; }
+}

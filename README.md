@@ -4,6 +4,8 @@ An idle RPG in the spirit of Melvor Idle and NGU Idle, set across three collided
 the **Shinobi Lands**, the **Soul Afterlands** and the **Endless Blue**.
 
 - 12 skills (gathering, crafting, voyages, combat), 6-12 unlocks each up to level 90, milestone perks at 10/25/50/75/99
+- Worlds, skills and menus open one at a time (Endless Blue → Soul Afterlands → Shinobi Lands → The Rift), always with a single "Next unlock" shown
+- Synergies: every profession boosts another one (e.g. Fishing → Cooking double output, Bladesmithing → all gathering speed)
 - 13 battle zones with bosses; 110+ items with visible drop rates, gems, openable chests, 13 pets and a Collection Log
 - Inner Power energy training, Rebirth and Karma perks, rare Abyss Fruits
 - Guided objectives, offline progress, autosave
@@ -29,7 +31,7 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | --- | --- |
 | `index.html` | Page shell |
 | `css/style.css` | All styling |
-| `js/data.js` | Game content: items, skills, zones, shop, objectives |
+| `js/data.js` | Game content: items, skills, zones, shop, objectives, synergies, unlock order |
 | `js/icons.js` | Game icon set (SVG paths) and which icon each item, skill, enemy and screen uses |
 | `js/guide.js` | New-player onboarding: welcome screen, coach bubbles for the first 10 objectives, menu unlocks |
 | `js/scene.js` | Generated background scenes for each world |
