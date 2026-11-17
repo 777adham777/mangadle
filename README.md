@@ -33,7 +33,7 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `js/icons.js` | Game icon set (SVG paths) and which icon each item, skill, enemy and screen uses |
 | `js/scene.js` | Generated background scenes for each world |
 | `js/game.js` | Game engine (no DOM) |
-| `js/ui.js` | Interface (gacha / JRPG style): rendering, animations, input, save/load |
+| `js/ui.js` | Interface: sidebar with every skill, activity bar, skill pages, bank, battle; rendering, input, save/load |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable app + offline support |
 
 ## Credits

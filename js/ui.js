@@ -1,11 +1,12 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — UI layer (gacha / JRPG style)
-   - render(): structural rebuild of hud / dock / tracker / main, only when `dirty`
+   TRI-REALM IDLE — UI layer
+   Layout of an RPG incremental: every skill is one click away in a permanent
+   sidebar, the current farm is always visible in the top activity bar, and
+   skill pages show every action as a full card (time, XP/h, materials, owned).
+   - render(): structural rebuild of nav / activity bar / main, only when `dirty`
    - update(): cheap per-frame sync of bars, numbers and states
    - BUS listeners: feedback (item-obtained popups, floats, level-up banners)
-   Visual system: item tiles framed by rarity (1★–5★), translucent windows over
-   a per-world painted scene, cream primary buttons, bottom dock navigation.
    ========================================================================== */
 
 const $ = (sel, root) => (root || document).querySelector(sel);
@@ -14,7 +15,7 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 const skillsOf = (realm) => Object.keys(SKILLS).filter((k) => SKILLS[k].realm === realm);
 const totalLevel = () => Object.keys(SKILLS).reduce((a, k) => a + skillLv(k), 0);
 
-// UI accent per world (tuned for the dark scenes; data colours are kept for saves/tools)
+// UI accent per world
 const RC = { shinobi: '#ff9a4d', soul: '#a98bff', seas: '#4cc3ff', combat: '#ff5d73', rift: '#ff5bd8', hub: '#f4c66a' };
 const rc = (r) => RC[r] || RC.hub;
 
@@ -55,7 +56,7 @@ const typeLabel = (id) => { const it = ITEMS[id]; return it.type === 'equip' ? i
 const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Abyss Fruit' : id === 'GEM' ? 'Random gem' : ITEMS[id].name);
 function stars(r) { return `<span class="stars">${'<i></i>'.repeat(r)}</span>`; }
 
-// An item tile: art area tinted by rarity + a cream count strip (the gacha "item card").
+// An item tile: art area tinted by rarity + a light count strip.
 function tile(id, n, o) {
   o = o || {};
   const r = o.unknown ? 0 : (o.r || rarity(id));
@@ -81,19 +82,8 @@ const stat = (label, val, attrs) => `<div class="stat"><small>${label}</small><b
 
 let selItem = null;
 const seenItems = new Set();
-const selAct = {};
 
 /* =============================================================== routing */
-const DOCK = [
-  ['home', () => ui('home'), 'Home', 'hub'],
-  ['realm:shinobi', () => ic('realm', 'shinobi'), 'Shinobi', 'shinobi'],
-  ['realm:soul', () => ic('realm', 'soul'), 'Soul', 'soul'],
-  ['realm:seas', () => ic('realm', 'seas'), 'Seas', 'seas'],
-  ['battle', () => ui('battle'), 'Battle', 'combat'],
-  ['hero', () => ui('hero'), 'Hero', 'hub'],
-  ['power', () => ui('power'), 'Power', 'soul'],
-  ['market', () => ui('market'), 'Market', 'hub'],
-];
 function normalizeView() {
   const legacy = { overview: 'home', combat: 'battle', bank: 'hero', shop: 'market', rebirth: 'power' };
   let v = legacy[S.ui.view] || S.ui.view || 'home';
@@ -115,41 +105,23 @@ function setView(v) {
   const [name, realm, skill] = S.ui.view.split(':');
   if (name === 'realm') S.ui.tab[realm] = skill;
   $('#main').scrollTop = 0;
+  document.body.classList.remove('menu-open');
   viewChanged = true;
   dirty = true;
 }
 let viewChanged = true;
-
-/* =============================================================== scene */
-let curScene = null;
-function sceneKind() {
+const skillView = (k) => (SKILLS[k].realm === 'combat' ? 'battle' : `realm:${SKILLS[k].realm}:${k}`);
+function viewAccent() {
   const [name, realm] = S.ui.view.split(':');
-  if (name === 'realm') return realm;
-  if (name === 'battle') return S.combat.zone != null ? (ZONES[S.combat.zone].realm === 'rift' ? 'hub' : 'battle') : 'battle';
-  return 'hub';
-}
-function setScene(kind) {
-  if (kind === curScene) return;
-  curScene = kind;
-  const host = $('#scene');
-  const layer = document.createElement('div');
-  layer.className = 'scene-layer';
-  layer.innerHTML = sceneHTML(kind) + particlesHTML(kind);
-  host.appendChild(layer);
-  requestAnimationFrame(() => layer.classList.add('in'));
-  const old = $$('.scene-layer', host).slice(0, -1);
-  setTimeout(() => old.forEach((o) => o.remove()), 700);
-  document.body.style.setProperty('--rc', rc(kind === 'battle' ? 'combat' : kind));
+  return name === 'realm' ? rc(realm) : name === 'battle' ? rc('combat') : rc('hub');
 }
 
-/* =============================================================== hud + dock */
+/* =============================================================== top bar + sidebar */
 function renderHud() {
   $('#hud').innerHTML = `
-    <button class="pcard" data-nav="hero" title="Hero">
-      <span class="avatar">${ui('hero')}<span class="av-lv" data-totallv>${totalLevel()}</span></span>
-      <span class="pinfo"><b>Wanderer</b><small><span id="r-rank"></span></small></span>
-    </button>
-    <div class="brand">TRI<span>·</span>REALM</div>
+    <button class="menu-btn" data-menu title="Menu">${ui('menu')}</button>
+    <button class="brand" data-nav="home">TRI<span>·</span>REALM</button>
+    <div id="nowbar" class="nowbar"></div>
     <div class="curs">
       <div class="cur gold" title="Gold — buys upgrades in the Market"><i>${ui('gold')}</i><b id="r-gold">0</b></div>
       <div class="cur bounty" title="Bounty — earned by defeating enemies. Higher ranks give bonus damage."><i>${ui('bounty')}</i><b id="r-bounty">0</b></div>
@@ -157,18 +129,36 @@ function renderHud() {
     </div>
     <button class="hud-btn" data-nav="settings" title="Settings">${ui('settings')}</button>`;
 }
-function dockBusy(key) {
-  if (key === 'battle') return S.combat.zone != null;
-  if (key.startsWith('realm:') && S.action) return SKILLS[S.action.skill].realm === key.split(':')[1];
-  if (key === 'power') return energyUsed() > 0;
-  return false;
+function isOn(key) {
+  const v = S.ui.view;
+  if (key === 'hero') return v === 'hero';
+  return v === key || v.startsWith(key + ':');
+}
+function navRow(key, icon, label, o) {
+  o = o || {};
+  const on = !o.noOn && isOn(key);
+  return `<button class="nav-row ${on ? 'on' : ''} ${o.sub ? 'sub' : ''}" data-nav="${key}" style="--rc:${o.color || rc('hub')}" title="${label}">
+    <span class="nr-ic">${icon}</span><span class="nr-name">${label}</span>
+    ${o.skill ? `<span class="nr-lv" data-lv="${o.skill}">${skillLv(o.skill)}</span><span class="nr-xp"><i data-xpbar="${o.skill}"></i></span>` : ''}
+    ${o.busy ? '<i class="nr-busy"></i>' : ''}</button>`;
 }
 function renderRail() {
-  $('#rail').innerHTML = DOCK.map(([key, icon, label, realm]) => {
-    const on = S.ui.view === key || S.ui.view.startsWith(key + ':');
-    return `<button class="dock-btn ${on ? 'on' : ''}" data-nav="${key}" style="--rc:${rc(realm)}" title="${label}">
-      <span class="dock-ic">${icon()}</span><span class="dock-l">${label}</span>${dockBusy(key) ? '<i class="busy"></i>' : ''}</button>`;
-  }).join('');
+  const groups = [];
+  const quick = [['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['hero:collection', 'collection', 'Collection'], ['market', 'market', 'Market'], ['power', 'power', 'Power'], ['settings', 'settings', 'Settings']];
+  groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => `<button class="nq ${isOn(k) ? 'on' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}</button>`).join('')}</div>`);
+  groups.push(`<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
+    ${navRow('battle', ui('battle'), S.combat.zone != null ? ZONES[S.combat.zone].name : 'Battlefield', { color: rc('combat'), busy: S.combat.zone != null })}
+    <div class="nav-cskills">${['strength', 'defense', 'vitality'].map((k) => `<button class="ncs" data-nav="battle" title="${SKILLS[k].name}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><span class="nr-xp"><i data-xpbar="${k}"></i></span></button>`).join('')}</div></div>`);
+  for (const r of ['shinobi', 'soul', 'seas']) {
+    groups.push(`<div class="nav-group"><div class="nav-sec" style="--rc:${rc(r)}">${ic('realm', r)}${REALMS[r].name}</div>
+      ${skillsOf(r).map((k) => navRow(`realm:${r}:${k}`, ic('skill', k), SKILLS[k].name, { skill: k, color: rc(r), busy: S.action && S.action.skill === k })).join('')}</div>`);
+  }
+  $('#rail').innerHTML = `<div class="nav-quest" id="navquest">${goalHTML()}</div>${groups.join('')}`;
+  $('#tabbar').innerHTML = [
+    `<button class="tab-btn" data-menu>${ui('menu')}<span>Menu</span></button>`,
+    ...[['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['battle', 'battle', 'Battle'], ['market', 'market', 'Market']]
+      .map(([k, icn, l]) => `<button class="tab-btn ${isOn(k) ? 'on' : ''}" data-nav="${k}">${ui(icn)}<span>${l}</span></button>`),
+  ].join('');
 }
 
 /* =============================================================== shared bits */
@@ -177,7 +167,7 @@ function xpInfo(id) {
   const lo = XP_TABLE[L], hi = XP_TABLE[L + 1];
   return { L, p: L >= MAX_LEVEL ? 1 : (xp - lo) / (hi - lo), xp, need: L >= MAX_LEVEL ? 0 : hi - xp };
 }
-const xpText = (b) => (b.need ? `${fmt(b.xp)} XP <em>· ${fmt(b.need)} to next</em>` : 'MAX LEVEL');
+const xpText = (b) => (b.need ? `${fmt(b.xp)} XP <em>· ${fmt(b.need)} to next level</em>` : 'MAX LEVEL');
 function statRows(st) {
   const rows = [];
   if (st.atk) rows.push(['atk', 'Attack', `+${st.atk}`]);
@@ -186,6 +176,7 @@ function statRows(st) {
   if (st.gold) rows.push(['gold', 'Gold bonus', `+${pct(st.gold)}`]);
   return rows;
 }
+const statInline = (st) => statRows(st).map(([icn, , v]) => `<span>${ui(icn)}${v}</span>`).join('');
 const attrList = (rows) => `<div class="attrs">${rows.map(([icn, l, v, attrs]) => `<div class="attr"><i>${ui(icn)}</i><span>${l}</span><b ${attrs || ''}>${v}</b></div>`).join('')}</div>`;
 // Drop rates: common ones as %, rare ones as "1/N" (easier to read for long odds).
 const fmtRate = (p) => (p >= 0.1 ? pct(Math.min(1, p)) : '1/' + Math.max(1, Math.round(1 / p)).toLocaleString('en-US'));
@@ -230,139 +221,151 @@ function sourcesHTML(id) {
   return `<ul class="srcs">${src.slice(0, 8).map((x) => `<li><span><i>${ic(x.icon[0], x.icon[1])}</i>${esc(x.text)}</span>${x.rate != null ? `<b>${fmtRate(x.rate)}</b>` : '<b class="ok">Guaranteed</b>'}</li>`).join('')}</ul>`;
 }
 
+/* =============================================================== farm numbers */
+function farmRates(skill, a) {
+  const T = actionTime(skill, a), per = 3600 / T;
+  const r = { T, per, xph: per * a.xp * xpMult() };
+  if (a.out) r.itemsh = per * Object.values(a.out)[0] * (1 + doubleChance(skill, a.id));
+  if (a.in) { r.can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(count(k) / n))); r.runout = r.can * T; }
+  return r;
+}
+function combatRates() {
+  const z = ZONES[S.combat.zone], e = z.enemies[0];
+  const kph = 3600 / (timeToKill(e) + (z.boss ? 3 : 1.2));
+  return { z, kph, xph: kph * e.xp * 1.33 * xpMult(), goldh: kph * (e.gold[0] + e.gold[1]) / 2 * goldMult() };
+}
+// The big "now farming" block (overview + the active skill page).
+function farmPanel() {
+  if (S.action) {
+    const skill = S.action.skill, s = SKILLS[skill], a = findAction(skill, S.action.id), f = farmRates(skill, a);
+    const outId = a.out ? Object.keys(a.out)[0] : null;
+    return `<div class="farm" style="--rc:${rc(s.realm)}">
+      <div class="fm-head">${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), title: a.name })}
+        <button class="fm-txt" data-nav="${skillView(skill)}"><small>Farming · ${s.name} Lv <em data-lv="${skill}">${skillLv(skill)}</em></small><b>${esc(a.name)}</b></button>
+        ${gbtn('Stop', 'stop', 'data-stop', 'dark sm')}</div>
+      <div class="fm-bar"><span class="pbar"><i data-nowfill></i></span><span class="fm-time" data-nowtime></span></div>
+      <div class="fm-stats">
+        ${outId ? stat('Items / hour', fmt(f.itemsh)) : stat('Voyages / hour', fmt(f.per))}
+        ${stat('XP / hour', fmt(f.xph))}
+        ${stat('Next level', '—', 'data-nextlv')}
+        ${a.in ? stat('Can make', fmt(f.can), 'data-canmake') + stat('Runs out', fmtTime(f.runout), 'data-runout') : ''}
+        ${outId ? stat('Owned', fmt(count(outId)), `data-count="${outId}"`) : ''}
+      </div></div>`;
+  }
+  if (S.combat.zone != null) {
+    const c = combatRates(), food = S.combat.food;
+    return `<div class="farm" style="--rc:${rc('combat')}">
+      <div class="fm-head">${tile(null, null, { r: c.z.boss ? 5 : 3, icon: ic('zone', c.z.id), title: c.z.name })}
+        <button class="fm-txt" data-nav="battle"><small>Fighting${c.z.boss ? ' · Boss' : ''}</small><b>${c.z.name}</b></button>
+        ${gbtn('Retreat', 'stop', 'data-stopcombat', 'dark sm')}</div>
+      <div class="fm-bar"><span class="pbar hp"><i data-nowhp></i></span><span class="fm-time" data-hpnow></span></div>
+      <div class="fm-stats">${stat('Kills / hour', '≈' + fmt(c.kph))}${stat('XP / hour', '≈' + fmt(c.xph))}${stat('Gold / hour', '≈' + fmt(c.goldh))}
+        ${stat('Food left', food && count(food) ? `<span data-count="${food}">${fmt(count(food))}</span>` : '<span class="bad">None</span>')}</div></div>`;
+  }
+  return '';
+}
+
 /* =============================================================== VIEWS */
 const VIEWS = {};
 
-/* ------------------------------------------------------------- home: world map */
+/* ------------------------------------------------------------- overview */
 VIEWS.home = () => {
   const rank = BOUNTY_RANKS[bountyRank()];
-  const portal = (key, realm, name, sub, skills, busy) => `
-    <button class="portal" data-nav="${key}" style="--rc:${rc(realm === 'battle' ? 'combat' : realm)}">
-      <span class="portal-art">${sceneHTML(realm, 'mini')}</span>
-      ${busy ? `<span class="live">${busy}</span>` : ''}
-      <span class="portal-emblem">${realm === 'battle' ? ui('battle') : ic('realm', realm)}</span>
-      <span class="portal-info"><small>${sub}</small><b>${name}</b>
-        <span class="portal-skills">${skills.map((k) => `<span title="${SKILLS[k].name}">${ic('skill', k)}<em>${skillLv(k)}</em></span>`).join('')}</span></span>
-    </button>`;
-  const actBusy = (r) => (S.action && SKILLS[S.action.skill].realm === r ? 'In progress' : '');
+  const farm = farmPanel();
+  const skillCard = (k) => {
+    const b = xpInfo(k), busy = (S.action && S.action.skill === k) || (SKILLS[k].realm === 'combat' && S.combat.zone != null);
+    return `<button class="ov-skill ${busy ? 'busy' : ''}" data-nav="${skillView(k)}" style="--rc:${rc(SKILLS[k].realm)}">
+      <span class="ovs-ic">${ic('skill', k)}</span><span class="ovs-main"><span class="ovs-top"><b>${SKILLS[k].name}</b><em><small>Lv</small> <span data-lv="${k}">${b.L}</span></em></span>
+      <span class="xpbar thin"><i data-xpbar="${k}"></i></span></span></button>`;
+  };
   return `
-  ${ptitle('Three worlds · one fate', 'World Map')}
-  <div class="portals">
-    ${portal('realm:shinobi', 'shinobi', REALMS.shinobi.name, 'World I', skillsOf('shinobi'), actBusy('shinobi'))}
-    ${portal('realm:soul', 'soul', REALMS.soul.name, 'World II', skillsOf('soul'), actBusy('soul'))}
-    ${portal('realm:seas', 'seas', REALMS.seas.name, 'World III', skillsOf('seas'), actBusy('seas'))}
-    ${portal('battle', 'battle', 'Battlefields', 'Combat', ['strength', 'defense', 'vitality'], S.combat.zone != null ? 'Fighting' : '')}
+  ${ptitle('Tri-Realm Idle', 'Overview')}
+  <div class="ov-top">
+    <section class="win">${farm || `<div class="idle-big">${ui('sleep')}<div><b>Nothing is farming</b><p class="muted">Idle games only progress while an activity runs. Pick a skill on the left, or follow the objective.</p></div></div>`}</section>
+    <section class="win quest-win">${goalHTML()}</section>
   </div>
-  <div class="home-row">
-    <section class="win stats-win">${hdr('Adventurer')}
-      <div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}</div>
-    </section>
-    <section class="win m-only quest-win">${goalHTML()}</section>
-  </div>`;
+  ${hdr('Skills', `Total level ${totalLevel()}`)}
+  <div class="ov-grid">${['shinobi', 'soul', 'seas', 'combat'].map((r) => `
+    <section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${r === 'combat' ? ui('battle') : ic('realm', r)}${r === 'combat' ? 'Combat' : REALMS[r].name}</h3>
+      ${skillsOf(r).map(skillCard).join('')}</section>`).join('')}</div>
+  <section class="win">${hdr('Adventurer')}
+    <div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Rebirths', fmt(S.rebirths))}</div>
+  </section>`;
 };
 
-/* ------------------------------------------------------------- realm / skill */
-function selectedAct(skill) {
-  const s = SKILLS[skill];
-  if (selAct[skill] && findAction(skill, selAct[skill])) return findAction(skill, selAct[skill]);
-  if (S.action && S.action.skill === skill) return findAction(skill, S.action.id);
-  const L = skillLv(skill);
-  const open = s.actions.filter((a) => a.level <= L);
-  return open[open.length - 1] || s.actions[0];
-}
-function msFill(L) {
-  const lv = MILESTONES.map((m) => m.lv), n = lv.length;
-  if (L < lv[0]) return 0;
-  if (L >= lv[n - 1]) return 1;
-  for (let i = 0; i < n - 1; i++) if (L < lv[i + 1]) return (i + (L - lv[i]) / (lv[i + 1] - lv[i])) / (n - 1);
-  return 1;
-}
+/* ------------------------------------------------------------- skill page */
 VIEWS.realm = (realm, skill) => {
-  const R = REALMS[realm], s = SKILLS[skill], b = xpInfo(skill), a = selectedAct(skill);
-  const mods = [`<span class="pill" title="Action speed">${ui('spd')} ×${skillSpeed(skill).toFixed(2)}</span>`, `<span class="pill" title="XP multiplier">${ui('xp')} ×${xpMult().toFixed(2)}</span>`];
-  if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Abyss Fruit eaters fish 40% slower">${ui('fruit')} −40%</span>`);
+  const R = REALMS[realm], s = SKILLS[skill], b = xpInfo(skill);
+  const mods = [`<span class="pill" title="Action speed">${ui('spd')} Speed ×${skillSpeed(skill).toFixed(2)}</span>`, `<span class="pill" title="XP multiplier">${ui('xp')} XP ×${xpMult().toFixed(2)}</span>`];
+  if (rareMult(skill) > 1) mods.push(`<span class="pill" title="Rare find multiplier">${ui('rare')} Luck ×${rareMult(skill).toFixed(2)}</span>`);
+  if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Abyss Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
+  const open = s.actions.filter((x) => x.level <= b.L).length;
+  const active = S.action && S.action.skill === skill;
   return `
-  ${ptitle(R.name, s.name, `<nav class="skill-tabs">${skillsOf(realm).map((k) => `
-    <button class="stab ${k === skill ? 'on' : ''}" data-nav="realm:${realm}:${k}" title="${SKILLS[k].name}">
-      <span class="stab-ic">${ic('skill', k)}</span><span class="stab-t"><b>${SKILLS[k].name}</b><small>Lv <em data-lv="${k}">${skillLv(k)}</em></small></span></button>`).join('')}</nav>`)}
-  <div class="skill-layout">
-    <section class="win skill-win">
-      <div class="skill-head">
-        <div class="lv-dia"><span><small>Lv</small><b data-lv="${skill}">${b.L}</b></span></div>
-        <div class="sh-main">
-          <div class="sh-top"><span class="muted">${s.desc}</span></div>
-          <div class="xpbar"><i data-xpbar="${skill}"></i></div>
-          <div class="sh-foot"><span class="sh-xp" data-xptext="${skill}">${xpText(b)}</span><span class="pills">${mods.join('')}</span></div>
-        </div>
-      </div>
-      <div class="ms-track" style="--f:${msFill(b.L)}">${MILESTONES.map((m) => `
-        <div class="ms ${b.L >= m.lv ? 'on' : ''}" title="${m.name} (Lv ${m.lv}): ${m.desc}"><i>${m.lv}</i><span>${m.name}</span><small>${m.desc}</small></div>`).join('')}</div>
-      ${hdr(s.type === 'voyage' ? 'Voyages' : s.type === 'craft' ? 'Recipes' : 'Gathering', `${s.actions.filter((x) => x.level <= b.L).length} / ${s.actions.length} unlocked`)}
-      <div class="act-list">${s.actions.map((x) => actRow(skill, x, x.id === a.id)).join('')}</div>
-    </section>
-    <section class="win detail" id="act-detail">${actDetailHTML(skill, a)}</section>
-  </div>`;
+  <section class="sk-banner" style="--rc:${rc(realm)}">
+    <div class="sk-bg">${sceneHTML(realm, 'mini')}</div>
+    <div class="sk-ic">${ic('skill', skill)}</div>
+    <div class="sk-main"><small>${R.name}</small><h1>${s.name}</h1>
+      <div class="sk-xp"><span class="pbar"><i data-xpbar="${skill}"></i></span><span class="sk-xpt" data-xptext="${skill}">${xpText(b)}</span></div>
+      <div class="pills">${mods.join('')}</div></div>
+    <div class="sk-lv"><small>Level</small><b data-lv="${skill}">${b.L}</b><span class="muted">/ ${MAX_LEVEL}</span></div>
+  </section>
+  <div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${b.L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b>${m.lv}</b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div>
+  ${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
+  ${hdr(s.type === 'voyage' ? 'Voyages' : s.type === 'craft' ? 'Recipes' : 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`)}
+  <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.map((x) => actCard(skill, x)).join('')}</div>
+  ${hdr('Rare finds', `rolled on every action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}
+  <div class="tiles rare-row">${rareTiles(skill).join('')}</div>`;
 };
-function actRow(skill, a, sel) {
-  const st = actState(skill, a), ml = masteryLv(skill, a.id);
-  return `<button class="act-row ${sel ? 'sel' : ''}" data-pick="${skill}:${a.id}" data-row="${skill}:${a.id}" data-state="${st}">
-    ${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), cls: 's', title: a.name })}
-    <span class="ar-main"><b>${esc(a.name)}</b>
-      <span class="ar-sub ar-open">${ui('time')}${fmtTime(actionTime(skill, a))}<span class="sep"></span>${ui('xp')}${fmt(a.xp)}</span>
-      <span class="ar-sub ar-lock">${ui('lock')}Requires Lv ${a.level}</span></span>
-    <span class="ar-tail"><span class="eq"><i></i><i></i><i></i></span><span class="ar-m" title="Mastery level">${ui('mastery')}<b data-mlv="${skill}:${a.id}">${ml}</b></span></span>
-    <span class="ar-prog"><i data-rowfill></i></span>
-  </button>`;
-}
 function actState(skill, a) {
   if (skillLv(skill) < a.level) return 'locked';
   if (S.action && S.action.skill === skill && S.action.id === a.id) return 'active';
   if (a.in && !canAfford(a.in)) return 'missing';
   return 'ready';
 }
-function ctaHTML(skill, a) {
-  const st = actState(skill, a);
-  if (st === 'locked') return `<i class="gbtn-ic">${ui('lock')}</i><span>Requires Lv ${a.level}</span>`;
-  if (st === 'active') return `<i class="gbtn-ic">${ui('stop')}</i><span>Stop</span>`;
-  if (st === 'missing') return `<i class="gbtn-ic">${ui('close')}</i><span>Missing materials</span>`;
-  return `<i class="gbtn-ic">${ui('play')}</i><span>${SKILLS[skill].type === 'voyage' ? 'Set sail' : SKILLS[skill].type === 'craft' ? 'Craft' : 'Start'}</span>`;
+function ctaLabel(skill, a, st) {
+  st = st || actState(skill, a);
+  if (st === 'active') return `${ui('stop')}Stop`;
+  if (st === 'missing') return `${ui('close')}Missing items`;
+  if (st === 'locked') return `${ui('lock')}Lv ${a.level}`;
+  return `${ui('play')}${SKILLS[skill].type === 'voyage' ? 'Set sail' : SKILLS[skill].type === 'craft' ? 'Craft' : 'Start'}`;
+}
+function actCard(skill, a) {
+  const st = actState(skill, a), r = actRarity(a), outId = a.out ? Object.keys(a.out)[0] : null, it = outId ? ITEMS[outId] : null;
+  const art = tile(null, null, { r, icon: actIc(skill, a), title: a.name, cls: 's' });
+  if (st === 'locked') {
+    return `<div class="acard" data-card="${skill}:${a.id}" data-state="locked">
+      <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>${ui('lock')}Requires level ${a.level}</small></div></div></div>`;
+  }
+  const f = farmRates(skill, a), ml = masteryLv(skill, a.id);
+  const lines = [];
+  if (a.in) lines.push(`<div class="ac-io"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(count(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (count(k) < n ? 'short' : '') })).join('')}</div>`);
+  if (a.loot) {
+    lines.push(`<div class="ac-io"><small>Loot</small>${tile(null, `${fmt(a.loot.gold[0] * goldMult())}+`, { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}${a.loot.table.map(([k]) => tile(k, null, { cls: 'xs' })).join('')}</div>`);
+    lines.push(`<div class="ac-io"><small>Rare</small>${a.loot.rare.map(([k, c]) => tile(k, fmtRate(c * luckMult()), { cls: 'xs' })).join('')}</div>`);
+  }
+  if (it && it.type === 'equip') lines.push(`<div class="ac-note">${statInline(it.stats)}</div>`);
+  if (it && it.type === 'food') lines.push(`<div class="ac-note"><span>${ui('hp')}Heals ${foodHeal(outId)} HP</span></div>`);
+  return `<button class="acard" data-act="${skill}:${a.id}" data-card="${skill}:${a.id}" data-state="${st}">
+    <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>${a.loot ? 'Voyage' : typeLabel(outId)} · Lv ${a.level}</small></div><span class="ac-cta" data-cta2>${ctaLabel(skill, a, st)}</span></div>
+    <div class="ac-stats"><span title="Time per action">${ui('time')}<b>${fmtTime(f.T)}</b></span><span title="XP per action">${ui('xp')}<b>${fmt(a.xp)}</b> xp</span><span title="XP per hour"><b>${fmt(f.xph)}</b> xp/h</span></div>
+    ${lines.join('')}
+    <div class="ac-foot">${it ? `<span class="ac-own">Owned <b data-count="${outId}">${fmt(count(outId))}</b></span>` : `<span class="ac-own">${fmt(f.per)} / hour</span>`}
+      <span class="ac-m" title="Mastery: each level makes this action 0.3% faster and adds 0.2% chance to double">${ui('mastery')}<b data-mlv="${skill}:${a.id}">${ml}</b><span class="bar mini"><i data-mfill="${skill}:${a.id}"></i></span></span></div>
+    <span class="ac-prog"><i data-cardfill></i></span>
+  </button>`;
 }
 function rareTiles(skill) {
   const m = rareMult(skill), out = [];
   for (const [id, c] of (RARE_FINDS[skill] || []).concat(GLOBAL_RARE)) {
     if (id === 'GEM') {
       const tot = GEM_TABLE.reduce((a, g) => a + g[1], 0);
-      GEM_TABLE.forEach(([g, w]) => out.push(tile(g, fmtRate(c * m * w / tot), { unknown: false, cls: S.found[g] ? '' : 'dim' })));
+      GEM_TABLE.forEach(([g, w]) => out.push(tile(g, fmtRate(c * m * w / tot), { cls: S.found[g] ? '' : 'dim' })));
     } else out.push(tile(id, fmtRate(c * m), { cls: id !== 'FRUIT' && !S.found[id] ? 'dim' : '' }));
   }
   const pet = PETS.find((x) => x.skill === skill);
   if (pet) out.push(petTile(pet, { n: S.pets[pet.id] ? 'Owned' : `~${PET_HOURS}h`, reveal: false }));
   return out;
-}
-function actDetailHTML(skill, a) {
-  const st = actState(skill, a), r = actRarity(a), outId = a.out ? Object.keys(a.out)[0] : null, it = outId ? ITEMS[outId] : null;
-  const mp = masteryProg(skill, a.id);
-  const parts = [];
-  parts.push(`<div class="dt-hero r${r}">
-    <div class="dt-name"><small>${a.loot ? 'Voyage' : typeLabel(outId)}</small><h2>${esc(a.name)}</h2>${stars(r)}</div>
-    <div class="dt-art">${actIc(skill, a)}</div></div>`);
-  parts.push(`<div class="dt-stats">
-    ${stat('Time', fmtTime(actionTime(skill, a)))}${stat('XP', fmt(a.xp))}
-    <div class="stat"><small>Mastery</small><b data-mlv="${skill}:${a.id}">${mp.L}</b><div class="bar mini"><i data-mfill="${skill}:${a.id}"></i></div></div>
-    ${it ? stat('Owned', fmt(count(outId)), `data-count="${outId}"`) : stat('Unlock', 'Lv ' + a.level)}</div>`);
-  if (it && it.type === 'equip') parts.push(attrList(statRows(it.stats)));
-  if (it && it.type === 'food') parts.push(attrList([['hp', 'Heals in battle', `${foodHeal(outId)} HP`]]));
-  if (a.in) parts.push(`${hdr('Requires')}<div class="tiles">${Object.entries(a.in).map(([k, n]) =>
-    tile(k, `<em data-have="${k}" data-n="${n}">${fmt(count(k))}</em>/${fmt(n)}`, { cls: count(k) < n ? 'short' : '' })).join('')}</div>`);
-  if (a.out) parts.push(`${hdr('Produces')}<div class="tiles">${Object.entries(a.out).map(([k, n]) => tile(k, '×' + fmt(n))).join('')}</div>`);
-  if (a.loot) {
-    parts.push(`${hdr('Loot', 'one roll per voyage')}<div class="tiles">${tile(null, `${fmt(a.loot.gold[0] * goldMult())}–${fmt(a.loot.gold[1] * goldMult())}`, { r: 3, icon: ui('gold'), title: 'Gold' })}${a.loot.table.map(([k, q]) => tile(k, `${q[0]}–${q[1]}`)).join('')}</div>`);
-    parts.push(`${hdr('Rare loot')}<div class="tiles">${a.loot.rare.map(([k, c]) => tile(k, fmtRate(c * luckMult()))).join('')}</div>`);
-  }
-  const rare = rareTiles(skill);
-  if (rare.length) parts.push(`${hdr('Rare finds', `per action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}<div class="tiles">${rare.join('')}</div>`);
-  parts.push(`<div class="dt-cta"><button class="gbtn big cta-main" data-act="${skill}:${a.id}" data-cta="${skill}:${a.id}" data-state="${st}">${ctaHTML(skill, a)}<span class="cta-prog"><i data-actfill></i></span></button></div>`);
-  return parts.join('');
 }
 
 /* ------------------------------------------------------------- battle */
@@ -385,12 +388,13 @@ VIEWS.battle = () => {
   ${ptitle('Battlefield', z ? z.name : 'Choose a stage', `<div class="cskills">${cskill('strength')}${cskill('defense')}${cskill('vitality')}</div>`)}
   <div class="battle-layout">
     <div class="battle-main">
+      ${z ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
       <section id="stage" class="arena ${C.zone != null ? 'fighting' : ''}">${stageHTML()}</section>
       <div class="battle-row">
         <section class="win controls">
           ${hdr('Tactics')}
           <div class="ctrl"><label>Train</label><div class="seg">${style('strength', 'atk', 'Strength')}${style('defense', 'def', 'Defense')}${style('balanced', 'star', 'Both')}</div></div>
-          <div class="ctrl"><label>Auto-eat</label><div class="food-pick">${C.food && count(C.food) ? tile(C.food, null, { cls: 's' }) : `<span class="tile r0 s"><span class="tile-art">${ui('food')}</span></span>`}
+          <div class="ctrl"><label>Auto-eat</label><div class="food-pick">${C.food && count(C.food) ? tile(C.food, null, { cls: 'xs' }) : `<span class="tile r0 xs"><span class="tile-art">${ui('food')}</span></span>`}
             <select data-food>${foods.length ? '' : '<option value="">No food — cook some first</option>'}${foods.map((f) => `<option value="${f}" ${C.food === f ? 'selected' : ''}>${ITEMS[f].name} ×${fmt(count(f))} (+${foodHeal(f)} HP)</option>`).join('')}</select></div></div>
           <div class="muted small">Eats below ${pct(autoEatThreshold())} HP. Vitality always gains XP.</div>
         </section>
@@ -409,7 +413,7 @@ function zoneRow(z, i) {
   const [dl, dc] = zoneDanger(i);
   return `<button class="zrow ${z.boss ? 'boss' : ''} ${C.zone === i ? 'on' : ''}" data-zone="${i}" style="--rc:${rc(z.realm)}">
     <span class="z-ic">${ic('enemy', z.enemies[z.enemies.length - 1].name)}</span>
-    <span class="z-main"><b>${z.name}</b><small>${z.boss ? 'Boss · ' : ''}${z.enemies.map((e) => e.name).join(' · ')}</small></span>
+    <span class="z-main"><b>${z.name}</b><small>${z.boss ? 'Boss · ' : ''}Rec. Lv ${z.rec} · ${z.enemies.map((e) => e.name).join(' · ')}</small></span>
     <span class="z-tail"><span class="danger ${dc}">${dl}</span><span class="z-k">${ui('skull')}<b data-kills="${z.id}">${fmt(C.kills[z.id] || 0)}</b></span></span></button>`;
 }
 function stageHTML() {
@@ -420,7 +424,7 @@ function stageHTML() {
       <div class="hpbar"><i data-php></i><span data-phptext></span></div><div class="atkbar"><i data-patk></i></div></div>
   </div>`;
   let right;
-  if (C.zone == null) right = `<div class="f-empty">${ui('map')}<b>Choose a stage</b><small>Start with an <em>Easy</em> one.</small></div>`;
+  if (C.zone == null) right = `<div class="f-empty">${ui('map')}<b>Choose a stage</b><small>Start with an <em>Easy</em> one in the list.</small></div>`;
   else if (!e) right = `<div class="f-empty searching">${ui('battle')}<b>Searching for a foe…</b></div>`;
   else {
     const boss = ZONES[C.zone].boss;
@@ -435,25 +439,26 @@ function stageHTML() {
 }
 function logHTML() { return S.combat.log.map((l) => `<div class="${l.c}">${esc(l.m)}</div>`).join('') || '<div class="sys">Nothing yet.</div>'; }
 
-/* ------------------------------------------------------------- hero */
+/* ------------------------------------------------------------- bank & gear */
 const heroTabs = (tab) => `<nav class="seg big-seg">
-  <button class="${tab !== 'collection' ? 'on' : ''}" data-nav="hero">${ui('hero')}<span>Inventory</span></button>
+  <button class="${tab !== 'collection' ? 'on' : ''}" data-nav="hero">${ui('hero')}<span>Bank & Gear</span></button>
   <button class="${tab === 'collection' ? 'on' : ''}" data-nav="hero:collection">${ui('collection')}<span>Collection</span><em>${Math.floor(collectionPct() * 100)}%</em></button></nav>`;
 const BAG_TABS = [['all', 'equip', 'All'], ['res', 'gem', 'Materials'], ['gem', 'gem', 'Gems'], ['chest', 'chest', 'Treasure'], ['food', 'food', 'Food'], ['equip', 'weapon', 'Gear'], ['fruit', 'fruit', 'Fruit']];
 VIEWS.hero = (tab) => {
   if (tab === 'collection') return collectionHTML();
   const ids = Object.keys(S.items).filter((k) => S.ui.bank === 'all' || ITEMS[k].type === S.ui.bank)
     .sort((a, b) => rarity(b) - rarity(a) || ITEMS[b].value - ITEMS[a].value);
+  const worth = Object.keys(S.items).reduce((a, k) => a + ITEMS[k].value * S.items[k], 0);
   const slot = (s, label, icn) => {
     const id = S.equip[s];
     if (!id) return `<div class="eslot empty"><span class="tile r0"><span class="tile-art">${ui(icn)}</span></span><span class="es-t"><small>${label}</small><b class="muted">Empty</b></span></div>`;
-    return `<div class="eslot">${tile(id, null, { tag: 'button', attrs: `data-sel="${id}" data-owned="0"` })}<span class="es-t"><small>${label}</small><b>${ITEMS[id].name}</b></span><button class="mini-btn" data-unequip="${s}" title="Unequip">${ui('close')}</button></div>`;
+    return `<div class="eslot">${tile(id, null, { tag: 'button', attrs: `data-sel="${id}"` })}<span class="es-t"><small>${label}</small><b>${ITEMS[id].name}</b><span class="es-st">${statInline(ITEMS[id].stats)}</span></span><button class="mini-btn" data-unequip="${s}" title="Unequip">${ui('close')}</button></div>`;
   };
   return `
-  ${ptitle('Hero', 'Inventory', heroTabs(tab))}
+  ${ptitle('Hero', 'Bank & Gear', heroTabs(tab))}
   <div class="hero-layout">
     <section class="win equip-win">
-      <div class="avatar-big">${ui('hero')}</div>
+      ${hdr('Equipment')}
       <div class="eslots">${slot('weapon', 'Weapon', 'weapon')}${slot('armor', 'Armor', 'armor')}${slot('accessory', 'Accessory', 'accessory')}
         ${S.fruit ? `<div class="eslot fruit">${tile(S.fruit, null)}<span class="es-t"><small>Abyss Fruit</small><b>${ITEMS[S.fruit].name}</b></span></div>` : ''}</div>
       ${hdr('Attributes')}
@@ -462,7 +467,7 @@ VIEWS.hero = (tab) => {
     <section class="win bag-win">
       <nav class="bag-tabs">${BAG_TABS.map(([k, icn, l]) => `<button class="${S.ui.bank === k ? 'on' : ''}" data-bankf="${k}" title="${l}">${ui(icn)}<span>${l}</span></button>`).join('')}</nav>
       <div class="bag-grid">${ids.length ? ids.map((k) => tile(k, `<span data-count="${k}">${fmt(S.items[k])}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: seenItems.has(k) ? '' : '<span class="new">New</span>' })).join('') : '<div class="empty-note">Nothing here yet.</div>'}</div>
-      <div class="bag-foot"><span>${Object.keys(S.items).length} item types</span></div>
+      <div class="bag-foot"><span>${Object.keys(S.items).length} item types</span><span>Bank value ${ui('gold')} ${fmt(worth)}</span></div>
     </section>
     <section class="win detail">${inspectorHTML()}</section>
   </div>`;
@@ -477,23 +482,23 @@ function inspectorHTML() {
   const it = ITEMS[selItem], n = count(selItem), equipped = !n;
   const body = [], acts = [];
   if (it.type === 'equip') { body.push(attrList(statRows(it.stats))); if (!equipped) acts.push(gbtn('Equip', 'check', `data-equip="${selItem}"`)); }
-  else if (it.type === 'food') { body.push(attrList([['hp', 'Heals in battle', foodHeal(selItem) + ' HP']])); body.push('<p class="muted">Also used as voyage supplies.</p>'); acts.push(gbtn('Battle food', 'eat', `data-setfood="${selItem}"`)); }
+  else if (it.type === 'food') { body.push(attrList([['hp', 'Heals in battle', foodHeal(selItem) + ' HP']])); body.push('<p class="muted">Also used as voyage supplies.</p>'); acts.push(gbtn('Use as battle food', 'eat', `data-setfood="${selItem}"`)); }
   else if (it.type === 'fruit') { body.push(`<p class="lore">${it.desc}</p><p class="muted">Only one fruit at a time — eating replaces the old one. Fruit eaters fish 40% slower.</p>`); acts.push(gbtn('Eat', 'fruit', `data-eat="${selItem}"`)); }
   else if (it.type === 'chest') {
     const tot = it.loot.reduce((a, l) => a + l[1], 0);
     body.push(`${hdr('Contents', `${fmt(it.gold[0])}–${fmt(it.gold[1])} gold + one of`)}<ul class="srcs">${it.loot.map(([id, w, q]) => `<li><span><i>${itemIc(id)}</i>${esc(fruitLabel(id))}${q[1] > 1 ? ` ×${q[0]}–${q[1]}` : ''}</span><b>${fmtRate(w / tot)}</b></li>`).join('')}</ul>`);
-    acts.push(gbtn('Open', 'open', `data-open="${selItem}:1"`));
-    if (n > 1) acts.push(gbtn(`Open ×${fmt(Math.min(n, 1000))}`, 'open', `data-open="${selItem}:all"`));
+    acts.push(gbtn('Open 1', 'open', `data-open="${selItem}:1"`));
+    if (n > 1) acts.push(gbtn(`Open all ×${fmt(Math.min(n, 1000))}`, 'open', `data-open="${selItem}:all"`));
   } else {
     const uses = [];
     for (const k in SKILLS) for (const a of SKILLS[k].actions) if (a.in && a.in[selItem]) uses.push([k, a]);
-    if (uses.length) body.push(`${hdr('Used in')}<div class="tiles">${uses.slice(0, 10).map(([k, a]) => tile(null, null, { r: actRarity(a), icon: actIc(k, a), title: `${a.name} (${SKILLS[k].name})`, cls: 'xs' })).join('')}</div>`);
+    if (uses.length) body.push(`${hdr('Used in')}<ul class="srcs">${uses.slice(0, 8).map(([k, a]) => `<li><span><i>${ic('skill', k)}</i>${esc(a.name)}</span><b>${SKILLS[k].name} ${a.level}</b></li>`).join('')}</ul>`);
   }
   body.push(`${hdr('Where to find')}${sourcesHTML(selItem)}`);
   return `${itemHead(selItem)}
-    <div class="dt-stats">${stat('Owned', fmt(n), `data-count="${selItem}"`)}${stat('Value', fmt(it.value) + ' g')}</div>
-    <div class="dt-body">${body.join('')}</div>
-    ${equipped ? '' : `<div class="dt-cta">${acts.join('')}<div class="sell-row"><button class="gbtn dark sm" data-sell="${selItem}:1">Sell 1</button><button class="gbtn dark sm" data-sell="${selItem}:half">Sell half</button><button class="gbtn dark sm" data-sell="${selItem}:all">Sell all · ${fmt(it.value * n)} g</button></div></div>`}`;
+    <div class="dt-stats">${stat('Owned', fmt(n), `data-count="${selItem}"`)}${stat('Value', fmt(it.value) + ' g')}${stat('Stack value', fmt(it.value * n) + ' g')}</div>
+    ${equipped ? '' : `<div class="dt-cta">${acts.join('')}<div class="sell-row"><button class="gbtn dark sm" data-sell="${selItem}:1">Sell 1</button><button class="gbtn dark sm" data-sell="${selItem}:half">Sell half</button><button class="gbtn dark sm" data-sell="${selItem}:all">Sell all</button></div></div>`}
+    <div class="dt-body">${body.join('')}</div>`;
 }
 
 /* ------------------------------------------------------------- collection log */
@@ -520,11 +525,8 @@ function collectionHTML() {
   const found = Object.keys(S.found).length + Object.keys(S.pets).length, all = Object.keys(ITEMS).length + PETS.length;
   return `
   ${ptitle('Hero', 'Collection', heroTabs('collection'))}
-  <div class="hero-layout">
-    <section class="win col-sum">
-      <div class="big-ring" style="--p:${pctAll}"><span><b>${Math.floor(pctAll * 100)}%</b><small>${found} / ${all}</small></span></div>
-      <p class="muted center">Every item and pet in the multiverse. Select one to see where it drops and the odds.</p>
-    </section>
+  <section class="win col-sum"><div class="cs-top"><b>${Math.floor(pctAll * 100)}%</b><span class="muted">${found} / ${all} discovered</span></div><span class="pbar gold"><i style="width:${pctAll * 100}%"></i></span></section>
+  <div class="hero-layout col-layout">
     <section class="win col-win">${groups}${pets}</section>
     <section class="win detail col-detail">${detail}</section>
   </div>`;
@@ -547,7 +549,7 @@ function openModal(html, btn) {
   $('#modal').classList.add('show');
 }
 
-/* ------------------------------------------------------------- power */
+/* ------------------------------------------------------------- inner power */
 const TRAIN_COLORS = { chakra: '#ff9a4d', reiatsu: '#a98bff', will: '#a9b4c6', swift: '#4fe0a0', fortune: '#f4c66a', wisdom: '#4cc3ff' };
 VIEWS.power = () => {
   const E = S.energy, cap = energyCap(), g = karmaGain();
@@ -615,42 +617,28 @@ VIEWS.settings = () => `
   </section>
   <section class="win">${hdr('Credits')}<p class="muted small">Icons by Lorc, Delapouite, Skoll, Caro Asercion, sbed, Cathelineau, DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue and Zeromancer from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. Scenes are generated in-game.</p></section>`;
 
-/* =============================================================== tracker (side) */
+/* =============================================================== activity bar + objective */
 function nowHTML() {
-  const C = S.combat;
   if (S.action) {
-    const s = SKILLS[S.action.skill], a = findAction(S.action.skill, S.action.id), T = actionTime(S.action.skill, a);
-    const per = 3600 / T;
-    let c1, c2;
-    if (a.in) {
-      const can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(count(k) / n)));
-      c1 = stat('Can make', fmt(can), 'data-canmake');
-      c2 = stat('Runs out', fmtTime(can * T), 'data-runout');
-    } else {
-      c1 = stat('Items / h', fmt(per * (1 + doubleChance(S.action.skill, a.id))));
-      c2 = stat('Next level', '—', 'data-nextlv');
-    }
-    return `<div class="trk-tag">${ui('play')}<span>Activity</span></div>
-      <div class="now-row" style="--rc:${rc(s.realm)}">
-        <span class="ring" data-ring>${actIc(S.action.skill, a)}</span>
-        <button class="now-txt" data-nav="realm:${s.realm}:${S.action.skill}"><small>${s.name}</small><b>${esc(a.name)}</b></button>
-        <button class="mini-btn hot" data-stop title="Stop">${ui('stop')}</button></div>
-      <div class="now-stats">${c1}${c2}${stat('XP / h', fmt(per * a.xp * xpMult()))}${stat('Each', fmtTime(T))}</div>`;
+    const skill = S.action.skill, s = SKILLS[skill], a = findAction(skill, S.action.id), f = farmRates(skill, a);
+    return `<div class="nb" style="--rc:${rc(s.realm)}">
+      <button class="nb-main" data-nav="${skillView(skill)}" title="Go to ${s.name}">${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), cls: 'xs', title: a.name })}
+        <span class="nb-txt"><small>${s.name} · Lv <em data-lv="${skill}">${skillLv(skill)}</em></small><b>${esc(a.name)}</b></span></button>
+      <span class="nb-prog"><span class="pbar"><i data-nowfill></i></span>
+        <span class="nb-stats">${a.out ? `<span><b>${fmt(f.itemsh)}</b>/h</span>` : ''}<span><b>${fmt(f.xph)}</b> xp/h</span><span>Lv up <b data-nextlv>—</b></span>${a.in ? `<span>Left <b data-canmake>${fmt(f.can)}</b></span>` : ''}</span></span>
+      <button class="mini-btn hot" data-stop title="Stop">${ui('stop')}</button></div>`;
   }
-  if (C.zone != null) {
-    const z = ZONES[C.zone], e = z.enemies[0];
-    const kph = 3600 / (timeToKill(e) + (z.boss ? 3 : 1.2));
-    return `<div class="trk-tag">${ui('battle')}<span>Battle</span></div>
-      <div class="now-row" style="--rc:${rc('combat')}">
-        <span class="ring" data-ring data-hpring>${ui('battle')}</span>
-        <button class="now-txt" data-nav="battle"><small>Fighting</small><b>${z.name}</b></button>
-        <button class="mini-btn hot" data-stopcombat title="Retreat">${ui('stop')}</button></div>
-      <div class="now-stats">${stat('Kills / h', '≈' + fmt(kph))}${stat('XP / h', '≈' + fmt(kph * e.xp * 1.33 * xpMult()))}
-        ${stat('Food', C.food && count(C.food) ? `<span data-count="${C.food}">${fmt(count(C.food))}</span>` : '<span class="bad">None</span>')}${stat('HP', '', 'data-hpnow')}</div>`;
+  if (S.combat.zone != null) {
+    const c = combatRates();
+    return `<div class="nb" style="--rc:${rc('combat')}">
+      <button class="nb-main" data-nav="battle" title="Go to battle">${tile(null, null, { r: c.z.boss ? 5 : 3, icon: ic('zone', c.z.id), cls: 'xs', title: c.z.name })}
+        <span class="nb-txt"><small>Fighting</small><b>${c.z.name}</b></span></button>
+      <span class="nb-prog"><span class="pbar hp"><i data-nowhp></i></span>
+        <span class="nb-stats"><span>HP <b data-hpnow></b></span><span><b>≈${fmt(c.kph)}</b> kills/h</span><span><b>≈${fmt(c.xph)}</b> xp/h</span></span></span>
+      <button class="mini-btn hot" data-stopcombat title="Retreat">${ui('stop')}</button></div>`;
   }
   const g = goalState();
-  return `<div class="trk-tag">${ui('sleep')}<span>Idle</span></div>
-    <div class="idle"><p>Nothing is running. Idle games only progress while you're doing something.</p>${g ? gbtn('Start: ' + esc(g.g.text), 'play', `data-nav="${g.g.go}"`, 'sm') : ''}</div>`;
+  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>Nothing is farming</b></span>${g ? gbtn('Start: ' + esc(g.g.text), 'play', `data-nav="${g.g.go}"`, 'sm') : ''}</div>`;
 }
 function goalHTML() {
   const st = goalState();
@@ -658,43 +646,40 @@ function goalHTML() {
   const { g, cur, done } = st;
   return `<div class="quest ${done ? 'done' : ''}">
     <div class="q-title"><i class="q-dia"></i><b>Objective</b><small>${S.goal + 1} / ${GOALS.length}</small></div>
-    <div class="q-main"><span class="q-ic">${ic('goal', S.goal)}</span><span class="q-text">${g.text}</span></div>
+    <button class="q-main" data-nav="${g.go}" title="Go to this objective"><span class="q-ic">${ic('goal', S.goal)}</span><span class="q-text">${g.text}</span></button>
     <div class="q-prog"><span class="xpbar thin gold"><i data-goalbar style="width:${(cur / g.n) * 100}%"></i></span><span data-goaltxt>${fmt(cur)} / ${fmt(g.n)}</span></div>
     <div class="q-foot"><span class="q-reward">${ui('gold')}<b>${fmt(g.reward)}</b></span>
       ${done ? gbtn('Claim', 'check', 'data-claim', 'sm glow') : gbtn('Go', 'play', `data-nav="${g.go}"`, 'dark sm')}</div></div>`;
 }
 let lastGoalDone = null;
 function renderSide() {
-  const now = $('#now');
-  now.innerHTML = nowHTML();
-  now.classList.toggle('active', !!(S.action || S.combat.zone != null));
+  const nb = $('#nowbar');
+  nb.innerHTML = nowHTML();
+  nb.classList.toggle('active', !!(S.action || S.combat.zone != null));
   const st = goalState();
   lastGoalDone = st ? st.done : null;
-  $('#goal').innerHTML = goalHTML();
-  const q = $('.quest-win');
-  if (q) q.innerHTML = goalHTML();
+  for (const q of $$('#navquest, .quest-win')) q.innerHTML = goalHTML();
 }
 
 /* =============================================================== obtained feed */
 const feedRows = [];
 function feedAdd(icon, name, n, cls, r) {
   const box = $('#feed');
-  const row = feedRows.find((f) => f.name === name && f.cls === (cls || ''));
-  if (row) {
-    row.n += n;
-    $('b', row.el).textContent = (row.n > 0 ? '+' : '') + fmt(row.n);
-    retrigger(row.el, 'bump');
-    clearTimeout(row.t);
+  let f = feedRows.find((x) => x.name === name && x.cls === (cls || ''));
+  if (f) {
+    f.n += n;
+    $('b', f.el).textContent = (f.n > 0 ? '+' : '') + fmt(f.n);
+    retrigger(f.el, 'bump');
+    clearTimeout(f.t);
   } else {
     const el = document.createElement('div');
     el.className = `ob-row r${r || 1} ${cls || ''}`;
     el.innerHTML = `<span class="ob-ic">${icon}</span><span class="ob-name">${esc(name)}</span><b>${n > 0 ? '+' : ''}${fmt(n)}</b>`;
     box.appendChild(el);
-    var nr = { name, cls: cls || '', n, el };
-    feedRows.push(nr);
+    f = { name, cls: cls || '', n, el };
+    feedRows.push(f);
     while (feedRows.length > 5) { const o = feedRows.shift(); clearTimeout(o.t); o.el.remove(); }
   }
-  const f = row || nr;
   f.t = setTimeout(() => { f.el.classList.add('out'); setTimeout(() => f.el.remove(), 400); const i = feedRows.indexOf(f); if (i >= 0) feedRows.splice(i, 1); }, 4200);
 }
 const feedItem = (id, n) => feedAdd(itemIc(id), ITEMS[id].name, n, '', rarity(id));
@@ -732,7 +717,8 @@ function flash() { const f = document.createElement('div'); f.className = 'flash
 function inBattleView() { return S.ui.view === 'battle'; }
 
 on('action', (d) => {
-  const anchor = $(`[data-row="${d.skill}:${d.act.id}"] .tile`) || $('#now [data-ring]');
+  const card = $(`[data-card="${d.skill}:${d.act.id}"]`);
+  const anchor = card ? $('.tile', card) : $('#nowbar .tile');
   const fast = actionTime(d.skill, d.act) < 0.8;
   if (!fast) {
     let i = 0;
@@ -740,8 +726,7 @@ on('action', (d) => {
     if (d.gold) floatAt(anchor, `+${fmt(d.gold)}${ui('gold')}`, 'gold', 40, 0);
     floatAt(anchor, `+${fmt(d.xp)} XP`, 'xp', 50, 24);
     if (d.double) floatAt(anchor, '×2', 'gold', -50, 0);
-    retrigger($(`[data-row="${d.skill}:${d.act.id}"]`), 'pop');
-    retrigger($('#now [data-ring]'), 'pop');
+    retrigger(card, 'pop');
   }
   for (const id in d.gains) feedItem(id, d.gains[id]);
   if (d.gold) feedGold(d.gold);
@@ -811,7 +796,7 @@ function render() {
   dirty = false; sideDirty = false;
   normalizeView();
   renderRail();
-  setScene(sceneKind());
+  document.body.style.setProperty('--rc', viewAccent());
   const [name, a1, a2] = S.ui.view.split(':');
   const main = $('#main');
   const scroll = main.scrollTop;
@@ -836,9 +821,7 @@ function update() {
   setText(goldEl, fmt(S.gold));
   if (Math.floor(S.gold) !== lastGold) { if (S.gold > lastGold) retrigger(goldEl.parentElement, 'bump'); lastGold = Math.floor(S.gold); }
   setText($('#r-bounty'), fmt(S.bounty));
-  setText($('#r-rank'), BOUNTY_RANKS[bountyRank()][1]);
   setText($('#r-karma'), fmt(S.karma));
-  setText($('[data-totallv]'), String(totalLevel()));
 
   // levels / xp
   for (const el of $$('[data-lv]')) setText(el, String(skillLv(el.dataset.lv)));
@@ -850,40 +833,38 @@ function update() {
     const t = el.closest('.tile'); if (t) t.classList.toggle('short', count(el.dataset.have) < +el.dataset.n);
   }
 
-  // action rows + main button
-  for (const row of $$('[data-row]')) {
-    const [s, id] = row.dataset.row.split(':');
+  // action cards
+  for (const card of $$('[data-card]')) {
+    const [s, id] = card.dataset.card.split(':');
     const a = findAction(s, id), st = actState(s, a);
-    if (row.dataset.state !== st) row.dataset.state = st;
-    $('[data-rowfill]', row).style.width = st === 'active' ? Math.min(100, (S.action.prog / actionTime(s, a)) * 100) + '%' : '0%';
-  }
-  for (const b of $$('[data-cta]')) {
-    const [s, id] = b.dataset.cta.split(':');
-    const a = findAction(s, id), st = actState(s, a);
-    if (b.dataset.state !== st) { b.dataset.state = st; const p = $('.cta-prog', b); b.innerHTML = ctaHTML(s, a); b.appendChild(p); }
-    $('[data-actfill]', b).style.width = st === 'active' ? Math.min(100, (S.action.prog / actionTime(s, a)) * 100) + '%' : '0%';
+    if (card.dataset.state !== st) {
+      if (card.dataset.state === 'locked' || st === 'locked') { dirty = true; continue; }
+      card.dataset.state = st;
+      const c = $('[data-cta2]', card); if (c) c.innerHTML = ctaLabel(s, a, st);
+    }
+    const fill = $('[data-cardfill]', card);
+    if (fill) fill.style.width = st === 'active' ? Math.min(100, (S.action.prog / actionTime(s, a)) * 100) + '%' : '0%';
   }
   for (const el of $$('[data-mlv]')) { const [s2, id] = el.dataset.mlv.split(':'); setText(el, String(masteryLv(s2, id))); }
   for (const el of $$('[data-mfill]')) { const [s2, id] = el.dataset.mfill.split(':'); el.style.width = masteryProg(s2, id).p * 100 + '%'; }
 
-  // tracker
-  const ring = $('#now [data-ring]');
-  if (ring) {
-    let p = 0;
-    if (S.action) p = S.action.prog / actionTime(S.action.skill, findAction(S.action.skill, S.action.id));
-    else if (S.combat.zone != null) p = S.combat.hp / pMaxHp();
-    ring.style.setProperty('--p', Math.min(1, p));
+  // activity bar + farm panel
+  if (S.action) {
+    const a = findAction(S.action.skill, S.action.id), T = actionTime(S.action.skill, a), b = xpInfo(S.action.skill);
+    for (const el of $$('[data-nowfill]')) el.style.width = Math.min(100, (S.action.prog / T) * 100) + '%';
+    for (const el of $$('[data-nowtime]')) setText(el, `${Math.max(0, T - S.action.prog).toFixed(1)}s`);
+    const nl = b.need ? fmtTime((b.need / (a.xp * xpMult())) * T) : 'MAX';
+    for (const el of $$('[data-nextlv]')) setText(el, nl);
+    if (a.in) {
+      const can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(count(k) / n)));
+      for (const el of $$('[data-canmake]')) setText(el, fmt(can));
+      for (const el of $$('[data-runout]')) setText(el, fmtTime(can * T));
+    }
   }
-  setText($('[data-hpnow]'), `${fmt(S.combat.hp)} / ${fmt(pMaxHp())}`);
-  const nl = $('[data-nextlv]');
-  if (nl && S.action) {
-    const a = findAction(S.action.skill, S.action.id), b = xpInfo(S.action.skill);
-    setText(nl, b.need ? fmtTime((b.need / (a.xp * xpMult())) * actionTime(S.action.skill, a)) : 'MAX');
-  }
-  const cm = $('[data-canmake]');
-  if (cm && S.action) {
-    const a = findAction(S.action.skill, S.action.id);
-    if (a.in) { const can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(count(k) / n))); setText(cm, fmt(can)); setText($('[data-runout]'), fmtTime(can * actionTime(S.action.skill, a))); }
+  if (S.combat.zone != null) {
+    const m = pMaxHp();
+    for (const el of $$('[data-nowhp]')) { el.style.width = (S.combat.hp / m) * 100 + '%'; el.parentElement.classList.toggle('low', S.combat.hp / m < 0.3); }
+    for (const el of $$('[data-hpnow]')) setText(el, `${fmt(S.combat.hp)} / ${fmt(m)}`);
   }
 
   // goal
@@ -925,7 +906,7 @@ function update() {
   }
   setText($('[data-eidle]'), fmt(energyIdle()));
 
-  // hero: new item types appeared
+  // bank: new item types appeared
   if (S.ui.view === 'hero' && Object.keys(S.items).join(',') !== bankSig) dirty = true;
 
   // gold-priced buttons
@@ -935,10 +916,11 @@ function update() {
 /* =============================================================== input */
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('button, [data-nav]');
-  if (!t || t.disabled) return;
+  if (!t) { if (ev.target.id === 'scrim') document.body.classList.remove('menu-open'); return; }
+  if (t.disabled) return;
   const d = t.dataset;
-  if (d.nav) setView(d.nav);
-  else if (d.pick) { const [s, id] = d.pick.split(':'); selAct[s] = id; dirty = true; }
+  if ('menu' in d) document.body.classList.toggle('menu-open');
+  else if (d.nav) setView(d.nav);
   else if (d.act) {
     const [s, id] = d.act.split(':');
     const st = actState(s, findAction(s, id));
@@ -992,6 +974,7 @@ document.addEventListener('click', (ev) => {
 document.addEventListener('change', (ev) => {
   if (ev.target.matches('[data-food]')) { S.combat.food = ev.target.value || null; ev.target.blur(); dirty = true; }
 });
+document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { document.body.classList.remove('menu-open'); $('#modal').classList.remove('show'); } });
 
 /* =============================================================== toasts */
 const TOAST_IC = { good: 'check', bad: 'close', rare: 'rare' };
