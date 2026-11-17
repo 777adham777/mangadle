@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Tri-Realm Idle</title>
+  <meta name="description" content="An idle RPG across three collided anime-inspired worlds: ninjas, soul reapers and pirates. Plays in your browser on desktop and mobile.">
+  <meta name="theme-color" content="#0e0e13">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Tri-Realm">
+  <meta property="og:title" content="Tri-Realm Idle">
+  <meta property="og:description" content="Ninjas, soul reapers and pirates in one idle RPG. Play free in your browser.">
+  <meta property="og:image" content="icons/icon-512.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Bangers&family=Rubik:wght@400;500;700;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <header id="top">
+    <div class="logo"><span class="l1">TRI-REALM</span><span class="l2">IDLE</span></div>
+    <div class="res">
+      <div class="res-item gold" title="Gold — buys upgrades in the Market"><span>🪙</span><b id="r-gold">0</b></div>
+      <div class="res-item bounty" title="Bounty — earned by defeating enemies. Higher ranks give bonus damage."><span>🏴‍☠️</span><b id="r-bounty">0</b><small id="r-rank"></small></div>
+      <div class="res-item karma" title="Karma — earned by Rebirth, spent on permanent perks"><span>☯</span><b id="r-karma">0</b></div>
+    </div>
+    <button class="icon-btn" data-nav="settings" title="Settings">⚙️</button>
+  </header>
+
+  <nav id="rail"></nav>
+  <main id="main"></main>
+  <aside id="side">
+    <section id="now" class="panel now"></section>
+    <section id="goal" class="panel goal"></section>
+    <section class="panel dark feed"><h3 class="mini-title">Recent loot</h3><div id="feed"></div></section>
+  </aside>
+
+  <div id="fx"></div>
+  <div id="toasts"></div>
+  <div id="modal" class="modal"><div class="panel modal-card"><div id="modal-body"></div><button id="modal-close" class="btn hot big">Let's go!</button></div></div>
+
+  <script src="js/data.js"></script>
+  <script src="js/game.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    if ('serviceWorker' in navigator && location.protocol !== 'file:') {
+      window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+    }
+  </script>
+</body>
+</html>
