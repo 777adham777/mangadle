@@ -530,14 +530,14 @@ function torsoMap(J, W) {
   };
 }
 // Outline of the torso (or a garment on it) from v0 up to v1, with round shoulders when it reaches the neck.
-function torsoOutline(M, v0, v1, ex) {
+function torsoOutline(M, v0, v1, ex, soft) {
   const vs = [v0];
   for (const v of [0.12, 0.3, 0.5, 0.68, 0.84]) if (v > v0 + 0.05 && v < v1 - 0.05) vs.push(v);
   const top = v1 >= 0.95
     ? [M(-0.97, 0.9, ex), M(-0.72, 1.0, ex), M(-0.32, 1.05, ex), M(0.32, 1.05, ex), M(0.72, 1.0, ex), M(0.97, 0.9, ex)]
     : [M(-1, v1, ex, 1), M(1, v1, ex, 1)];
-  const L = vs.map((v, i) => M(-1, v, ex, i === 0)), R = vs.slice().reverse().map((v, i) => M(1, v, ex, i === vs.length - 1));
-  return [...L, ...top, ...R];
+  const L = vs.map((v, i) => M(-1, v, ex, i === 0 && !soft)), R = vs.slice().reverse().map((v, i) => M(1, v, ex, i === vs.length - 1 && !soft));
+  return soft ? [...L, ...top, ...R, M(0.55, v0 - 0.035, ex), M(-0.55, v0 - 0.035, ex)] : [...L, ...top, ...R];
 }
 function torsoShade(M, v0, v1, ex, u0) {
   const vs = [...Array(7)].map((_, i) => v0 + ((v1 - v0) * i) / 6);
@@ -762,12 +762,12 @@ function drawAvatar(A, P, t, opt) {
   const legC = (L) => bez(L, -0.04, 1, 8);
   const legW = (n) => lerpW(n, 6.4 * W, 5.4 * W);
   const pantW = (n) => [...Array(n + 1)].map((_, i) => W * (i <= n / 2 ? 9.8 - 1.2 * (i / (n / 2)) : 8.6 + (Bt.flare || 0) * 0.9 * ((i - n / 2) / (n / 2))));
-  const leg = (L, far) => {
+  // details on a trouser leg (creases, bandage, fur cuff) and boots, drawn over the merged trousers
+  const legDetails = (L, far) => {
     const n = 8;
-    let s = cel(spline(tube(legC(L), legW(n)), true), far ? St.far : St.body, shd('skin', far), 0.8) + shoe(L, far);
+    let s = '';
     if (Bt) {
       const Cp = bez(L, -0.06, Bt.len, n), hw = pantW(n);
-      s += piece(tube(Cp, hw, { flatEnd: 1 }), Bt.c, far);
       if (Bt.len > 0.7) s += crease(Cp, Math.round(n * 0.5), hw[4]) + crease(Cp, n - 1, hw[n - 1]);
       if (Bt.wrap && !far) s += piece(tube(bez(L, 0.36, 0.5, 3), [10.2, 10, 9.8, 9.7].map((x) => x * W), { flatStart: 1, flatEnd: 1 }), Bt.wrap, far, 0.5)
         + (() => { const C = bez(L, 0.43, 0.43, 1)[0], [nx, ny] = nrm(bez(L, 0.4, 0.46, 2), 1), w = 9.6 * W; return lineP(`M${r1(C[0] - nx * w)},${r1(C[1] - ny * w)}L${r1(C[0] + nx * w)},${r1(C[1] + ny * w)}`, '#b9b6ad', 1.2); })();
@@ -782,7 +782,8 @@ function drawAvatar(A, P, t, opt) {
     }
     return s;
   };
-  const legTop = (L, w, t1) => { const C = bez(L, -0.06, t1, 3); return tube(C, lerpW(3, w, w * 0.94), { flatEnd: 1 }); };
+  // the two side edges of a leg's lower half, as thin lines: they only show where it overlaps the other leg
+  const legEdge = (C, hw) => { const i0 = Math.round(C.length * 0.45), c = C.slice(i0), w = hw.slice(i0); return lineP(spline(offsetVar(c, w), false) + spline(offsetVar(c, w.map((x) => -x)), false), LINE, 1.2, 0.9); };
 
   // ---- torso pieces (the front line of a garment runs down the middle, u = 0)
   const ex = (T && T.fit) || 2;
@@ -801,7 +802,7 @@ function drawAvatar(A, P, t, opt) {
   };
   const top = () => {
     const v0 = T.hem != null ? T.hem : -0.1;
-    let s = piece(torsoOutline(M, v0, 1, ex), T.c);
+    let s = piece(torsoOutline(M, v0, 1, ex, 1), T.c);
     if (T.band) s += piece(torsoOutline(M, T.band[0], 1, ex + 0.2), T.band[1]);
     if (T.open) s += cel(spline([M(-0.3, 1.06, ex), M(-0.16, 0.6, ex), M(-0.1, v0 + 0.02, ex, 1), M(0.18, v0 + 0.02, ex, 1), M(0.24, 0.6, ex), M(0.38, 1.04, ex)], true), col(T.open), St.sh, 0.7)
       + lineP(spline([M(-0.12, 0.64, ex), M(0.04, 0.61, ex), M(0.2, 0.64, ex)], false), St.sh, 1.1) + lineP(spline([M(0.04, 0.5, ex), M(0.04, 0.3, ex)], false), St.sh, 1);
@@ -840,11 +841,16 @@ function drawAvatar(A, P, t, opt) {
   const back = arm(J.aB, J.foreA.aB, true), front = arm(J.aF, J.foreA.aF, false);
   if (!backX) fig.push(back.s);
   if (!frontX) fig.push(front.s);
-  // legs, then the hips that merge their tops into one shape
-  fig.push(leg(J.lB, true), leg(J.lF, false));
-  const skinBody = union(torsoOutline(M, -0.3, 1, 0), legTop(J.lB, 6.4 * W, 0.3), legTop(J.lF, 6.4 * W, 0.3));
-  fig.push(cel(skinBody, St.body, St.sh));
-  if (Bt) fig.push(cel(union(torsoOutline(M, -0.32, 0.22, 1.6), legTop(J.lB, 9.8 * W, 0.34), legTop(J.lF, 9.8 * W, 0.34)), Bt.c, shd(Bt.c)));
+  // below the waist the body is one shape: the hips and both whole legs merged, so the torso
+  // flows into the legs with no seam; the same for the trousers over it
+  const skinC = [legC(J.lB), legC(J.lF)], skinW = legW(8);
+  fig.push(cel(union(torsoOutline(M, -0.3, 1, 0), tube(skinC[0], skinW), tube(skinC[1], skinW)), St.body, St.sh) + legEdge(skinC[1], skinW));
+  fig.push(shoe(J.lB, true), shoe(J.lF, false));
+  if (Bt) {
+    const pc = [bez(J.lB, -0.06, Bt.len, 8), bez(J.lF, -0.06, Bt.len, 8)], pw = pantW(8);
+    fig.push(cel(union(torsoOutline(M, -0.32, 0.22, 1.6), tube(pc[0], pw, { flatEnd: 1 }), tube(pc[1], pw, { flatEnd: 1 })), Bt.c, shd(Bt.c)) + legEdge(pc[1], pw));
+  }
+  fig.push(legDetails(J.lB, true), legDetails(J.lF, false));
   fig.push(tails());
   // the neck, the torso (bare or dressed)
   fig.push(cel(spline(tube([add(J.neckBase, J.neckA, -6), J.neck, add(J.neck, J.neckA, 9)], [4.4 * W, 4.1 * W, 4.1 * W]), true), St.far, shd('skin', true), 0.6));
