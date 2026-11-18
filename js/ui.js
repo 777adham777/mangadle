@@ -1279,7 +1279,8 @@ function boot() {
   function frame() {
     catchUp();
     pollUnlocks();
-    const busy = document.activeElement && ['SELECT', 'TEXTAREA'].includes(document.activeElement.tagName);
+    const ae = document.activeElement;
+    const busy = ae && (['SELECT', 'TEXTAREA'].includes(ae.tagName) || (ae.tagName === 'INPUT' && ['text', 'number', 'search'].includes(ae.type)));
     if (dirty && !busy) render();
     else {
       const key = (S.action ? S.action.skill + S.action.id : '') + '|' + S.combat.zone;
@@ -1312,11 +1313,15 @@ function boot() {
 
 // Wall-clock simulation: works no matter how long frames, timers or the whole page were paused.
 let lastTick = Date.now(), hiddenAt = 0, hiddenSnap = null;
+let GAME_SPEED = 1;   // dev tools (dev.js) fast-forward: the extra time runs silently, like offline progress
 function catchUp() {
   const now = Date.now(), dt = (now - lastTick) / 1000;
   lastTick = now;
   if (dt > 5) { SIM = true; advance(offlineSeconds(dt)); SIM = false; dirty = true; }
-  else if (dt > 0) step(dt);
+  else if (dt > 0) {
+    step(dt);
+    if (GAME_SPEED > 1) { SIM = true; advance(dt * (GAME_SPEED - 1)); SIM = false; }
+  }
 }
 
 // "Install app" support (Android / desktop Chrome & Edge). iOS uses Share → Add to Home Screen.

@@ -1682,3 +1682,21 @@ body { background: var(--bg); }
 /* tall modals (welcome, loot) scroll inside the card instead of spilling off short screens */
 .modal-card { overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; }
 .modal-card > * { flex-shrink: 0; }
+
+/* ---------------------------------------------------------------- dev tools (dev mode only, js/dev.js) */
+.dev-cols { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); gap: 12px; }
+.dev-cols .btn-row:last-child, .dev-top .btn-row { margin-bottom: 0; }
+.dev-top .btn-row { margin-bottom: 10px; }
+.dev-give { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.dev-give:last-child { margin-bottom: 0; }
+.dev-in { height: 32px; min-width: 0; padding: 0 9px; border-radius: 2px; font: 500 13px var(--body); color: var(--text); background: #111215; border: 1px solid var(--line2); }
+.dev-in.grow { flex: 1 1 200px; }
+.dev-in.num { width: 84px; }
+.dev-give select { height: 32px; }
+.dev-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 190px), 1fr)); gap: 4px; }
+.dev-sk { display: flex; align-items: center; gap: 8px; min-width: 0; padding: 3px 4px 3px 8px; background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--rc); }
+.dev-sk .gi { font-size: 17px; color: var(--rc); }
+.dev-sk span { flex: 1; min-width: 0; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; font-size: 13px; }
+.dev-sk input { width: 62px; height: 28px; padding: 0 6px; text-align: right; border-radius: 2px; font: 600 13px var(--display); color: var(--text); background: #111215; border: 1px solid var(--line2); }
+.dev-sk.off { opacity: 0.5; }
+.dev-cols .tog { margin-right: 14px; }

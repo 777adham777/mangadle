@@ -29,6 +29,12 @@ python -m http.server 8000
 
 Then open http://localhost:8000. Opening `index.html` directly also works, but offline/install support needs http(s).
 
+## Dev tools (testing)
+
+Add `?dev` to the URL (or tap the TRI·REALM logo 7 times) to get a **Dev** entry in the menu: unlock every world, skill, menu and stage,
+max levels and systems, give items and gold, speed time up (×10 to ×1000) or skip hours, god mode and one-hit kills, skip objectives.
+The first cheat backs up the save so it can be restored from the same page. `?dev=0` (or the button on the page) turns it off.
+
 ## Deploying an update
 
 Bump `VERSION` in `sw.js` so returning players get the new files, then push.
@@ -49,6 +55,7 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `js/scene.js` | Generated background scenes for each world |
 | `js/game.js` | Core engine (no DOM) with hooks for the world systems |
 | `js/ui.js` | Interface: sidebar with every skill, activity bar, skill pages, bank, battle; rendering, input, save/load |
+| `js/dev.js` | Hidden dev tools for testing (`?dev`): unlock everything, levels, items, time speed, god mode, save backup |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable app + offline support |
 
 ## Credits

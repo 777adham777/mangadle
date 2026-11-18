@@ -552,6 +552,9 @@ ICONS.ui.plus = 'plain-plus';
 ICONS.ui.minus = 'plain-minus';
 GI['plain-menu'] = 'M64 104h384v64H64zM64 224h384v64H64zM64 344h384v64H64z';
 ICONS.ui.menu = 'plain-menu';
+// Dev tools entry (dev mode only): a plain </> glyph.
+GI['dev-code'] = 'M176 120l40 40-96 96 96 96-40 40L40 256zM336 120l136 136-136 136-40-40 96-96-96-96zM282 88l50 14-102 322-50-14z';
+ICONS.ui.dev = 'dev-code';
 
 // Technique scrolls
 for (const id in ITEMS) if (ITEMS[id].type === 'scroll') ICONS.item[id] = 'tied-scroll';
