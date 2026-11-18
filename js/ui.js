@@ -461,9 +461,9 @@ VIEWS.realm = (realm, skill) => {
   ${scene}
   ${active && !scene ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
   ${uix('realmTop', realm, skill)}
-  ${s.actions.length ? hdr({ voyage: 'Destinations', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
+  ${s.type === 'craft' ? workshopHTML(skill) : `${s.actions.length ? hdr({ voyage: 'Destinations', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
-  ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}
+  ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}`}
   </div><aside class="sk-side">
   ${uix('realmSide', realm, skill)}
   ${renownOn() ? renownHTML(realm) : ''}
@@ -1039,10 +1039,13 @@ function render() {
   const main = $('#main');
   const scroll = main.scrollTop;
   const box = $('#savebox'), boxVal = box ? box.value : null;
+  // A focused text field (e.g. the workshop search) keeps its focus and caret across redraws.
+  const fe = document.activeElement, foc = fe && fe.id && fe.tagName === 'INPUT' && main.contains(fe) ? [fe.id, fe.selectionStart, fe.selectionEnd] : null;
   main.classList.toggle('static', !viewChanged);
   main.dataset.view = name;
   main.innerHTML = VIEWS[name](a1, a2);
   main.scrollTop = scroll;
+  if (foc && $('#' + foc[0])) { const el = $('#' + foc[0]); el.focus({ preventScroll: true }); try { el.setSelectionRange(foc[1], foc[2]); } catch (e) { /* not a text field */ } }
   if (boxVal !== null && $('#savebox')) $('#savebox').value = boxVal;
   if (name === 'hero') { bankSig = Object.keys(S.items).join(','); setTimeout(() => Object.keys(S.items).forEach((k) => seenItems.add(k)), 0); }
   viewChanged = false;
