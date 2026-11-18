@@ -12,8 +12,10 @@
 // One entry per early objective (same index as GOALS).
 // act/zone: what the objective wants running. nav: how to get there. start: what to click. run: tip while it runs.
 const GUIDE = [
-  { skill: 'fishing', nav: 'Open <b>Fishing</b>. Fish are the start of everything here.', start: 'Click <b>Minnow</b> to start fishing.', run: 'Fishing repeats on its own, even while the game is closed. Catch 10 Minnows and the ship cook will want to meet you.' },
-  { act: 'cooking:grilled_minnow', nav: '<b>Cooking</b> is now open. Open it.', start: 'Click <b>Grilled Minnow</b>. Each one uses 1 Minnow.', run: 'Raw fish is useless in a fight, cooked fish heals you. Cook 5 and the harbour guards will let you fight.' },
+  { skill: 'fishing', nav: 'Open <b>Fishing</b>. Fish are the start of everything here.', start: 'Click <b>Minnow</b> to start fishing.', run: 'Fishing repeats on its own, even while the game is closed. No need to watch it: come back later and the fish are waiting.' },
+  { skill: 'fishing', nav: 'Back to <b>Fishing</b>.', start: 'Keep fishing <b>Minnows</b>.', run: 'Every catch gives Fishing XP. Higher levels unlock new fish (Reef Bass at level 10), and each fish has its own <b>Mastery</b> that makes it faster. Reach level 5 and a ship cook will want to meet you.' },
+  { act: 'cooking:grilled_minnow', nav: '<b>Cooking</b> is now open. Open it.', start: 'Click <b>Grilled Minnow</b>. Each one uses 1 Minnow.', run: 'Raw fish is useless in a fight, cooked fish heals you. Every dish you cook is stored in your Bank.' },
+  { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook <b>Grilled Minnows</b>.', run: 'Fishing and Cooking feed each other: when the Minnows run out, go fish more, then come back. Reach Cooking level 5 and the harbour guards will let you fight.' },
   { food: true, nav: 'Before you fight, pack your food: open your <b>Bank</b>.' },
   { zone: 0, nav: 'Food packed. Open the <b>Battlefield</b>.', start: 'Pick <b>Rookie Shoals</b>. It is an Easy stage.', run: 'Combat is automatic. When your HP drops low you eat your equipped food on your own. Run out and you lose: fish and cook more.' },
   { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook whatever you can.', run: 'At Cooking level 10, a captain will take you on voyages.' },
@@ -70,7 +72,9 @@ function guideStep() {
     if (S.action && S.action.skill === G.skill) return run(G.run);
     if (!onGoalView(go)) return nav;
     const best = SKILLS[G.skill].actions.filter((a) => actState(G.skill, a) === 'ready').pop();
-    return best ? { sels: [`[data-card="${G.skill}:${best.id}"]`], text: G.start } : null;
+    if (best) return { sels: [`[data-card="${G.skill}:${best.id}"]`], text: G.start };
+    if (G.skill === 'cooking') return { sels: navSels('realm:seas:fishing'), text: 'Out of fish! Open <b>Fishing</b> and catch more Minnows, then come back to cook.' };
+    return null;
   }
   if (G.zone != null) {
     if (S.combat.zone === G.zone) return run(G.run);
@@ -211,7 +215,7 @@ const INTRO = {
     text: 'A ship cook eyes your bucket. "Raw fish will not keep you alive out there. Let me show you."',
     points: [[() => ic('item', 'minnow'), '1 Minnow → 1 Grilled Minnow', 'Each dish uses fish you caught.'],
              [() => ui('hp'), 'Food heals', 'Cooked food restores HP in battle.'],
-             [() => ui('lock'), 'Cook 5 Grilled Minnows', 'Then the harbour guards will let you fight.']],
+             [() => ui('lock'), 'Reach Cooking level 5', 'Then the harbour guards will let you fight.']],
     go: 'realm:seas:cooking', btn: 'Start cooking' },
   'feature:battle': { icon: () => ui('battle'), kicker: 'New menu', title: 'The Battlefield',
     text: 'With food in your bag, the harbour guards wave you through to the shoals. Combat runs on its own: you only prepare.',

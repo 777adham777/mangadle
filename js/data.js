@@ -508,7 +508,9 @@ const G = (text, go, n, prog, reward) => ({ text, go, n, prog, reward });
 const GOALS = [
   // Endless Blue
   G('Catch 10 Minnows', 'realm:seas:fishing', 10, made('minnow'), 40),
+  G('Reach Fishing level 5', 'realm:seas:fishing', 5, lvl('fishing'), 50),                  // v5: a slower start
   G('Cook 5 Grilled Minnows', 'realm:seas:cooking', 5, made('grilled_minnow'), 60),
+  G('Reach Cooking level 5', 'realm:seas:cooking', 5, lvl('cooking'), 80),                  // v5
   G('Equip food for battle', 'hero', 1, () => [S.combat.food ? 1 : 0], 120),
   G('Defeat 10 foes at Rookie Shoals', 'battle', 10, kills('shoals'), 120),
   G('Reach Cooking level 10', 'realm:seas:cooking', 10, lvl('cooking'), 200),
@@ -621,14 +623,14 @@ const worldUnlock = (r, name) => ({ id: 'realm:' + r, name, need: () => !!S.gate
 const UNLOCKS = [
   { id: 'realm:seas',         name: 'Endless Blue',    need: () => true },
   { id: 'skill:fishing',      name: 'Fishing',         need: () => true },
-  { id: 'skill:cooking',      name: 'Cooking',         need: () => (S.stats.made.minnow || 0) >= 10 || skillLv('fishing') >= 5 || usedSkill('cooking'),
-    hint: () => 'Catch 10 Minnows', why: 'A ship cook trades you a pan for a good catch.' },
-  { id: 'feature:battle',     name: 'Battlefield',     need: () => (S.stats.made.grilled_minnow || 0) >= 5 || S.stats.kills > 0,
-    hint: () => 'Cook 5 Grilled Minnows', why: 'With food in your bag, the harbour guards let you fight at the shoals.' },
+  { id: 'skill:cooking',      name: 'Cooking',         need: () => skillLv('fishing') >= 5 || usedSkill('cooking'),
+    hint: () => 'Reach Fishing level 5', why: 'A ship cook trades you a pan for a good catch.' },
+  { id: 'feature:battle',     name: 'Battlefield',     need: () => skillLv('cooking') >= 5 || S.stats.kills > 0,
+    hint: () => 'Reach Cooking level 5', why: 'With food in your bag, the harbour guards let you fight at the shoals.' },
   { id: 'feature:avatar',     name: 'Avatar',          need: () => (S.combat.kills.shoals || 0) >= 10 || S.stats.kills >= 10,
     why: 'A harbour painter wants to sketch the new fighter. Dress your hero in Bank → Avatar; feats across the worlds unlock new looks.' },
-  { id: 'feature:spices',     name: 'Spice Rack',      need: () => skillLv('cooking') >= 5 || (S.stats.seasoned || 0) > 0,
-    hint: () => 'Reach Cooking level 5', why: 'The galley cook lends you her spice rack. Season dishes for small battle buffs; your catches now bring up sea salt.' },
+  { id: 'feature:spices',     name: 'Spice Rack',      need: () => skillLv('cooking') >= 8 || (S.stats.seasoned || 0) > 0,
+    hint: () => 'Reach Cooking level 8', why: 'The galley cook lends you her spice rack. Season dishes for small battle buffs; your catches now bring up sea salt.' },
   { id: 'skill:voyaging',     name: 'Voyaging',        need: () => skillLv('cooking') >= 10 || usedSkill('voyaging'),
     hint: () => 'Reach Cooking level 10', why: 'With proper provisions, a captain agrees to take you aboard.' },
   { id: 'feature:collection', name: 'Collection Log',  need: () => Object.keys(S.found).length >= 12,

@@ -33,7 +33,7 @@ function defaultState() {
   const skills = {};
   for (const id in SKILLS) skills[id] = { xp: 0 };
   return {
-    v: 4,
+    v: 5,
     gold: 50,
     bounty: 0,
     items: {},
@@ -740,6 +740,7 @@ function loadFrom(json) {
   if (oldV < 2) migrateV2();
   if (oldV < 3) migrateV3();
   if (oldV < 4) migrateV4(oldV);
+  if (oldV < 5) migrateV5(oldV);
   if (legacy || oldV < 3) checkUnlocks();   // open what older saves already reached, quietly
 }
 // v4: the Endless Blue overhaul added objectives at new positions 5, 6 and 10 (Perfect dish, seasoning,
@@ -748,6 +749,12 @@ function loadFrom(json) {
 function migrateV4(oldV) {
   if (oldV === 3) for (const at of [5, 6, 10]) if (S.goal >= at) S.goal++;
   S.v = 4;
+}
+// v5: a slower start added 'Reach Fishing level 5' (position 1) and 'Reach Cooking level 5' (position 3).
+// Saves already past them keep pointing at the same objective.
+function migrateV5(oldV) {
+  if (oldV >= 3) for (const at of [1, 3]) if (S.goal >= at) S.goal++;
+  S.v = 5;
 }
 // v3: Endless Blue first, then Shinobi, Soul and the new worlds. Every world a save already used stays open.
 function migrateV3() {
