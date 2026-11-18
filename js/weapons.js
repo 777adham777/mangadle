@@ -204,7 +204,7 @@ const fightingBoss = () => { const z = zoneOfFight(); return !!(z && z.boss); };
   playerHit = function (e) {
     const a = curArm(), el = armEl(a), C = S.combat;
     const roll = rand(0.5, 1);
-    let m = el === 'fire' ? 1.15 : 1;
+    let m = (el === 'fire' ? 1.15 : 1) * (typeof inDomain === 'function' && inDomain('domain_blaze') && RT.domainLv >= 10 ? 1.25 : 1);
     if (armFam(a) === 'ranged' && RT.opener) { m *= 3; RT.opener = false; }
     const def = e.def * hmul('edef') * (el === 'bleed' ? 0.8 : 1);
     const hit = () => {

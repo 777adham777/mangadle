@@ -62,13 +62,27 @@ const TECHNIQUES = {
   sealing_mark:  { name: 'Sealing Mark', cat: 'support', realm: 'shinobi', cd: 16, tags: ['seal', 'lightning'],
     desc: (L) => `For 8s: the foe's defense drops by ${25 + 3 * (L - 1)}%.`,
     tiers: { 5: 'Lasts 12s.', 10: 'You also deal 15% more damage to a marked foe.' } },
+  // Shinjuku: Domain Expansions (Ultimate). Cast: a big hit, then for 10s (15s from level 5) every technique
+  // sharing one of the domain's element tags is 50% stronger, plus the domain's own rule.
+  domain_blaze:  { name: 'Infinite Blaze', cat: 'ultimate', realm: 'hex', cd: 45, tags: ['domain', 'fire'],
+    desc: (L) => `Burst for ${(6 + 0.6 * (L - 1)).toFixed(1)}× your max hit, then open a domain: fire techniques +50%.`,
+    tiers: { 5: 'The domain lasts 15s.', 10: 'Inside it, auto-attacks deal 25% more damage.' } },
+  domain_storm:  { name: 'Storm Sanctum', cat: 'ultimate', realm: 'hex', cd: 45, tags: ['domain', 'lightning', 'wind'],
+    desc: (L) => `Strike for ${(5 + 0.5 * (L - 1)).toFixed(1)}× your max hit, then open a domain: lightning and wind techniques +50%, attacks 20% faster.`,
+    tiers: { 5: 'The domain lasts 15s.', 10: 'Inside it, your other techniques recharge twice as fast.' } },
+  domain_garden: { name: 'Crimson Garden', cat: 'ultimate', realm: 'hex', cd: 45, tags: ['domain', 'bleed', 'critical'],
+    desc: (L) => `Six cuts of ${(1 + 0.1 * (L - 1)).toFixed(1)}× your max hit, then open a domain: bleed and critical techniques +50%, foe defense −30%.`,
+    tiers: { 5: 'The domain lasts 15s.', 10: 'Foe defense −50% inside it.' } },
+  domain_shrine: { name: 'Sanctuary of Life', cat: 'ultimate', realm: 'hex', cd: 45, tags: ['domain', 'drain', 'heal'],
+    desc: (L) => `Heal ${30 + 2 * (L - 1)}% of your max HP, then open a domain: drain and heal techniques +50%, take 30% less damage.`,
+    tiers: { 5: 'The domain lasts 15s.', 10: 'Regenerate 3% of max HP per second inside it.' } },
 };
 // Technique pools: which world's scroll teaches what. Each world adds its own as it is reworked.
 const TECH_POOLS = {};
 for (const id in TECHNIQUES) (TECH_POOLS[TECHNIQUES[id].realm] = TECH_POOLS[TECHNIQUES[id].realm] || []).push(id);
 // A world's scroll drops from its foes and is read at once: a random technique of that world
 // (unknown ones 3× as likely). A duplicate becomes fragments of that technique.
-const SCROLL_NAME = { shinobi: 'Leaf Scroll' };
+const SCROLL_NAME = { shinobi: 'Leaf Scroll', hex: 'Cursed Scroll' };
 for (const r in TECH_POOLS) defItem('scroll_' + r, SCROLL_NAME[r] || `${REALMS[r].name} Scroll`, '📜', 40, { type: 'scroll', pool: r });
 // Crafted scrolls teach one chosen technique (the deterministic way to target it).
 for (const id in TECHNIQUES) defItem('scroll_' + id, 'Scroll: ' + TECHNIQUES[id].name, '📜', 50, { type: 'scroll', tech: id });
@@ -249,10 +263,9 @@ const EXTRA_USES = [];
 })();
 
 /* ====================================================== WORLD 5: HEXBOUND CITY */
-// Exorcism purifies spirits from every world (cursed essence + that world's materials).
-// Sigilcraft binds essence into sigils for your Domain (a 3×3 board of rules) and cursed gear.
-// Pacts: self-imposed restrictions for big bonuses that grow the longer you hold them.
-const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
+// Cursed Research studies curses from every world: cursed essence, that world's materials and Cursed
+// Fragments that level any technique. Shinjuku's scrolls teach Domain Expansions (Ultimate techniques).
+// Binding Vows (systems.js): self-imposed restrictions for big bonuses.
 (() => {
   const h = (id, name, v) => defItem(id, name, '🕯️', v);
   h('hex_ash', 'Curse Ash', 70); h('hex_residue', 'Curse Residue', 120); h('hex_ember', 'Grudge Ember', 190); h('hex_shade', 'Shade Essence', 280);
@@ -261,13 +274,10 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
   defItem('veil_shard', 'Veil Shard', '🔷', 4500, relic('hex'));
   defItem('matriarch_eye', "Matriarch's Eye", '👁️', 15000, relic('hex'));
 
-  SKILLS.exorcism = { name: 'Exorcism', realm: 'hex', icon: '🕯️', type: 'gather',
-    desc: 'Purify restless spirits from every world. They leave cursed essence and the materials of the world they came from.' };
-  SKILLS.sigilcraft = { name: 'Sigilcraft', realm: 'hex', icon: '🔯', type: 'craft',
-    desc: 'Bind cursed essence and materials into sigils for your Domain, and forge cursed gear with a price.' };
-  SKILLS.pacts = { name: 'Pacts', realm: 'hex', icon: '📿', type: 'pact',
-    desc: 'Swear binding vows: a restriction for a big bonus. The longer you hold them, the more this skill grows, and the stronger they get.' };
-  const X = (item, level, time, name, extra) => Object.assign(gather(item, level, time), { name, extra });
+  defItem('cursed_fragment', 'Cursed Fragment', '🧩', 400);
+  SKILLS.exorcism = { name: 'Cursed Research', realm: 'hex', icon: '🕯️', type: 'gather',
+    desc: 'Study the curses that haunt every world. They leave cursed essence, the materials of their world, and Cursed Fragments that level up any technique. Its level strengthens your Binding Vows.' };
+  const X = (item, level, time, name, extra) => Object.assign(gather(item, level, time), { name, extra: extra.concat([['cursed_fragment', 0.04 + level / 1500, [1, 1]]]) });
   SKILLS.exorcism.actions = [
     X('hex_ash', 1, 3, 'Harbor Wraiths', [['reef_bass', 0.4, [1, 2]], ['tide_pearl', 0.02, [1, 1]]]),
     X('hex_residue', 12, 3.5, 'Village Phantoms', [['moonpetal', 0.4, [1, 2]], ['chakra_orb', 0.3, [1, 2]], ['mist_steel', 0.03, [1, 1]]]),
@@ -277,19 +287,6 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
     X('hex_void', 64, 5.5, 'Shrine Specters', [['phantom_silk', 0.3, [1, 2]], ['veil_shard', 0.03, [1, 1]]]),
     X('hex_crown', 78, 6.5, 'Abyss Grudges', [['echo_soul', 0.25, [1, 1]], ['sunstone', 0.3, [1, 2]], ['veil_shard', 0.05, [1, 1]]]),
   ];
-  // Sigils: world sigils speed up that world's skills; Hexbound sigils boost you. Same-world neighbours amplify each other.
-  const sig = (id, name, tag, kind, val, desc) => { defItem(id, name, '🔯', 300, { type: 'sigil' }); SIGILS[id] = { tag, kind, target: kind === 'speed' ? tag : null, val, desc }; };
-  sig('sigil_tide', 'Tide Sigil', 'seas', 'speed', 0.10, 'Orange Town skills');
-  sig('sigil_leaf', 'Leaf Sigil', 'shinobi', 'speed', 0.10, 'Leaf Village skills');
-  sig('sigil_soul', 'Soul Sigil', 'soul', 'speed', 0.10, 'Soul City skills');
-  sig('sigil_ki', 'Ki Sigil', 'ki', 'speed', 0.10, 'Kaio Planet skills');
-  sig('sigil_hex', 'Hex Sigil', 'hex', 'speed', 0.10, 'Shinjuku skills');
-  sig('sigil_blade', 'Blade Sigil', 'hex', 'dmg', 0.08, 'damage');
-  sig('sigil_ward', 'Ward Sigil', 'hex', 'def', 0.08, 'defense');
-  sig('sigil_heart', 'Heart Sigil', 'hex', 'hp', 0.08, 'max HP');
-  sig('sigil_coin', 'Coin Sigil', 'hex', 'gold', 0.10, 'gold');
-  sig('sigil_lore', 'Lore Sigil', 'hex', 'xp', 0.05, 'XP on every skill');
-  sig('sigil_luck', 'Luck Sigil', 'hex', 'rare', 0.08, 'rare finds');
   // cursed gear: huge stats with a price
   defItem('cursed_cleaver', 'Cursed Cleaver', '🪓', 30000, eq('weapon', { atk: 225, hp: -300 }));
   defItem('grudge_mail', 'Grudge Mail', '🥋', 30000, eq('armor', { def: 240, hp: 1300, atk: -25 }));
@@ -297,30 +294,18 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
   defItem('schem_cursed_cleaver', 'Schematic: Cursed Cleaver', '📜', 20000, schem('cursed_cleaver'));
   defItem('schem_grudge_mail', 'Schematic: Grudge Mail', '📜', 20000, schem('grudge_mail'));
   defItem('schem_hex_eye', 'Schematic: Hex Eye', '📜', 20000, schem('hex_eye'));
-  SKILLS.sigilcraft.actions = [
-    craft('sigil_tide', 3, 5, { hex_ash: 10, blue_marlin: 10, tide_pearl: 1 }),
-    craft('sigil_blade', 8, 5, { hex_ash: 15, chakra_orb: 10 }),
-    craft('sigil_leaf', 15, 5.5, { hex_residue: 10, storm_chakra: 10, shadowroot: 8 }),
-    craft('sigil_ward', 20, 5.5, { hex_residue: 15, void_stone: 10 }),
-    craft('sigil_soul', 28, 6, { hex_ember: 10, void_stone: 12, spirit_core: 8 }),
-    craft('sigil_heart', 34, 6, { hex_ember: 15, vital_bean: 5, wisp_flame: 10 }),
-    craft('sigil_ki', 40, 6.5, { hex_shade: 10, ki_core: 10, gravity_plate: 1 }),
-    craft('sigil_coin', 46, 6.5, { hex_shade: 15, sapphire: 2, tide_pearl: 2 }),
-    craft('sigil_hex', 52, 7, { hex_core: 12, bound_talisman: 1, grave_dust: 10 }),
-    needs('schem_cursed_cleaver', craft('cursed_cleaver', 55, 9, { hex_core: 20, bound_talisman: 3, starsteel: 15, ashen_tail: 2 })),
-    craft('sigil_lore', 60, 7, { hex_void: 12, sage_lotus: 10, ki_flare: 6 }),
+  // Cursed gear (Crafting): huge stats with a price.
+  SKILLS.arts.actions.push(
+    needs('schem_cursed_cleaver', craft('cursed_cleaver', 55, 9, { hex_core: 20, bound_talisman: 3, star_ingot: 8, ashen_tail: 2 })),
     needs('schem_grudge_mail', craft('grudge_mail', 66, 10, { hex_void: 20, veil_shard: 3, phantom_silk: 10, warrior_sash: 2 })),
-    craft('sigil_luck', 72, 7.5, { hex_void: 15, void_diamond: 1, ruby: 2 }),
     needs('schem_hex_eye', craft('hex_eye', 80, 10, { hex_crown: 12, matriarch_eye: 1, void_diamond: 1, tyrant_horn: 1 })),
-  ];
-  SKILLS.pacts.actions = [];
-  for (const s of ['exorcism', 'sigilcraft', 'pacts']) RARE_FINDS[s] = [];
+  );
+  RARE_FINDS.exorcism = [];
   SHOP.push({ id: 'tools_hex', cat: 'Tools', realm: 'hex', name: 'Warded Satchel', icon: '🛠️', desc: '+10% speed for Shinjuku skills per tier.', costs: [50000, 200000, 800000, 3e6, 9e6] });
   SYNERGIES.push(
     { from: 'exorcism',   to: 'mining',  kind: 'speed',    per: 0.003, name: 'Spirit Sense',  desc: 'Reishi Mining goes faster' },
-    { from: 'pacts',      to: 'gravity', kind: 'speed',    per: 0.003, name: 'Iron Vow',      desc: 'Gravity Training goes faster' },
   );
-  // Crafting learns a tool for Exorcism too
+  // Crafting learns a tool for Cursed Research too
   [1, 2, 3].forEach((t) => {
     const id = `tool_exorcism_${t}`;
     defItem(id, `Spirit Bell Mk ${'I'.repeat(t)}`, '🔧', 300 * t, { type: 'tool', toolFor: 'exorcism', tier: t });
@@ -353,13 +338,9 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
       lore: "The Crimson Tyrant's horn hummed with a curse not of this world. Offer it, with what your farm and your training made, and a gate of black paper will open.",
       offer: { tyrant_horn: 1, gravity_plate: 5, ki_nova: 20, fire_pepper: 10 } },
     unlocks: [
-      { id: 'skill:exorcism', name: 'Exorcism', need: () => !!S.gates.hex || usedSkill('exorcism') },
-      { id: 'skill:sigilcraft', name: 'Sigilcraft', need: () => skillLv('exorcism') >= 5 || usedSkill('sigilcraft'),
-        hint: () => 'Reach Exorcism level 5', why: 'An old sorcerer shows you how to bind cursed essence into sigils.' },
-      { id: 'feature:domain', name: 'Your Domain', need: () => skillLv('sigilcraft') >= 5 || S.domain.cells.some(Boolean),
-        hint: () => 'Reach Sigilcraft level 5', why: 'You can now shape a Domain of your own: place sigils on its board (menu: Domain).' },
-      { id: 'skill:pacts', name: 'Pacts', need: () => (S.combat.kills.alleys || 0) >= 10 || usedSkill('pacts'),
-        hint: () => 'Defeat 10 foes in the Shadow Alleys', why: 'A dying sorcerer teaches you the oldest trick: binding vows.' },
+      { id: 'skill:exorcism', name: 'Cursed Research', need: () => !!S.gates.hex || usedSkill('exorcism') },
+      { id: 'feature:vows', name: 'Binding Vows', need: () => (S.combat.kills.alleys || 0) >= 10 || S.pacts.active.length > 0,
+        hint: () => 'Defeat 10 foes in the Shadow Alleys', why: 'A dying sorcerer teaches you the oldest trick: bind yourself with a restriction and get stronger. Vows are on the Cursed Research page.' },
     ],
   });
 })();
@@ -440,10 +421,6 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
     { from: 'trapcraft', to: 'fishing',   kind: 'double', per: 0.002, name: 'Bait Craft', desc: 'Chance to catch two fish' },
     { from: 'taming',    to: 'farming',   kind: 'double', per: 0.003, name: 'Beast Plough', desc: 'Chance for a double harvest' },
   );
-  defItem('sigil_hunt', 'Hunt Sigil', '🔯', 300, { type: 'sigil' });
-  SIGILS.sigil_hunt = { tag: 'hunter', kind: 'speed', target: 'hunter', val: 0.10, desc: "Green Island skills" };
-  SKILLS.sigilcraft.actions.push(craft('sigil_hunt', 62, 7, { hex_void: 10, trail_stone: 1, stag_antler: 10 }));
-  SKILLS.sigilcraft.actions.sort((a, b) => a.level - b.level);
   [1, 2, 3].forEach((tier) => {
     const id = `tool_tracking_${tier}`;
     defItem(id, `Hunter's Compass Mk ${'I'.repeat(tier)}`, '🔧', 300 * tier, { type: 'tool', toolFor: 'tracking', tier });
@@ -564,10 +541,6 @@ const ECHOES = [
     { from: 'restoration', to: 'smithing', kind: 'xp',   per: 0.003, name: 'Old Techniques', desc: 'More Smelting XP' },
     { from: 'bonding',     to: 'all',      kind: 'xp',   per: 0.001, name: 'Shared Will',    desc: 'A little more XP on every skill' },
   );
-  defItem('sigil_echo', 'Echo Sigil', '🔯', 300, { type: 'sigil' });
-  SIGILS.sigil_echo = { tag: 'echo', kind: 'speed', target: 'echo', val: 0.10, desc: 'Echo Quarter skills' };
-  SKILLS.sigilcraft.actions.push(craft('sigil_echo', 76, 7.5, { hex_crown: 8, echo_dust: 4, pillar_fragment: 10 }));
-  SKILLS.sigilcraft.actions.sort((a, b) => a.level - b.level);
   [1, 2, 3].forEach((tier) => {
     const id = `tool_archaeology_${tier}`;
     defItem(id, `Brush & Pick Mk ${'I'.repeat(tier)}`, '🔧', 300 * tier, { type: 'tool', toolFor: 'archaeology', tier });

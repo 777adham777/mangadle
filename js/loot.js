@@ -14,7 +14,7 @@ defItem('capsule_crate', 'Capsule Crate', '🧰', 3000, chest([2000, 6000], [
   ['gravity_plate', 8, [1, 1]], ['warrior_sash', 4, [1, 1]], ['seed_star_fruit', 2, [1, 1]], ['FRUIT', 0.3, [1, 1]]]));
 defItem('cursed_box', 'Cursed Box', '🧰', 6000, chest([5000, 12000], [
   ['hex_residue', 30, [3, 8]], ['hex_shade', 20, [2, 5]], ['hex_core', 14, [1, 3]], ['GEM', 12, [1, 1]], ['bound_talisman', 8, [1, 1]],
-  ['veil_shard', 5, [1, 1]], ['sigil_luck', 1, [1, 1]], ['FRUIT', 0.3, [1, 1]]]));
+  ['veil_shard', 5, [1, 1]], ['cursed_fragment', 6, [1, 3]], ['FRUIT', 0.3, [1, 1]]]));
 defItem('hunters_cache', "Hunter's Cache", '🧰', 12000, chest([10000, 25000], [
   ['swift_feather', 25, [3, 8]], ['stag_antler', 20, [2, 5]], ['lynx_pelt', 14, [1, 3]], ['GEM', 12, [1, 1]], ['seed_thunder_root', 10, [1, 2]],
   ['trail_stone', 8, [1, 1]], ['beast_essence', 8, [1, 2]], ['chimera_trap', 2, [1, 1]], ['FRUIT', 0.3, [1, 1]]]));

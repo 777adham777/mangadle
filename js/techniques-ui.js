@@ -39,7 +39,7 @@ function techCardHTML(id) {
     <p class="tc-desc">${T.desc(L)}</p>
     <ul class="tc-tiers">${tiers}</ul>
     <div class="tc-foot">${L < TECH_MAX
-      ? `<span class="tc-frag">${ui('frag')}<b>${f}</b>/${c} fragments</span>${gbtn(`Level ${L + 1}`, 'plus', `data-techup="${id}" ${f < c ? 'disabled' : ''}`, 'sm')}`
+      ? `<span class="tc-frag">${ui('frag')}<b>${f}</b>/${c} fragments</span>${f < c && count('cursed_fragment') ? gbtn(`Cursed ×${Math.min(c - f, count('cursed_fragment'))}`, 'frag', `data-infuse="${id}"`, 'dark sm') : ''}${gbtn(`Level ${L + 1}`, 'plus', `data-techup="${id}" ${f < c ? 'disabled' : ''}`, 'sm')}`
       : `<span class="tc-frag">${ui('star')}Mastered</span>`}
       ${eqd ? `<span class="pill">${ui('check')}Equipped</span>` : slotFor(id) ? gbtn('Equip', 'play', `data-techeq="${id}"`, 'dark sm') : ''}</div>
   </div>`;
@@ -54,7 +54,7 @@ VIEWS.techniques = () => {
     <div class="tslots wide">${TECH_SLOTS.map(techSlotHTML).join('')}</div></section>
   <p class="muted small tc-help">Every foe drops its world's scroll now and then (bosses often). A scroll teaches a random technique of that world; unknown ones come up 3× as often.
   A technique you already know gives <b>${FRAG_PER_DUP} fragments</b> instead, and fragments level it up. Levels 5 and 10 change how it works.
-  Crafting can also write the scroll of one chosen technique.</p>
+  Crafting can also write the scroll of one chosen technique, and Cursed Fragments from Cursed Research count for any technique.</p>
   ${byWorld}`;
 };
 
@@ -92,6 +92,7 @@ document.addEventListener('click', (ev) => {
   const t = ev.target.closest('button');
   if (!t || t.disabled) return;
   if (t.dataset.techup) upgradeTech(t.dataset.techup);
+  else if (t.dataset.infuse) infuseTech(t.dataset.infuse);
   else if (t.dataset.techeq) { const sl = slotFor(t.dataset.techeq); if (sl) equipTech(sl.id, t.dataset.techeq); }
 });
 document.addEventListener('change', (ev) => {

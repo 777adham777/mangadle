@@ -602,7 +602,9 @@ ICONS.form = { surge: 'aura', ascended: 'lightning-trio', limit: 'falling-star' 
 
 // ---- Shinjuku
 ICONS.realm.hex = 'oni';
-Object.assign(ICONS.skill, { exorcism: 'candle-flame', sigilcraft: 'magic-swirl', pacts: 'prayer-beads' });
+Object.assign(ICONS.skill, { exorcism: 'candle-flame' });
+Object.assign(ICONS.technique, { domain_blaze: 'fire-gem', domain_storm: 'lightning-storm', domain_garden: 'spiral-bloom', domain_shrine: 'lotus-flower' });
+ICONS.item.cursed_fragment = 'crystal-shine';
 Object.assign(ICONS.zone, { alleys: 'spooky-house', shrine: 'paper-lantern', veil: 'portal', matriarch: 'tombstone' });
 Object.assign(ICONS.enemy, { 'Grudge Spirit': 'floating-ghost', 'Hollow Sorcerer': 'warlock-hood', 'Shrine Specter': 'ghost', 'Bound Corpse': 'skull-mask',
   'Veil Walker': 'evil-eyes', 'Elder Curse': 'devil-mask', 'Cursed Matriarch': 'oni' });

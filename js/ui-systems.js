@@ -43,7 +43,7 @@ on('awaken', (d) => burst(RELEASE[d.rel].name, ITEMS[d.id].name, itemIc(d.id), r
 on('reforge', (d) => toast(`${ITEMS[d.id].name} reforged to tier ${d.tier}.`, 'rare'));
 
 /* ============================================================ shared: labels */
-Object.assign(TYPE_LABEL, { scroll: 'Technique scroll', seed: 'Seed', meal: 'Buff meal', tool: 'Tool', wish: 'Dragon Ball', trap: 'Trap', sigil: 'Sigil', artifact: 'Artifact' });
+Object.assign(TYPE_LABEL, { scroll: 'Technique scroll', seed: 'Seed', meal: 'Buff meal', tool: 'Tool', wish: 'Dragon Ball', trap: 'Trap', artifact: 'Artifact' });
 COL_GROUPS.push(['seed', 'Seeds'], ['meal', 'Buff meals'], ['wish', 'Dragon Balls']);
 const BUFF_NAME = { speed: 'skill speed', xp: 'XP', dmg: 'damage', gold: 'gold', rare: 'rare finds', all: 'everything' };
 SYN_KIND.buff = 'meal duration';
@@ -172,66 +172,24 @@ document.addEventListener('click', (ev) => {
 });
 document.addEventListener('change', (ev) => { if ('autotend' in ev.target.dataset) { S.farm.auto = ev.target.checked; dirty = true; } });
 
-/* ============================================================ HEX: DOMAIN */
-VIEW_FEATURE.domain = 'domain';
-SYN_KIND.techcost = 'cheaper techniques';
-COL_GROUPS.push(['sigil', 'Sigils']);
-UIX.quick.push(() => (domainOn() || isUnlocked('realm:hex') ? [['domain', 'domain', 'Domain']] : []));
-const SIG_KIND = { speed: 'speed', dmg: 'damage', def: 'defense', hp: 'max HP', gold: 'gold', xp: 'XP', rare: 'rare finds' };
-const sigDesc = (id) => { const g = SIGILS[id]; return `+${pct(g.val)} ${g.kind === 'speed' ? 'speed for ' + g.desc : g.desc}`; };
-let selCell = 0;
-VIEWS.domain = () => {
-  const n = domainCells(), C = S.domain.cells, inv = Object.keys(SIGILS).filter((k) => count(k) > 0);
-  const cell = (i) => {
-    if (i >= n) return `<div class="dcell locked">${ui('lock')}<small>Sigilcraft ${(i - 2) * 12}</small></div>`;
-    const id = C[i], sg = id && SIGILS[id];
-    return `<button class="dcell ${id ? 'full' : ''} ${selCell === i ? 'on' : ''}" data-cell="${i}" style="--rc:${sg ? rc(sg.tag) : 'var(--line2)'}">
-      ${id ? `${itemIc(id)}<b>${ITEMS[id].name.replace(' Sigil', '')}</b><small>+${pct(sigilPower(i))} ${SIG_KIND[sg.kind]}</small>` : `${ui('plus')}<small>Empty</small>`}</button>`;
-  };
-  const tot = domainTotals();
-  const rows = Object.entries(tot).map(([k, v]) => { const [kind, r] = k.split(':'); return `<li><span>${r ? `${REALMS[r].name} skill speed` : SIG_KIND[kind]}</span><b>+${pct(v)}</b></li>`; });
-  return `${ptitle('Shinjuku', 'Your Domain')}
-  <div class="domain-layout">
-    <section class="win">${hdr('Board', `${n} / 9 cells open`)}
-      <div class="dboard">${[0, 1, 2, 3, 4, 5, 6, 7, 8].map(cell).join('')}</div>
-      <p class="muted small">Pick a cell, then a sigil. Each sigil gets <b>+25%</b> per neighbour from the same world, and <b>+50%</b> if its whole row or column is one world. Sigilcraft level adds up to +50% to the whole board.</p>
-      ${C[selCell] && selCell < n ? gbtn('Take back this sigil', 'close', `data-unsigil="${selCell}"`, 'dark sm') : ''}
-    </section>
-    <section class="win">${hdr('Sigils in your bag', inv.length ? 'click to place in the selected cell' : 'craft them in Sigilcraft')}
-      <div class="sig-inv">${inv.map((k) => `<button class="sig" data-place="${k}" style="--rc:${rc(SIGILS[k].tag)}">${tile(k, count(k), { cls: 'xs' })}<span><b>${ITEMS[k].name}</b><small>${sigDesc(k)}</small></span></button>`).join('') || '<div class="empty-note">No sigils yet.</div>'}</div>
-      ${hdr('Domain effects')}
-      <ul class="rn-list">${rows.join('') || '<li><span class="muted">Nothing yet</span></li>'}
-        <li><span>Domain Release (each fight)</span><b>${domainSigils() >= 3 ? `${releaseMult().toFixed(1)}× max hit` : 'needs 3 sigils'}</b></li></ul>
-    </section>
-  </div>`;
-};
-UIX.actLines.push((skill, a) => (a.out && SIGILS[Object.keys(a.out)[0]] ? `<div class="ac-note"><span>${ui('domain')}${sigDesc(Object.keys(a.out)[0])}</span></div>` : ''));
-UIX.inspectorAny.push((id) => (SIGILS[id] ? `${attrList([['domain', 'On your Domain', sigDesc(id)]])}<div class="dt-cta">${gbtn('Open the Domain', 'play', 'data-nav="domain"')}</div>` : ''));
-UIX.realmSide.push((realm, skill) => (skill === 'sigilcraft' && domainOn() ? `<section class="win">${hdr('Your Domain', `${domainSigils()} sigils placed`)}<p class="muted small">Sigils do nothing in the bag: place them on your Domain board.</p>${gbtn('Open the Domain', 'play', 'data-nav="domain"', 'sm')}</section>` : ''));
-
-/* ============================================================ HEX: PACTS */
+/* ============================================================ HEX: BINDING VOWS */
 UIX.realmTop.push((realm, skill) => {
-  if (skill !== 'pacts') return '';
+  if (skill !== 'exorcism') return '';
+  if (!pactsOn()) return `<section class="win">${hdr('Binding Vows')}<p class="muted small">${ui('lock')} ${esc(lockedNote('feature:vows').replace('Locked. ', ''))}</p></section>`;
   const n = pactSlots(), act = S.pacts.active.slice(0, n), m = pactMult();
-  return `${hdr('Binding vows', `${act.length} / ${n} active · slot 2 at Pacts 40, slot 3 at 80 · bonuses ×${m.toFixed(2)} from your level`)}
-    <p class="muted small">Holding a vow trains this skill (more vows, faster). You can break a vow at any time.</p>
+  return `<section class="win">${hdr('Binding Vows', `${act.length} / ${n} sworn · 2nd vow at Cursed Research 40, 3rd at 80 · bonuses ×${m.toFixed(2)} from your level`)}
+    <p class="muted small">A restriction for a bonus. You can break a vow at any time.</p>
     <div class="pacts">${PACTS.map((p) => {
       const on = act.includes(p.id);
       return `<button class="pact ${on ? 'on' : ''}" data-pact="${p.id}" ${!on && act.length >= n ? 'disabled' : ''}>
-        <b>${p.name}</b><span class="vow">${ui('pact')}${p.vow}</span><span class="gift">${ui('star')}${p.gift(m)}</span><em>${on ? 'Active · click to break' : 'Swear this vow'}</em></button>`;
+        <b>${p.name}</b><span class="vow">${ui('pact')}${p.vow}</span><span class="gift">${ui('star')}${p.gift(m)}</span><em>${on ? 'Sworn · click to break' : 'Swear this vow'}</em></button>`;
     }).join('')}</div>
-    <p class="muted small">Time under vows: <b data-pacttime>${fmtTime(S.stats.pactTime || 0)}</b></p>`;
+    <p class="muted small">Time under vows: <b data-pacttime>${fmtTime(S.stats.pactTime || 0)}</b></p></section>`;
 });
 UPD.push(() => { const el = $('[data-pacttime]'); if (el) setText(el, fmtTime(S.stats.pactTime || 0)); });
-
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('button');
-  if (!t || t.disabled) return;
-  const d = t.dataset;
-  if (d.cell !== undefined) { selCell = +d.cell; dirty = true; }
-  else if (d.place) { let i = selCell; if (!cellOpen(i)) i = [0, 1, 2, 3, 4, 5, 6, 7, 8].find((j) => cellOpen(j) && !S.domain.cells[j]); if (i != null && placeSigil(i, d.place)) { const nx = [0, 1, 2, 3, 4, 5, 6, 7, 8].find((j) => cellOpen(j) && !S.domain.cells[j]); if (nx != null) selCell = nx; } }
-  else if (d.unsigil !== undefined) removeSigil(+d.unsigil);
-  else if (d.pact) togglePact(d.pact);
+  if (t && !t.disabled && t.dataset.pact) togglePact(t.dataset.pact);
 });
 
 /* ============================================================ HUNTER: CONTRACTS + CARD BOOK */

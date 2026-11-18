@@ -37,7 +37,7 @@ const TECH_SLOTS = [
 ];
 const SLOT_BY = Object.fromEntries(TECH_SLOTS.map((s) => [s.id, s]));
 const openSlots = () => TECH_SLOTS.filter((s) => s.open());
-const equipped = () => openSlots().map((s) => S.tech.slots[s.id]).filter((id) => id && techLv(id));
+const equipped = () => openSlots().slice(0, typeof pactOn === 'function' && pactOn('narrow') ? 2 : 99).map((s) => S.tech.slots[s.id]).filter((id) => id && techLv(id));
 const isEquipped = (id) => Object.values(S.tech.slots).includes(id);
 const slotFor = (id) => TECH_SLOTS.find((s) => s.cat === TECHNIQUES[id].cat && s.open() && !S.tech.slots[s.id]);
 
@@ -121,7 +121,11 @@ hook('block', (skill, act) => {
 
 /* ------------------------------------------------------------ in battle */
 // Chakra / Cursed Energy, and a weapon whose awakened element matches the technique's tag (weapons.js).
-const techPower = () => (1 + discFx('tech')) * (typeof armTechMult === 'function' ? armTechMult(RT.casting) : 1);
+const domainOpen = () => (RT.fx.domain || 0) > 0;
+// A technique sharing an element tag with the open domain is 50% stronger.
+const domainMult = (id) => (id && domainOpen() && RT.domainTags && TECHNIQUES[id].tags.some((t) => t !== 'domain' && RT.domainTags.includes(t)) ? 1.5 : 1);
+const techPower = () => (1 + discFx('tech')) * (typeof armTechMult === 'function' ? armTechMult(RT.casting) : 1) * domainMult(RT.casting)
+  * (typeof pactOn === 'function' && pactOn('narrow') ? 1 + 0.3 * pactMult() : 1);
 const strike = (e, mult, label, crit) => dealDamage(e, Math.max(1, Math.round(pMaxHit() * mult * techPower() * mitig(e.def * hmul('edef')))), !!crit, label);
 const alive = () => S.combat.enemy != null;
 const techCd = (id) => (id === 'fire_lotus' && techTier(id, 10) ? 14 : id === 'healing_palm' && techTier(id, 10) ? 8 : TECHNIQUES[id].cd);
@@ -152,7 +156,36 @@ const CAST = {
     emit('tech', { id: 'iron_skin' });
   },
   sealing_mark(e, L) { RT.fx.mark = L >= 5 ? 12 : 8; emit('tech', { id: 'sealing_mark' }); },
+  domain_blaze(e, L) { strike(e, 6 + 0.6 * (L - 1), 'Infinite Blaze'); openDomain('domain_blaze', L); },
+  domain_storm(e, L) { strike(e, 5 + 0.5 * (L - 1), 'Storm Sanctum'); openDomain('domain_storm', L); },
+  domain_garden(e, L) { for (let i = 0; i < 6 && alive(); i++) strike(e, 1 + 0.1 * (L - 1), i ? '' : 'Crimson Garden'); openDomain('domain_garden', L); },
+  domain_shrine(e, L) { const m = pMaxHp(); S.combat.hp = Math.min(m, S.combat.hp + Math.round(m * (0.3 + 0.02 * (L - 1)) * techPower())); openDomain('domain_shrine', L); },
 };
+// Domain Expansion: one domain at a time; its rule lasts 10s (15s from level 5).
+function openDomain(id, L) {
+  RT.fx.domain = L >= 5 ? 15 : 10;
+  RT.domainId = id; RT.domainLv = L; RT.domainTags = TECHNIQUES[id].tags;
+  S.stats.domains = (S.stats.domains || 0) + 1;
+  emit('tech', { id });
+}
+const inDomain = (id) => domainOpen() && RT.domainId === id;
+hook('haste', () => (inDomain('domain_storm') ? 1.2 : 1));
+hook('edef', () => (inDomain('domain_garden') ? (RT.domainLv >= 10 ? 0.5 : 0.7) : 1));
+hook('taken', () => (inDomain('domain_shrine') ? 0.7 : 1));
+hook('combat', (dt) => {
+  if (!domainOpen()) return;
+  if (inDomain('domain_storm') && RT.domainLv >= 10) for (const k in RT.cd) if (k !== 'domain_storm') RT.cd[k] -= dt;
+  if (inDomain('domain_shrine') && RT.domainLv >= 10) { const m = pMaxHp(); S.combat.hp = Math.min(m, S.combat.hp + m * 0.03 * dt); }
+});
+// Cursed Fragments (Cursed Research) count as fragments of any technique you know.
+function infuseTech(id) {
+  const need = fragCost(id) - techFrag(id), n = Math.min(need, count('cursed_fragment'));
+  if (!techLv(id) || n <= 0) return false;
+  removeItem('cursed_fragment', n);
+  S.tech.frag[id] = techFrag(id) + n;
+  dirty = true;
+  return true;
+}
 // Defensive techniques wait for their moment.
 const hurt = () => S.combat.hp < 0.85 * pMaxHp();
 const TECH_WHEN = { healing_palm: () => S.combat.hp < 0.6 * pMaxHp(), mist_step: hurt, iron_skin: hurt };

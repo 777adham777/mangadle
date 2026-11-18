@@ -65,7 +65,6 @@ function defaultState() {
     tools: {},                          // skill id -> tool tier (tools are crafted)
     chamber: { store: 0, on: false },   // Time Chamber (chamber.js), seconds stored
     wishes: {},
-    domain: { cells: [null, null, null, null, null, null, null, null, null] },
     pacts: { active: [] },
     contracts: { list: [], next: 0, stars: 0 },
     beasts: {}, companion: null,

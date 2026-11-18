@@ -574,9 +574,9 @@ const GOALS = [
   G('Defeat the Crimson Tyrant', 'battle', 1, kills('tyrant'), 25000),
   G('Open the Hex Gate', 'home', 1, gate('hex'), 30000),
   // Shinjuku
-  G('Reach Exorcism level 10', 'realm:hex:exorcism', 10, lvl('exorcism'), 20000),
-  G('Place 3 sigils in your Domain', 'domain', 3, () => [(S.domain ? S.domain.cells.filter(Boolean).length : 0)], 25000),
-  G('Hold a Pact for 30 minutes', 'realm:hex:pacts', 1800, () => [Math.floor(S.stats.pactTime || 0)], 25000),
+  G('Reach Cursed Research level 10', 'realm:hex:exorcism', 10, lvl('exorcism'), 20000),
+  G('Learn a Domain Expansion', 'techniques', 1, () => [TECH_POOLS.hex.filter(techLv).length ? 1 : 0], 25000),
+  G('Hold a Binding Vow for 30 minutes', 'realm:hex:exorcism', 1800, () => [Math.floor(S.stats.pactTime || 0)], 25000),
   G('Defeat the Cursed Matriarch', 'battle', 1, kills('matriarch'), 50000),
   G("Open the Hunter's Trail", 'home', 1, gate('hunter'), 60000),
   // Green Island
