@@ -33,7 +33,7 @@ function defaultState() {
   const skills = {};
   for (const id in SKILLS) skills[id] = { xp: 0 };
   return {
-    v: 3,
+    v: 4,
     gold: 50,
     bounty: 0,
     items: {},
@@ -71,6 +71,8 @@ function defaultState() {
     cards: {},
     echo: { id: null, grades: null, bond: 0, task: null, prog: 0 },
     museum: {},
+    quality: { log: {}, rec: {} },      // Shiny & Perfect logs (variant id -> how many), fish weight records (quality.js)
+    kitchen: { spice: null },           // seasoning picked in the Cooking spice rack (seas.js)
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),
   };
@@ -85,6 +87,7 @@ function mergeDefaults(target, def) {
   return target;
 }
 function sanitize() {
+  if (typeof restoreVariants === 'function') restoreVariants();   // shiny / perfect / seasoned items are created on demand
   for (const id in S.items) if (!ITEMS[id] || !(S.items[id] > 0)) delete S.items[id];
   for (const slot in S.equip) if (S.equip[slot] && !ITEMS[S.equip[slot]]) S.equip[slot] = null;
   if (S.fruit && !ITEMS[S.fruit]) S.fruit = null;
@@ -146,7 +149,20 @@ function addItem(id, n) {
   if (!S.found[id]) { S.found[id] = 1; emit('newitem', id); }
 }
 function removeItem(id, n) { S.items[id] = count(id) - n; if (S.items[id] <= 0) delete S.items[id]; }
-function canAfford(inputs) { for (const k in inputs) if (count(k) < inputs[k]) return false; return true; }
+// Perfect / seasoned versions of an item (quality.js registers them here, by base item).
+// Recipes, voyages and gate offerings take any version except shiny trophies, plain ones first.
+const VARIANTS = {};
+function stock(id) {
+  let n = count(id);
+  for (const v of VARIANTS[id] || []) if (ITEMS[v].q !== 's') n += count(v);
+  return n;
+}
+function takeStock(id, n) {
+  const take = (k) => { const m = Math.min(n, count(k)); if (m > 0) { removeItem(k, m); n -= m; } };
+  take(id);
+  if (n > 0 && VARIANTS[id]) for (const v of VARIANTS[id].filter((k) => ITEMS[k].q !== 's').sort((a, b) => ITEMS[a].value - ITEMS[b].value)) { take(v); if (n <= 0) break; }
+}
+function canAfford(inputs) { for (const k in inputs) if (stock(k) < inputs[k]) return false; return true; }
 function findAction(skill, id) { return SKILLS[skill].actions.find((a) => a.id === id); }
 
 /* ------------------------------------------------------------- levels */
@@ -163,7 +179,8 @@ function addXp(id, amt) {
 // World systems (systems.js) plug in here instead of editing the core engine.
 // Multiplier hooks return a factor (1 = no change); 'double' hooks return an added chance.
 const HOOKS = { dmg: [], hp: [], def: [], gold: [], xp: [], speed: [], double: [], rare: [], taken: [], dodge: [], edef: [],
-                tick: [], combat: [], action: [], kill: [], spawn: [], block: [], energy: [] };
+                tick: [], combat: [], action: [], kill: [], spawn: [], block: [], energy: [],
+                haste: [], heal: [], eat: [], shiny: [], perfect: [] };
 // Why an action cannot run right now ('' = it can). Systems add reasons (max rank reached, no free plot...).
 const actionBlock = (skill, act) => { for (const f of HOOKS.block) { const r = f(skill, act); if (r) return r; } return ''; };
 const hook = (name, fn) => HOOKS[name].push(fn);
@@ -207,9 +224,11 @@ function milestoneFx(skill) {
 const combatMilestones = (skill) => COMBAT_MILESTONES.filter((lv) => skillLv(skill) >= lv).length;
 const luckMult = () => 1 + 0.15 * (S.shop.lucky_coin || 0);
 const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult() * (1 + synergyBonus('rare', skill)) * hmul('rare', skill);
+// Shiny / perfect / seasoned variants have their own logs (quality.js): they do not count here.
 function collectionPct() {
-  const total = Object.keys(ITEMS).length + PETS.length;
-  return (Object.keys(S.found).length + Object.keys(S.pets).length) / total;
+  const real = (k) => ITEMS[k] && !ITEMS[k].variant;
+  const total = Object.keys(ITEMS).filter(real).length + PETS.length;
+  return (Object.keys(S.found).filter(real).length + Object.keys(S.pets).length) / total;
 }
 
 function dmgMult()  { return hmul('dmg') * (1 + synergyBonus('dmg', 'combat')) * (1 + 0.01 * tl('chakra')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones('strength')) * (1 + 0.03 * bossPets()); }
@@ -281,11 +300,11 @@ const synTargetOpen = (s) => (s.to === 'combat' ? isUnlocked('feature:battle') :
 const pMaxHit = () => (8 + 1.5 * skillLv('strength') + gearStat('atk')) * dmgMult();
 const pDef    = () => (1.5 * skillLv('defense') + gearStat('def')) * defMult();
 const pMaxHp  = () => Math.floor((40 + 10 * skillLv('vitality') + gearStat('hp')) * hpMult());
-const pSpeed  = () => 2.4 * (1 + (fruitFx().atkSpeed || 0));
+const pSpeed  = () => 2.4 * (1 + (fruitFx().atkSpeed || 0)) / hmul('haste');
 const pDodge  = () => Math.min(0.9, (fruitFx().dodge || 0) + hadd('dodge'));
 const mitig   = (def) => 100 / (100 + def);
 const autoEatThreshold = () => [0.4, 0.55, 0.7][S.shop.satchel || 0];
-const foodHeal = (id) => Math.floor(ITEMS[id].heal * hpMult() * (1 + synergyBonus('heal', 'cooking')));
+const foodHeal = (id) => Math.floor(ITEMS[id].heal * hpMult() * (1 + synergyBonus('heal', 'cooking')) * hmul('heal'));
 
 function timeToKill(e) { return e.hp / (0.75 * pMaxHit() * mitig(e.def * hmul('edef')) / pSpeed()); }
 function timeToDie(e)  { return pMaxHp() / (0.75 * e.atk * hmul('taken') * mitig(pDef()) * (1 - pDodge()) / e.spd); }
@@ -360,7 +379,7 @@ function tickAction(dt) {
 }
 
 function completeAction(skill, act) {
-  if (act.in) for (const k in act.in) removeItem(k, act.in[k]);
+  if (act.in) for (const k in act.in) takeStock(k, act.in[k]);
   const mult = Math.random() < doubleChance(skill, act.id) ? 2 : 1;
   const gains = {};
   if (act.out) for (const k in act.out) {
@@ -565,6 +584,7 @@ function autoEat() {
   while (C.hp < thr && C.food && count(C.food) > 0 && n++ < 10) {
     C.hp = Math.min(max, C.hp + foodHeal(C.food));
     emit('eat', { id: C.food, heal: foodHeal(C.food) });
+    hrun('eat', C.food);             // seasoned dishes start their battle buff (also offline)
     removeItem(C.food, 1);
   }
 }
@@ -591,7 +611,7 @@ const nextGate = () => GATE_ORDER.find((r) => !S.gates[r]);
 function openGate(r) {
   const st = gateState(r);
   if (!st.ready) return false;
-  for (const k in st.g.offer) removeItem(k, st.g.offer[k]);
+  for (const k in st.g.offer) takeStock(k, st.g.offer[k]);
   S.gates[r] = 1;
   dirty = true;
   return true;
@@ -719,7 +739,15 @@ function loadFrom(json) {
   sanitize();
   if (oldV < 2) migrateV2();
   if (oldV < 3) migrateV3();
+  if (oldV < 4) migrateV4(oldV);
   if (legacy || oldV < 3) checkUnlocks();   // open what older saves already reached, quietly
+}
+// v4: the Endless Blue overhaul added objectives at new positions 5, 6 and 10 (Perfect dish, seasoning,
+// Shiny fish). A v3 save keeps pointing at the same objective; only players before them meet the new ones.
+// (Saves older than v3 were re-pointed by migrateV3, which already reads the new list.)
+function migrateV4(oldV) {
+  if (oldV === 3) for (const at of [5, 6, 10]) if (S.goal >= at) S.goal++;
+  S.v = 4;
 }
 // v3: Endless Blue first, then Shinobi, Soul and the new worlds. Every world a save already used stays open.
 function migrateV3() {

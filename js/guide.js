@@ -17,9 +17,12 @@ const GUIDE = [
   { food: true, nav: 'Before you fight, pack your food: open your <b>Bank</b>.' },
   { zone: 0, nav: 'Food packed. Open the <b>Battlefield</b>.', start: 'Pick <b>Rookie Shoals</b>. It is an Easy stage.', run: 'Combat is automatic. When your HP drops low you eat your equipped food on your own. Run out and you lose: fish and cook more.' },
   { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook whatever you can.', run: 'At Cooking level 10, a captain will take you on voyages.' },
+  { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook any dish.', run: 'Now and then a dish comes out <b>Perfect</b>: it heals 50% more. Your first Perfect of each recipe goes in the Perfect Log.' },
+  { spice: true, nav: 'Open <b>Cooking</b>: the spice rack is on the stove.', pick: 'Pick a seasoning in the <b>spice rack</b>. Each dish you cook uses one.', start: 'Now cook any dish: it comes out seasoned.', run: 'Seasoned dishes give a small buff when you eat them in battle. Out of seasoning? Dishes simply come out plain.' },
   { act: 'voyaging:coastal', nav: '<b>Voyaging</b> is open. Ships bring back gold, chests and relics.', start: 'Click <b>Coastal Run</b>. Each voyage uses 2 Grilled Minnows as supplies.', run: 'Voyages are slow but pay well.' },
   { market: true, nav: 'The <b>Market</b> is open. Spend your gold there.' },
   { zone: 1, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in <b>Merfolk Reef</b>.', run: 'Every world ends with a guardian. Beat the Admiral to reach a new world.' },
+  { skill: 'fishing', nav: 'Open <b>Fishing</b>.', start: 'Fish anything. Every catch has a small chance to be <b>Shiny</b>.', run: 'Shiny fish glitter on the line. Mastery of a fish raises its odds, and a full Shiny Log gives big bonuses.' },
   { zone: 3, nav: 'Time for the guardian: open the <b>Battlefield</b>.', start: 'Challenge the <b>Admiral\'s Flagship</b>. Bring plenty of food.', run: 'Its relic, the Heart of the Tide, is part of the gate offering.' },
   { gate: true, nav: 'Open the <b>Overview</b>: the gate to the next world is there.' },
 ];
@@ -58,7 +61,7 @@ function guideStep() {
     if (!onGoalView(go)) return nav;
     const a = findAction(sk, id);
     if (actState(sk, a) === 'missing') {
-      const need = Object.entries(a.in).filter(([k, n]) => count(k) < n).map(([k, n]) => `${n} ${ITEMS[k].name}`).join(', ');
+      const need = Object.entries(a.in).filter(([k, n]) => stock(k) < n).map(([k, n]) => `${n} ${ITEMS[k].name}`).join(', ');
       return { sels: [`[data-card="${G.act}"]`], text: `You need <b>${need}</b> first. Look at the item's sources in the Bank, or check the objective list.` };
     }
     return { sels: [`[data-card="${G.act}"]`], text: G.start };
@@ -92,6 +95,13 @@ function guideStep() {
     if (selItem === id) return { sels: ['[data-setfood]'], text: 'Click <b>Equip as battle food</b>. In battle you eat it on your own when your HP gets low.' };
     if (!['all', 'food'].includes(S.ui.bank)) return { sels: ['[data-bankf="food"]'], text: 'Open the <b>Food</b> tab.' };
     return { sels: [`.bag-grid [data-sel="${id}"]`], text: `Click your <b>${ITEMS[id].name}</b>.` };
+  }
+  if (G.spice) {
+    if (S.action && S.action.skill === 'cooking' && S.kitchen.spice) return run(G.run);
+    if (!onGoalView(go)) return nav;
+    if (!S.kitchen.spice) return { sels: ['.spice-rack [data-spice]:not(.locked)'], text: G.pick };
+    const best = SKILLS.cooking.actions.filter((a) => actState('cooking', a) === 'ready').pop();
+    return best ? { sels: [`[data-card="cooking:${best.id}"]`], text: G.start } : null;
   }
   if (G.gate) {
     if (S.ui.view !== 'home') return nav;

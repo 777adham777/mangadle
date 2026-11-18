@@ -525,7 +525,7 @@ const ICONS = {
 };
 // GOALS has no ids: mapped by index.
 ICONS.goal = [
-  'fishing-pole', 'cooking-pot', 'island', 'broadsword', 'bowl-of-rice', 'sailboat', 'shop', 'coral', 'pirate-captain', 'paper-lantern',
+  'fishing-pole', 'cooking-pot', 'island', 'broadsword', 'bowl-of-rice', 'round-star', 'salt-shaker', 'sailboat', 'shop', 'coral', 'sparkles', 'pirate-captain', 'paper-lantern',
   'herbs-bundle', 'medicine-pills', 'target-dummy', 'concentration-orb', 'scroll-unfurled', 'meditation', 'battery-100', 'tied-scroll', 'fox', 'portal',
   'war-pick', 'spooky-house', 'katana', 'shining-sword', 'recycle', 'trophy', 'drama-masks', 'stone-throne',
   'biceps', 'plant-roots', 'cog', 'aura', 'crown', 'portal',

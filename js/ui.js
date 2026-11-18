@@ -242,7 +242,7 @@ function gateHTML() {
     <div class="gt-req">
       <div class="gt-step ${st.boss ? 'ok' : ''}"><i>${st.boss ? ui('check') : ic('enemy', boss.name)}</i><span>Defeat the <b>${boss.name}</b></span><em>${st.boss ? 'Done' : 'Not yet'}</em></div>
       <div class="gt-step ${st.items ? 'ok' : ''}"><i>${st.items ? ui('check') : ui('gate')}</i><span>Make the offering</span>
-        <span class="gt-offer">${Object.entries(g.offer).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(count(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (count(k) < n ? 'short' : ''), title: `${ITEMS[k].name}: ${sourcesOf(k).map((x) => x.text).slice(0, 2).join(', ') || 'see Bank'}` })).join('')}</span></div>
+        <span class="gt-offer">${Object.entries(g.offer).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : ''), title: `${ITEMS[k].name}: ${sourcesOf(k).map((x) => x.text).slice(0, 2).join(', ') || 'see Bank'}` })).join('')}</span></div>
     </div>
     <div class="gt-cta">${gbtn('Open the gate', 'gate', `data-gate="${r}" ${st.ready ? '' : 'disabled'}`, st.ready ? 'glow' : '')}</div>
   </section>`;
@@ -303,6 +303,7 @@ function sourcesOf(id) {
     };
     for (const k in SKILLS) for (const a of SKILLS[k].actions) {
       for (const o in a.out || {}) add(o, ['skill', k], `${SKILLS[k].name} Lv ${a.level}`, null);
+      for (const [t, c] of a.extra || []) add(t, a.loot ? ['voyage', a.id] : ['skill', k], `${a.loot ? 'Voyage' : SKILLS[k].name} · ${a.name}`, c);
       if (a.loot) {
         a.loot.table.forEach(([t]) => add(t, ['voyage', a.id], `Voyage · ${a.name}`, 1 / a.loot.table.length));
         a.loot.rare.forEach(([t, c]) => add(t, ['voyage', a.id], `Voyage · ${a.name}`, c));
@@ -337,7 +338,7 @@ function farmRates(skill, a) {
   const T = actionTime(skill, a), per = 3600 / T;
   const r = { T, per, xph: per * a.xp * skillXpMult(skill) };
   if (a.out) r.itemsh = per * Object.values(a.out)[0] * (1 + doubleChance(skill, a.id));
-  if (a.in) { r.can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(count(k) / n))); r.runout = r.can * T; }
+  if (a.in) { r.can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(stock(k) / n))); r.runout = r.can * T; }
   return r;
 }
 function combatRates() {
@@ -379,7 +380,8 @@ function farmPanel() {
 /* =============================================================== VIEWS */
 const VIEWS = {};
 // Extension points filled by ui-systems.js: each entry returns HTML (or '').
-const UIX = { quick: [], homeTop: [], realmSide: [], realmTop: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [] };
+// realmScene: an animated scene under a skill's banner (seas-ui.js); when one is shown it carries the farm numbers.
+const UIX = { quick: [], homeTop: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [] };
 const uix = (k, ...a) => UIX[k].map((f) => f(...a) || '').join('');
 
 /* ------------------------------------------------------------- overview */
@@ -419,6 +421,7 @@ VIEWS.realm = (realm, skill) => {
   if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Abyss Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
   const open = s.actions.filter((x) => !['locked', 'schem'].includes(actState(skill, x))).length;
   const active = S.action && S.action.skill === skill;
+  const scene = uix('realmScene', realm, skill);
   return `<div class="sk-layout" style="--rc:${rc(realm)}"><div class="sk-col">
   <section class="sk-banner" style="--rc:${rc(realm)}">
     <div class="sk-ic">${ic('skill', skill)}</div>
@@ -427,7 +430,8 @@ VIEWS.realm = (realm, skill) => {
       <div class="pills">${mods.join('')}</div></div>
     <div class="sk-ring" data-xpring="${skill}" style="--p:${b.p}" title="Progress to the next level"><span><b data-lv="${skill}">${b.L}</b><small>Level</small></span></div>
   </section>
-  ${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
+  ${scene}
+  ${active && !scene ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
   ${uix('realmTop', realm, skill)}
   ${s.actions.length ? hdr({ voyage: 'Voyages', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
@@ -471,7 +475,7 @@ function actCard(skill, a) {
   }
   const f = farmRates(skill, a), ml = masteryLv(skill, a.id);
   const lines = [];
-  if (a.in) lines.push(`<div class="ac-io"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(count(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (count(k) < n ? 'short' : '') })).join('')}</div>`);
+  if (a.in) lines.push(`<div class="ac-io"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : '') })).join('')}</div>`);
   if (a.loot) {
     lines.push(`<div class="ac-io"><small>Loot</small>${tile(null, `${fmt(a.loot.gold[0] * goldMult())}+`, { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}${a.loot.table.map(([k]) => tile(k, null, { cls: 'xs' })).join('')}</div>`);
     lines.push(`<div class="ac-io"><small>Rare</small>${a.loot.rare.map(([k, c]) => tile(k, fmtRate(c * luckMult()), { cls: 'xs' })).join('')}</div>`);
@@ -644,7 +648,7 @@ const inColGroup = (k, g) => (g === 'relic' ? !!ITEMS[k].relic : g === 'res' ? I
 function collectionHTML() {
   const pctAll = collectionPct();
   const groups = COL_GROUPS.map(([type, label]) => {
-    const ids = Object.keys(ITEMS).filter((k) => inColGroup(k, type));
+    const ids = Object.keys(ITEMS).filter((k) => !ITEMS[k].variant && inColGroup(k, type));
     const n = ids.filter((k) => S.found[k]).length;
     return `${hdr(label, `${n} / ${ids.length}`)}<div class="col-grid">${ids.map((id) => tile(id, null, { tag: 'button', unknown: !S.found[id], cls: selCol === id ? 'on' : '', attrs: `data-col="${id}"` })).join('')}</div>`;
   }).join('');
@@ -661,10 +665,12 @@ function collectionHTML() {
     const teach = rec ? attrList([['star', 'Teaches', `${ITEMS[it.teaches].name} · ${SKILLS[rec.skill].name} Lv ${rec.act.level}`]]) : '';
     detail = `${itemHead(selCol, !got)}<div class="dt-body">${got && it.type === 'equip' ? attrList(statRows(it.stats)) : ''}${teach}${hdr('Where to find')}${sourcesHTML(selCol)}</div>`;
   }
-  const found = Object.keys(S.found).length + Object.keys(S.pets).length, all = Object.keys(ITEMS).length + PETS.length;
+  const real = (k) => ITEMS[k] && !ITEMS[k].variant;
+  const found = Object.keys(S.found).filter(real).length + Object.keys(S.pets).length, all = Object.keys(ITEMS).filter(real).length + PETS.length;
   return `
   ${ptitle('Hero', 'Collection', heroTabs('collection'))}
   <section class="win col-sum"><div class="cs-top"><b>${Math.floor(pctAll * 100)}%</b><span class="muted">${found} / ${all} discovered</span></div><span class="pbar gold"><i style="width:${pctAll * 100}%"></i></span></section>
+  ${uix('collectionTop')}
   <div class="hero-layout col-layout">
     <section class="win col-win">${groups}${pets}</section>
     <section class="win detail col-detail">${detail}</section>
@@ -930,7 +936,7 @@ on('pet', (pet) => {
   toast(`${pet.name} joined you! ${petBonus(pet)}.`, 'rare');
 });
 on('newitem', (id) => {
-  if (!featureOpen('collection')) return;   // beginners: the Collection menu is not unlocked yet
+  if (!featureOpen('collection') || ITEMS[id].variant) return;   // beginners: no Collection menu yet · variants have their own log
   setTimeout(() => { if (!rareThisTick.has(id)) toast(`New in your Collection: ${ITEMS[id].name}`, 'good'); }, 0);
 });
 on('schematic', (id) => {
@@ -1036,8 +1042,8 @@ function update() {
   for (const el of $$('[data-xptext]')) { const h = xpText(xpInfo(el.dataset.xptext)); if (el.innerHTML !== h) el.innerHTML = h; }
   for (const el of $$('[data-count]')) setText(el, fmt(count(el.dataset.count)));
   for (const el of $$('[data-have]')) {
-    setText(el, fmt(count(el.dataset.have)));
-    const t = el.closest('.tile'); if (t) t.classList.toggle('short', count(el.dataset.have) < +el.dataset.n);
+    setText(el, fmt(stock(el.dataset.have)));
+    const t = el.closest('.tile'); if (t) t.classList.toggle('short', stock(el.dataset.have) < +el.dataset.n);
   }
 
   // action cards
@@ -1063,7 +1069,7 @@ function update() {
     const nl = b.need ? fmtTime((b.need / (a.xp * skillXpMult(S.action.skill))) * T) : 'MAX';
     for (const el of $$('[data-nextlv]')) setText(el, nl);
     if (a.in) {
-      const can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(count(k) / n)));
+      const can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(stock(k) / n)));
       for (const el of $$('[data-canmake]')) setText(el, fmt(can));
       for (const el of $$('[data-runout]')) setText(el, fmtTime(can * T));
     }

@@ -502,6 +502,8 @@ const lvl = (k) => () => [S.skills[k] ? skillLv(k) : 0];
 const gate = (r) => () => [S.gates[r] ? 1 : 0];
 // v3: Endless Blue → Shinobi → Soul → Ki → Hexbound → Hunter's Wilds → Echo Quarter → Rift.
 // Older saves are reset to the first objective they have not done yet (no double rewards).
+// Inserting an objective shifts every index after it: add a migration (see migrateV4 in game.js),
+// and keep ICONS.goal (icons.js) and GUIDE (guide.js) in step.
 const G = (text, go, n, prog, reward) => ({ text, go, n, prog, reward });
 const GOALS = [
   // Endless Blue
@@ -510,9 +512,12 @@ const GOALS = [
   G('Equip food for battle', 'hero', 1, () => [S.combat.food ? 1 : 0], 120),
   G('Defeat 10 foes at Rookie Shoals', 'battle', 10, kills('shoals'), 120),
   G('Reach Cooking level 10', 'realm:seas:cooking', 10, lvl('cooking'), 200),
+  G('Cook a Perfect dish', 'realm:seas:cooking', 1, () => [qTotal('cooking')], 220),        // v4 (quality.js)
+  G('Season 5 dishes', 'realm:seas:cooking', 5, () => [S.stats.seasoned || 0], 250),         // v4 (seas.js)
   G('Return from 3 voyages', 'realm:seas:voyaging', 3, () => [S.stats.voyages], 250),
   G('Buy any upgrade in the Market', 'market', 1, () => [['tools_shinobi', 'tools_soul', 'tools_seas', 'abundance', 'satchel', 'lucky_coin'].reduce((a, k) => a + (S.shop[k] || 0), 0)], 300),
   G('Defeat 10 foes in Merfolk Reef', 'battle', 10, kills('reef'), 400),
+  G('Catch a Shiny fish', 'realm:seas:fishing', 1, () => [qTotal('fishing')], 600),          // v4 (quality.js)
   G('Defeat the Admiral of the Tide', 'battle', 1, kills('admiral'), 1000),
   G('Open the Fog Lighthouse', 'home', 1, gate('shinobi'), 1200),
   // Shinobi Lands
@@ -622,6 +627,8 @@ const UNLOCKS = [
     hint: () => 'Cook 5 Grilled Minnows', why: 'With food in your bag, the harbour guards let you fight at the shoals.' },
   { id: 'feature:avatar',     name: 'Avatar',          need: () => (S.combat.kills.shoals || 0) >= 10 || S.stats.kills >= 10,
     why: 'A harbour painter wants to sketch the new fighter. Dress your hero in Bank → Avatar; feats across the worlds unlock new looks.' },
+  { id: 'feature:spices',     name: 'Spice Rack',      need: () => skillLv('cooking') >= 5 || (S.stats.seasoned || 0) > 0,
+    hint: () => 'Reach Cooking level 5', why: 'The galley cook lends you her spice rack. Season dishes for small battle buffs; your catches now bring up sea salt.' },
   { id: 'skill:voyaging',     name: 'Voyaging',        need: () => skillLv('cooking') >= 10 || usedSkill('voyaging'),
     hint: () => 'Reach Cooking level 10', why: 'With proper provisions, a captain agrees to take you aboard.' },
   { id: 'feature:collection', name: 'Collection Log',  need: () => Object.keys(S.found).length >= 12,

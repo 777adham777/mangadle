@@ -17,7 +17,9 @@ Each world adds one new system, and every system also applies to the worlds befo
 - Worlds open after their guardian falls and you make an offering at the gate; skills and menus open from in-world events, one "Next unlock" at a time
 - Renown per world (bonuses, then Ascension tiers that replay old stages for the newest relics), synergies between professions, schematics and world relics for iconic gear
 - Loot rarity (Common → Legendary) follows how hard an item is to get; every world has a chest, drop-only gear with a perk, and a very rare Rift Shard on its guardian. Drop-only gear salvages into relics, duplicate fruits raise their rank, Rift Shards Rift-forge gear to tier 6
-- Combat skills to 120, everything else to 99; 55 guided objectives; offline progress, autosave, installable PWA
+- **Shiny & Perfect** (game-wide, opted in skill by skill): gathering can bring up a shiny find, crafting can make a perfect item. Each skill keeps a log of its firsts, and filling 25 / 50 / 75 / 100 % of it pays a set bonus. Live on Fishing (shiny fish) and Cooking (perfect dishes: +50%)
+- **Endless Blue overhaul** (worlds are being polished one at a time): animated scenes of your avatar fishing (pier → reef → open sea → abyss), cooking in the galley and sailing voyages; catch weights and records; the Cooking spice rack (six seasonings from fishing, voyages, foes and the Market) gives seasoned dishes a battle buff
+- Combat skills to 120, everything else to 99; 58 guided objectives; offline progress, autosave, installable PWA
 
 ## Run locally
 
@@ -44,11 +46,15 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | Path | What it is |
 | --- | --- |
 | `index.html` | Page shell |
-| `css/style.css` | All styling |
+| `css/style.css` | Main styling |
+| `css/seas.css` | Skill scenes, Shiny & Perfect tiles and logs, spice rack |
 | `js/data.js` | Core content: worlds 1-3, items, zones, shop, objectives, synergies, gates, unlock order |
 | `js/loot.js` | Loot pass: world chests, drop-only gear with utility perks, rarity from drop rates, salvage values |
 | `js/worlds.js` | Worlds 4-7 and the Rift finale, registered with `addWorld()`; content for techniques and awakening |
 | `js/systems.js` | World systems (Renown, Ascension, techniques, awakening, farming, transformations, Domain, pacts, contracts, beasts, cards, Echo...), plugged into engine hooks |
+| `js/quality.js` | Shiny & Perfect: variant items (shiny / perfect / seasoned, created on demand), quality rolls, logs and their set bonuses |
+| `js/seas.js` | Endless Blue overhaul: seasonings and their battle buffs, where they drop, catch weights and records |
+| `js/seas-ui.js` | Animated skill scenes (fishing, galley, voyages), spice rack, Shiny & Perfect logs, celebrations |
 | `js/ui-systems.js` | Interface for those systems; boots the game |
 | `js/icons.js` | Game icon set (SVG paths) and which icon each item, skill, enemy and screen uses |
 | `js/guide.js` | New-player onboarding: welcome screen, coach bubbles for the first 10 objectives, menu unlocks |
