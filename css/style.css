@@ -772,6 +772,18 @@ button.acard:hover { border-color: color-mix(in srgb, var(--rc) 60%, var(--line)
 .wl-points b { color: var(--text); }
 .wl-points span { color: var(--dim); }
 .wl-cta { display: flex; flex-wrap: wrap; justify-content: center; gap: 10px; margin-top: 6px; }
+.welcome > p b { color: var(--text); }
+.wl-goal { width: 100%; display: flex; flex-direction: column; gap: 4px; padding: 12px 14px; border: 1px solid rgba(244, 198, 106, 0.45); background: rgba(244, 198, 106, 0.08); border-radius: 2px; }
+.wl-goal small, .wl-sub { font: 600 11px var(--display); letter-spacing: 0.24em; text-transform: uppercase; color: var(--gold); }
+.wl-goal b { font-size: 15px; color: #fff; }
+.wl-sub { margin-top: 6px; }
+.wl-loop { list-style: none; margin: 0; padding: 0; width: 100%; display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; counter-reset: wl; }
+.wl-loop li { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; padding: 12px 8px 10px; background: rgba(255, 255, 255, 0.03); border: 1px solid var(--line); font-size: 12.5px; color: var(--dim); text-align: center; }
+.wl-loop li + li::before { content: '›'; position: absolute; left: -9px; top: 22px; font-size: 20px; color: var(--gold); }
+.wl-loop i { width: 40px; height: 40px; display: grid; place-items: center; font-size: 22px; border-radius: 2px; color: var(--gold); background: var(--panel3); }
+.wl-loop b { display: block; font: 700 14px var(--display); text-transform: uppercase; letter-spacing: 0.06em; color: #fff; }
+@media (max-width: 420px) { .wl-loop { grid-template-columns: 1fr; } .wl-loop li { flex-direction: row; text-align: left; } .wl-loop li + li::before { display: none; } }
+.eslot.food.empty b { color: var(--bad, #e66); }
 .nq.locked, .tab-btn.locked { opacity: 0.42; }
 .nq.locked .gi { color: var(--mute); }
 .nq.shake, .tab-btn.shake { animation: shake 0.28s; }

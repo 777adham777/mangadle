@@ -12,10 +12,10 @@
 // One entry per early objective (same index as GOALS).
 // act/zone: what the objective wants running. nav: how to get there. start: what to click. run: tip while it runs.
 const GUIDE = [
-  { skill: 'fishing', nav: 'Open <b>Fishing</b>. Fish are the start of everything here.', start: 'Click <b>Minnow</b> to start fishing.', run: 'Fishing repeats on its own, even while the game is closed. At level 5, the ship cook will want your catch.' },
-  { act: 'cooking:grilled_minnow', nav: '<b>Cooking</b> is now open. Open it.', start: 'Click <b>Grilled Minnow</b>. Each one uses 1 Minnow.', run: 'Food heals you in battle. Cook 5 and the Battlefield opens.' },
-  { equip: true, nav: 'The <b>Battlefield</b> is open, but arm yourself first: open your <b>Bank</b> and equip the Rusty Cutlass.' },
-  { zone: 0, nav: 'Cutlass in hand, open the <b>Battlefield</b>.', start: 'Pick <b>Rookie Shoals</b>. It is an Easy stage.', run: 'Combat is automatic. You eat on your own when your HP gets low: fish → cook → fight is the core loop.' },
+  { skill: 'fishing', nav: 'Open <b>Fishing</b>. Fish are the start of everything here.', start: 'Click <b>Minnow</b> to start fishing.', run: 'Fishing repeats on its own, even while the game is closed. Catch 10 Minnows and the ship cook will want to meet you.' },
+  { act: 'cooking:grilled_minnow', nav: '<b>Cooking</b> is now open. Open it.', start: 'Click <b>Grilled Minnow</b>. Each one uses 1 Minnow.', run: 'Raw fish is useless in a fight, cooked fish heals you. Cook 5 and the harbour guards will let you fight.' },
+  { food: true, nav: 'Before you fight, pack your food: open your <b>Bank</b>.' },
+  { zone: 0, nav: 'Food packed. Open the <b>Battlefield</b>.', start: 'Pick <b>Rookie Shoals</b>. It is an Easy stage.', run: 'Combat is automatic. When your HP drops low you eat your equipped food on your own. Run out and you lose: fish and cook more.' },
   { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook whatever you can.', run: 'At Cooking level 10, a captain will take you on voyages.' },
   { act: 'voyaging:coastal', nav: '<b>Voyaging</b> is open. Ships bring back gold, chests and relics.', start: 'Click <b>Coastal Run</b>. Each voyage uses 2 Grilled Minnows as supplies.', run: 'Voyages are slow but pay well.' },
   { market: true, nav: 'The <b>Market</b> is open. Spend your gold there.' },
@@ -84,6 +84,14 @@ function guideStep() {
   if (G.power) {
     if (S.ui.view !== 'power') return nav;
     return { sels: ['[data-alloc="chakra:1"]'], text: 'Click <b>+</b> to put energy into a training. Trainings level up forever, even offline.' };
+  }
+  if (G.food) {
+    if (S.ui.view !== 'hero') return nav;
+    const id = Object.keys(S.items).find((k) => ITEMS[k].type === 'food');
+    if (!id) return { sels: ['.nav-row[data-nav="realm:seas:cooking"]'], text: 'You have no cooked food left. Cook some first.' };
+    if (selItem === id) return { sels: ['[data-setfood]'], text: 'Click <b>Equip as battle food</b>. In battle you eat it on your own when your HP gets low.' };
+    if (!['all', 'food'].includes(S.ui.bank)) return { sels: ['[data-bankf="food"]'], text: 'Open the <b>Food</b> tab.' };
+    return { sels: [`.bag-grid [data-sel="${id}"]`], text: `Click your <b>${ITEMS[id].name}</b>.` };
   }
   if (G.gate) {
     if (S.ui.view !== 'home') return nav;
@@ -159,18 +167,24 @@ function updateCoach(force) {
 /* ------------------------------------------------------------ welcome */
 const isFreshSave = () => !S.ui.welcomed && S.goal === 0 && S.stats.actions === 0 && S.stats.kills === 0;
 function showWelcome() {
+  const step = (icon, name, txt) => `<li><i>${icon}</i><span><b>${name}</b>${txt}</span></li>`;
   openModal(`<div class="welcome">
     <div class="wl-ic">${ui('hero')}</div>
     <small>Tri-Realm Idle</small>
     <h2>Welcome, Wanderer</h2>
-    <p>Worlds have collided: the endless sea, ninja lands, the afterlife, and more beyond. You wash ashore in the Endless Blue with a fishing line and a rusty cutlass. Catch fish, learn to cook them, then fight with a full bag. Each world is sealed behind a guardian: beat it to cross over.</p>
+    <p>Seven worlds have collided. You wash ashore in the <b>Endless Blue</b> with a rusty cutlass and a fishing line. Each world is sealed by a guardian.</p>
+    <div class="wl-goal"><small>Your goal</small><b>Grow strong enough to beat every guardian and cross all seven worlds.</b></div>
+    <small class="wl-sub">How you get stronger</small>
+    <ol class="wl-loop">
+      ${step(ic('skill', 'fishing'), 'Fish', 'Catch fish. It is how everything starts.')}
+      ${step(ic('skill', 'cooking'), 'Cook', 'Cooked fish becomes food that heals you.')}
+      ${step(ui('battle'), 'Fight', 'Equip your food and fight. Foes drop gear, gold and relics.')}
+    </ol>
     <ul class="wl-points">
-      <li><i>${ui('play')}</i><span><b>Pick an activity.</b> It repeats on its own and earns items and XP.</span></li>
-      <li><i>${ui('time')}</i><span><b>Progress never stops.</b> It keeps going while the game is closed, up to 12 hours.</span></li>
-      <li><i>${ui('quest')}</i><span><b>Follow the Objective.</b> Each one pays gold and shows you what to do next.</span></li>
-      <li><i>${ui('lock')}</i><span><b>Unlock as you go.</b> New skills, menus and worlds open one at a time.</span></li>
+      <li><i>${ui('time')}</i><span><b>It plays itself.</b> An activity repeats on its own, even while the game is closed (up to 12 hours).</span></li>
+      <li><i>${ui('quest')}</i><span><b>Follow the Objective</b> at the top of the menu. New skills and menus open one at a time.</span></li>
     </ul>
-    <div class="wl-cta">${gbtn('Start fishing', 'play', 'data-welcome="go"')}${gbtn('Look around first', '', 'data-welcome="skip"', 'dark')}</div>
+    <div class="wl-cta">${gbtn('Cast your line', 'play', 'data-welcome="go"')}${gbtn('Look around first', '', 'data-welcome="skip"', 'dark')}</div>
   </div>`, null, true);
 }
 function welcomeChoice(go) {
@@ -178,4 +192,32 @@ function welcomeChoice(go) {
   $('#modal').classList.remove('show', 'nofoot');
   if (go) { setView('realm:seas:fishing'); startAction('fishing', 'minnow'); }
   else setView('home');
+}
+
+/* ------------------------------------------------------------ first-time scenes */
+// The two early unlocks that teach the core loop get a short scene instead of a banner.
+const INTRO = {
+  'skill:cooking': { icon: () => ic('skill', 'cooking'), kicker: 'New skill', title: 'Cooking',
+    text: 'A ship cook eyes your bucket. "Raw fish will not keep you alive out there. Let me show you."',
+    points: [[() => ic('item', 'minnow'), '1 Minnow → 1 Grilled Minnow', 'Each dish uses fish you caught.'],
+             [() => ui('hp'), 'Food heals', 'Cooked food restores HP in battle.'],
+             [() => ui('lock'), 'Cook 5 Grilled Minnows', 'Then the harbour guards will let you fight.']],
+    go: 'realm:seas:cooking', btn: 'Start cooking' },
+  'feature:battle': { icon: () => ui('battle'), kicker: 'New menu', title: 'The Battlefield',
+    text: 'With food in your bag, the harbour guards wave you through to the shoals. Combat runs on its own: you only prepare.',
+    points: [[() => ui('food'), 'Equip your food', 'Bank → your Grilled Minnows → Equip as battle food.'],
+             [() => ui('hp'), 'Auto-eat', 'You eat when your HP drops low. No food left means a lost fight.'],
+             [() => ui('gold'), 'Loot', 'Foes drop gold, gear and the materials for new worlds.']],
+    go: 'hero', btn: 'Equip my food' },
+};
+function showIntro(id) {
+  const I = INTRO[id];
+  openModal(`<div class="welcome intro">
+    <div class="wl-ic">${I.icon()}</div>
+    <small>${I.kicker}</small>
+    <h2>${I.title}</h2>
+    <p>${I.text}</p>
+    <ul class="wl-points">${I.points.map(([icn, b, t]) => `<li><i>${icn()}</i><span><b>${b}.</b> ${t}</span></li>`).join('')}</ul>
+    <div class="wl-cta">${gbtn(I.btn, 'play', `data-realmgo="${I.go}"`)}</div>
+  </div>`, null, true);
 }

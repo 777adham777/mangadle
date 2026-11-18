@@ -505,9 +505,9 @@ const gate = (r) => () => [S.gates[r] ? 1 : 0];
 const G = (text, go, n, prog, reward) => ({ text, go, n, prog, reward });
 const GOALS = [
   // Endless Blue
-  G('Reach Fishing level 5', 'realm:seas:fishing', 5, lvl('fishing'), 40),
+  G('Catch 10 Minnows', 'realm:seas:fishing', 10, made('minnow'), 40),
   G('Cook 5 Grilled Minnows', 'realm:seas:cooking', 5, made('grilled_minnow'), 60),
-  G('Equip a weapon', 'hero', 1, () => [S.equip.weapon ? 1 : 0], 120),
+  G('Equip food for battle', 'hero', 1, () => [S.combat.food ? 1 : 0], 120),
   G('Defeat 10 foes at Rookie Shoals', 'battle', 10, kills('shoals'), 120),
   G('Reach Cooking level 10', 'realm:seas:cooking', 10, lvl('cooking'), 200),
   G('Return from 3 voyages', 'realm:seas:voyaging', 3, () => [S.stats.voyages], 250),
@@ -616,8 +616,8 @@ const worldUnlock = (r, name) => ({ id: 'realm:' + r, name, need: () => !!S.gate
 const UNLOCKS = [
   { id: 'realm:seas',         name: 'Endless Blue',    need: () => true },
   { id: 'skill:fishing',      name: 'Fishing',         need: () => true },
-  { id: 'skill:cooking',      name: 'Cooking',         need: () => skillLv('fishing') >= 5 || usedSkill('cooking'),
-    hint: () => 'Reach Fishing level 5', why: 'A ship cook trades you a pan for a good catch.' },
+  { id: 'skill:cooking',      name: 'Cooking',         need: () => (S.stats.made.minnow || 0) >= 10 || skillLv('fishing') >= 5 || usedSkill('cooking'),
+    hint: () => 'Catch 10 Minnows', why: 'A ship cook trades you a pan for a good catch.' },
   { id: 'feature:battle',     name: 'Battlefield',     need: () => (S.stats.made.grilled_minnow || 0) >= 5 || S.stats.kills > 0,
     hint: () => 'Cook 5 Grilled Minnows', why: 'With food in your bag, the harbour guards let you fight at the shoals.' },
   { id: 'skill:voyaging',     name: 'Voyaging',        need: () => skillLv('cooking') >= 10 || usedSkill('voyaging'),

@@ -36,13 +36,13 @@ function defaultState() {
     v: 3,
     gold: 50,
     bounty: 0,
-    items: { rusty_cutlass: 1 },
+    items: {},
     skills,
     mastery: {},
     action: null,                       // { skill, id, prog }
     combat: { zone: null, enemy: null, eHp: 0, pT: 0, eT: 0, respawn: 0, hp: 50,
-              style: 'strength', food: 'grilled_minnow', kills: {}, log: [] },
-    equip: { weapon: null, armor: null, accessory: null, gadget: null },
+              style: 'strength', food: null, kills: {}, log: [] },   // food is equipped by the player
+    equip: { weapon: 'rusty_cutlass', armor: null, accessory: null, gadget: null },
     fruit: null,
     shop: {},
     energy: { capLv: 0, powLv: 0, alloc: {}, lvl: {}, prog: {}, step: '10' },

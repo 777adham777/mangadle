@@ -530,7 +530,7 @@ VIEWS.battle = () => {
           ${hdr('Tactics')}
           <div class="ctrl"><label>Train</label><div class="seg">${style('strength', 'atk', 'Strength')}${style('defense', 'def', 'Defense')}${style('balanced', 'star', 'Both')}</div></div>
           <div class="ctrl"><label>Auto-eat</label><div class="food-pick">${C.food && count(C.food) ? tile(C.food, null, { cls: 'xs' }) : `<span class="tile r0 xs"><span class="tile-art">${ui('food')}</span></span>`}
-            <select data-food>${foods.length ? '' : '<option value="">No food — cook some first</option>'}${foods.map((f) => `<option value="${f}" ${C.food === f ? 'selected' : ''}>${ITEMS[f].name} ×${fmt(count(f))} (+${foodHeal(f)} HP)</option>`).join('')}</select></div></div>
+            <select data-food>${foods.length ? (C.food ? '' : '<option value="" selected>No food equipped</option>') : '<option value="">No food — cook some first</option>'}${foods.map((f) => `<option value="${f}" ${C.food === f ? 'selected' : ''}>${ITEMS[f].name} ×${fmt(count(f))} (+${foodHeal(f)} HP)</option>`).join('')}</select></div></div>
           <div class="muted small">Eats below ${pct(autoEatThreshold())} HP. Vitality always gains XP.</div>
         </section>
         ${uix('battleSide')}
@@ -586,6 +586,12 @@ VIEWS.hero = (tab) => {
   const ids = Object.keys(S.items).filter((k) => S.ui.bank === 'all' || ITEMS[k].type === S.ui.bank)
     .sort((a, b) => rarity(b) - rarity(a) || ITEMS[b].value - ITEMS[a].value);
   const worth = Object.keys(S.items).reduce((a, k) => a + ITEMS[k].value * S.items[k], 0);
+  // Battle food: eaten automatically when HP gets low.
+  const foodSlot = () => {
+    const id = S.combat.food;
+    if (!id) return `<div class="eslot empty food"><span class="tile r0"><span class="tile-art">${ui('food')}</span></span><span class="es-t"><small>Battle food</small><b class="muted">Empty: you won't heal</b></span></div>`;
+    return `<div class="eslot food">${tile(id, `<span data-count="${id}">${fmt(count(id))}</span>`, { tag: 'button', attrs: `data-sel="${id}"` })}<span class="es-t"><small>Battle food</small><b>${ITEMS[id].name}</b><span class="es-st">+${foodHeal(id)} HP each</span></span><button class="mini-btn" data-unfood title="Unequip">${ui('close')}</button></div>`;
+  };
   const slot = (s, label, icn) => {
     const id = S.equip[s];
     if (!id) return `<div class="eslot empty"><span class="tile r0"><span class="tile-art">${ui(icn)}</span></span><span class="es-t"><small>${label}</small><b class="muted">Empty</b></span></div>`;
@@ -596,7 +602,7 @@ VIEWS.hero = (tab) => {
   <div class="hero-layout">
     <section class="win equip-win">
       ${hdr('Equipment')}
-      <div class="eslots">${slot('weapon', 'Weapon', 'weapon')}${slot('armor', 'Armor', 'armor')}${slot('accessory', 'Accessory', 'accessory')}${skillOpen('tinkering') || S.equip.gadget ? slot('gadget', 'Gadget', 'gadget') : ''}
+      <div class="eslots">${slot('weapon', 'Weapon', 'weapon')}${slot('armor', 'Armor', 'armor')}${slot('accessory', 'Accessory', 'accessory')}${skillOpen('tinkering') || S.equip.gadget ? slot('gadget', 'Gadget', 'gadget') : ''}${featureOpen('battle') ? foodSlot() : ''}
         ${S.fruit ? `<div class="eslot fruit">${tile(S.fruit, null)}<span class="es-t"><small>Abyss Fruit</small><b>${ITEMS[S.fruit].name}</b></span></div>` : ''}</div>
       ${hdr('Attributes')}
       ${attrList([['atk', 'Max hit', fmt(pMaxHit())], ['def', 'Defense', fmt(pDef())], ['hp', 'Max HP', fmt(pMaxHp())], ['spd', 'Attack speed', pSpeed().toFixed(1) + 's'], ['gold', 'Gold bonus', '×' + goldMult().toFixed(2)], ['xp', 'XP bonus', '×' + xpMult().toFixed(2)]])}
@@ -619,7 +625,7 @@ function inspectorHTML() {
   const it = ITEMS[selItem], n = count(selItem), equipped = !n;
   const body = [], acts = [];
   if (it.type === 'equip') { body.push(attrList(statRows(Object.fromEntries(Object.keys(it.stats).map((k) => [k, itemStat(selItem, k)]))))); body.push(uix('inspector', selItem)); if (!equipped) acts.push(gbtn('Equip', 'check', `data-equip="${selItem}"`)); }
-  else if (it.type === 'food') { body.push(attrList([['hp', 'Heals in battle', foodHeal(selItem) + ' HP']])); body.push('<p class="muted">Also used as voyage supplies.</p>'); acts.push(gbtn('Use as battle food', 'eat', `data-setfood="${selItem}"`)); }
+  else if (it.type === 'food') { body.push(attrList([['hp', 'Heals in battle', foodHeal(selItem) + ' HP']])); body.push('<p class="muted">Also used as voyage supplies.</p>'); acts.push(S.combat.food === selItem ? gbtn('Equipped as battle food', 'check', 'disabled') : gbtn('Equip as battle food', 'eat', `data-setfood="${selItem}"`)); }
   else if (it.type === 'fruit') { body.push(`<p class="lore">${it.desc}</p><p class="muted">Only one fruit at a time — eating replaces the old one. Fruit eaters fish 40% slower.</p>`); acts.push(gbtn('Eat', 'fruit', `data-eat="${selItem}"`)); }
   else if (it.type === 'chest') {
     const tot = it.loot.reduce((a, l) => a + l[1], 0);
@@ -959,13 +965,15 @@ function pollUnlocks() {
   if (!pendingUnlocks.length || $('#modal').classList.contains('show')) return;
   const list = pendingUnlocks.splice(0);
   const realms = list.filter((u) => u.id.startsWith('realm:')).map((u) => u.id.slice(6));
+  const intro = SIM ? null : list.find((u) => INTRO[u.id]);
   for (const u of list) {
     const [kind, ref] = u.id.split(':');
-    if (kind === 'realm' || (kind === 'skill' && realms.includes(SKILLS[ref].realm))) continue;
+    if (kind === 'realm' || (kind === 'skill' && realms.includes(SKILLS[ref].realm)) || u === intro) continue;
     burst(unlockKind(u), u.name, unlockIcon(u), kind === 'skill' ? rc(SKILLS[ref].realm) : 'var(--gold)');
     toast(`${unlockKind(u)}: ${u.name}. ${u.why || ''}`, 'rare');
   }
   if (realms.length) showRealmOpen(realms[0]);
+  else if (intro) showIntro(intro.id);
   for (const r of realms.slice(1)) toast(`New world unlocked: ${REALMS[r].name}`, 'rare');
 }
 function showRealmOpen(r) {
@@ -1158,6 +1166,7 @@ document.addEventListener('click', (ev) => {
   else if (d.equip) { equip(d.equip); toast(`Equipped ${ITEMS[d.equip].name}`, 'good'); }
   else if (d.unequip) unequip(d.unequip);
   else if (d.eat) { if (!S.fruit || confirm(`Replace your ${ITEMS[S.fruit].name}? Its power will be lost.`)) { eatFruit(d.eat); burst('Power awakened', ITEMS[d.eat].desc, itemIc(d.eat), 'var(--gold)'); } }
+  else if ('unfood' in d) { S.combat.food = null; dirty = true; }
   else if (d.setfood) { S.combat.food = d.setfood; toast(`${ITEMS[d.setfood].name} will be eaten in battle.`, 'good'); dirty = true; }
   else if (d.sell) {
     const [id, q] = d.sell.split(':');
