@@ -9,9 +9,9 @@ One character and one progression cross every world; each world adds activities 
 | 1 | Leaf Village | Woodcutting, Crafting, Combat | Character level and five stats; technique collection (scrolls from battle, fragments, typed slots); Chakra |
 | 2 | Orange Town | Fishing, Cooking, Voyaging | Passive expeditions (10 min to 8 h, in parallel); spice rack; Haki |
 | 3 | Soul City | Reishi Mining, Smelting | Ingots; every weapon copy levels, refines (+10) and awakens (element, family passive); Reiatsu |
-| 4 | Kaio Planet | Gravity Training, Farming, Tinkering | Transformations, farm plots, Dragon Balls; Ki *(rework pending)* |
-| 5 | Shinjuku | Exorcism, Sigilcraft, Pacts | Domain, binding vows; Cursed Energy *(rework pending)* |
-| 6 | Green Island | Tracking, Trapcraft, Beast Taming | Contracts, companions, Greed Island Cards; Nen *(rework pending)* |
+| 4 | Kaio Planet | Gravity Training, Farming | Transformations, farm plots, Time Chamber, Dragon Balls, passive techniques; Ki |
+| 5 | Shinjuku | Cursed Research | Cursed Fragments, Domain Expansions (Ultimate techniques), Binding Vows; Cursed Energy |
+| 6 | Green Island | Hunting | Up to 3 companions, Hunter Licence contracts, Greed Island Cards, the six Nen categories as techniques; Nen |
 | 7 | Echo Quarter | Archaeology, Restoration, Echo Bonding | Post-game: an Echo that runs a second activity, museum |
 | ∞ | The Rift | — | Post-game: final bosses and an hourly Rift Tear |
 
@@ -22,7 +22,9 @@ One character and one progression cross every world; each world adds activities 
 - **Expeditions**: ships sail in parallel with anything else, need hull wood, optional dishes bring back more
 - Worlds open after their guardian falls and you make an offering at the gate; skills and menus open one at a time
 - Renown and Ascension per world, synergies between activities, schematics and relics for iconic gear, loot rarity, chests, Devil Fruits
-- **Shiny & Perfect** collection logs (Fishing, Cooking so far); offline progress (12 h), autosave, installable PWA
+- **Elites and mini-bosses** in every stage; **daily and weekly objectives** from every open world
+- **Collection Log** with items, pets, techniques, a bestiary and companions
+- **Shiny & Perfect** collection logs (Fishing, Cooking so far); offline progress (12 h, the rest fills the Time Chamber), autosave, installable PWA
 
 ## Run locally
 
@@ -57,6 +59,8 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `js/systems.js` | World systems (Renown, Ascension, armor sockets/reforge, farming, transformations, Domain, pacts, contracts, beasts, cards, Echo...), plugged into engine hooks |
 | `js/techniques.js`, `js/techniques-ui.js` | Technique collection, scrolls, fragments, typed slots, combat casting; Techniques page |
 | `js/expeditions.js`, `js/expeditions-ui.js` | Passive expeditions (ships, hauls, provisions); Harbour panel and destination cards |
+| `js/chamber.js` | Time Chamber (stored time, ×2 activities) |
+| `js/tasks.js`, `js/tasks-ui.js` | Daily / weekly objectives; extra Collection Log sections |
 | `js/weapons.js`, `js/weapons-ui.js` | Weapon copies: level, refinement, awakening, elements and families; weapon rack and forge panel |
 | `css/gdd.css` | Styles for the GDD rework (stats, techniques, disciplines, harbour, weapons) |
 | `docs/` | Game Design Document, audit, design decisions |

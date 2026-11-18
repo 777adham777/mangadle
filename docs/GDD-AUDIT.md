@@ -80,13 +80,15 @@ insérer un objectif décale tous les suivants et demande une migration.
 
 ## Avancement (2026-11-18)
 
-Fait : noms du GDD · niveau de personnage + 5 stats · techniques (parchemins, fragments, slots typés, paliers, recharges) ·
-monde 1 (Woodcutting, Crafting, Combat) · disciplines énergétiques · expéditions passives · Soul City (Smelting, armes par exemplaire :
-niveau, raffinage, éveil).
+Fait : noms du GDD · niveau de personnage + 5 stats · techniques (27, parchemins de chaque monde, fragments, slots typés,
+paliers, recharges, passives, Domain Expansions, catégories de Nen) · monde 1 (Woodcutting, Crafting, Combat) · disciplines
+énergétiques · expéditions passives · Soul City (Smelting, armes par exemplaire : niveau, raffinage, éveil) · Kaio Planet
+(Time Chamber, Tinkering retiré) · Shinjuku (Cursed Research, Binding Vows, Domain) · Green Island (Hunting, 3 compagnons) ·
+élites et mini-boss · objectifs quotidiens / hebdomadaires · Collection Log étendu.
 
-Reste : Kaio Planet (Time Chamber, retrait de Tinkering), Shinjuku (Cursed Research, Binding Vows hors skill, Domain = couche des
-techniques, retrait de Sigilcraft), Green Island (Hunting, slots de compagnons, cartes en sets), pools de techniques des mondes 2-6,
-élites et mini-boss, objectifs quotidiens / hebdomadaires, Collection Log étendu (techniques, ennemis, armes).
+Reste : équilibrage inter-mondes (les mondes 4-7 ont été réglés avant le retrait de plusieurs multiplicateurs : perks de Karma,
+sigils, gadgets, skills fusionnés) · Shiny / Perfect sur les autres skills · scènes animées des mondes 1, 3-6 · Ascension
+(prévue par le GDD après les six mondes : à redéfinir) · Echo Quarter / Rift en post-game.
 
 ## Ordre de travail proposé (GDD §9)
 

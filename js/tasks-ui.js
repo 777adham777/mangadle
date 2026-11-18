@@ -37,3 +37,21 @@ document.addEventListener('click', (ev) => {
   const [w, i] = t.dataset.task.split(':');
   claimTask(w === 'w', +i);
 });
+
+/* ============================================================ Collection Log: techniques, bestiary, companions */
+// GDD §6.1: the log also lists techniques, foes and companions (items and pets are in ui.js).
+hook('kill', (e) => { const n = e.base || e.name; S.stats.foes = S.stats.foes || {}; S.stats.foes[n] = (S.stats.foes[n] || 0) + 1; });
+UIX.collectionTop.push(() => {
+  const techs = Object.keys(TECHNIQUES), known = techs.filter(techLv);
+  const foes = [...new Set(ZONES.filter((z) => !z.tear && !REALMS[z.realm].hidden || S.gates[z.realm]).flatMap((z) => z.enemies.map((e) => e.name)))];
+  const seen = S.stats.foes || {}, met = foes.filter((n) => seen[n]);
+  const beasts = Object.keys(BEASTS), caught = beasts.filter((b) => S.beasts[b]);
+  const techTile = (id) => tile(null, techLv(id) ? `Lv ${techLv(id)}` : null, { r: techLv(id) ? Math.min(5, 1 + Math.floor(techLv(id) / 3)) : 0, icon: ic('technique', id), unknown: !techLv(id), cls: 'xs', title: techLv(id) ? TECHNIQUES[id].name : 'Unknown technique' });
+  const foeTile = (n) => tile(null, seen[n] ? fmt(seen[n]) : null, { r: seen[n] ? 2 : 0, icon: ic('enemy', n), unknown: !seen[n], cls: 'xs', title: seen[n] ? `${n} · defeated ${fmt(seen[n])}` : 'Unknown foe' });
+  const beastTile = (b) => tile(null, S.beasts[b] ? `Lv ${beastLv(b)}` : null, { r: S.beasts[b] ? 4 : 0, icon: ic('beast', b), unknown: !S.beasts[b], cls: 'xs', title: S.beasts[b] ? BEASTS[b].name : 'Unknown beast' });
+  return `<section class="win col-extra">
+    ${hdr('Techniques', `${known.length} / ${techs.length}`)}<div class="col-grid">${techs.map(techTile).join('')}</div>
+    ${hdr('Bestiary', `${met.length} / ${foes.length} foes defeated`)}<div class="col-grid">${foes.map(foeTile).join('')}</div>
+    ${hdr('Companions', `${caught.length} / ${beasts.length}`)}<div class="col-grid">${beasts.map(beastTile).join('')}</div>
+  </section>`;
+});
