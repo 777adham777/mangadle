@@ -1,6 +1,7 @@
 /* Workshop: the recipe browser of every crafting skill (Crafting, Smelting, Cooking, Restoration).
-   Instead of a wall of cards: a search box, status tabs, item-family chips and a sort menu over a
-   compact list of recipe rows (one click on ▶ starts it), with the selected recipe in full beside it. */
+   A search box, status tabs, item-family chips and a sort menu over a gallery of item cards: what you
+   can make right now is lit, everything else is greyed. Click a card to see it in full beside the
+   gallery; the ▶ in its corner starts it in one click. */
 
 GI['ws-search'] = 'M60 210A150 150 0 1 0 360 210A150 150 0 1 0 60 210ZM115 210A95 95 0 1 1 305 210A95 95 0 1 1 115 210ZM300 345L345 300L470 425L425 470Z';
 GI['ws-sort'] = 'M144 40L40 168h72v304h64V168h72ZM368 472l104-128h-72V40h-64v304h-72Z';
@@ -12,11 +13,11 @@ const WS_CATS = [
   ['food', 'k-food', 'Consumables', 'food'], ['scroll', 'k-scroll', 'Scrolls', 'scroll'], ['tool', 'k-tool', 'Tools', 'tool'],
   ['res', 'k-res', 'Materials', 'res'], ['trade', 'gold', 'Trade goods', 'chest'], ['chest', 'k-chest', 'Treasure', 'chest'],
 ];
-const WS_STATUS = [['open', 'Available'], ['ready', 'Craftable'], ['locked', 'Upcoming']];
+const WS_STATUS = [['all', 'All'], ['open', 'Unlocked'], ['ready', 'Craftable'], ['locked', 'Locked']];
 const wsCan = (a) => (a.in ? Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(stock(k) / n))) : Infinity);
 const wsOut = (a) => (a.out ? Object.keys(a.out)[0] : null);
 const WS_SORTS = {
-  best: ['Craftable first', (s, a, b) => wsRank(s, b) - wsRank(s, a) || b.level - a.level],
+  best: ['Craftable first', (s, a, b) => wsRank(s, b) - wsRank(s, a) || (wsRank(s, a) ? b.level - a.level : a.level - b.level)],
   lvd: ['Level: high to low', (s, a, b) => b.level - a.level],
   lva: ['Level: low to high', (s, a, b) => a.level - b.level],
   name: ['Name', (s, a, b) => a.name.localeCompare(b.name)],
@@ -32,7 +33,7 @@ function wsCat(a) {
 }
 const wsLocked = (st) => st === 'locked' || st === 'schem';
 const wsRank = (s, a) => { const st = actState(s, a); return st === 'active' ? 3 : st === 'ready' ? 2 : wsLocked(st) ? 0 : 1; };
-// Narrow workshops (phones, small windows) open the selected recipe inline under its row instead of beside the list.
+// Narrow workshops (phones, small windows) show the selected recipe above the gallery instead of beside it.
 function wsNarrow() {
   const m = $('#main'), w = (m ? m.clientWidth : innerWidth) - 48;
   return w < 680;
@@ -42,7 +43,8 @@ function wsNarrow() {
 const wsQuery = {}, wsScroll = {};
 function wsState(skill) {
   S.ui.ws = S.ui.ws || {};
-  const W = (S.ui.ws[skill] = Object.assign({ cat: 'all', st: 'open', sort: 'best', sel: null }, S.ui.ws[skill]));
+  const W = (S.ui.ws[skill] = Object.assign({ cat: 'all', st: 'all', sort: 'best', sel: null }, S.ui.ws[skill]));
+  if (!W.g) { W.g = 1; W.st = 'all'; }   // the gallery shows everything by default (older saves had the list's "Available")
   if (!WS_SORTS[W.sort]) W.sort = 'best';
   return W;
 }
@@ -57,7 +59,7 @@ function wsGuideId(skill) {
 const wsText = (a) => (a.name + ' ' + Object.keys(a.in || {}).map((k) => ITEMS[k].name).join(' ')).toLowerCase();
 function wsMatch(skill, a, W, q, o) {
   const st = actState(skill, a);
-  if (!o.noSt) {
+  if (!o.noSt && W.st !== 'all') {
     if (W.st === 'locked' ? !wsLocked(st) : wsLocked(st)) return false;
     if (W.st === 'ready' && st !== 'ready' && st !== 'active') return false;
   }
@@ -81,18 +83,19 @@ function wsSelected(skill) {
 
 /* ------------------------------------------------------------- pieces */
 const wsGoIc = (st) => ui(st === 'active' ? 'stop' : st === 'missing' ? 'close' : st === 'blocked' ? 'lock' : 'play');
-function wsRow(skill, a, selId) {
-  const st = actState(skill, a), o = wsOut(a), k = wsCat(a), cat = WS_CATS.find((c) => c[0] === k);
-  const sub = st === 'schem' ? `${ui('schematic')}Schematic · Lv ${a.level}` : st === 'locked' ? `${ui('lock')}Requires Lv ${a.level}`
-    : `<span class="kind-lab k-${cat ? cat[3] : 'res'}">${o ? typeLabel(o) : SKILLS[skill].name}</span> · Lv ${a.level}`;
+// One gallery card. Anything you cannot make right now (locked, schematic missing, short of
+// ingredients) is greyed; the ▶ corner button starts it.
+function wsCard(skill, a, selId) {
+  const st = actState(skill, a), locked = wsLocked(st), can = wsCan(a);
   const mats = Object.entries(a.in || {}).map(([m, n]) => `<span class="ws-m ${stock(m) >= n ? 'ok' : ''}" data-wsm="${m}" data-n="${n}">${itemIc(m)}</span>`).join('');
-  const can = wsCan(a);
-  return `<div class="ws-row ${a.id === selId ? 'sel' : ''}" data-card="${skill}:${a.id}" data-state="${st}">
-    <button class="ws-pick" data-wsel="${skill}:${a.id}">${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), mark: actMark(a), cls: 'xs', title: a.name })}
-      <span class="ws-nm"><b>${esc(a.name)}</b><small>${sub}</small></span>
-      <span class="ws-mats">${mats}</span>
-      ${wsLocked(st) || !a.in ? '' : `<span class="ws-can ${can ? '' : 'zero'}" data-wscan="${skill}:${a.id}" title="How many you can make with what you have">×${fmt(can)}</span>`}</button>
-    ${wsLocked(st) ? `<span class="ws-lk">${ui(st === 'schem' ? 'schematic' : 'lock')}</span>` : `<button class="ws-go" data-act="${skill}:${a.id}" data-wsgo title="Start / stop">${wsGoIc(st)}</button>`}
+  const sub = st === 'schem' ? `${ui('schematic')}Lv ${a.level}` : st === 'locked' ? `${ui('lock')}Lv ${a.level}` : `Lv ${a.level}`;
+  return `<div class="ws-card ${a.id === selId ? 'sel' : ''}" data-card="${skill}:${a.id}" data-state="${st}">
+    <button class="wc-pick" data-wsel="${skill}:${a.id}" title="${esc(a.name)}">
+      ${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), mark: actMark(a), cls: 'wc-tile', title: a.name })}
+      <b class="wc-nm">${esc(a.name)}</b><small class="wc-sub">${sub}</small>
+      <span class="ws-mats wc-mats">${mats}</span></button>
+    ${locked || !a.in ? '' : `<span class="ws-can wc-can ${can ? '' : 'zero'}" data-wscan="${skill}:${a.id}" title="How many you can make with what you have">×${fmt(can)}</span>`}
+    ${locked ? '' : `<button class="ws-go wc-go" data-act="${skill}:${a.id}" data-wsgo title="Start / stop">${wsGoIc(st)}</button>`}
     <span class="ws-prog"><i data-cardfill></i></span></div>`;
 }
 function wsNext(skill) {
@@ -107,8 +110,7 @@ function wsListHTML(skill) {
   if (!list.length) {
     return `<div class="ws-empty">${ui('search')}<b>No recipe matches</b><span>${W.st === 'ready' ? 'Nothing can be made with what you have right now.' : 'Try another family or search.'}</span>${gbtn('Clear filters', 'close', `data-wsclear="${skill}"`, 'dark sm')}</div>`;
   }
-  const inline = wsNarrow();
-  return list.map((a) => wsRow(skill, a, sel && sel.id) + (inline && sel && sel.id === a.id ? wsDetail(skill, a) : '')).join('') + (W.st === 'open' && !(wsQuery[skill] || '').trim() ? wsNext(skill) : '');
+  return list.map((a) => wsCard(skill, a, sel && sel.id)).join('') + (W.st === 'open' && !(wsQuery[skill] || '').trim() ? wsNext(skill) : '');
 }
 function wsCatsHTML(skill) {
   const W = wsState(skill), acts = SKILLS[skill].actions;
@@ -124,7 +126,7 @@ function wsCatsHTML(skill) {
 function wsStatusHTML(skill) {
   const W = wsState(skill), q = (wsQuery[skill] || '').trim().toLowerCase();
   const pool = SKILLS[skill].actions.filter((a) => wsMatch(skill, a, W, q, { noSt: true }));
-  const n = { open: 0, ready: 0, locked: 0 };
+  const n = { all: pool.length, open: 0, ready: 0, locked: 0 };
   for (const a of pool) { const st = actState(skill, a); if (wsLocked(st)) n.locked++; else { n.open++; if (st === 'ready' || st === 'active') n.ready++; } }
   return `<nav class="seg ws-st" id="ws-st">${WS_STATUS.map(([k, l]) => `<button class="${W.st === k ? 'on' : ''}" data-wsst="${skill}:${k}"><span>${l}</span><em>${n[k]}</em></button>`).join('')}</nav>`;
 }
@@ -181,7 +183,7 @@ function workshopHTML(skill, o) {
     </div>
     ${wsCatsHTML(skill)}
     <div class="ws-body ${wsNarrow() ? 'narrow' : o.detail === false ? 'solo' : ''}">
-      ${sel && !wsNarrow() && o.detail !== false ? wsDetail(skill, sel) : ''}
+      ${sel && (wsNarrow() || o.detail !== false) ? wsDetail(skill, sel) : ''}
       <div class="ws-list" id="ws-list" data-wslist="${skill}">${wsListHTML(skill)}</div>
     </div>
   </section>`;
@@ -225,11 +227,11 @@ document.addEventListener('click', (ev) => {
   if (d.wsel) {
     const [skill, id] = d.wsel.split(':'), W = wsState(skill), narrow = wsNarrow();
     // Inline (narrow) details fold back when their row is tapped again.
-    W.sel = narrow && W.sel === id && t.classList.contains('ws-pick') ? null : id; dirty = true;
-    if (narrow && W.sel) requestAnimationFrame(() => { const p = $('.ws-list .ws-detail'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
+    W.sel = narrow && W.sel === id && t.classList.contains('wc-pick') ? null : id; dirty = true;
+    if (narrow && W.sel) requestAnimationFrame(() => { const p = $('.ws-body .ws-detail'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'nearest' }); });
   } else if (d.wscat) { const [skill, k] = d.wscat.split(':'); wsState(skill).cat = k; wsRefresh(skill); }
   else if (d.wsst) { const [skill, k] = d.wsst.split(':'); wsState(skill).st = k; wsRefresh(skill); }
-  else if (d.wsclear) { const W = wsState(d.wsclear); W.cat = 'all'; W.st = 'open'; wsQuery[d.wsclear] = ''; const q = $('#ws-q'); if (q) q.value = ''; wsRefresh(d.wsclear); }
+  else if (d.wsclear) { const W = wsState(d.wsclear); W.cat = 'all'; W.st = 'all'; wsQuery[d.wsclear] = ''; const q = $('#ws-q'); if (q) q.value = ''; wsRefresh(d.wsclear); }
   else if ('wsgo' in d) { const [skill, id] = d.act.split(':'), W = wsState(skill); if (W.sel !== id) { W.sel = id; dirty = true; } }
 });
 document.addEventListener('input', (ev) => {

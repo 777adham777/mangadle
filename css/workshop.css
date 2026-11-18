@@ -37,8 +37,9 @@
 .ws-body > .ws-detail { grid-column: 2; grid-row: 1; position: sticky; top: 0; }
 .ws-body > .ws-list { grid-column: 1; grid-row: 1; }
 .ws-body.narrow { grid-template-columns: minmax(0, 1fr); }
+.ws-body.narrow > .ws-detail, .ws-body.narrow > .ws-list { grid-column: 1; grid-row: auto; position: static; }
+.ws-body.narrow > .ws-detail { border-color: var(--sel); animation: wsIn 0.2s ease-out; }
 .ws-body.narrow > .ws-list { max-height: none; overflow: visible; padding-right: 0; }
-.ws-list > .ws-detail { flex-shrink: 0; margin: -2px 0 6px; border-color: var(--sel); border-top: 0; animation: wsIn 0.2s ease-out; }
 
 /* ---------- recipe rows */
 .ws-list { display: flex; flex-direction: column; gap: 3px; max-height: min(72vh, 760px); overflow-y: auto; padding-right: 3px; scrollbar-width: thin; }
@@ -173,7 +174,39 @@
   .ws-st button { flex: 1; justify-content: center; padding: 0 6px; gap: 5px; }
 }
 
-/* Wide workshops: the detail sits elsewhere (solo) or the list is wide enough for two columns of rows. */
+/* ---------- gallery: one card per recipe; what you cannot make right now is greyed */
 .ws-body.solo { grid-template-columns: minmax(0, 1fr); }
-.ws-body:not(.narrow) > .ws-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(400px, 100%), 1fr)); align-content: start; gap: 3px 8px; }
-.ws-body:not(.narrow) > .ws-list > .ws-next, .ws-body:not(.narrow) > .ws-list > .ws-empty { grid-column: 1 / -1; }
+.ws-body > .ws-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(112px, 1fr)); align-content: start; gap: 6px; padding: 2px 4px 2px 2px; }
+.ws-list > .ws-next, .ws-list > .ws-empty { grid-column: 1 / -1; }
+.ws-card { position: relative; display: flex; flex-direction: column; min-width: 0; overflow: hidden;
+  background: linear-gradient(180deg, rgba(30, 31, 37, 0.94), rgba(18, 19, 23, 0.94)); border: 1px solid var(--line); border-radius: 2px;
+  transition: border-color 0.15s, transform 0.12s, box-shadow 0.15s; animation: wsIn 0.22s ease-out backwards; }
+#main.static .ws-card { animation: none; }
+.ws-card:hover { border-color: var(--line2); transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45); }
+.wc-pick { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 12px 6px 8px; color: inherit; text-align: center; min-width: 0; }
+.wc-pick .tile.wc-tile { --ts: 58px; margin-bottom: 5px; }
+.wc-nm { width: 100%; font: 600 13px/1.15 var(--display); color: var(--text); display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; min-height: 2.3em; }
+.wc-sub { display: flex; align-items: center; gap: 3px; font-size: 11px; color: var(--mute); }
+.wc-sub .gi { font-size: 10px; }
+.wc-mats { justify-content: center; flex-wrap: wrap; margin-top: 5px; }
+.wc-mats .ws-m { width: 20px; height: 20px; }
+.wc-mats .ws-m .gi { width: 13px; height: 13px; }
+.wc-can { position: absolute; top: 4px; left: 5px; min-width: 0; font-size: 12.5px; text-align: left; pointer-events: none; text-shadow: 0 1px 2px #000; }
+.wc-go { position: absolute; top: 0; right: 0; width: 28px; height: 28px; border-left: 0; font-size: 11px; border-radius: 0 0 0 2px; }
+/* states */
+.ws-card[data-state="ready"] { border-color: color-mix(in srgb, var(--act) 35%, var(--line)); }
+.ws-card[data-state="ready"] .wc-go { background: var(--act-bg); }
+.ws-card[data-state="active"] { border-color: var(--act); background: linear-gradient(180deg, rgba(77, 106, 53, 0.38), rgba(26, 36, 20, 0.6)); box-shadow: 0 0 14px color-mix(in srgb, var(--act) 25%, transparent); }
+.ws-card[data-state="active"] .wc-go { background: #a8303f; }
+.ws-card:is([data-state="missing"], [data-state="blocked"], [data-state="locked"], [data-state="schem"]) .wc-tile { filter: grayscale(1) brightness(0.5); }
+.ws-card:is([data-state="missing"], [data-state="blocked"], [data-state="locked"], [data-state="schem"]) .wc-nm { color: var(--mute); }
+.ws-card:is([data-state="missing"], [data-state="blocked"]) .wc-go, .wc-can.zero { display: none; }
+.ws-card:is([data-state="locked"], [data-state="schem"]) { background: rgba(12, 12, 15, 0.6); border-style: dashed; }
+.ws-card[data-state="schem"] .wc-sub { color: var(--gold, #ffc94a); }
+.ws-card.sel { border-color: var(--sel); box-shadow: 0 0 0 1px var(--sel), 0 0 14px rgba(232, 153, 44, 0.3); }
+.ws-card.pop .tile { animation: tilePop 0.3s; }
+.ws-card.shake { animation: shake 0.28s; }
+@media (max-width: 860px) {
+  .ws-body > .ws-list { grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 5px; }
+  .wc-pick .tile.wc-tile { --ts: 48px; }
+}
