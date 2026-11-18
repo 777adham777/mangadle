@@ -71,7 +71,8 @@ function defaultState() {
     echo: { id: null, grades: null, bond: 0, task: null, prog: 0 },
     museum: {},
     quality: { log: {}, rec: {} },      // Shiny & Perfect logs (variant id -> how many), fish weight records (quality.js)
-    kitchen: { spice: null },           // seasoning picked in the Cooking spice rack (seas.js)
+    kitchen: { spice: null },
+    exped: { ships: [], dur: 600, food: true, repeat: true, last: null },   // expeditions.js           // seasoning picked in the Cooking spice rack (seas.js)
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),
   };

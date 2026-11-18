@@ -230,8 +230,8 @@ const SKILLS = {
   mining:    { name: 'Reishi Mining', realm: 'soul',    icon: '⛏️', type: 'gather', desc: 'Mine ore crystallized from pure spiritual particles. Gems hide in the rock.' },
   smithing:  { name: 'Bladesmithing', realm: 'soul',    icon: '⚒️', type: 'craft',  desc: 'Forge soul-bound blades and set gems into jewelry. Most iconic weapons are made here.' },
   fishing:   { name: 'Fishing',       realm: 'seas',    icon: '🎣', type: 'gather', desc: 'Cast your line into the endless blue. Fruit eaters fish 40% slower.' },
-  cooking:   { name: 'Cooking',       realm: 'seas',    icon: '🍳', type: 'craft',  desc: 'A good cook keeps the crew alive. Food heals in combat and supplies voyages.' },
-  voyaging:  { name: 'Voyaging',      realm: 'seas',    icon: '⛵', type: 'voyage', desc: 'Set sail on expeditions. Consumes food as supplies and returns with gold and treasure.' },
+  cooking:   { name: 'Cooking',       realm: 'seas',    icon: '🍳', type: 'craft',  desc: 'A good cook keeps the crew alive. Food heals in combat, and packed as provisions it brings back more from expeditions.' },
+  voyaging:  { name: 'Voyaging',      realm: 'seas',    icon: '⛵', type: 'voyage', desc: 'Send ships on expeditions of 10 minutes to 8 hours. They sail while you do anything else and come back with gold, spices, relics and treasure.' },
   character: { name: 'Character',    realm: 'combat',  icon: '🧍', type: 'combat', desc: 'Your hero. Every foe defeated gives XP; every level raises Attack, Defense, Vitality, Speed and Luck.' },
 };
 

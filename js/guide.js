@@ -36,7 +36,7 @@ const GUIDE = [
   { act: 'cooking:grilled_minnow', nav: '<b>Cooking</b> is now open. Open it.', start: 'Click <b>Grilled Minnow</b>. Each one uses 1 Minnow.', run: 'Cooked fish heals in battle, like your pills, and feeds the crew on voyages.' },
   { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook whatever you can.', run: 'At Cooking level 10, a captain will take you on voyages. The spice rack opens at level 8.' },
   { spice: true, nav: 'Open <b>Cooking</b>: the spice rack is on the stove.', pick: 'Pick a seasoning in the <b>spice rack</b>. Each dish you cook uses one.', start: 'Now cook any dish: it comes out seasoned.', run: 'Seasoned dishes give a small buff when you eat them in battle. Out of seasoning? Dishes simply come out plain.' },
-  { act: 'voyaging:coastal', nav: '<b>Voyaging</b> is open. Ships bring back gold, chests and relics.', start: 'Click <b>Coastal Run</b>. It needs 2 Grilled Minnows and 2 Pine Logs to patch the hull.', run: 'Voyages are slow but pay well. Your Woodcutting keeps the ships afloat.' },
+  { exped: true, nav: '<b>Voyaging</b> is open. Ships bring back gold, spices, chests and relics.', start: 'Click <b>Coastal Run</b> to send a ship. The hull takes Pine Logs; a Grilled Minnow per 10 minutes is optional and brings back more.', run: 'Your ship sails on its own while you fish, cook or fight, even offline. It comes back with its loot and sets out again.' },
   { zone: 4, nav: 'Open the <b>Battlefield</b>.', start: 'Fight at <b>Rookie Shoals</b>.', run: 'The sea is much tougher than the forest. Bring your best food.' },
   { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook any dish.', run: 'Now and then a dish comes out <b>Perfect</b>: it heals 50% more. Your first Perfect of each recipe goes in the Perfect Log.' },
   { zone: 5, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in <b>Merfolk Reef</b>.', run: 'Beat the Admiral to reach the next world.' },
@@ -106,6 +106,11 @@ function guideStep() {
     if (!['all', 'equip'].includes(S.ui.bank)) return { sels: ['[data-bankf="equip"]'], text: 'Open the <b>Gear</b> tab.' };
     const id = Object.keys(S.items).find((k) => ITEMS[k].slot === 'weapon');
     return id ? { sels: [`.bag-grid [data-sel="${id}"]`], text: `Click your <b>${ITEMS[id].name}</b> to see what it does.` } : null;
+  }
+  if (G.exped) {
+    if (S.exped.ships.length) return { sels: ['.harbour .ships', '#navquest'], info: true, text: `${G.run}<span class="cm-prog">${fmt(st.cur)} / ${fmt(st.g.n)}</span>` };
+    if (!onGoalView(go)) return nav;
+    return { sels: ['[data-exped="coastal"]'], text: G.start };
   }
   if (G.techup) {
     if (S.ui.view !== 'techniques') return nav;

@@ -432,7 +432,7 @@ VIEWS.realm = (realm, skill) => {
   ${scene}
   ${active && !scene ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
   ${uix('realmTop', realm, skill)}
-  ${s.actions.length ? hdr({ voyage: 'Voyages', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
+  ${s.actions.length ? hdr({ voyage: 'Destinations', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
   ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}
   </div><aside class="sk-side">
@@ -460,6 +460,7 @@ function ctaLabel(skill, a, st) {
   return `${ui('play')}${SKILLS[skill].type === 'voyage' ? 'Set sail' : SKILLS[skill].type === 'craft' ? 'Craft' : 'Start'}`;
 }
 function actCard(skill, a) {
+  if (SKILLS[skill].type === 'voyage' && skillLv(skill) >= a.level) return expCard(a);   // expeditions-ui.js
   const st = actState(skill, a), r = actRarity(a), outId = a.out ? Object.keys(a.out)[0] : null, it = outId ? ITEMS[outId] : null;
   const art = tile(null, null, { r, icon: actIc(skill, a), mark: actMark(a), title: a.name, cls: 's' });
   if (st === 'schem') {
@@ -622,7 +623,7 @@ function inspectorHTML() {
   const body = [], acts = [];
   if (it.type === 'equip') { body.push(attrList(statRows(Object.fromEntries(Object.keys(it.stats).map((k) => [k, itemStat(selItem, k)]))))); body.push(uix('inspector', selItem)); if (!equipped) acts.push(gbtn('Equip', 'check', `data-equip="${selItem}"`));
     if (it.salvage && !equipped) body.push(`${hdr('Salvage', 'drop-only gear breaks down into relics')}<div class="aw-cost">${costTiles(it.salvage)}</div><div class="dt-cta">${gbtn('Salvage 1', 'salvage', `data-salvage="${selItem}:1"`, 'sm')}${n > 1 ? gbtn(`Salvage all ×${fmt(n)}`, 'salvage', `data-salvage="${selItem}:all"`, 'sm dark') : ''}</div>`); }
-  else if (it.type === 'food') { body.push(attrList([['hp', 'Heals in battle', foodHeal(selItem) + ' HP']])); body.push('<p class="muted">Also used as voyage supplies.</p>'); acts.push(S.combat.food === selItem ? gbtn('Equipped as battle food', 'check', 'disabled') : gbtn('Equip as battle food', 'eat', `data-setfood="${selItem}"`)); }
+  else if (it.type === 'food') { body.push(attrList([['hp', 'Heals in battle', foodHeal(selItem) + ' HP']])); body.push('<p class="muted">Also packs as expedition provisions.</p>'); acts.push(S.combat.food === selItem ? gbtn('Equipped as battle food', 'check', 'disabled') : gbtn('Equip as battle food', 'eat', `data-setfood="${selItem}"`)); }
   else if (it.type === 'fruit') {
     const mine = S.fruit === selItem, rk = mine ? fruitRank() : 0;
     body.push(`<p class="lore">${it.desc}</p>${mine ? attrList([['star', 'Your rank', `${rk} / ${FRUIT_RANK_MAX} · power ×${(1 + 0.25 * (rk - 1)).toFixed(2)}`]]) : ''}<p class="muted">Only one fruit at a time — eating another kind replaces it. Eat copies of yours to raise its rank (+25% power each). Fruit eaters fish 40% slower.</p>`);
