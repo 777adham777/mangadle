@@ -66,9 +66,9 @@ function rarity(id) {
 }
 const rarityVoy = (a) => (a.level < 25 ? 3 : a.level < 55 ? 4 : 5);
 const actRarity = (a) => (a.loot ? rarityVoy(a) : a.out ? rarity(Object.keys(a.out)[0]) : a.level < 30 ? 3 : a.level < 60 ? 4 : 5);
-const TYPE_LABEL = { res: 'Material', food: 'Food', gem: 'Gem', chest: 'Treasure', fruit: 'Abyss Fruit', schematic: 'Schematic' };
+const TYPE_LABEL = { res: 'Material', food: 'Food', gem: 'Gem', chest: 'Treasure', fruit: 'Devil Fruit', schematic: 'Schematic' };
 const typeLabel = (id) => { const it = ITEMS[id]; if (it.relic) return `Relic · ${REALMS[it.relic].name}`; if (it.type === 'equip' && SCHEM_OF[id]) return 'Iconic ' + it.slot; return it.type === 'equip' ? it.slot[0].toUpperCase() + it.slot.slice(1) : TYPE_LABEL[it.type] || 'Item'; };
-const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Abyss Fruit' : id === 'GEM' ? 'Random gem' : ITEMS[id].name);
+const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Devil Fruit' : id === 'GEM' ? 'Random gem' : ITEMS[id].name);
 function stars(r) { return `<span class="stars">${'<i></i>'.repeat(r)}</span>`; }
 
 // An item tile: art area tinted by rarity + a light count strip.
@@ -418,7 +418,7 @@ VIEWS.realm = (realm, skill) => {
   const R = REALMS[realm], s = SKILLS[skill], b = xpInfo(skill);
   const mods = [`<span class="pill" title="Action speed">${ui('spd')} Speed ×${skillSpeed(skill).toFixed(2)}</span>`, `<span class="pill" title="XP multiplier">${ui('xp')} XP ×${skillXpMult(skill).toFixed(2)}</span>`];
   if (rareMult(skill) > 1) mods.push(`<span class="pill" title="Rare find multiplier">${ui('rare')} Luck ×${rareMult(skill).toFixed(2)}</span>`);
-  if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Abyss Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
+  if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Devil Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
   const open = s.actions.filter((x) => !['locked', 'schem'].includes(actState(skill, x))).length;
   const active = S.action && S.action.skill === skill;
   const scene = uix('realmScene', realm, skill);
@@ -590,7 +590,7 @@ VIEWS.hero = (tab) => {
     <section class="win equip-win">
       ${hdr('Equipment')}
       <div class="eslots">${slot('weapon', 'Weapon', 'weapon')}${slot('armor', 'Armor', 'armor')}${slot('accessory', 'Accessory', 'accessory')}${skillOpen('tinkering') || S.equip.gadget ? slot('gadget', 'Gadget', 'gadget') : ''}${featureOpen('battle') ? foodSlot() : ''}
-        ${S.fruit ? `<div class="eslot fruit">${tile(S.fruit, null)}<span class="es-t"><small>Abyss Fruit · rank ${fruitRank()}</small><b>${ITEMS[S.fruit].name}</b></span></div>` : ''}</div>
+        ${S.fruit ? `<div class="eslot fruit">${tile(S.fruit, null)}<span class="es-t"><small>Devil Fruit · rank ${fruitRank()}</small><b>${ITEMS[S.fruit].name}</b></span></div>` : ''}</div>
       ${hdr('Attributes')}
       ${attrList([['atk', 'Max hit', fmt(pMaxHit())], ['def', 'Defense', fmt(pDef())], ['hp', 'Max HP', fmt(pMaxHp())], ['spd', 'Attack speed', pSpeed().toFixed(1) + 's'], ['gold', 'Gold bonus', '×' + goldMult().toFixed(2)], ['xp', 'XP bonus', '×' + xpMult().toFixed(2)]])}
     </section>
@@ -643,7 +643,7 @@ function inspectorHTML() {
 
 /* ------------------------------------------------------------- collection log */
 let selCol = null;
-const COL_GROUPS = [['res', 'Materials'], ['relic', 'World relics'], ['gem', 'Gems'], ['chest', 'Treasure'], ['food', 'Food'], ['equip', 'Gear'], ['schematic', 'Schematics'], ['fruit', 'Abyss Fruits']];
+const COL_GROUPS = [['res', 'Materials'], ['relic', 'World relics'], ['gem', 'Gems'], ['chest', 'Treasure'], ['food', 'Food'], ['equip', 'Gear'], ['schematic', 'Schematics'], ['fruit', 'Devil Fruits']];
 const inColGroup = (k, g) => (g === 'relic' ? !!ITEMS[k].relic : g === 'res' ? ITEMS[k].type === 'res' && !ITEMS[k].relic : ITEMS[k].type === g);
 function collectionHTML() {
   const pctAll = collectionPct();

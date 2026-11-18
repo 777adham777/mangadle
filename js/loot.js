@@ -49,18 +49,18 @@ defItem('sunlit_armor',     'Sunlit Pillar Armor',   '🛡️', 150000, eq('armo
 (() => {
   const foe = (name) => { for (const z of ZONES) for (const e of z.enemies) if (e.name === name) return e; throw new Error('No foe ' + name); };
   const drop = (name, ...d) => foe(name).drops.push(...d);
-  // Ki Frontier
+  // Kaio Planet
   drop('Raging Ape', ['battle_scouter', 1 / 250, [1, 1]], ['capsule_crate', 1 / 60, [1, 1]]);
   drop('Elite Soldier', ['battle_scouter', 1 / 250, [1, 1]]);
   drop('Wasteland Brawler', ['capsule_crate', 1 / 60, [1, 1]]);
   drop('Armored Commander', ['weighted_gi', 1 / 300, [1, 1]]);
   drop('Crimson Tyrant', ['crimson_knuckles', 1 / 25, [1, 1]], ['capsule_crate', 0.3, [1, 2]]);
-  // Hexbound City
+  // Shinjuku
   drop('Grudge Spirit', ['paper_blade', 1 / 250, [1, 1]], ['cursed_box', 1 / 60, [1, 1]]);
   drop('Shrine Specter', ['paper_blade', 1 / 250, [1, 1]], ['cursed_box', 1 / 60, [1, 1]]);
   drop('Veil Walker', ['veil_shroud', 1 / 300, [1, 1]]);
   drop('Cursed Matriarch', ['matriarch_rosary', 1 / 25, [1, 1]], ['cursed_box', 0.3, [1, 2]]);
-  // Hunter's Wilds
+  // Green Island
   drop('Cliff Wyvern', ['wyvern_bow', 1 / 250, [1, 1]]);
   drop('Rival Examinee', ['hunters_cache', 1 / 60, [1, 1]]);
   drop('Bandit Hunter', ['hunters_cache', 1 / 60, [1, 1]]);

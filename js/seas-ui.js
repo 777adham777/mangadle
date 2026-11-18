@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Endless Blue overhaul: interface
+   TRI-REALM IDLE — Orange Town overhaul: interface
    - animated scenes under the skill banner: your avatar fishing off a pier /
      a reef / a ship deck, cooking in the galley, your ship sailing a voyage
    - Shiny & Perfect: tile shine, logs with their set bonuses (skill pages +

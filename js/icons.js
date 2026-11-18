@@ -534,7 +534,7 @@ ICONS.goal = [
   'paw', 'wolf-howl', 'notebook', 'claw', 'portal',
   'stone-block', 'spark-spirit', 'all-seeing-eye', 'open-book', 'stone-tower', 'vortex',
   'falling-star', 'shiny-apple', 'third-eye', 'war-axe', 'bookshelf'];
-/* Woodcutting (Shinobi Lands): drawn for this game. */
+/* Woodcutting (Leaf Village): drawn for this game. */
 Object.assign(GI, {
   'wood-log': 'M64 160H292V352H64Q20 256 64 160ZM128 160l-16-50h34l14 50ZM104 214v14h140v-14ZM132 286v14h132v-14ZM292 256A96 96 0 1 1 484 256A96 96 0 1 1 292 256ZM310 256A78 78 0 1 0 466 256A78 78 0 1 0 310 256ZM332 256A56 56 0 1 1 444 256A56 56 0 1 1 332 256ZM352 256A36 36 0 1 0 424 256A36 36 0 1 0 352 256ZM374 256A14 14 0 1 1 402 256A14 14 0 1 1 374 256Z',
   'wood-axe': 'M98 470l-34-34 248-248 34 34ZM300 150l70-82c58 4 104 46 116 104l-84 66c-6-36-30-66-66-80ZM286 164l40 40 22-22-40-40Z',
@@ -575,7 +575,7 @@ for (const id in ITEMS) if (ITEMS[id].type === 'scroll') ICONS.item[id] = 'tied-
 ICONS.technique = { shadow_strike: 'hooded-assassin', healing_palm: 'heart-plus', mist_step: 'fog', iron_skin: 'mailed-fist', sealing_mark: 'yin-yang', fire_lotus: 'fire' };
 Object.assign(ICONS.ui, { technique: 'shuriken', awaken: 'shining-sword', socket: 'gems', reforge: 'anvil-impact', chakra: 'concentration-orb' });
 
-// ---- Ki Frontier
+// ---- Kaio Planet
 ICONS.realm.ki = 'falling-star';
 Object.assign(ICONS.skill, { gravity: 'aura', farming: 'plant-roots', tinkering: 'cog' });
 Object.assign(ICONS.zone, { plains: 'sandstorm', canyon: 'lightning-storm', citadel: 'stone-tower', tyrant: 'stone-throne' });
@@ -600,7 +600,7 @@ Object.assign(ICONS.shop, { buy_beans: 'leaf-swirl', buy_wheat: 'fern', tools_ki
 Object.assign(ICONS.ui, { form: 'aura', stamina: 'lightning-trio', wish: 'crystal-ball', farm: 'plant-roots', gadget: 'cog', meal: 'bowl-of-rice' });
 ICONS.form = { surge: 'aura', ascended: 'lightning-trio', limit: 'falling-star' };
 
-// ---- Hexbound City
+// ---- Shinjuku
 ICONS.realm.hex = 'oni';
 Object.assign(ICONS.skill, { exorcism: 'candle-flame', sigilcraft: 'magic-swirl', pacts: 'prayer-beads' });
 Object.assign(ICONS.zone, { alleys: 'spooky-house', shrine: 'paper-lantern', veil: 'portal', matriarch: 'tombstone' });
@@ -620,7 +620,7 @@ for (const id in ITEMS) {
 Object.assign(ICONS.shop, { tools_hex: 'tied-scroll' });
 Object.assign(ICONS.ui, { domain: 'magic-swirl', pact: 'prayer-beads' });
 
-// ---- Hunter's Wilds
+// ---- Green Island
 ICONS.realm.hunter = 'wolf-howl';
 Object.assign(ICONS.skill, { tracking: 'paw', trapcraft: 'knapsack', taming: 'wolf-head' });
 Object.assign(ICONS.zone, { thicket: 'leaf-swirl', cliffs: 'mountains', ruins: 'stone-tower', chimera: 'claw' });

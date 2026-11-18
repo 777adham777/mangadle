@@ -731,7 +731,7 @@ function snapshot() {
 }
 function offlineSeconds(elapsed) { return Math.min(elapsed, (BASE_OFFLINE_HOURS + 2 * pl('dilation')) * 3600); }
 function serialize() { S.last = Date.now(); return JSON.stringify(S); }
-// v6 made the Shinobi Lands the first world (Woodcutting start) and the Endless Blue the second.
+// v6 made the Leaf Village the first world (Woodcutting start) and Orange Town the second.
 // The whole early game changed, so saves from before it start over.
 const SAVE_V = 6;
 function loadFrom(json) {

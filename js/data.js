@@ -1,13 +1,13 @@
 'use strict';
 /* ==========================================================================
    TRI-REALM IDLE — static game data
-   Worlds collided: the Shinobi Lands (start), the Endless Blue, the Soul Afterlands, and more (worlds.js).
+   Worlds collided: the Leaf Village (start), Orange Town, Soul City, and more (worlds.js).
    ========================================================================== */
 
 const REALMS = {
-  shinobi: { name: 'Shinobi Lands',   icon: '🍃', color: '#ff7a1a', tagline: 'Hidden villages, chakra and cold steel.' },     // world 1: the forest village
-  seas:    { name: 'Endless Blue',    icon: '⚓', color: '#14a8ff', tagline: 'Pirates, bounties and cursed fruit.' },          // world 2
-  soul:    { name: 'Soul Afterlands', icon: '🌙', color: '#9b6bff', tagline: 'Spirit blades, masked husks and restless souls.' }, // world 3
+  shinobi: { name: 'Leaf Village',   icon: '🍃', color: '#ff7a1a', tagline: 'Hidden villages, chakra and cold steel.' },     // world 1: the forest village
+  seas:    { name: 'Orange Town',    icon: '⚓', color: '#14a8ff', tagline: 'Pirates, bounties and cursed fruit.' },          // world 2
+  soul:    { name: 'Soul City', icon: '🌙', color: '#9b6bff', tagline: 'Spirit blades, masked husks and restless souls.' }, // world 3
 };
 // Worlds in the order they open. Later worlds append themselves (worlds.js).
 const WORLD_ORDER = ['shinobi', 'seas', 'soul'];
@@ -19,7 +19,7 @@ function defItem(id, name, icon, value, extra) {
   ITEMS[id] = Object.assign({ id, name, icon, value, type: 'res' }, extra || {});
 }
 
-// Shinobi — wood (every log also patches a ship's hull on Endless Blue voyages)
+// Shinobi — wood (every log also patches a ship's hull on Orange Town voyages)
 defItem('pine_log',        'Pine Log',         '🪵', 2);
 defItem('cedar_log',       'Cedar Log',        '🪵', 6);
 defItem('bamboo',          'Bamboo Stalk',     '🎋', 10);
@@ -159,7 +159,7 @@ defItem('tide_pearl',      'Tide Pearl',          '🫧', 600,  relic('seas'));
 defItem('leviathan_scale', 'Leviathan Scale',     '🐉', 900,  relic('seas'));
 defItem('tide_heart',      'Heart of the Tide',   '🌊', 5000, relic('seas'));
 
-// More pills: Shinobi Arts keeps you alive until the Endless Blue's cooks take over.
+// More pills: Shinobi Arts keeps you alive until Orange Town's cooks take over.
 defItem('moon_pill',       'Moonpetal Pill',      '🌕', 25,  food(90));
 defItem('shadow_pill',     'Shadowroot Pill',     '🌑', 45,  food(150));
 
@@ -189,7 +189,7 @@ defItem('schem_stormcaller',      'Schematic: Stormcaller Cutlass', '📜', 9000
 defItem('schem_tide_mantle',      'Schematic: Tidesovereign Mantle','📜', 12000, schem('tide_mantle'));
 defItem('schem_rift_cleaver',     'Schematic: Rift Cleaver',        '📜', 25000, schem('rift_cleaver'));
 
-// Abyss Fruits — eat one for a permanent power. Only one at a time. The sea hates you (-40% fishing speed).
+// Devil Fruits — eat one for a permanent power. Only one at a time. The sea hates you (-40% fishing speed).
 const fr = (fx, desc) => ({ type: 'fruit', fx, desc });
 defItem('ember_fruit',    'Ember Fruit',    '🍎', 5000, fr({ dmg: 0.30 },                 '+30% damage. Your strikes burn.'));
 defItem('quake_fruit',    'Quake Fruit',    '🍇', 5000, fr({ dmg: 0.60, atkSpeed: 0.15 }, '+60% damage, attacks 15% slower.'));
@@ -200,7 +200,7 @@ defItem('colossus_fruit', 'Colossus Fruit', '🍉', 5000, fr({ hp: 0.50 },      
 const FRUITS = ['ember_fruit', 'quake_fruit', 'mist_fruit', 'gilded_fruit', 'bloom_fruit', 'colossus_fruit'];
 
 // Chests — rare finds you open from the Hero page. loot: weighted [item, weight, [min,max]].
-// 'FRUIT' = random Abyss Fruit, 'GEM' = random gem.
+// 'FRUIT' = random Devil Fruit, 'GEM' = random gem.
 const chest = (gold, loot) => ({ type: 'chest', gold, loot });
 defItem('herb_pouch',    "Wanderer's Pouch", '👛', 60, chest([20, 80], [
   ['healing_leaf', 30, [5, 15]], ['moonpetal', 25, [3, 8]], ['cloud_fern', 15, [2, 6]], ['soldier_pill', 12, [2, 5]],
@@ -224,7 +224,7 @@ const GEM_TABLE = [['jade', 60], ['sapphire', 25], ['ruby', 12], ['void_diamond'
 
 /* ----------------------------------------------------------------- skills */
 const SKILLS = {
-  woodcutting: { name: 'Woodcutting', realm: 'shinobi', icon: '🪓', type: 'gather', desc: 'Fell the trees around the hidden village. Logs become kunai and weapon hafts, and patch the hulls of Endless Blue ships.' },
+  woodcutting: { name: 'Woodcutting', realm: 'shinobi', icon: '🪓', type: 'gather', desc: 'Fell the trees around the hidden village. Logs become kunai and weapon hafts, and patch the hulls of Orange Town ships.' },
   herbalism: { name: 'Herbalism',     realm: 'shinobi', icon: '🌿', type: 'gather', desc: 'Forage medicinal herbs. They become pills, armor cloth and seasoning.' },
   chakra:    { name: 'Chakra Focus',  realm: 'shinobi', icon: '🌀', type: 'gather', desc: 'Meditate under waterfalls to condense chakra crystals: kunai, pills and the power inside every iconic craft.' },
   arts:      { name: 'Shinobi Arts',  realm: 'shinobi', icon: '📃', type: 'craft',  desc: 'Brew healing pills, craft kunai and weave armor. Your first source of gear and healing.' },
@@ -360,7 +360,7 @@ SKILLS.cooking.actions = [
   craft('angler_feast', 70, 3.5, { abyss_angler: 1, sage_lotus: 1 }),
   craft('sea_king_curry', 88, 4, { sea_king: 1, world_tree_leaf: 1 }),
 ];
-// Voyages: loot.table = one guaranteed roll; loot.rare = independent chances ('FRUIT' = random Abyss Fruit)
+// Voyages: loot.table = one guaranteed roll; loot.rare = independent chances ('FRUIT' = random Devil Fruit)
 const voyage = (id, name, icon, level, time, input, loot) => ({ id, name, icon, level, time, xp: xpFor(level, time, true), in: input, loot });
 SKILLS.voyaging.actions = [
   voyage('coastal', 'Coastal Run', '🏝️', 1, 10, { grilled_minnow: 2, pine_log: 2 },
@@ -433,7 +433,7 @@ const COMBAT_STAT = { strength: 'damage', defense: 'defense', vitality: 'max HP'
 const en = (name, icon, hp, atk, def, spd, xp, gold, drops) => ({ name, icon, hp, atk, def, spd, xp, gold, drops: drops || [] });
 
 const ZONES = [
-  // World 1 — Shinobi Lands
+  // World 1 — Leaf Village
   { id: 'training', name: 'Training Grounds', realm: 'shinobi', rec: 1, enemies: [
     en('Bandit Thug', '🗡️', 25, 4, 0, 3, 10, [2, 6], [['healing_leaf', 0.4, [1, 3]], ['pine_log', 0.3, [2, 4]], ['soldier_pill', 0.08, [1, 2]], ['old_compass', 1 / 400, [1, 1]]]),
     en('Rogue Apprentice', '🥷', 35, 5, 2, 2.8, 15, [4, 9], [['chakra_shard', 0.3, [1, 3]], ['soldier_pill', 0.05, [1, 1]], ['shinobi_headband', 1 / 150, [1, 1]]]),
@@ -449,7 +449,7 @@ const ZONES = [
   { id: 'fox', name: 'Den of the Ashen Fox', realm: 'shinobi', rec: 32, boss: true, enemies: [
     en('Ashen Fox Beast', '🦊', 1600, 45, 35, 2.5, 700, [300, 600], [['storm_chakra', 1, [2, 4]], ['ashen_tail', 0.5, [1, 1]], ['sealed_scroll', 0.25, [1, 2]], ['fox_tail_charm', 1 / 8, [1, 1]], ['schem_ashen_fang', 1 / 6, [1, 1]]]),
   ] },
-  // World 2 — Endless Blue
+  // World 2 — Orange Town
   { id: 'shoals', name: 'Rookie Shoals', realm: 'seas', rec: 38, enemies: [
     en('Navy Recruit', '⚓', 420, 35, 30, 2.6, 95, [30, 60], [['reef_bass', 0.4, [2, 4]], ['marine_coat', 1 / 60, [1, 1]], ['rusty_cutlass', 1 / 30, [1, 1]]]),
     en('Cannon Brute', '💣', 540, 40, 40, 2.6, 115, [35, 70], [['minnow', 0.4, [2, 4]], ['hand_cannon', 1 / 60, [1, 1]]]),
@@ -512,9 +512,9 @@ const PERKS = [
 
 /* ------------------------------------------------------------------- shop */
 const SHOP = [
-  { id: 'tools_shinobi', cat: 'Tools', name: 'Shinobi Tool Pouch', icon: '🎒', desc: '+10% speed for Shinobi Lands skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
-  { id: 'tools_soul',    cat: 'Tools', name: 'Soul Lantern',       icon: '🏮', desc: '+10% speed for Soul Afterlands skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
-  { id: 'tools_seas',    cat: 'Tools', name: 'Ship Upgrades',      icon: '🛠️', desc: '+10% speed for Endless Blue skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
+  { id: 'tools_shinobi', cat: 'Tools', name: 'Shinobi Tool Pouch', icon: '🎒', desc: '+10% speed for Leaf Village skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
+  { id: 'tools_soul',    cat: 'Tools', name: 'Soul Lantern',       icon: '🏮', desc: '+10% speed for Soul City skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
+  { id: 'tools_seas',    cat: 'Tools', name: 'Ship Upgrades',      icon: '🛠️', desc: '+10% speed for Orange Town skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
   { id: 'abundance',     cat: 'Charms', name: 'Abundance Charm',   icon: '🍀', desc: '+5% chance per tier to double gathering output.', costs: [500, 5000, 50000, 500000] },
   { id: 'lucky_coin',    cat: 'Charms', name: 'Lucky Coin',        icon: '🎲', desc: '+15% chance per tier for every rare find (chests, gems, pets, rare drops).', costs: [2000, 20000, 200000] },
   { id: 'satchel',       cat: 'Charms', name: 'Auto-Eat Satchel',  icon: '👝', desc: 'Raises the auto-eat threshold: 40% → 55% → 70% HP.', costs: [1000, 20000] },
@@ -529,12 +529,12 @@ const made = (id) => () => [S.stats.made[id] || 0];
 const kills = (zone) => () => [S.combat.kills[zone] || 0];
 const lvl = (k) => () => [S.skills[k] ? skillLv(k) : 0];
 const gate = (r) => () => [S.gates[r] ? 1 : 0];
-// v6: Shinobi → Endless Blue → Soul → Ki → Hexbound → Hunter's Wilds → Echo Quarter → Rift.
+// v6: Shinobi → Orange Town → Soul → Ki → Hexbound → Green Island → Echo Quarter → Rift.
 // Saves store the index: inserting an objective shifts every index after it (add a migration in game.js),
 // and keep ICONS.goal (icons.js) and GUIDE (guide.js) in step.
 const G = (text, go, n, prog, reward) => ({ text, go, n, prog, reward });
 const GOALS = [
-  // Shinobi Lands
+  // Leaf Village
   G('Chop 10 Pine Logs', 'realm:shinobi:woodcutting', 10, made('pine_log'), 20),
   G('Reach Woodcutting level 5', 'realm:shinobi:woodcutting', 5, lvl('woodcutting'), 25),
   G('Carve a Training Kunai', 'realm:shinobi:arts', 1, made('training_kunai'), 30),
@@ -552,7 +552,7 @@ const GOALS = [
   G('Learn a schematic from a defeated foe', 'battle', 1, () => [Object.keys(S.known).length], 600),
   G('Defeat the Ashen Fox Beast', 'battle', 1, kills('fox'), 1000),
   G('Open the Hidden Harbour', 'home', 1, gate('seas'), 1200),
-  // Endless Blue
+  // Orange Town
   G('Catch 10 Minnows', 'realm:seas:fishing', 10, made('minnow'), 600),
   G('Reach Fishing level 5', 'realm:seas:fishing', 5, lvl('fishing'), 600),
   G('Cook 5 Grilled Minnows', 'realm:seas:cooking', 5, made('grilled_minnow'), 700),
@@ -565,7 +565,7 @@ const GOALS = [
   G('Catch a Shiny fish', 'realm:seas:fishing', 1, () => [qTotal('fishing')], 2000),
   G('Defeat the Admiral of the Tide', 'battle', 1, kills('admiral'), 3000),
   G('Open the Drowned Seal', 'home', 1, gate('soul'), 3500),
-  // Soul Afterlands
+  // Soul City
   G('Mine 20 Spirit Ore', 'realm:soul:mining', 20, made('spirit_ore'), 2000),
   G('Defeat 10 foes in the Outer Districts', 'battle', 10, kills('districts'), 2500),
   G('Forge a Spirit Katana', 'realm:soul:smithing', 1, made('spirit_katana'), 3000),
@@ -574,20 +574,20 @@ const GOALS = [
   G('Reach Renown 25 in any world', 'home', 25, () => [Math.max(0, ...WORLD_ORDER.map(renownLv))], 6000),
   G('Defeat the Masked Sovereign', 'battle', 1, kills('sovereign'), 10000),
   G('Climb the Throne Stair', 'home', 1, gate('ki'), 12000),
-  // Ki Frontier
+  // Kaio Planet
   G('Reach Gravity Training level 10', 'realm:ki:gravity', 10, lvl('gravity'), 8000),
   G('Harvest your first crop', 'realm:ki:farming', 1, () => [S.stats.harvests || 0], 8000),
   G('Craft a tool in Tinkering', 'realm:ki:tinkering', 1, () => [Object.keys(S.tools || {}).length], 10000),
   G('Transform in battle', 'battle', 1, () => [S.stats.transforms || 0], 12000),
   G('Defeat the Crimson Tyrant', 'battle', 1, kills('tyrant'), 25000),
   G('Open the Hex Gate', 'home', 1, gate('hex'), 30000),
-  // Hexbound City
+  // Shinjuku
   G('Reach Exorcism level 10', 'realm:hex:exorcism', 10, lvl('exorcism'), 20000),
   G('Place 3 sigils in your Domain', 'domain', 3, () => [(S.domain ? S.domain.cells.filter(Boolean).length : 0)], 25000),
   G('Hold a Pact for 30 minutes', 'realm:hex:pacts', 1800, () => [Math.floor(S.stats.pactTime || 0)], 25000),
   G('Defeat the Cursed Matriarch', 'battle', 1, kills('matriarch'), 50000),
   G("Open the Hunter's Trail", 'home', 1, gate('hunter'), 60000),
-  // Hunter's Wilds
+  // Green Island
   G('Reach Tracking level 10', 'realm:hunter:tracking', 10, lvl('tracking'), 40000),
   G('Tame your first beast', 'realm:hunter:taming', 1, () => [Object.keys(S.beasts || {}).length], 45000),
   G('Complete 3 contracts', 'contracts', 3, () => [S.stats.contracts || 0], 50000),
@@ -601,8 +601,8 @@ const GOALS = [
   G('Defeat the Pillar Lord', 'battle', 1, kills('pillar'), 150000),
   G('Tear open the Convergence', 'home', 1, gate('rift'), 200000),
   // The Rift and beyond
-  G('Make a wish with the 7 Wish Stones', 'realm:ki:gravity', 1, () => [Object.values(S.wishes || {}).reduce((a, b) => a + b, 0)], 150000),
-  G('Eat an Abyss Fruit', 'hero', 1, () => [S.fruit ? 1 : 0], 100000),
+  G('Summon Shenron with the 7 Dragon Balls', 'realm:ki:gravity', 1, () => [Object.values(S.wishes || {}).reduce((a, b) => a + b, 0)], 150000),
+  G('Eat an Devil Fruit', 'hero', 1, () => [S.fruit ? 1 : 0], 100000),
   G('Defeat the Rift Emperor', 'battle', 1, kills('convergence'), 400000),
   G('Forge the Rift Cleaver', 'realm:soul:smithing', 1, made('rift_cleaver'), 500000),
   G('Fill 75% of the Collection Log', 'hero:collection', 75, () => [Math.floor(collectionPct() * 100)], 500000),
@@ -654,7 +654,7 @@ const bossName = (zone) => ZONES.find((z) => z.id === zone).enemies[0].name;
 const gateHint = (r) => () => `Defeat the ${bossName(GATES[r].boss)}, then make the offering at ${GATES[r].name} (Overview)`;
 const worldUnlock = (r, name) => ({ id: 'realm:' + r, name, need: () => !!S.gates[r], hint: gateHint(r) });
 const UNLOCKS = [
-  { id: 'realm:shinobi',      name: 'Shinobi Lands',   need: () => true },
+  { id: 'realm:shinobi',      name: 'Leaf Village',   need: () => true },
   { id: 'skill:woodcutting',  name: 'Woodcutting',     need: () => true },
   { id: 'skill:arts',         name: 'Shinobi Arts',    need: () => skillLv('woodcutting') >= 5 || usedSkill('arts'),
     hint: () => 'Reach Woodcutting level 5', why: 'The village carpenter shows you how to carve your own kunai.' },
@@ -674,7 +674,7 @@ const UNLOCKS = [
     hint: () => 'Carry 500 gold', why: 'A travelling merchant noticed your heavy purse.' },
   { id: 'feature:power',      name: 'Inner Power',     need: () => skillLv('chakra') >= 15 || S.rebirths > 0 || S.karma > 0,
     hint: () => 'Reach Chakra Focus level 15', why: 'Your chakra runs deep enough to train your inner power.' },
-  worldUnlock('seas', 'Endless Blue'),
+  worldUnlock('seas', 'Orange Town'),
   { id: 'skill:fishing',      name: 'Fishing',         need: () => !!S.gates.seas || usedSkill('fishing') },
   { id: 'skill:cooking',      name: 'Cooking',         need: () => skillLv('fishing') >= 5 || usedSkill('cooking'),
     hint: () => 'Reach Fishing level 5', why: 'A ship cook trades you a pan for a good catch.' },
@@ -682,7 +682,7 @@ const UNLOCKS = [
     hint: () => 'Reach Cooking level 8', why: 'The galley cook lends you her spice rack. Season dishes for small battle buffs; your catches now bring up sea salt.' },
   { id: 'skill:voyaging',     name: 'Voyaging',        need: () => skillLv('cooking') >= 10 || usedSkill('voyaging'),
     hint: () => 'Reach Cooking level 10', why: 'With proper provisions and timber for the hull, a captain agrees to take you aboard.' },
-  worldUnlock('soul', 'Soul Afterlands'),
+  worldUnlock('soul', 'Soul City'),
   { id: 'skill:mining',       name: 'Reishi Mining',   need: () => !!S.gates.soul || usedSkill('mining') },
   { id: 'skill:smithing',     name: 'Bladesmithing',   need: () => skillLv('mining') >= 5 || usedSkill('smithing'),
     hint: () => 'Reach Reishi Mining level 5', why: 'A soul smith offers you his spare anvil for your ore.' },
@@ -691,7 +691,7 @@ const UNLOCKS = [
   { id: 'feature:awakening',  name: 'Weapon Awakening', need: () => skillLv('smithing') >= 15 || Object.values(S.gear || {}).some((g) => g.rel > 0),
     hint: () => 'Reach Bladesmithing level 15', why: 'Your blades start to answer you. Awaken, socket and reforge them from the Bank.' },
   { id: 'feature:renown',     name: 'Renown & Ascension', need: () => !!S.gates.soul,
-    hint: () => 'Open the Soul Afterlands', why: 'Word of you spreads across worlds. Every world now tracks your Renown.' },
+    hint: () => 'Open Soul City', why: 'Word of you spreads across worlds. Every world now tracks your Renown.' },
 ];
 const UNLOCK_TAIL = [{ id: 'realm:rift', name: 'The Rift', need: () => !!S.gates.rift, hint: gateHint('rift') }];
 // worlds.js pushes each new world's unlocks, then the Rift closes the list.

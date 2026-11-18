@@ -117,7 +117,7 @@ const COSMETICS = {
     C('mask',    'Shinobi Mask',   'shinobi', 3, LV('arts', 20)),
     C('husk',    'Husk Mask',      'soul',    4, KILLS('districts', 100)),
     C('fierce',  'Battle Glare',   'ki',      2, KILLS('plains', 50)),
-    C('scar',    "Survivor's Scar", 'ki',     3, { need: () => S.stats.deaths >= 1 && !!S.gates.ki, hint: 'Lose a fight after reaching the Ki Frontier' }),
+    C('scar',    "Survivor's Scar", 'ki',     3, { need: () => S.stats.deaths >= 1 && !!S.gates.ki, hint: 'Lose a fight after reaching Kaio Planet' }),
     C('cursed',  'Cursed Marks',   'hex',     3, LV('pacts', 15)),
     C('paint',   'War Paint',      'hunter',  2, KILLS('thicket', 50)),
     C('marble',  'Marble Mask',    'echo',    4, LV('restoration', 30)),
@@ -314,7 +314,7 @@ const LAUREL = (() => {
   return s;
 })();
 const HATS = {
-  // Endless Blue
+  // Orange Town
   bucket: `<path d="M-17,-8 Q-18,-28 0,-29 Q18,-28 17,-9 Q0,-14 -17,-8Z" fill="#c9a66b" ${HO}/>`
     + `<path d="M-16.6,-13 Q0,-19 16.8,-14 L17,-9 Q0,-14 -17,-8Z" fill="#3f6688" ${HO}/>`
     + hl('M-9,-24 Q-1,-27 7,-25.5', '#e6cb94', 2.4)
@@ -337,26 +337,26 @@ const HATS = {
     + hl('M-29,-12.5 Q-26,-16 -20,-14.2 Q1,-21 23,-14 Q28,-16 31,-13.5', '#f4c66a', 2)
     + hl('M-9,-31 Q0,-33.5 8,-32', '#3c4864', 2.2)
     + `<circle cx="7" cy="-24" r="4.4" fill="#f4c66a" ${HO} stroke-width="1.6"/><circle cx="7" cy="-24" r="1.8" fill="#8e2433"/>`,
-  // Shinobi Lands
+  // Leaf Village
   hood: `<path d="M-18.6,-5 Q-30,-13 -43,-8 L-41,-1.5 Q-30,-6 -18.6,0Z M-18.6,-2 Q-27,3 -35,12 L-30,15 Q-24,6 -17.6,2Z" fill="#2f3a55" ${HO}/>`
     + `<path d="M-19.6,-6 Q0,-14 19.6,-6 L19.8,1.5 Q0,-6.5 -19.8,1.5Z" fill="#2f3a55" ${HO}/>` + hl('M-18.6,-0.6 Q0,-8 18.6,-0.6', '#1e2638', 1.6)
     + `<rect x="-7.5" y="-12.6" width="15" height="9.4" rx="2.2" fill="#c7cfdd" ${HO} stroke-width="1.8"/>` + hl('M-5.4,-10.8 H5.4', '#fff', 1.3) + hl('M-3.2,-6.6 Q0,-9.8 3.2,-6.6', '#56627a', 1.6),
-  // Soul Afterlands
+  // Soul City
   horns: `<path d="M4,-18 C7,-26 7,-34 15,-41 C15,-31 15,-23 13,-14Z" fill="#b9ae96" ${HO}/>`
     + `<path d="M-13,-13 C-17,-24 -15,-35 -24,-45 C-9,-39 -2,-29 -2,-19Z" fill="#efe8d6" ${HO}/>`
     + hl('M-13.6,-23 L-5.4,-24.6 M-16,-30.5 L-8.6,-32.4 M-19.2,-37.6 L-13.4,-39', '#b8ad95', 1.6) + hl('M7,-25 L13,-25 M9,-32 L14.4,-32.4', '#968b74', 1.4)
     + hl('M-9,-18 Q-11,-28 -17,-37', '#fff', 1.4),
-  // Ki Frontier
+  // Kaio Planet
   martial: `<path d="M-19,-6 C-30,-11 -38,-2 -51,-8 L-49,-1 C-38,4 -30,-4 -19,-2Z M-19,-4 C-27,4 -32,12 -45,12 L-41,18 C-30,17 -25,6 -18,0Z" fill="#e8443a" ${HO}/>`
     + `<path d="M-20.4,-6 Q-2,-17.5 19.7,-10.5 L20.4,-4 Q0,-10 -20.5,0Z" fill="#e8443a" ${HO}/>`
     + hl('M-19,-0.6 Q0,-9 19.5,-4.6', '#b02a22', 2) + hl('M-12,-11 Q0,-15 10,-13', '#ff8a7a', 1.6)
     + `<circle cx="-19.6" cy="-3" r="3.8" fill="#c22f27" ${HO}/>`,
-  // Hexbound City
+  // Shinjuku
   talisman: hl('M-20.4,-5 Q0,-18 19.6,-9', OL, 4.4) + hl('M-20.4,-5 Q0,-18 19.6,-9', '#c0392b', 2)
     + `<g transform="rotate(-6 12 -14)"><path d="M5.5,-21 H18.5 V11 L15.3,8.6 L12,11 L8.7,8.6 L5.5,11Z" fill="#f3e2a0" ${HO} stroke-width="1.8"/>`
     + hl('M12,-15.5 V-8 M8.5,-12 H15.5 M9,-4.5 Q12,-1.5 15,-4.5 M12,-2.5 V5 M9.5,3 H14.5', '#c0392b', 1.8)
     + `<circle cx="12" cy="-18.5" r="1.8" fill="#c0392b"/></g>`,
-  // Hunter's Wilds
+  // Green Island
   beast: `<path d="M3,-19 L9,-39 L17,-15Z" fill="#6e4520" ${HO}/>`
     + `<path d="M-21,11 Q-25,-21 0,-22.6 Q18,-22.4 21,-8 Q10,-13.5 -1,-11.5 Q-13,-6 -12,13Z" fill="#8a5a2f" ${HO}/>`
     + `<path d="M-13,-18 L-17,-40 L-1,-23Z" fill="#8a5a2f" ${HO}/><path d="M-12,-21.5 L-14.4,-34 L-5,-23.5Z" fill="#e0a07a"/>`

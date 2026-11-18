@@ -1,10 +1,10 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Endless Blue overhaul (world 1), DOM-free
+   TRI-REALM IDLE — Orange Town overhaul (world 1), DOM-free
    - Seasonings for the Cooking spice rack: each dish cooked while one is
      picked uses one and comes out seasoned. Seasoned dishes give a battle
      buff when eaten (more healing, damage, attack speed, less damage taken,
-     regeneration). Sources: fishing by-catch, voyages, Endless Blue foes,
+     regeneration). Sources: fishing by-catch, voyages, Orange Town foes,
      the Sunken Chest and the Market.
    - Catch weights: every fish has a size; records are kept per fish.
    Shiny fish and Perfect dishes come from quality.js. Loaded after it.

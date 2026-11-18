@@ -78,7 +78,7 @@ hook('kill', (e, z, loot, dropped) => {
 });
 
 /* =========================================================== TECHNIQUES */
-// Shinobi Lands. Up to 3 techniques fire on their own in combat when ready, paid with a chakra bar
+// Leaf Village. Up to 3 techniques fire on their own in combat when ready, paid with a chakra bar
 // that Chakra Focus grows. Slot 2 at Chakra 30, slot 3 at Chakra 60.
 const techOn = () => isUnlocked('feature:techniques');
 const techRank = (id) => S.tech.rank[id] || 0;
@@ -136,7 +136,7 @@ hook('taken', () => ((RT.fx.skin || 0) > 0 ? 0.65 - 0.05 * techRank('iron_skin')
 hook('edef', () => ((RT.fx.mark || 0) > 0 ? 0.7 - 0.06 * techRank('sealing_mark') : 1));
 
 /* ==================================================== AWAKENING + FORGE */
-// Soul Afterlands. Per item (all copies share it): { xp, rel, gems, tier }.
+// Soul City. Per item (all copies share it): { xp, rel, gems, tier }.
 const gearOn = () => isUnlocked('feature:awakening');
 const GEAR0 = Object.freeze({ xp: 0, rel: 0, gems: [], tier: 0 });
 const gearOf = (id) => S.gear[id] || GEAR0;

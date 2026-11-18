@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Shinobi Lands: the woodcutting scene
+   TRI-REALM IDLE — Leaf Village: the woodcutting scene
    Your avatar chops a tree in a clearing above the hidden village. The tree
    changes with the wood you cut, chips fly on every swing, a notch grows in
    the trunk as the log comes loose, and your logs pile up beside you.

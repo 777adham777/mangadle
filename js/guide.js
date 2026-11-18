@@ -12,7 +12,7 @@
 // One entry per early objective (same index as GOALS).
 // act/zone: what the objective wants running. nav: how to get there. start: what to click. run: tip while it runs.
 const GUIDE = [
-  // Shinobi Lands: wood → first weapon → herbs and pills → first fights
+  // Leaf Village: wood → first weapon → herbs and pills → first fights
   { skill: 'woodcutting', nav: 'Open <b>Woodcutting</b>. Everything in the village starts with wood.', start: 'Click <b>Pine Log</b> to start chopping.', run: 'Woodcutting repeats on its own, even while the game is closed. No need to watch it: come back later and the logs are waiting.' },
   { skill: 'woodcutting', nav: 'Back to <b>Woodcutting</b>.', start: 'Keep chopping <b>Pine Logs</b>.', run: 'Every log gives Woodcutting XP. Higher levels unlock new trees (Cedar at level 10), and each tree has its own <b>Mastery</b> that makes it faster. Reach level 5 and the village carpenter will teach you to carve.' },
   { act: 'arts:training_kunai', nav: '<b>Shinobi Arts</b> is now open. Open it.', start: 'Click <b>Training Kunai</b>. It uses 5 Pine Logs.', run: 'Your very first weapon is on the bench. Crafting skills turn what you gather into gear, pills and more.' },
@@ -30,8 +30,8 @@ const GUIDE = [
   { zone: 2, nav: 'Open the <b>Battlefield</b>.', start: 'Fight in <b>Fang Ravine</b>.', run: 'Some foes drop a <b>schematic</b>: it teaches a recipe for an iconic weapon forever.' },
   { zone: 3, nav: 'Time for the guardian: open the <b>Battlefield</b>.', start: 'Challenge the <b>Ashen Fox Beast</b>. Bring plenty of pills.', run: 'Its relic, the Ashen Fox Tail, is part of the gate offering.' },
   { gate: true, nav: 'Open the <b>Overview</b>: the gate to the next world is there.' },
-  // Endless Blue
-  { skill: 'fishing', nav: 'Welcome to the Endless Blue. Open <b>Fishing</b>.', start: 'Click <b>Minnow</b> to cast your line.', run: 'A new world, a new food: fish. Catch 10 Minnows.' },
+  // Orange Town
+  { skill: 'fishing', nav: 'Welcome to Orange Town. Open <b>Fishing</b>.', start: 'Click <b>Minnow</b> to cast your line.', run: 'A new world, a new food: fish. Catch 10 Minnows.' },
   { skill: 'fishing', nav: 'Back to <b>Fishing</b>.', start: 'Keep fishing.', run: 'Reach Fishing level 5 and the ship cook will want to meet you.' },
   { act: 'cooking:grilled_minnow', nav: '<b>Cooking</b> is now open. Open it.', start: 'Click <b>Grilled Minnow</b>. Each one uses 1 Minnow.', run: 'Cooked fish heals in battle, like your pills, and feeds the crew on voyages.' },
   { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook whatever you can.', run: 'At Cooking level 10, a captain will take you on voyages. The spice rack opens at level 8.' },
@@ -205,8 +205,8 @@ function showWelcome() {
     <div class="wl-ic">${ui('hero')}</div>
     <small>Tri-Realm Idle</small>
     <h2>Welcome, Wanderer</h2>
-    <p>Seven worlds have collided. You wake up at the edge of a village hidden in the forest of the <b>Shinobi Lands</b>, with nothing but a hatchet. Each world is sealed by a guardian.</p>
-    <div class="wl-goal"><small>Your goal</small><b>Grow strong enough to beat every guardian and cross all seven worlds.</b></div>
+    <p>Six worlds have collided. You wake up at the edge of the <b>Leaf Village</b>, a village hidden in the forest, with nothing but a hatchet. Each world is sealed by a guardian.</p>
+    <div class="wl-goal"><small>Your goal</small><b>Grow strong enough to beat every guardian and cross all six worlds.</b></div>
     <small class="wl-sub">How you get stronger</small>
     <ol class="wl-loop">
       ${step(ic('skill', 'woodcutting'), 'Chop', 'Fell trees. Wood is how everything starts.')}

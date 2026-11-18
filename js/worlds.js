@@ -75,7 +75,7 @@ const GEM_FX = { jade: { hp: 0.06 }, sapphire: { def: 0.06 }, ruby: { dmg: 0.06 
 const REFORGE_MAX = 6;
 
 /* ======================================================= WORLDS 4-7 (below) */
-const CROPS = [];          // Farming (Ki Frontier)
+const CROPS = [];          // Farming (Kaio Planet)
 // Sources that come from systems rather than actions/drops: [item, iconKind, iconId, text, rate|null]. Shown in the Bank.
 const EXTRA_SOURCES = [];
 // Uses that come from systems rather than recipes: [item, text].
@@ -85,7 +85,7 @@ const EXTRA_USES = [];
 /* ========================================================= WORLD 4: KI FRONTIER */
 // Gravity Training builds raw power and unlocks transformations; Farming grows crops on real-time
 // plots; Tinkering builds tools for every gathering skill and gadgets for a new gear slot.
-// Wish Stones: one hides in each world — gather all 7 for a permanent wish.
+// Dragon Balls: one hides in each world — gather all 7 for a permanent wish.
 (() => {
   const k = (id, name, v) => defItem(id, name, '✨', v);
   k('ki_dust', 'Ki Dust', 30); k('ki_spark', 'Ki Spark', 60); k('ki_orb', 'Ki Orb', 110); k('ki_core', 'Ki Core', 180);
@@ -142,7 +142,7 @@ const EXTRA_USES = [];
   defItem('schem_battle_armor', 'Schematic: Battle Armor Mk-X', '📜', 15000, schem('battle_armor'));
   defItem('schem_gravity_bracer', 'Schematic: Gravity Bracer', '📜', 15000, schem('gravity_bracer'));
   // wish stones (one per world)
-  for (let i = 1; i <= 7; i++) { defItem('wish_stone_' + i, `Wish Stone ★${i}`, '🔮', 5000, { type: 'wish', star: i }); EXTRA_SOURCES.push(['wish_stone_' + i, 'ui', 'wish', `Any skill or foe of world ${i} (once Wish Stones are unlocked)`, 1 / 1500]); }
+  for (let i = 1; i <= 7; i++) { defItem('wish_stone_' + i, `${i}-Star Dragon Ball`, '🔮', 5000, { type: 'wish', star: i }); EXTRA_SOURCES.push(['wish_stone_' + i, 'ui', 'wish', `Any skill or foe of world ${i} (once Dragon Balls are unlocked)`, 1 / 1500]); }
   for (const c of CROPS) EXTRA_SOURCES.push([c.id, 'skill', 'farming', `Farming · plant ${c.name} Seed (${c.mins} min)`, null]);
 
   SKILLS.gravity = { name: 'Gravity Training', realm: 'ki', icon: '💪', type: 'gather',
@@ -189,7 +189,7 @@ const EXTRA_USES = [];
   SHOP.push(
     { id: 'buy_beans', cat: 'Supplies', realm: 'ki', name: '5× Vital Bean Seed', icon: '🌱', desc: 'Starter seeds for your first plots.', cost: 400, give: ['seed_vital_bean', 5] },
     { id: 'buy_wheat', cat: 'Supplies', realm: 'ki', name: '5× Sun Wheat Seed', icon: '🌱', desc: 'Grows into flour for Sunbread.', cost: 1500, give: ['seed_sun_wheat', 5] },
-    { id: 'tools_ki', cat: 'Tools', realm: 'ki', name: 'Capsule Workshop', icon: '🛠️', desc: '+10% speed for Ki Frontier skills per tier.', costs: [20000, 80000, 300000, 1e6, 3e6] },
+    { id: 'tools_ki', cat: 'Tools', realm: 'ki', name: 'Capsule Workshop', icon: '🛠️', desc: '+10% speed for Kaio Planet skills per tier.', costs: [20000, 80000, 300000, 1e6, 3e6] },
   );
   SYNERGIES.push(
     { from: 'gravity',   to: 'combat',  kind: 'xp',   per: 0.004, name: 'Heavy Bones',   desc: 'Training under gravity speeds up combat XP' },
@@ -200,7 +200,7 @@ const EXTRA_USES = [];
   const E = (name, hp, atk, def, spd, xp, gold, drops) => en(name, '', hp, atk, def, spd, xp, gold, drops);
   addWorld({
     id: 'ki',
-    realm: { name: 'Ki Frontier', icon: '⚡', color: '#ffb93d', ui: '#ffc65a', tagline: 'Endless plains, gravity chambers and warriors who never stop growing.' },
+    realm: { name: 'Kaio Planet', icon: '⚡', color: '#ffb93d', ui: '#ffc65a', tagline: 'Endless plains, gravity chambers and warriors who never stop growing.' },
     zones: [
       { id: 'plains', name: 'Rocky Plains', realm: 'ki', rec: 92, enemies: [
         E('Wasteland Brawler', 6000, 560, 240, 2.5, 1300, [400, 800], [['ki_spark', 0.3, [2, 4]], ['gravity_plate', 0.08, [1, 1]], ['seed_moon_rice', 0.03, [1, 2]]]),
@@ -229,7 +229,7 @@ const EXTRA_USES = [];
         hint: () => 'Reach Gravity Training level 10', why: 'Your body can finally hold a surge of ki. Pick a form on the Battlefield.' },
       { id: 'skill:tinkering', name: 'Tinkering', need: () => (S.combat.kills.plains || 0) >= 10 || usedSkill('tinkering'),
         hint: () => 'Defeat 10 foes on the Rocky Plains', why: 'You salvage scrap from fallen soldiers. A capsule engineer shows you how to use it.' },
-      { id: 'feature:wishes', name: 'Wish Stones', need: () => skillLv('tinkering') >= 10,
+      { id: 'feature:wishes', name: 'Dragon Balls', need: () => skillLv('tinkering') >= 10,
         hint: () => 'Reach Tinkering level 10', why: 'Your new radar picks up seven strange signals, one in every world.' },
     ],
   });
@@ -266,11 +266,11 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
   ];
   // Sigils: world sigils speed up that world's skills; Hexbound sigils boost you. Same-world neighbours amplify each other.
   const sig = (id, name, tag, kind, val, desc) => { defItem(id, name, '🔯', 300, { type: 'sigil' }); SIGILS[id] = { tag, kind, target: kind === 'speed' ? tag : null, val, desc }; };
-  sig('sigil_tide', 'Tide Sigil', 'seas', 'speed', 0.10, 'Endless Blue skills');
-  sig('sigil_leaf', 'Leaf Sigil', 'shinobi', 'speed', 0.10, 'Shinobi Lands skills');
-  sig('sigil_soul', 'Soul Sigil', 'soul', 'speed', 0.10, 'Soul Afterlands skills');
-  sig('sigil_ki', 'Ki Sigil', 'ki', 'speed', 0.10, 'Ki Frontier skills');
-  sig('sigil_hex', 'Hex Sigil', 'hex', 'speed', 0.10, 'Hexbound City skills');
+  sig('sigil_tide', 'Tide Sigil', 'seas', 'speed', 0.10, 'Orange Town skills');
+  sig('sigil_leaf', 'Leaf Sigil', 'shinobi', 'speed', 0.10, 'Leaf Village skills');
+  sig('sigil_soul', 'Soul Sigil', 'soul', 'speed', 0.10, 'Soul City skills');
+  sig('sigil_ki', 'Ki Sigil', 'ki', 'speed', 0.10, 'Kaio Planet skills');
+  sig('sigil_hex', 'Hex Sigil', 'hex', 'speed', 0.10, 'Shinjuku skills');
   sig('sigil_blade', 'Blade Sigil', 'hex', 'dmg', 0.08, 'damage');
   sig('sigil_ward', 'Ward Sigil', 'hex', 'def', 0.08, 'defense');
   sig('sigil_heart', 'Heart Sigil', 'hex', 'hp', 0.08, 'max HP');
@@ -302,7 +302,7 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
   ];
   SKILLS.pacts.actions = [];
   for (const s of ['exorcism', 'sigilcraft', 'pacts']) RARE_FINDS[s] = [];
-  SHOP.push({ id: 'tools_hex', cat: 'Tools', realm: 'hex', name: 'Warded Satchel', icon: '🛠️', desc: '+10% speed for Hexbound City skills per tier.', costs: [50000, 200000, 800000, 3e6, 9e6] });
+  SHOP.push({ id: 'tools_hex', cat: 'Tools', realm: 'hex', name: 'Warded Satchel', icon: '🛠️', desc: '+10% speed for Shinjuku skills per tier.', costs: [50000, 200000, 800000, 3e6, 9e6] });
   SYNERGIES.push(
     { from: 'exorcism',   to: 'harvest', kind: 'speed',    per: 0.003, name: 'Spirit Sense',  desc: 'Soul Harvest goes faster' },
     { from: 'sigilcraft', to: 'chakra',  kind: 'techcost', per: 0.003, name: 'Sealed Script', desc: 'Techniques cost less chakra' },
@@ -319,7 +319,7 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
   const E = (name, hp, atk, def, spd, xp, gold, drops) => en(name, '', hp, atk, def, spd, xp, gold, drops);
   addWorld({
     id: 'hex',
-    realm: { name: 'Hexbound City', icon: '🕯️', color: '#36d6a8', ui: '#4fe3b8', tagline: 'Neon alleys, sealed shrines and curses that feed on fear.' },
+    realm: { name: 'Shinjuku', icon: '🕯️', color: '#36d6a8', ui: '#4fe3b8', tagline: 'Neon alleys, sealed shrines and curses that feed on fear.' },
     zones: [
       { id: 'alleys', name: 'Shadow Alleys', realm: 'hex', rec: 108, enemies: [
         E('Grudge Spirit', 18000, 1100, 420, 2.4, 4000, [1200, 2200], [['hex_residue', 0.3, [2, 4]], ['bound_talisman', 0.08, [1, 1]]]),
@@ -355,7 +355,7 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
 /* ===================================================== WORLD 6: HUNTER'S WILDS */
 // Tracking reads trails (beast materials, wild seeds); Trapcraft builds traps and baits;
 // Beast Taming captures a companion in any world. The Hunter Licence brings contracts across
-// every world, and the Card Book collects cards from all of them.
+// every world, and the Greed Island Cards collects cards from all of them.
 const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
 (() => {
   const t = (id, name, v) => defItem(id, name, '🐾', v);
@@ -422,14 +422,14 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
   const xpOf = (lv, tm) => xpFor(lv, tm, true);
   SKILLS.taming.actions = Object.entries(BEASTS).map(([id, b]) => ({ id: 'tame_' + id, name: `Hunt: ${b.name}`, level: b.level, time: 8 + b.level / 10, xp: xpOf(b.level, 8 + b.level / 10), in: { [b.trap]: 1 }, beast: id, icon: ['beast', id], kind: 'Beast hunt' }));
   for (const s of ['tracking', 'trapcraft', 'taming']) RARE_FINDS[s] = [];
-  SHOP.push({ id: 'tools_hunter', cat: 'Tools', realm: 'hunter', name: 'Hunter Kit', icon: '🛠️', desc: "+10% speed for Hunter's Wilds skills per tier.", costs: [120000, 500000, 2e6, 7e6, 2e7] });
+  SHOP.push({ id: 'tools_hunter', cat: 'Tools', realm: 'hunter', name: 'Hunter Kit', icon: '🛠️', desc: "+10% speed for Green Island skills per tier.", costs: [120000, 500000, 2e6, 7e6, 2e7] });
   SYNERGIES.push(
     { from: 'tracking',  to: 'herbalism', kind: 'rare',   per: 0.004, name: 'Wild Seeds', desc: 'More rare finds (and seeds) while foraging' },
     { from: 'trapcraft', to: 'fishing',   kind: 'double', per: 0.002, name: 'Bait Craft', desc: 'Chance to catch two fish' },
     { from: 'taming',    to: 'farming',   kind: 'double', per: 0.003, name: 'Beast Plough', desc: 'Chance for a double harvest' },
   );
   defItem('sigil_hunt', 'Hunt Sigil', '🔯', 300, { type: 'sigil' });
-  SIGILS.sigil_hunt = { tag: 'hunter', kind: 'speed', target: 'hunter', val: 0.10, desc: "Hunter's Wilds skills" };
+  SIGILS.sigil_hunt = { tag: 'hunter', kind: 'speed', target: 'hunter', val: 0.10, desc: "Green Island skills" };
   SKILLS.sigilcraft.actions.push(craft('sigil_hunt', 62, 7, { hex_void: 10, trail_stone: 1, stag_antler: 10 }));
   SKILLS.sigilcraft.actions.sort((a, b) => a.level - b.level);
   [1, 2, 3].forEach((tier) => {
@@ -442,7 +442,7 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
   const E = (name, hp, atk, def, spd, xp, gold, drops) => en(name, '', hp, atk, def, spd, xp, gold, drops);
   addWorld({
     id: 'hunter',
-    realm: { name: "Hunter's Wilds", icon: '🐾', color: '#9be15d', ui: '#a8e86b', tagline: 'Untamed forests, licensed hunters and beasts worth a fortune.' },
+    realm: { name: "Green Island", icon: '🐾', color: '#9be15d', ui: '#a8e86b', tagline: 'Untamed forests, licensed hunters and beasts worth a fortune.' },
     zones: [
       { id: 'thicket', name: 'Exam Thicket', realm: 'hunter', rec: 118, enemies: [
         E('Rival Examinee', 48000, 2500, 650, 2.3, 10000, [3000, 5000], [['swift_feather', 0.3, [2, 4]], ['trail_stone', 0.08, [1, 1]]]),
@@ -483,7 +483,7 @@ const ECHOES = [
   { id: 'gilded_hand', name: 'Gilded Hand', ability: 'Each action your Echo finishes also pays gold (5× its XP).' },
   { id: 'rewind',      name: 'Rewind',      ability: 'Crafts done by your Echo have a 15% chance to give their materials back.' },
   { id: 'star_fist',   name: 'Star Fist',   ability: 'Power counts double in combat.' },
-  { id: 'silent_tide', name: 'Silent Tide', ability: 'Works 50% faster on Endless Blue skills.' },
+  { id: 'silent_tide', name: 'Silent Tide', ability: 'Works 50% faster on Orange Town skills.' },
   { id: 'paper_moon',  name: 'Paper Moon',  ability: '+10% rare finds on everything you do.' },
   { id: 'iron_bloom',  name: 'Iron Bloom',  ability: 'Durability counts double, +10% defense.' },
 ];
@@ -497,9 +497,9 @@ const ECHOES = [
   defItem('lord_visage', "Pillar Lord's Visage", '🗿', 45000, relic('echo'));
   // museum artifacts: restore each once for a permanent bonus
   const art = (id, name, realm, kind, val, desc) => { defItem(id, name, '🏺', 20000, { type: 'artifact' }); ARTIFACTS[id] = { realm, kind, val, desc }; };
-  art('mermaid_compass', "Mermaid's Compass", 'seas', 'speed', 0.08, 'Endless Blue skills +8% speed');
-  art('founders_scroll', "Founder's Scroll", 'shinobi', 'speed', 0.08, 'Shinobi Lands skills +8% speed');
-  art('reaper_hourglass', "Reaper's Hourglass", 'soul', 'speed', 0.08, 'Soul Afterlands skills +8% speed');
+  art('mermaid_compass', "Mermaid's Compass", 'seas', 'speed', 0.08, 'Orange Town skills +8% speed');
+  art('founders_scroll', "Founder's Scroll", 'shinobi', 'speed', 0.08, 'Leaf Village skills +8% speed');
+  art('reaper_hourglass', "Reaper's Hourglass", 'soul', 'speed', 0.08, 'Soul City skills +8% speed');
   art('gravity_seal', 'Ancient Gravity Seal', 'ki', 'dmg', 0.05, '+5% damage');
   art('sealed_grimoire', 'Sealed Grimoire', 'hex', 'xp', 0.05, '+5% XP on every skill');
   art('first_licence', 'The First Licence', 'hunter', 'gold', 0.10, '+10% gold');
