@@ -11,33 +11,33 @@
 // Enemy name keyword -> how that foe is dressed. First match wins.
 // over: avatar cosmetics; weapon: item id drawn in hand ('' = bare hands).
 const FOE_LOOKS = [
-  [/Admiral/,              { hat: 'tricorn', face: 'fierce', back: 'coat', build: 'stout' }, 'stormcaller'],
-  [/Corsair/,              { hat: 'bandana', face: 'patch', back: 'coat' }, 'corsair_cutlass'],
-  [/Cannon Brute/,         { hat: 'bandana', face: 'fierce', build: 'stout' }, 'hand_cannon'],
-  [/Navy Recruit/,         { hat: 'bucket', face: 'dots' }, 'rusty_cutlass'],
-  [/Merfolk/,              { face: 'fierce', build: 'stout' }, 'power_gauntlets'],
-  [/Bandit Thug/,          { hat: 'bandana', face: 'scar' }, 'iron_wakizashi'],
-  [/Rogue Apprentice/,     { hat: 'hood', face: 'mask', build: 'slim' }, 'crystal_kunai'],
-  [/Mist Assassin/,        { hat: 'hood', face: 'mask', back: 'scarf', build: 'slim' }, 'ashen_fang'],
-  [/Husk|Towering/,        { face: 'husk', build: 'tall' }, 'husk_claw'],
-  [/Masked Lancer/,        { face: 'husk', back: 'shroud' }, 'bone_lance'],
-  [/Bone Priest/,          { hat: 'horns', face: 'husk', back: 'shroud' }, 'wraith_sickle'],
-  [/Masked Sovereign/,     { hat: 'horns', face: 'husk', back: 'shroud', build: 'tall', aura: 'wisps' }, 'sovereign_blade'],
-  [/Wasteland Brawler|Elite Soldier/, { hat: 'martial', face: 'fierce' }, 'power_gauntlets'],
-  [/Armored Commander/,    { hat: 'martial', face: 'scar', back: 'coat', build: 'stout' }, 'black_warhammer'],
-  [/Horned Mutant/,        { hat: 'horns', face: 'fierce', build: 'stout' }, ''],
-  [/Crimson Tyrant/,       { hat: 'horns', face: 'fierce', back: 'mantle', build: 'stout', aura: 'embers' }, 'power_gauntlets'],
-  [/Hollow Sorcerer/,      { hat: 'talisman', face: 'cursed', back: 'shroud' }, 'wraith_sickle'],
-  [/Bound Corpse/,         { hat: 'talisman', face: 'blank' }, ''],
-  [/Veil Walker/,          { face: 'cursed', back: 'shroud', build: 'tall' }, 'cursed_cleaver'],
-  [/Cursed Matriarch/,     { hat: 'talisman', face: 'cursed', back: 'sigil', build: 'tall', aura: 'smoke' }, 'cursed_cleaver'],
-  [/Rival Examinee|Bandit Hunter/, { hat: 'beast', face: 'paint', back: 'quiver' }, 'sunforged_bow'],
-  [/Masked Vampire/,       { face: 'marble', back: 'shroud', build: 'slim' }, 'eclipse_blade'],
-  [/Sunlight Monk/,        { hat: 'martial', face: 'dots' }, 'power_gauntlets'],
-  [/Echo Thief/,           { hat: 'laurel', face: 'marble', build: 'slim' }, 'crystal_kunai'],
-  [/Pillar Warrior|Pillar Guard/, { hat: 'laurel', face: 'fierce', build: 'stout' }, 'bone_lance'],
-  [/Pillar Lord/,          { hat: 'laurel', face: 'marble', back: 'wings', build: 'tall', aura: 'echo' }, 'eclipse_blade'],
-  [/Rift Emperor/,         { hat: 'crown', face: 'rifteye', back: 'mantle', build: 'tall', aura: 'storm' }, 'rift_cleaver'],
+  [/Admiral/,              { outfit: 'uniform', hair: 'mop', hat: 'tricorn', face: 'fierce', back: 'coat', build: 'stout' }, 'stormcaller'],
+  [/Corsair/,              { outfit: 'corsair', hair: 'mop', hat: 'bandana', face: 'patch', back: 'coat' }, 'corsair_cutlass'],
+  [/Cannon Brute/,         { outfit: 'corsair', hair: 'tuft', hat: 'bandana', face: 'fierce', build: 'stout' }, 'hand_cannon'],
+  [/Navy Recruit/,         { outfit: 'tee', hair: 'tuft', hat: 'bucket', face: 'dots' }, 'rusty_cutlass'],
+  [/Merfolk/,              { outfit: 'none', hair: 'mop', face: 'fierce', build: 'stout' }, 'power_gauntlets'],
+  [/Bandit Thug/,          { outfit: 'tee', hair: 'tuft', hat: 'bandana', face: 'scar' }, 'iron_wakizashi'],
+  [/Rogue Apprentice/,     { outfit: 'shinobi', hair: 'spikes', hat: 'hood', face: 'mask', build: 'slim' }, 'crystal_kunai'],
+  [/Mist Assassin/,        { outfit: 'shinobi', hair: 'tuft', hat: 'hood', face: 'mask', back: 'scarf', build: 'slim' }, 'ashen_fang'],
+  [/Husk|Towering/,        { outfit: 'none', face: 'husk', build: 'tall' }, 'husk_claw'],
+  [/Masked Lancer/,        { outfit: 'reaper', hair: 'ember', face: 'husk', back: 'shroud' }, 'bone_lance'],
+  [/Bone Priest/,          { outfit: 'reaper', hat: 'horns', face: 'husk', back: 'shroud' }, 'wraith_sickle'],
+  [/Masked Sovereign/,     { outfit: 'reaper', hair: 'ember', hat: 'horns', face: 'husk', back: 'shroud', build: 'tall', aura: 'wisps' }, 'sovereign_blade'],
+  [/Wasteland Brawler|Elite Soldier/, { outfit: 'gi', hair: 'tuft', hat: 'martial', face: 'fierce' }, 'power_gauntlets'],
+  [/Armored Commander/,    { outfit: 'gi', hat: 'martial', face: 'scar', back: 'coat', build: 'stout' }, 'black_warhammer'],
+  [/Horned Mutant/,        { outfit: 'none', hat: 'horns', face: 'fierce', build: 'stout' }, ''],
+  [/Crimson Tyrant/,       { outfit: 'gi', hair: 'flame', hat: 'horns', face: 'fierce', back: 'mantle', build: 'stout', aura: 'embers' }, 'power_gauntlets'],
+  [/Hollow Sorcerer/,      { outfit: 'uniform', hair: 'swept', hat: 'talisman', face: 'cursed', back: 'shroud' }, 'wraith_sickle'],
+  [/Bound Corpse/,         { outfit: 'tee', hat: 'talisman', face: 'blank' }, ''],
+  [/Veil Walker/,          { outfit: 'uniform', hair: 'frost', face: 'cursed', back: 'shroud', build: 'tall' }, 'cursed_cleaver'],
+  [/Cursed Matriarch/,     { outfit: 'uniform', hair: 'frost', hat: 'talisman', face: 'cursed', back: 'sigil', build: 'tall', aura: 'smoke' }, 'cursed_cleaver'],
+  [/Rival Examinee|Bandit Hunter/, { outfit: 'wilds', hair: 'wild', hat: 'beast', face: 'paint', back: 'quiver' }, 'sunforged_bow'],
+  [/Masked Vampire/,       { outfit: 'longcoat', hair: 'swept', face: 'marble', back: 'shroud', build: 'slim' }, 'eclipse_blade'],
+  [/Sunlight Monk/,        { outfit: 'gi', hat: 'martial', face: 'dots' }, 'power_gauntlets'],
+  [/Echo Thief/,           { outfit: 'longcoat', hair: 'swept', hat: 'laurel', face: 'marble', build: 'slim' }, 'crystal_kunai'],
+  [/Pillar Warrior|Pillar Guard/, { outfit: 'none', hair: 'tuft', hat: 'laurel', face: 'fierce', build: 'stout' }, 'bone_lance'],
+  [/Pillar Lord/,          { outfit: 'longcoat', hair: 'swept', hat: 'laurel', face: 'marble', back: 'wings', build: 'tall', aura: 'echo' }, 'eclipse_blade'],
+  [/Rift Emperor/,         { outfit: 'riftwear', hair: 'crest', hat: 'crown', face: 'rifteye', back: 'mantle', build: 'tall', aura: 'storm' }, 'rift_cleaver'],
 ];
 // Dark, mean palette per world: humanoid foes wear a darker shade of the world colour.
 function foeLook(e, realm) {
@@ -45,7 +45,7 @@ function foeLook(e, realm) {
   const m = FOE_LOOKS.find(([re]) => re.test(name));
   if (!m) return null;
   const base = (REALMS[realm] && REALMS[realm].color) || '#ff5d73';
-  return { over: Object.assign({ style: 'flat', color: 'chalk', hat: 'none', face: 'fierce', back: 'none', aura: 'none', build: 'athletic', stance: 'relaxed', ink: shade(base, -0.32) }, m[1]), weapon: ITEMS[m[2]] ? m[2] : '' };
+  return { over: Object.assign({ style: 'flat', color: 'chalk', hat: 'none', face: 'fierce', back: 'none', aura: 'none', build: 'athletic', stance: 'relaxed', hair: 'none', outfit: 'none', ink: shade(base, -0.32) }, m[1]), weapon: ITEMS[m[2]] ? m[2] : '' };
 }
 
 /* ------------------------------------------------------------- markup */

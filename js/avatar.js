@@ -64,6 +64,32 @@ const COSMETICS = {
     C('orchid',  'Orchid',        'echo',    4, LV('archaeology', 20), { ink: '#ef7cff' }),
     C('void',    'Rift Void',     'rift',    5, KILLS('tear', 10),     { ink: '#8b7bff' }),
   ],
+  // Hair: each style has its own colour, drawn as a spiky silhouette on the head.
+  hair: [
+    { id: 'tuft', name: 'Messy Black', r: 1, need: FREE },
+    { id: 'none', name: 'Shaved', r: 1, need: FREE },
+    C('mop',    'Sea-Salt Mop',    'seas',    2, LV('fishing', 10)),
+    C('spikes', 'Swept Spikes',    'shinobi', 2, LV('chakra', 10)),
+    C('ember',  'Ember Crest',     'soul',    3, LV('harvest', 10)),
+    C('flame',  'Ascended Flame',  'ki',      5, LV('gravity', 40)),
+    C('frost',  'Frost Tousle',    'hex',     3, LV('exorcism', 10)),
+    C('wild',   'Wild Broom',      'hunter',  3, LV('tracking', 10)),
+    C('swept',  'Slicked Back',    'echo',    3, LV('archaeology', 10)),
+    C('crest',  'Rift Crest',      'rift',    5, KILLS('tear', 5)),
+  ],
+  // Outfits are worn over the limbs: a top with sleeves, trousers, shoes, a sash.
+  outfit: [
+    { id: 'tee', name: 'Traveler', r: 1, need: FREE },
+    { id: 'none', name: 'Bare', r: 1, need: FREE },
+    C('corsair',  'Corsair Vest',     'seas',    3, LV('voyaging', 10)),
+    C('shinobi',  'Shinobi Track',    'shinobi', 3, KILLS('mist', 50)),
+    C('reaper',   'Reaper Robes',     'soul',    3, KILLS('desert', 50)),
+    C('gi',       'Training Gi',      'ki',      3, KILLS('canyon', 50)),
+    C('uniform',  'Exorcist Uniform', 'hex',     3, KILLS('shrine', 50)),
+    C('wilds',    'Wilds Gear',       'hunter',  3, KILLS('cliffs', 50)),
+    C('longcoat', 'Chained Longcoat', 'echo',    4, KILLS('museum', 50)),
+    C('riftwear', 'Rift Raiment',     'rift',    5, KILLS('tear', 25)),
+  ],
   hat: [
     { id: 'none', name: 'No hat', r: 1, need: FREE },
     C('bucket',   "Fisher's Bucket",   'seas',    2, { need: () => (S.stats.made.minnow || 0) >= 100, hint: 'Catch 100 Minnows' }),
@@ -82,7 +108,10 @@ const COSMETICS = {
     { id: 'blank', name: 'Faceless', r: 1, need: FREE },
     { id: 'dots',  name: 'Calm',     r: 1, need: FREE },
     { id: 'smile', name: 'Cheerful', r: 1, need: FREE },
+    C('stitch',  'Stitched Cheek', 'seas',    2, KILLS('reef', 50)),
     C('patch',   'Eyepatch',       'seas',    3, LV('voyaging', 20)),
+    C('shades',  'Capsule Shades', 'ki',      2, LV('tinkering', 10)),
+    C('blindfold', 'Sealed Eyes',  'hex',     4, LV('exorcism', 35)),
     C('mask',    'Shinobi Mask',   'shinobi', 3, LV('arts', 20)),
     C('husk',    'Husk Mask',      'soul',    4, KILLS('districts', 100)),
     C('fierce',  'Battle Glare',   'ki',      2, KILLS('plains', 50)),
@@ -116,7 +145,7 @@ const COSMETICS = {
     C('storm',    'Rift Storm',    'rift',    5, KILLS('tear', 50)),
   ],
 };
-const COS_SLOTS = [['build', 'Build'], ['style', 'Style'], ['stance', 'Stance'], ['color', 'Colour'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
+const COS_SLOTS = [['build', 'Build'], ['style', 'Style'], ['stance', 'Stance'], ['color', 'Colour'], ['hair', 'Hair'], ['outfit', 'Outfit'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
 const COS_RARITY = ['', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
 const cosOf = (slot, id) => COSMETICS[slot].find((c) => c.id === id) || COSMETICS[slot][0];
 const avatarOn = () => isUnlocked('feature:avatar');
@@ -124,7 +153,7 @@ function avState() {
   if (!S.avatar || typeof S.avatar !== 'object') S.avatar = {};
   const A = S.avatar;
   // v2 of the cosmetic list: re-check what this save has earned (quietly)
-  if (!A.got || typeof A.got !== 'object' || A.gv !== 2) { A.got = {}; A.gv = 2; A.seeded = 0; }
+  if (!A.got || typeof A.got !== 'object' || A.gv !== 3) { A.got = {}; A.gv = 3; A.seeded = 0; }
   for (const [s] of COS_SLOTS) if (!COSMETICS[s].some((c) => c.id === A[s])) A[s] = COSMETICS[s][0].id;
   return A;
 }
@@ -225,16 +254,16 @@ const part = (d, fill, ow) => `<path d="${d}" fill="${OL}" stroke="${OL}" stroke
 const GROUND = 226;
 function solve(P, B) {
   const s = B.h;
-  const len = { ab: 24 * s, ch: 25 * s, nk: 8 * s, ua: 29 * s, fa: 27 * s, th: 37 * s, sh: 37 * s, ft: 12 * s };
+  const len = { ab: 22 * s, ch: 24 * s, nk: 6 * s, ua: 27 * s, fa: 25 * s, th: 34 * s, sh: 33 * s, ft: 13 * s };
   const pelvis = [100, 128 + P.dy];
   const waist = add(pelvis, P.t1, len.ab);
   const chestA = P.t1 + P.t2;
   const chest = add(waist, chestA, len.ch);
   const neckA = chestA + P.n;
   const shoulder = add(chest, chestA, -4 * s);
-  const headR = 21 * B.head;
+  const headR = 25 * B.head;   // chibi proportions: a big head
   const neck = add(chest, neckA, len.nk);
-  const head = add(neck, neckA, headR - 2);
+  const head = add(neck, neckA, headR - 4);
   const arm = (a) => { const e = add(shoulder, a[0], len.ua); return [shoulder, e, add(e, a[0] + a[1], len.fa)]; };
   const leg = (l, ft) => {
     const k = add(pelvis, l[0], len.th), an = add(k, l[0] + l[1], len.sh);
@@ -335,7 +364,7 @@ function faceSVG(face, expr, eye) {
   if (face === 'blank') return '';
   const E = eye || OL, e = `fill="${E}"`, st = `stroke="${E}" stroke-width="2.2" stroke-linecap="round" fill="none"`;
   const scar = face === 'scar' ? `<path d="M13,-12 L18,1" stroke="#ff4d5e" stroke-width="2.2" stroke-linecap="round"/>` : '';
-  const plain = ['dots', 'smile', 'fierce', 'scar'].includes(face);
+  const plain = ['dots', 'smile', 'fierce', 'scar', 'stitch'].includes(face);
   if (expr === 'hurt' && plain) return `<path d="M1,-5 l5,3 -5,3 M16,-5 l-5,3 5,3" ${st}/><path d="M5,9 Q9,6 13,9" ${st}/>` + scar;
   if (expr === 'happy' && plain) return `<path d="M1,-1 Q4,-6 7,-1 M10,-1 Q13,-6 16,-1" ${st}/><path d="M4,6 Q9.5,13 15,5" ${st}/>` + scar;
   const eyes = `<ellipse cx="4" cy="-2" rx="2" ry="3" ${e}/><ellipse cx="13" cy="-2" rx="2.3" ry="3.2" ${e}/>`;
@@ -343,6 +372,9 @@ function faceSVG(face, expr, eye) {
     case 'smile': return eyes + `<path d="M4,6 Q9.5,12 15,5" ${st}/>`;
     case 'fierce': return `<path d="M0,-9 L7,-5 M17,-9 L11,-5" ${st}/><ellipse cx="4" cy="-1" rx="2" ry="2.4" ${e}/><ellipse cx="13" cy="-1" rx="2.2" ry="2.6" ${e}/><path d="M5,8 H14" ${st}/>`;
     case 'scar': return eyes + scar + `<path d="M6,7 H12" ${st}/>`;
+    case 'stitch': return eyes + `<path d="M9,5.5 Q12.5,7.5 16.5,5" fill="none" stroke="${OL}" stroke-width="1.6" stroke-linecap="round"/><path d="M10.5,3.8 l0.6,3.4 M13,4.6 l0,3.4 M15.4,3.6 l-0.4,3.4" stroke="${OL}" stroke-width="1.3" stroke-linecap="round"/>`;
+    case 'shades': return `<path d="M-2,-6.5 H20 L19,-1 Q15,3 11,-0.5 L10,-4 L9,-0.5 Q4.5,3 0.5,-0.5Z" fill="#15161b" stroke="${OL}" stroke-width="1.4" stroke-linejoin="round"/><path d="M2.5,-4.6 l3,0 M12.5,-4.6 l3,0" stroke="#6a7389" stroke-width="1.6" stroke-linecap="round"/><path d="M6,9 Q10,11 14,8" ${st}/>`;
+    case 'blindfold': return `<path d="M-19.4,-6.5 Q0,-13 19.8,-8 L20.2,1 Q0,-4 -19.5,2Z" fill="#15161b" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/><path d="M-17,-2 Q0,-8 18,-3.5" fill="none" stroke="#2c2f3a" stroke-width="1.6"/>`;
     case 'patch': return `<path d="M-19,-9 Q0,-15 19,-9" fill="none" stroke="#15161b" stroke-width="2"/><ellipse cx="4" cy="-2" rx="2" ry="3" ${e}/><ellipse cx="13" cy="-2" rx="5.4" ry="5.8" fill="#15161b" stroke="${OL}" stroke-width="1.2"/><path d="M10,-5 q3,-2 6,0" fill="none" stroke="#3a3d47" stroke-width="1.2"/>`;
     case 'mask': return `<ellipse cx="4" cy="-4" rx="2" ry="2.8" ${e}/><ellipse cx="13" cy="-4" rx="2.2" ry="3" ${e}/><path d="M-6,1 H19.5 Q18.5,15 8,16.5 Q-3,15 -6,1Z" fill="#323a4b" stroke="${OL}" stroke-width="2"/><path d="M-1,6 H16 M1,10.5 H14" stroke="#4c566b" stroke-width="1.2"/>`;
     case 'husk': return `<path d="M-4,-17 Q19,-19 20.5,0 Q19.5,13 8,17 Q-1,18 -4,12Z" fill="#f2ede0" stroke="${OL}" stroke-width="2"/><ellipse cx="5" cy="-4" rx="3.2" ry="4.4" fill="#15161b"/><ellipse cx="14" cy="-4" rx="3.4" ry="4.6" fill="#15161b"/><path d="M1,9 H18 M4.5,7 v5 M8.5,7 v6 M12.5,7 v6 M16,7 v5" stroke="#15161b" stroke-width="1.2"/><path d="M9,-17 L12,-9 M17,-14 L16,-8" stroke="#c0392b" stroke-width="1.8" stroke-linecap="round"/>`;
@@ -386,8 +418,8 @@ function weaponSVG(id) {
 const rotTo = (a) => r1(90 - a);
 
 const STYLES = {
-  flat:   (ink) => ({ body: ink, far: shade(ink, -0.3), rim: shade(ink, -0.58), rw: 1.7, eye: OL }),
-  ink:    (ink) => ({ body: '#0d0f14', far: '#1c2029', rim: '#f2f4f8', rw: 1.3, eye: ink }),
+  flat:   (ink) => ({ body: ink, far: shade(ink, -0.22), rim: OL, rw: 2.5, eye: OL }),
+  ink:    (ink) => ({ body: '#0d0f14', far: '#1c2029', rim: '#f2f4f8', rw: 1.8, eye: ink }),
   neon:   (ink) => ({ body: '#06070b', far: '#06070b', rim: ink, rw: 1.9, eye: ink, filter: 'avNeon' }),
   sketch: () => ({ body: '#ebe6da', far: '#c4bdae', rim: '#1d1d1f', rw: 1.4, eye: '#1d1d1f', filter: 'avSketch' }),
 };
@@ -405,14 +437,132 @@ function curvyFrom(a, j, b, t0) {
 // Local frame at a point on the torso: +x forward (the way the figure faces), +y down the spine.
 const frame = (J, p, inner) => `<g transform="translate(${pt(p)}) rotate(${r1(180 - J.chestA)})">${inner}</g>`;
 
+/* ---------------------------------------------------------------- hair */
+// Head-local polar point: 0° = forward (the face), -90° = straight up, -180° = back.
+const HP = (a, r) => [Math.cos(a * D2R) * r, Math.sin(a * D2R) * r];
+// sp: spikes from the forehead to the nape as [angle, length, half-width, lean].
+// line: the hairline from the nape back to the forehead (it keeps the face clear).
+const HAIR = {
+  tuft:   { c: '#25262e', hi: '#4a4c5a', sp: [[-34, 7, 14, -8], [-62, 9, 14, -10], [-90, 10, 14, -12], [-118, 9, 14, -14], [-146, 8, 14, -14], [-176, 6, 14, -10]],
+    line: 'Q-8,-2 0,-10 L4,-5 L7,-11 L11,-6 L13,-10' },
+  mop:    { c: '#1d1e24', hi: '#3c3f4c', sp: [[-30, 5, 16, 0], [-62, 6, 16, -6], [-96, 6, 16, -8], [-130, 6, 16, -8], [-164, 5, 16, -6], [-192, 4, 12, 0]],
+    line: 'Q-8,0 -1,-9 L3,-5 L6,-10 L10,-5 L13,-10 L16,-6' },
+  spikes: { c: '#ffd23a', hi: '#fff0a0', sp: [[-30, 10, 12, -16], [-55, 15, 12, -22], [-82, 17, 12, -26], [-110, 16, 12, -28], [-138, 14, 12, -24], [-165, 11, 12, -18], [-190, 7, 10, -10]],
+    line: 'Q-8,-2 -2,-10 L2,-3 L5,-10 L9,-2 L12,-10 L15,-4' },
+  ember:  { c: '#ff8a2b', hi: '#ffc07a', sp: [[-28, 9, 12, 4], [-52, 12, 12, -12], [-78, 13, 12, -20], [-104, 13, 12, -24], [-130, 12, 12, -22], [-156, 10, 12, -18], [-184, 7, 12, -10]],
+    line: 'Q-8,-2 -1,-10 L3,-4 L6,-10 L10,-4 L13,-10' },
+  flame:  { c: '#ffcf3a', hi: '#fffbd0', glow: '#ffb21f', sp: [[-35, 14, 12, -25], [-60, 22, 12, -20], [-85, 30, 12, -6], [-108, 28, 12, 8], [-132, 24, 12, 16], [-158, 18, 12, 18], [-185, 10, 12, 10]],
+    line: 'Q-8,-2 1,-10 L5,-3 L8,-11' },
+  frost:  { c: '#eef0f6', hi: '#ffffff', sh: '#b9c0d0', sp: [[-40, 9, 13, -20], [-66, 13, 13, -14], [-92, 15, 13, -2], [-118, 14, 13, 10], [-145, 11, 13, 14], [-172, 7, 13, 8]],
+    line: 'Q-8,-3 2,-11' },
+  wild:   { c: '#2f8a3c', hi: '#7fd36a', sp: [[-45, 16, 10, -35], [-65, 24, 10, -22], [-85, 28, 10, -4], [-105, 27, 10, 12], [-125, 24, 10, 24], [-148, 18, 10, 30], [-172, 10, 10, 24]],
+    line: 'Q-8,-3 2,-11' },
+  swept:  { c: '#2b2340', hi: '#7a5fb0', sp: [[-30, 6, 16, -24], [-62, 9, 16, -30], [-96, 10, 16, -32], [-130, 9, 16, -30], [-164, 7, 16, -22]],
+    line: 'Q-8,-3 2,-11' },
+  crest:  { c: '#ff3fb4', hi: '#ffd0ee', sh: '#8b2bd6', sp: [[-40, 6, 12, -6], [-62, 14, 9, -10], [-84, 22, 9, -10], [-106, 24, 9, -8], [-130, 20, 9, -6], [-155, 13, 9, -4], [-185, 6, 12, 0]],
+    line: 'Q-8,-3 2,-11' },
+};
+function hairSVG(id) {
+  const h = HAIR[id];
+  if (!h) return '';
+  const R = 19.4, from = -25, to = -200, K = 1.3;   // K: spikes are drawn bold
+  let d = `M${pt(HP(from, R))}`, prev = from;
+  for (const [a, len, hw, lean] of h.sp) {
+    const b0 = Math.min(prev, a + hw), b1 = a - hw;
+    d += b0 < prev ? `A${R},${R} 0 0,0 ${pt(HP(b0, R))}` : `L${pt(HP(b0, R))}`;
+    const tip = HP(a + lean, R + len * K);
+    d += `Q${pt(HP(b0 + lean * 0.3, R + len * K * 0.5))} ${pt(tip)}Q${pt(HP(b1 + lean * 0.5, R + len * K * 0.45))} ${pt(HP(b1, R))}`;
+    prev = b1;
+  }
+  if (prev > to) d += `A${R},${R} 0 0,0 ${pt(HP(to, R))}`;
+  d += `${h.line}Z`;
+  const glow = h.glow ? `<path d="${d}" fill="none" stroke="${h.glow}" stroke-width="9" opacity=".35" stroke-linejoin="round"/>` : '';
+  const shadow = `<path d="M-17,6 Q-19,-6 -12,-13" fill="none" stroke="${h.sh || shade(h.c, -0.35)}" stroke-width="3.2" stroke-linecap="round"/>`;
+  return glow + `<path d="${d}" fill="${h.c}" stroke="${OL}" stroke-width="2.4" stroke-linejoin="round"/>` + shadow
+    + hl('M-9,-13 Q-1,-18.5 7,-15.5', h.hi, 2.4);
+}
+
+/* ---------------------------------------------------------------- outfits */
+// top: c colour, sl sleeve length (0 none … 0.9 to the wrist), slc sleeve colour, wide (loose sleeves),
+//      open (a vest showing the chest, 'skin' = body colour), v (inner V collar), collar 'high',
+//      sh (shoulder band), zip / buttons / trim / chain details.
+// bot: c colour, len (0.5 shorts, 1 full), wide (flare), cuff. skirt: coat length below the waist.
+const OUTFITS = {
+  tee:      { top: { c: '#59657a', sl: 0.36 }, bot: { c: '#2f3442', len: 1 }, shoe: '#22242c' },
+  corsair:  { top: { c: '#d8343f', sl: 0.34, open: 'skin', trim: '#a8222d' }, bot: { c: '#3460c4', len: 0.5, cuff: '#e8e2d0' }, sash: '#f4c430', shoe: '#c9a66b' },
+  shinobi:  { top: { c: '#ff8a1f', sl: 0.9, sh: '#22252e', zip: '#22252e', collar: 'high', cc: '#22252e' }, bot: { c: '#ff8a1f', len: 1, cuff: '#e8e6df' }, shoe: '#2f4a8a' },
+  reaper:   { top: { c: '#1b1c22', sl: 0.66, wide: 1, v: '#f2f0ea' }, bot: { c: '#1b1c22', len: 1, wide: 1 }, sash: '#f2f0ea', shoe: '#f2f0ea' },
+  gi:       { top: { c: '#ff7a1a', sl: 0.3, slc: '#2b4fb8', v: '#2b4fb8' }, bot: { c: '#ff7a1a', len: 1, wide: 0.5 }, sash: '#2b4fb8', wrist: '#2b4fb8', shoe: '#2b4fb8' },
+  uniform:  { top: { c: '#1f2433', sl: 0.9, collar: 'high', buttons: '#f4c66a' }, bot: { c: '#1f2433', len: 1, wide: 0.4 }, skirt: 22, shoe: '#121418' },
+  wilds:    { top: { c: '#3aa84a', sl: 0.3, v: '#2a7a35', trim: '#2a7a35' }, bot: { c: '#2f8a3c', len: 0.5 }, sash: '#8a5a2b', shoe: '#2f6a2c' },
+  longcoat: { top: { c: '#1a1c26', sl: 0.9, collar: 'high', chain: '#f4c66a', trim: '#f4c66a' }, bot: { c: '#1a1c26', len: 1 }, skirt: 54, shoe: '#121418' },
+  riftwear: { top: { c: '#2c1846', sl: 0.9, trim: '#ff3fb4', zip: '#ff3fb4', collar: 'high', cc: '#1a0f2a' }, bot: { c: '#2c1846', len: 1 }, sash: '#ff3fb4', wrist: '#ff3fb4', shoe: '#ff3fb4' },
+};
+// Points along the quadratic limb curve (same curve as curvy()) between t0 and t1.
+function bez(L, t0, t1, n) {
+  const [a, j, b] = L, c = [2 * j[0] - (a[0] + b[0]) / 2, 2 * j[1] - (a[1] + b[1]) / 2], out = [];
+  n = n || 6;
+  for (let i = 0; i <= n; i++) {
+    const t = t0 + (t1 - t0) * i / n, u = 1 - t;
+    out.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]);
+  }
+  return out;
+}
+// Shift a polyline sideways (+d = towards the figure's front when the line runs up the spine).
+function offsetPts(pts, d) {
+  return pts.map((p, i) => {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+    const tx = b[0] - a[0], ty = b[1] - a[1], l = Math.hypot(tx, ty) || 1;
+    return [p[0] - (ty / l) * d, p[1] + (tx / l) * d];
+  });
+}
+const poly = (pts) => 'M' + pts.map(pt).join('L');
+const lerpW = (n, w0, w1) => [...Array(n + 1)].map((_, i) => w0 + ((w1 - w0) * i) / n);
+// A piece of cloth: a tapered shape along points with a thick ink outline.
+// Dark cloth gets a lighter edge line so folds stay readable against the ink outline.
+const lum = (hex) => { const n = parseInt(hex.slice(1), 16); return ((n >> 16) * 0.3 + ((n >> 8) & 255) * 0.59 + (n & 255) * 0.11) / 255; };
+const cloth = (pts, w0, w1, col) => {
+  const d = taper(pts, lerpW(pts.length - 1, w0, w1));
+  return part(d, col, 4.6) + (col[0] === '#' && lum(col) < 0.2 && pts.length > 2 ? `<path d="${poly(offsetPts(pts, (w0 + w1) / 4 - 2.4))}" fill="none" stroke="${shade(col, 0.3)}" stroke-width="1.6" stroke-linecap="round" opacity=".9"/>` : '');
+};
+const inkLine = (d, w, col) => `<path d="${d}" fill="none" stroke="${OL}" stroke-width="${r1(w + 3)}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${r1(w)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+
+/* ---------------------------------------------------------------- flame auras */
+// A flickering flame silhouette around the body, in three layers (outer, mid, hot core).
+function flameAura(cx, t, cols, o) {
+  o = o || {};
+  const base = 228, H = o.h || 186, w = o.w || 52, n = 13, out = [];
+  [[1, 1, 0.3], [0.74, 0.84, 0.42], [0.46, 0.62, 0.5]].forEach(([kw, kh, op], li) => {
+    const v = [];
+    for (let i = 0; i <= n; i++) { const ph = Math.PI * (1 - i / n); v.push([cx + Math.cos(ph) * w * kw, base - H * kh * Math.pow(Math.sin(ph), 0.55)]); }
+    let d = `M${pt(v[0])}`;
+    for (let i = 0; i < n; i++) {
+      const a = v[i], b = v[i + 1], m = [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2];
+      const ph = Math.PI * (1 - (i + 0.5) / n), s = Math.sin(ph);
+      const L = (6 + 24 * s) * kh * (1 + 0.35 * Math.sin(t * 9 + i * 1.9 + li));
+      const tip = [m[0] + Math.cos(ph) * L * 0.35 + Math.sin(t * 3 + i) * 2, m[1] - L];
+      d += `Q${r1(a[0])},${r1(tip[1] + L * 0.6)} ${pt(tip)}Q${r1(b[0])},${r1(b[1] - L * 0.3)} ${pt(b)}`;
+    }
+    out.push(`<path d="${d}Z" fill="${cols[li]}" opacity="${op}"/>`);
+  });
+  return out.join('');
+}
+function bolts(cx, t, col) {
+  if (Math.sin(t * 11) < 0.25) return '';
+  const k = Math.floor(t * 5) % 3, z = (x, y, s) => `M${r1(x)},${r1(y)} l${6 * s},10 -5,3 ${7 * s},12 -4,2 ${5 * s},10`;
+  const d = [z(cx - 44 + k * 6, 80 + k * 14, 1), z(cx + 40 - k * 4, 110 - k * 10, -1)].join('');
+  return `<path d="${d}" fill="none" stroke="${col}" stroke-width="5" opacity=".35" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#fff" stroke-width="2" stroke-linejoin="round"/>`;
+}
+
+/* ---------------------------------------------------------------- the figure */
 function drawAvatar(A, P, t, opt) {
   const B = cosOf('build', A.build).b, ink = A.ink || cosOf('color', A.color).ink;
   const St = STYLES[A.style] ? STYLES[A.style](ink) : STYLES.flat(ink);
   const J = solve(P, B), W = B.w, out = [];
-  const LW = 10.5 * W, TW = 12 * W;   // limb and torso thickness (about a quarter of the head)
+  const LW = 12.5 * W, TW = 18 * W, armW = LW * 0.92, rw = St.rw;
   const cx = (J.pelvis[0] + J.chest[0]) / 2, cy = (J.pelvis[1] + J.chest[1]) / 2;
-  const feetX = (J.lF[2][0] + J.lB[2][0]) / 2, air = P.air || 0;
-  out.push(`<ellipse cx="${r1(feetX)}" cy="${GROUND + 1}" rx="${r1(32 - air * 0.5)}" ry="5" fill="#000" opacity="${r1(0.42 - air * 0.01)}"/>`);
+  const feetX = (J.lF[2][0] + J.lB[2][0]) / 2, air = P.air || 0, sp = P.t1, sway = Math.sin(t * 2.1);
+  out.push(`<ellipse cx="${r1(feetX)}" cy="${GROUND + 1}" rx="${r1(34 - air * 0.5)}" ry="5.5" fill="#000" opacity="${r1(0.45 - air * 0.01)}"/>`);
   const aura = auraSVG(A.aura, cx, cy, t);
   if (aura) out.push(AURA_GLOW[A.aura] ? `<g style="mix-blend-mode:screen">${aura}</g>` : aura);
   // opt.weapon: an item id, '' for bare hands, or undefined for your equipped weapon
@@ -422,39 +572,101 @@ function drawAvatar(A, P, t, opt) {
   const sheathed = worn && !onHand && (P.sh || P.prop) ? worn : null;
   // Gear in three layers: behind the body, worn over the torso, over the front arm.
   const G = gearSVG(A, J, P, t, B, { LW, TW, sheathed });
+  const O = OUTFITS[A.outfit] || null, T = O && O.top, Bt = O && O.bot;
+  const col = (v, far) => (v === 'skin' ? (far ? St.far : St.body) : far ? shade(v, -0.32) : v);
   const fig = [G.back];
   if (P.fx) fig.push(fxSVG(P.fx, J, worn ? RCOL[Math.min(6, typeof rarity === 'function' ? rarity(worn) : 1)] : ink));
-  // The body is one silhouette: every rim first, then every fill on top,
-  // so limbs, torso and head melt together with no seams between them.
-  // When something is worn over the torso, the front arm is drawn after it.
-  const arm = [J.aF[0], J.aF[1], J.aF[2]], armW = LW * 0.92;
-  const parts = [
-    [curvy(J.lB[0], J.lB[1], J.lB[2]), LW], [curvy(J.aB[0], J.aB[1], J.aB[2]), armW],
-    [curvy(J.pelvis, J.waist, J.neck), TW], [curvy(J.lF[0], J.lF[1], J.lF[2]), LW],
-  ];
-  if (!G.under) parts.push([curvy(...arm), armW]);
-  const line = (d, w, col) => `<path d="${d}" fill="none" stroke="${col}" stroke-width="${r1(w)}" stroke-linecap="round" stroke-linejoin="round"/>`;
-  const head = (r, col) => `<circle cx="${r1(J.head[0])}" cy="${r1(J.head[1])}" r="${r1(r)}" fill="${col}"/>`;
-  fig.push(parts.map(([d, w]) => line(d, w + St.rw * 2, St.rim)).join('') + head(J.headR + St.rw, St.rim));
-  fig.push(parts.map(([d, w]) => line(d, w, St.body)).join('') + head(J.headR, St.body));
-  if (G.under) {
-    // the arm's outline starts below the shoulder, so it never cuts a seam into the torso
-    fig.push(G.under + line(curvyFrom(...arm, 0.38), armW + St.rw * 2, St.rim) + line(curvy(...arm), armW, St.body));
-  }
+  // 1. The bare body is one silhouette: every rim first, then every fill on top, so limbs,
+  //    torso and head melt together with no seams. Far limbs are a shade darker (depth).
+  const line = (d, w, c) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${r1(w)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const foot = (L) => `M${pt(L[2])}L${pt(L[3])}`;
+  const parts = [[curvy(J.lB[0], J.lB[1], J.lB[2]), LW, St.far], [foot(J.lB), LW * 0.8, St.far], [curvy(J.aB[0], J.aB[1], J.aB[2]), armW, St.far],
+    [curvy(J.pelvis, J.waist, J.neck), TW, St.body], [curvy(J.lF[0], J.lF[1], J.lF[2]), LW, St.body], [foot(J.lF), LW * 0.8, St.body]];
+  const head = (r, c) => `<circle cx="${r1(J.head[0])}" cy="${r1(J.head[1])}" r="${r1(r)}" fill="${c}"/>`;
+  fig.push(parts.map(([d, w]) => line(d, w + rw * 2, St.rim)).join('') + head(J.headR + rw, St.rim));
+  fig.push(parts.map(([d, w, c]) => line(d, w, c)).join('') + head(J.headR, St.body));
+  const hand = (p, far) => `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="${r1(LW * 0.62)}" fill="${far ? St.far : St.body}" stroke="${St.rim}" stroke-width="${r1(rw * 2)}"/>`;
+  // 2. Clothes, back to front: far shoe, trouser leg, sleeve and hand, then the near leg, then the torso.
+  const shoe = (L, far) => (O && O.shoe ? cloth([bez(L, 0.92, 0.92, 1)[0], L[2], L[3]], LW * 0.95, LW * 0.8, col(O.shoe, far)) : '');
+  const leg = (L, far) => {
+    if (!Bt) return '';
+    const w1 = Bt.wide ? LW + 5 + 9 * Bt.wide : LW + 4.5;
+    let s = cloth(bez(L, 0, Bt.len, 6), LW + 5.5, w1, col(Bt.c, far));
+    if (Bt.cuff) s += cloth(bez(L, Bt.len - 0.07, Bt.len, 2), w1 + 1, w1 + 2, col(Bt.cuff, far));
+    return s;
+  };
+  const sleeve = (Ar, far) => {
+    let s = '';
+    if (T && T.sl) {
+      const w1 = T.wide ? armW + 11 : armW + 4.5;
+      s += cloth(bez(Ar, 0, T.sl, 6), armW + 5.5, w1, col(T.slc || T.c, far));
+      if (T.trim && T.sl < 0.5) s += cloth(bez(Ar, T.sl - 0.05, T.sl, 2), w1 + 0.5, w1 + 1, col(T.trim, far));
+    }
+    if (O && O.wrist) s += cloth(bez(Ar, 0.76, 0.9, 2), armW + 3.5, armW + 3.5, col(O.wrist, far));
+    return s;
+  };
+  fig.push(shoe(J.lB, true) + leg(J.lB, true) + sleeve(J.aB, true) + hand(J.aB[2], true));
+  fig.push(shoe(J.lF, false) + leg(J.lF, false));
+  if (O) fig.push(torsoCloth(O, J, B, TW, sp, sway, St));
+  fig.push(G.under);
+  // 3. The near arm over the torso (its outline starts below the shoulder: no seam on bare skin).
+  const arm = J.aF;
+  fig.push(line(curvyFrom(...arm, T && !T.sl ? 0.12 : 0.38), armW + rw * 2, St.rim) + line(curvy(...arm), armW, St.body) + sleeve(arm, false));
   fig.push(G.over);
-  // head details ride on the head (rigid, tilting with the neck)
+  // 4. Head details ride on the head (rigid, tilting with the neck): shading, hair, face, hat.
   const ha = (P.h || 0) + (180 - J.neckA) * 0.6;
-  const gloss = A.style === 'flat' || !A.style ? `<path d="M-11,-10 A13,13 0 0,1 2,-14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".35"/>` : '';
-  fig.push(`<g transform="translate(${pt(J.head)}) rotate(${r1(ha)}) scale(${r1(J.headR / 19 * 100) / 100})">${gloss}${faceSVG(A.face, P.expr, St.eye)}${HATS[A.hat] || ''}</g>`);
-  // weapon or tool in the near hand; the hand is redrawn over the grip
-  const hand = J.aF[2], fa = J.foreA.aF, prop = P.prop;
+  const flat = A.style === 'flat' || !A.style;
+  const cel = flat ? `<path d="M-4,-18.6 A19,19 0 0,0 -4,18.6 A24,24 0 0,1 -4,-18.6Z" fill="#000" opacity=".16"/><path d="M-10,-11 A13,13 0 0,1 2,-14.5" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".4"/>` : '';
+  fig.push(`<g transform="translate(${pt(J.head)}) rotate(${r1(ha)}) scale(${r1((J.headR / 19) * 100) / 100})">${cel}${hairSVG(A.hair)}${faceSVG(A.face, P.expr, St.eye)}${HATS[A.hat] || ''}</g>`);
+  // 5. Weapon or tool in the near hand; the hand is drawn over the grip.
+  const hp = J.aF[2], fa = J.foreA.aF, prop = P.prop;
   const weapon = !prop && worn && !sheathed ? worn : null;
-  if (weapon) fig.push(`<g transform="translate(${pt(hand)}) rotate(${rotTo(fa + P.g)}) scale(1.15)">${weaponSVG(weapon)}</g>`);
-  if (prop === 'rod') fig.push(rodSVG(hand, fa + P.g, t));
-  if (prop === 'pan') fig.push(panSVG(hand, fa + P.g, t));
-  if (weapon || prop) fig.push(`<circle cx="${r1(hand[0])}" cy="${r1(hand[1])}" r="${r1(LW * 0.48)}" fill="${St.body}" stroke="${St.rim}" stroke-width="${St.rw}"/>`);
+  if (weapon) fig.push(`<g transform="translate(${pt(hp)}) rotate(${rotTo(fa + P.g)}) scale(1.2)">${weaponSVG(weapon)}</g>`);
+  if (prop === 'rod') fig.push(rodSVG(hp, fa + P.g, t));
+  if (prop === 'pan') fig.push(panSVG(hp, fa + P.g, t));
+  fig.push(hand(hp, false));
   out.push(St.filter ? `<g filter="url(#${St.filter})">${fig.join('')}</g>` : fig.join(''));
   return out.join('');
+}
+// The torso of an outfit: waistband, coat skirt, the top itself and its details, then the sash.
+function torsoCloth(O, J, B, TW, sp, sway, St) {
+  const T = O.top, Tc = [J.pelvis, J.waist, J.neck], wt = TW + 7, s = [];
+  const c = (v) => (v === 'skin' ? St.body : v);
+  if (O.bot) s.push(cloth(bez(Tc, -0.2, 0.1, 2), TW + 11, TW + 10, O.bot.c));
+  if (O.skirt) {
+    const top = add(J.pelvis, sp, 8), hw = (TW + 11) / 2;
+    const bk = add(top, sp + 90, hw), fr = add(top, sp - 90, hw);
+    const by = J.pelvis[1] + O.skirt * B.h;
+    const kx = [J.lB[1][0], J.lF[1][0], J.pelvis[0]];
+    const x0 = Math.min(...kx) - 10 - sway * 3 - O.skirt * 0.12, x1 = Math.max(...kx) + 6;
+    const d = `M${pt(bk)}L${pt(fr)}Q${r1(x1 + 1)},${r1((fr[1] + by) / 2)} ${r1(x1)},${r1(by)}L${r1(x0)},${r1(by + 2)}Q${r1(x0 + 3)},${r1((bk[1] + by) / 2)} ${pt(bk)}Z`;
+    s.push(part(d, T.c, 4.6) + `<path d="M${pt(add(top, sp - 90, hw * 0.3))}L${r1(x1 - 7)},${r1(by)}" stroke="${shade(T.c, 0.25)}" stroke-width="2"/>`);
+    if (T.trim) s.push(`<path d="M${r1(x1)},${r1(by)}L${r1(x0)},${r1(by + 2)}" stroke="${T.trim}" stroke-width="2.2"/>`);
+  }
+  const body = bez(Tc, -0.14, 0.84, 8);
+  s.push(cloth(body, wt + 1, wt, T.c));
+  s.push(`<path d="${poly(offsetPts(bez(Tc, 0, 0.8, 6), -wt / 2 + 3))}" fill="none" stroke="${shade(T.c, -0.3)}" stroke-width="3" stroke-linecap="round" opacity=".8"/>`);
+  if (T.sh) s.push(cloth(bez(Tc, 0.64, 0.84, 3), wt + 0.6, wt + 0.6, T.sh));
+  const front = (k0, k1, inset) => poly(offsetPts(bez(Tc, k0, k1, 6), wt / 2 - inset));
+  if (T.open) s.push(inkLine(front(0.06, 0.86, 4.2), 6.5, c(T.open)));
+  if (T.trim && !T.open) s.push(`<path d="${front(-0.12, 0.84, 1.6)}" fill="none" stroke="${T.trim}" stroke-width="2.2" stroke-linecap="round"/>`);
+  if (T.zip) s.push(`<path d="${front(-0.1, 0.84, 4.5)}" fill="none" stroke="${T.zip}" stroke-width="2" stroke-linecap="round"/>`);
+  if (T.buttons) s.push(offsetPts(bez(Tc, 0.12, 0.7, 3), wt / 2 - 4.5).map((p) => `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="2" fill="${T.buttons}" stroke="${OL}" stroke-width="1.1"/>`).join(''));
+  const P84 = bez(Tc, 0.84, 0.84, 1)[0], hw = wt / 2;
+  if (T.v) s.push(frame(J, P84, `<path d="M-1,-1 L${r1(hw - 0.5)},-1 L${r1(hw * 0.45)},13Z" fill="${c(T.v)}" stroke="${OL}" stroke-width="1.8" stroke-linejoin="round"/>`));
+  if (O.sash) {
+    const bp = add(J.pelvis, sp, 5), sw = (TW + 13) / 2, bk = add(bp, sp + 90, sw - 2);
+    s.push(inkLine(`M${pt(add(bp, sp + 90, sw))}L${pt(add(bp, sp - 90, sw))}`, 6, O.sash));
+    s.push(part(taper([bk, [bk[0] - 6 - sway * 2, bk[1] + 10], [bk[0] - 9 - sway * 3, bk[1] + 19]], [5.5, 4.4, 3.2]), O.sash, 3.4));
+  }
+  if (T.collar === 'high') s.push(frame(J, P84, `<path d="M${r1(-hw)},3 L${r1(-hw + 1)},-8 Q0,-11 ${r1(hw - 1)},-8 L${r1(hw)},3 Q0,6 ${r1(-hw)},3Z" fill="${T.cc || T.c}" ${HO} stroke-width="2.6"/>`
+    + hl(`M${r1(-hw + 3)},-6 Q0,-8.5 ${r1(hw - 3)},-6`, shade(T.cc || T.c, 0.3), 1.6)));
+  if (T.chain) {
+    const a = offsetPts([P84], 0)[0], f = add(add(P84, sp, -26), sp - 90, hw - 3), b = add(add(P84, sp, -4), sp - 90, hw - 1);
+    const d = `M${pt(add(a, sp + 90, hw * 0.4))}Q${pt(f)} ${pt(b)}`;
+    s.push(`<path d="${d}" fill="none" stroke="${OL}" stroke-width="4.6" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${T.chain}" stroke-width="2.6" stroke-dasharray="3.2 1.6" stroke-linecap="round"/>`);
+  }
+  return s.join('');
 }
 
 // A weapon carried at the waist: blades sit in a scabbard on the hip (hilt forward),
@@ -650,33 +862,28 @@ function capeSVG(J, B, P, t, o) {
   return s;
 }
 // Auras that glow are blended with "screen"; smoke stays a normal (dark) layer.
-const AURA_GLOW = { bubbles: 1, leaves: 1, wisps: 1, embers: 1, flies: 1, echo: 1, storm: 1 };
+const AURA_GLOW = { bubbles: 1, leaves: 1, wisps: 1, embers: 1, smoke: 1, flies: 1, echo: 1, storm: 1 };
 function auraSVG(id, cx, cy, t) {
   switch (id) {
-    case 'bubbles': return [0, 1, 2, 3, 4].map((i) => {
+    case 'bubbles': return flameAura(cx, t, ['#14a8ff', '#7fd3ff', '#e6f7ff'], { h: 150, w: 46 }) + [0, 1, 2, 3, 4].map((i) => {
       const k = (t * 0.35 + i / 5) % 1, x = cx + Math.sin(i * 2.4 + t) * 42, y = 220 - k * 170;
       return `<circle cx="${r1(x)}" cy="${r1(y)}" r="${r1(3 + (i % 3) * 1.6)}" fill="none" stroke="#7fd3ff" stroke-width="1.6" opacity="${r1(0.9 - k * 0.8)}"/>`;
     }).join('');
-    case 'leaves': return [0, 1, 2, 3, 4, 5].map((i) => {
+    case 'leaves': return flameAura(cx, t, ['#ff3a1a', '#ff8a2b', '#ffe0a0']) + [0, 1, 2, 3, 4, 5].map((i) => {
       const a = t * 1.4 + i * 1.05, x = cx + Math.cos(a) * 50, y = cy + Math.sin(a) * 16 - 20 + Math.sin(t * 2 + i) * 18, rot = r1(a / D2R * 2);
       return `<path transform="translate(${r1(x)},${r1(y)}) rotate(${rot})" d="M-6,0 Q0,-5 6,0 Q0,5 -6,0Z M-6,0 H6" fill="${i % 2 ? '#7fd36a' : '#ff9a4d'}" stroke="#2c5a1e" stroke-width=".8" opacity="${Math.sin(a) > 0 ? 0.95 : 0.6}"/>`;
     }).join('');
-    case 'wisps': return [0, 1, 2, 3].map((i) => {
+    case 'wisps': return flameAura(cx, t, ['#5a6bff', '#9fb0ff', '#f0f2ff'], { h: 196, w: 50 }) + [0, 1, 2, 3].map((i) => {
       const a = t * 0.9 + i * Math.PI / 2, x = cx + Math.cos(a) * 46, y = cy + Math.sin(a) * 26 - 10, f = Math.sin(t * 9 + i) * 2;
       return `<path transform="translate(${r1(x)},${r1(y)})" d="M0,8 Q-7,2 -3,-4 Q0,-8 ${r1(1 + f)},-16 Q5,-6 6,0 Q6,7 0,8Z" fill="#9b6bff" opacity=".8"/><circle cx="${r1(x)}" cy="${r1(y + 2)}" r="2.6" fill="#e8dcff"/>`;
     }).join('');
-    case 'embers': {
-      const tongue = (dx, h, w, k) => { const f = Math.sin(t * 8 + k) * 5, x = cx + dx, top = 214 - h;
-        return `M${r1(x - w)},214 Q${r1(x - w * 0.9)},${r1(top + h * 0.45)} ${r1(x + f * 0.6)},${r1(top + f)} Q${r1(x + w * 0.9)},${r1(top + h * 0.45)} ${r1(x + w)},214Z`; };
-      return `<path d="${tongue(-26, 110, 18, 1)}${tongue(26, 120, 18, 2)}${tongue(0, 160, 26, 3)}" fill="#ffb21f" opacity=".45"/>`
-        + `<path d="${tongue(-22, 80, 10, 4)}${tongue(22, 90, 10, 5)}${tongue(0, 120, 15, 6)}" fill="#fff0a0" opacity=".55"/>`
-        + [0, 1, 2, 3].map((i) => { const k = (t * 0.6 + i / 4) % 1; return `<circle cx="${r1(cx - 30 + i * 20 + Math.sin(t * 3 + i) * 6)}" cy="${r1(200 - k * 150)}" r="2.2" fill="#fff0a0" opacity="${r1(1 - k)}"/>`; }).join('');
-    }
-    case 'smoke': return [0, 1, 2, 3, 4, 5].map((i) => {
+    case 'embers': return flameAura(cx, t, ['#ffb21f', '#ffe066', '#fffbe0'], { h: 200, w: 56 }) + bolts(cx, t, '#ffe066')
+      + [0, 1, 2, 3].map((i) => { const k = (t * 0.6 + i / 4) % 1; return `<circle cx="${r1(cx - 30 + i * 20 + Math.sin(t * 3 + i) * 6)}" cy="${r1(200 - k * 150)}" r="2.2" fill="#fff0a0" opacity="${r1(1 - k)}"/>`; }).join('');
+    case 'smoke': return flameAura(cx, t, ['#7a3bff', '#36d6a8', '#d8fff2'], { h: 180 }) + [0, 1, 2, 3, 4, 5].map((i) => {
       const k = (t * 0.25 + i / 6) % 1, x = cx - 30 + (i % 3) * 30 + Math.sin(t + i) * 8, y = 222 - k * 150, r = 8 + k * 16;
       return `<circle cx="${r1(x)}" cy="${r1(y)}" r="${r1(r)}" fill="${i % 2 ? '#123a33' : '#1d4d44'}" opacity="${r1((1 - k) * 0.55)}"/><circle cx="${r1(x + 3)}" cy="${r1(y - 3)}" r="${r1(r * 0.35)}" fill="#36d6a8" opacity="${r1((1 - k) * 0.35)}"/>`;
     }).join('');
-    case 'flies': return [0, 1, 2, 3, 4, 5, 6].map((i) => {
+    case 'flies': return flameAura(cx, t, ['#2fbf5a', '#9be15d', '#eaffd0'], { h: 176, w: 48 }) + [0, 1, 2, 3, 4, 5, 6].map((i) => {
       const x = cx + Math.sin(t * 0.7 + i * 2.1) * 56, y = cy - 10 + Math.cos(t * 0.9 + i * 1.3) * 60, on = Math.sin(t * 3 + i * 1.7) > -0.2;
       return on ? `<circle cx="${r1(x)}" cy="${r1(y)}" r="5" fill="#d8ff6a" opacity=".25"/><circle cx="${r1(x)}" cy="${r1(y)}" r="2" fill="#f4ffb0"/>` : '';
     }).join('');
@@ -684,11 +891,11 @@ function auraSVG(id, cx, cy, t) {
       // the Echo: a tall spirit figure standing just behind you
       const gx = cx - 42, gy = 196 + Math.sin(t * 1.4) * 5;
       const fig = `M${gx},${gy - 92} Q${gx - 2},${gy - 70} ${gx + 1},${gy - 44} M${gx - 2},${gy - 86} Q${gx + 14},${gy - 70} ${gx + 22},${gy - 80} M${gx - 2},${gy - 84} Q${gx - 18},${gy - 66} ${gx - 6},${gy - 58} M${gx + 1},${gy - 44} L${gx - 12},${gy} M${gx + 1},${gy - 44} L${gx + 14},${gy - 2}`;
-      return `<g opacity=".8"><path d="${fig}" fill="none" stroke="#ef7cff" stroke-width="15" stroke-linecap="round" opacity=".25"/><path d="${fig}" fill="none" stroke="#ef7cff" stroke-width="8" stroke-linecap="round" opacity=".55"/><circle cx="${gx}" cy="${gy - 112}" r="19" fill="#ef7cff" opacity=".5"/><circle cx="${gx}" cy="${gy - 112}" r="14" fill="none" stroke="#ffd6ff" stroke-width="2" opacity=".7"/><path d="M${gx + 3},${gy - 114} h10" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></g>`;
+      return flameAura(cx, t, ['#b04cff', '#ef7cff', '#ffe6ff'], { h: 160, w: 44 }) + `<g opacity=".8"><path d="${fig}" fill="none" stroke="#ef7cff" stroke-width="15" stroke-linecap="round" opacity=".25"/><path d="${fig}" fill="none" stroke="#ef7cff" stroke-width="8" stroke-linecap="round" opacity=".55"/><circle cx="${gx}" cy="${gy - 112}" r="19" fill="#ef7cff" opacity=".5"/><circle cx="${gx}" cy="${gy - 112}" r="14" fill="none" stroke="#ffd6ff" stroke-width="2" opacity=".7"/><path d="M${gx + 3},${gy - 114} h10" stroke="#fff" stroke-width="2.4" stroke-linecap="round"/></g>`;
     }
     case 'storm': {
       const on = Math.sin(t * 9) > 0.55, X = (d) => r1(cx + d), Y = (d) => r1(cy + d);
-      return `<ellipse cx="${r1(cx)}" cy="${r1(cy)}" rx="58" ry="84" fill="#ff3fb4" opacity="${r1(0.1 + Math.sin(t * 2) * 0.04)}"/><ellipse cx="${r1(cx)}" cy="${r1(cy)}" rx="40" ry="66" fill="#8b7bff" opacity=".12"/>`
+      return flameAura(cx, t, ['#8b2bd6', '#ff3fb4', '#ffe0f4'], { h: 204, w: 58 }) + `<ellipse cx="${r1(cx)}" cy="${r1(cy)}" rx="58" ry="84" fill="#ff3fb4" opacity="${r1(0.1 + Math.sin(t * 2) * 0.04)}"/><ellipse cx="${r1(cx)}" cy="${r1(cy)}" rx="40" ry="66" fill="#8b7bff" opacity=".12"/>`
         + (on ? `<path d="M${X(-48)},${Y(-40)} l12,14 -7,4 13,16 M${X(50)},${Y(-20)} l-10,12 7,3 -12,16" fill="none" stroke="#ffd0ee" stroke-width="2.4" stroke-linejoin="round"/>` : '');
     }
     default: return '';
