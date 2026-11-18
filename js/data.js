@@ -470,24 +470,21 @@ const BOUNTY_RANKS = [
   [5e6, 'Sea Emperor'], [5e7, 'Multiverse Legend'],
 ];
 
-/* ------------------------------------------------- inner power (energy) */
+/* ------------------------------------------------- energy disciplines (Inner Power) */
+// GDD: one shared energy mastery; each world adds its discipline. You split your energy between them
+// and they level forever, even offline. Each has a combat effect plus an idle one.
+// fx: what one level gives (applied in game.js / systems.js / techniques.js). world: opens with that world.
 const TRAININGS = [
-  { id: 'chakra',  name: 'Chakra Control',    icon: '🌀', base: 25, per: 1,     unit: '% damage' },
-  { id: 'reiatsu', name: 'Spirit Pressure',   icon: '🌙', base: 25, per: 1,     unit: '% max HP' },
-  { id: 'will',    name: 'Iron Will',         icon: '🛡️', base: 30, per: 1,     unit: '% defense' },
-  { id: 'swift',   name: 'Swiftness',         icon: '💨', base: 40, per: 0.2,   unit: '% skill speed' },
-  { id: 'fortune', name: 'Fortune',           icon: '💰', base: 50, per: 1,     unit: '% gold' },
-  { id: 'wisdom',  name: 'Wisdom',            icon: '📖', base: 60, per: 0.5,   unit: '% XP' },
+  { id: 'chakra',  name: 'Chakra',        world: 'shinobi', base: 25, desc: '+1% technique power, +0.2% skill speed',  fx: { tech: 0.01, speed: 0.002 } },
+  { id: 'haki',    name: 'Haki',          world: 'seas',    base: 30, desc: '+0.5% damage, +1% gold',                  fx: { dmg: 0.005, gold: 0.01 } },
+  { id: 'reiatsu', name: 'Reiatsu',       world: 'soul',    base: 35, desc: '+1% max HP, +1% weapon XP',               fx: { hp: 0.01, wxp: 0.01 } },
+  { id: 'ki',      name: 'Ki',            world: 'ki',      base: 40, desc: '+1% defense, +0.2 Speed',                 fx: { def: 0.01, spd: 0.2 } },
+  { id: 'cursed',  name: 'Cursed Energy', world: 'hex',     base: 50, desc: '+0.5% XP on every skill, +0.5% technique power', fx: { xp: 0.005, tech: 0.005 } },
+  { id: 'nen',     name: 'Nen',           world: 'hunter',  base: 60, desc: '+0.1 Luck, +1% companion bonus',          fx: { luck: 0.1, pet: 0.01 } },
 ];
-
-const PERKS = [
-  { id: 'fire',     name: 'Inner Fire',      icon: '🔥', desc: '+25% energy power per level' },
-  { id: 'reserves', name: 'Vast Reserves',   icon: '🔋', desc: '+20% energy cap per level' },
-  { id: 'mentor',   name: "Mentor's Wisdom", icon: '🧙', desc: '+10% skill XP per level' },
-  { id: 'merchant', name: 'Merchant Blood',  icon: '🪙', desc: '+15% gold per level' },
-  { id: 'warrior',  name: 'Warrior Soul',    icon: '⚔️', desc: '+10% damage and max HP per level' },
-  { id: 'dilation', name: 'Time Dilation',   icon: '⏳', desc: '+2h offline progress cap per level', max: 6 },
-];
+const disciplineOpen = (t) => realmOpen(t.world);
+// Total bonus of one kind across the disciplines (level × per-level value).
+const discFx = (k) => TRAININGS.reduce((a, t) => a + (t.fx[k] || 0) * (S.energy.lvl[t.id] || 0), 0);
 
 /* ------------------------------------------------------------------- shop */
 const SHOP = [
@@ -549,7 +546,7 @@ const GOALS = [
   G('Defeat 10 foes in the Outer Districts', 'battle', 10, kills('districts'), 2500),
   G('Forge a Spirit Katana', 'realm:soul:smithing', 1, made('spirit_katana'), 3000),
   G('Awaken a weapon (First Release)', 'hero', 1, () => [Object.values(S.gear || {}).some((g) => g.rel > 0) ? 1 : 0], 4000),
-  G('Rebirth for the first time', 'power', 1, () => [S.rebirths], 5000),
+  G('Reach Reiatsu level 10', 'power', 10, () => [S.energy.lvl.reiatsu || 0], 5000),
   G('Reach Renown 25 in any world', 'home', 25, () => [Math.max(0, ...WORLD_ORDER.map(renownLv))], 6000),
   G('Defeat the Masked Sovereign', 'battle', 1, kills('sovereign'), 10000),
   G('Climb the Throne Stair', 'home', 1, gate('ki'), 12000),
@@ -643,8 +640,8 @@ const UNLOCKS = [
     hint: () => 'Discover 12 different items', why: 'You start keeping a journal of everything you find.' },
   { id: 'feature:market',     name: 'Market',          need: () => S.gold >= 500 || Object.keys(S.shop).length > 0,
     hint: () => 'Carry 500 gold', why: 'A travelling merchant noticed your heavy purse.' },
-  { id: 'feature:power',      name: 'Inner Power',     need: () => charLv() >= 20 || S.rebirths > 0 || S.karma > 0,
-    hint: () => 'Reach Character level 20', why: 'Your chakra runs deep enough to train your inner power.' },
+  { id: 'feature:power',      name: 'Energy Disciplines',     need: () => charLv() >= 20 || energyUsed() > 0,
+    hint: () => 'Reach Character level 20', why: 'Your chakra runs deep enough to train it. Every world you reach adds a new discipline.' },
   worldUnlock('seas', 'Orange Town'),
   { id: 'skill:fishing',      name: 'Fishing',         need: () => !!S.gates.seas || usedSkill('fishing') },
   { id: 'skill:cooking',      name: 'Cooking',         need: () => skillLv('fishing') >= 5 || usedSkill('cooking'),

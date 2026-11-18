@@ -25,8 +25,8 @@ const GUIDE = [
   { market: true, nav: 'The <b>Market</b> is open. Spend your gold there.' },
   { zone: 1, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in the <b>Misty Forest</b>.', run: 'Every world ends with a guardian. Beat the Ashen Fox to reach a new world.' },
   { techup: true, nav: 'Open <b>Techniques</b>.' },
-  { zone: 1, nav: 'Open the <b>Battlefield</b>.', start: 'Fight in the <b>Misty Forest</b>.', run: 'At Character level 20 your chakra runs deep enough to train your Inner Power.' },
-  { power: true, nav: '<b>Inner Power</b> is open. Open it.' },
+  { zone: 1, nav: 'Open the <b>Battlefield</b>.', start: 'Fight in the <b>Misty Forest</b>.', run: 'At Character level 20 your chakra runs deep enough to train it as a discipline.' },
+  { power: true, nav: '<b>Energy Disciplines</b> are open. Open them.' },
   { zone: 2, nav: 'Open the <b>Battlefield</b>.', start: 'Fight in <b>Fang Ravine</b>.', run: 'Some foes drop a <b>schematic</b>: it teaches a recipe for an iconic weapon forever.' },
   { zone: 3, nav: 'Time for the guardian: open the <b>Battlefield</b>.', start: 'Challenge the <b>Ashen Fox Beast</b>. Bring plenty of pills.', run: 'Its relic, the Ashen Fox Tail, is part of the gate offering.' },
   { gate: true, nav: 'Open the <b>Overview</b>: the gate to the next world is there.' },
@@ -114,7 +114,7 @@ function guideStep() {
   }
   if (G.power) {
     if (S.ui.view !== 'power') return nav;
-    return { sels: ['[data-alloc="chakra:1"]'], text: 'Click <b>+</b> to put energy into a training. Trainings level up forever, even offline.' };
+    return { sels: ['[data-alloc="chakra:1"]'], text: 'Click <b>+</b> to put energy into Chakra. Disciplines level up forever, even offline.' };
   }
   if (G.food) {
     if (S.ui.view !== 'hero') return nav;

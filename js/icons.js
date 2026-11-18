@@ -443,11 +443,11 @@ const ICONS = {
   },
   training: {
     chakra: 'magic-swirl',
+    haki: 'mailed-fist',
     reiatsu: 'aura',
-    will: 'mailed-fist',
-    swift: 'wingfoot',
-    fortune: 'horseshoe',
-    wisdom: 'open-book',
+    ki: 'rolling-energy',
+    cursed: 'evil-eyes',
+    nen: 'third-eye',
   },
   perk: {
     fire: 'fire',

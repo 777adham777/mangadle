@@ -137,7 +137,7 @@ const DEV_ACTS = {
     unlockContent();
     for (const k in SKILLS) setSkillLv(k, maxLv(k));
     maxSystems();
-    S.gold += 1e9; S.karma += 1000; S.karmaTotal += 1000;
+    S.gold += 1e9;
     S.bounty = Math.max(S.bounty, BOUNTY_RANKS[BOUNTY_RANKS.length - 1][0]);
   }, 'Everything unlocked and maxed.'),
   systems: () => cheat(maxSystems, 'Pets, looks, techniques, tools, cards, museum, beasts, Echo and Renown maxed.'),
@@ -147,7 +147,6 @@ const DEV_ACTS = {
   goldK: () => cheat(() => { S.gold += 1e3; }),
   goldM: () => cheat(() => { S.gold += 1e6; }),
   goldB: () => cheat(() => { S.gold += 1e9; }),
-  karma: () => cheat(() => { S.karma += 100; S.karmaTotal += 100; }),
   bounty: () => cheat(() => { S.bounty += 1e6; }),
   train: () => cheat(() => { for (const t of TRAININGS) S.energy.lvl[t.id] = tl(t.id) + 100; }, '+100 levels in every training.'),
   heal: () => { S.combat.hp = pMaxHp(); },
@@ -223,7 +222,7 @@ VIEWS.dev = () => {
     </section>
     <section class="win">${hdr('Resources')}
       <div class="btn-row">${btn('goldK', '+1K gold', 'gold')}${btn('goldM', '+1M gold', 'gold')}${btn('goldB', '+1B gold', 'gold')}</div>
-      <div class="btn-row">${btn('karma', '+100 karma', 'karma')}${btn('bounty', '+1M bounty', 'bounty')}${btn('train', '+100 training levels', 'energy')}</div>
+      <div class="btn-row">${btn('bounty', '+1M bounty', 'bounty')}${btn('train', '+100 training levels', 'energy')}</div>
     </section>
     <section class="win">${hdr('Systems')}
       <div class="btn-row">${btn('systems', 'Max every system', 'crown')}${btn('pets', 'All pets', 'pet')}${btn('looks', 'All avatar looks', 'avatar')}${btn('renown', 'Renown 100', 'trophy')}</div>

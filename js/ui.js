@@ -145,7 +145,6 @@ function renderHud() {
     <div class="curs">
       <div class="cur gold" title="Gold — buys upgrades in the Market"><i>${ui('gold')}</i><b id="r-gold">0</b></div>
       <div class="cur bounty" title="Bounty — earned by defeating enemies. Higher ranks give bonus damage."><i>${ui('bounty')}</i><b id="r-bounty">0</b></div>
-      <div class="cur karma" title="Karma — earned by Rebirth, spent on permanent perks"><i>${ui('karma')}</i><b id="r-karma">0</b></div>
     </div>
     <button class="hud-btn" data-nav="settings" title="Settings">${ui('settings')}</button>`;
 }
@@ -164,7 +163,7 @@ function navRow(key, icon, label, o) {
 }
 function renderRail() {
   const groups = [];
-  const quick = [['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['hero:collection', 'collection', 'Collection'], ['market', 'market', 'Market'], ['power', 'power', 'Power'], ...UIX.quick.flatMap((f) => f()), ['settings', 'settings', 'Settings']];
+  const quick = [['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['hero:collection', 'collection', 'Collection'], ['market', 'market', 'Market'], ['power', 'power', 'Energy'], ...UIX.quick.flatMap((f) => f()), ['settings', 'settings', 'Settings']];
   groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => {
     const f = featureOfView(k);
     if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
@@ -409,7 +408,7 @@ VIEWS.home = () => {
       ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
     ${gateHTML() ? '' : nextUnlockHTML('win ov-next')}</div>
   <section class="win adv-win">${hdr('Adventurer')}
-    ${featureOpen('avatar') ? `<button class="adv-av" data-nav="hero:avatar" title="Customize your avatar">${avatarSVG(null, { ctx: 'auto' })}</button>` : ''}<div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Rebirths', fmt(S.rebirths))}</div>
+    ${featureOpen('avatar') ? `<button class="adv-av" data-nav="hero:avatar" title="Customize your avatar">${avatarSVG(null, { ctx: 'auto' })}</button>` : ''}<div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Character', 'Lv ' + charLv())}${stat('Techniques', `${Object.keys(S.tech.lv).length} / ${Object.keys(TECHNIQUES).length}`)}</div>
   </section>`;
 };
 
@@ -706,12 +705,12 @@ function openModal(html, btn, nofoot) {
 }
 
 /* ------------------------------------------------------------- inner power */
-const TRAIN_COLORS = { chakra: '#ff9a4d', reiatsu: '#a98bff', will: '#a9b4c6', swift: '#4fe0a0', fortune: '#f4c66a', wisdom: '#4cc3ff' };
+const TRAIN_COLORS = { chakra: '#ff9a4d', haki: '#4cc3ff', reiatsu: '#a98bff', ki: '#ffc65a', cursed: '#4fe3b8', nen: '#a8e86b' };
 VIEWS.power = () => {
-  const E = S.energy, cap = energyCap(), g = karmaGain();
+  const E = S.energy, cap = energyCap();
   const steps = ['1', '10', '100', '10%', '25%', 'max'];
   return `
-  ${ptitle('Inner Power', 'Training')}
+  ${ptitle('Energy mastery', 'Disciplines')}
   <section class="win energy-win">
     <div class="en-top">
       <div class="en-num"><small>Free energy</small><b><span data-eidle>${fmt(energyIdle())}</span><em> / ${fmt(cap)}</em></b></div>
@@ -719,11 +718,13 @@ VIEWS.power = () => {
         ${gbtn('Release all', 'close', 'data-releaseall', 'dark sm')}</div>
     </div>
     <div class="pool-bar">${TRAININGS.map((t) => `<i style="width:${((E.alloc[t.id] || 0) / cap) * 100}%;background:${TRAIN_COLORS[t.id]}" title="${t.name}"></i>`).join('')}</div>
+    <p class="muted small en-help">Split your energy between your disciplines: each one levels up forever, even offline. Every world you reach teaches a new one.</p>
   </section>
   <div class="train-grid">${TRAININGS.map((t) => {
+    if (!disciplineOpen(t)) return `<section class="win train locked"><div class="tr-top"><span class="tr-ic">${ui('lock')}</span><span class="tr-main"><b>${t.name}</b><small>Learned in ${REALMS[t.world].name}</small></span></div></section>`;
     const a = E.alloc[t.id] || 0, L = tl(t.id), rate = (a * energyPower()) / trainCost(t.id, L);
     return `<section class="win train ${a ? 'active' : ''}" style="--tc:${TRAIN_COLORS[t.id]}">
-      <div class="tr-top"><span class="tr-ic">${ic('training', t.id)}</span><span class="tr-main"><b>${t.name}</b><small data-tbonus="${t.id}">+${fmt(L * t.per)}${t.unit}</small></span>
+      <div class="tr-top"><span class="tr-ic">${ic('training', t.id)}</span><span class="tr-main"><b>${t.name}</b><small>${REALMS[t.world].name} · per level: ${t.desc}</small></span>
         <span class="tr-lv"><small>Lv</small><b data-tl="${t.id}">${fmt(L)}</b></span></div>
       <div class="xpbar thin"><i data-tbar="${t.id}"></i></div>
       <div class="tr-ctl"><button class="mini-btn" data-alloc="${t.id}:-1" title="Take energy back">${ui('minus')}</button>
@@ -731,23 +732,10 @@ VIEWS.power = () => {
         <button class="mini-btn hot" data-alloc="${t.id}:1" title="Add energy">${ui('plus')}</button></div>
     </section>`;
   }).join('')}</div>
-  <div class="power-row">
-    <section class="win">${hdr('Gold upgrades')}
-      <div class="upg">${tile(null, null, { r: 4, icon: ui('energy') })}<span class="upg-t"><b>Bigger Vessel</b><small>+25 energy capacity · now ${fmt(cap)}</small></span>${gbtn(fmt(capCost()), 'gold', `data-buycap data-cost="${capCost()}"`, 'sm')}</div>
-      <div class="upg">${tile(null, null, { r: 4, icon: ui('power') })}<span class="upg-t"><b>Purer Energy</b><small>+10% training speed · now ×${energyPower().toFixed(2)}</small></span>${gbtn(fmt(powCost()), 'gold', `data-buypow data-cost="${powCost()}"`, 'sm')}</div>
-    </section>
-    <section class="win rebirth">
-      <div>${hdr('Rebirth')}<p class="muted">Reset Inner Power (trainings, capacity, power) to earn <b>Karma</b>. Skills, items, gear and gold are kept. Needs 200 training levels — you have <b>${fmt(totalTrain())}</b>.</p>
-        ${gbtn('Be reborn', 'rebirth', `${g > 0 ? '' : 'disabled'} data-rebirth`)}</div>
-      <div class="gain">${ui('karma')}<b>+${fmt(g)}</b><small>Karma</small></div>
-    </section>
-  </div>
-  ${hdr('Karma perks', `${fmt(S.karma)} karma`)}
-  <div class="shop">${PERKS.map((p) => {
-    const L = pl(p.id), maxed = p.max && L >= p.max, c = perkCost(p.id);
-    return `<section class="win ware">${tile(null, `Lv ${L}${p.max ? '/' + p.max : ''}`, { r: 4, icon: ic('perk', p.id) })}<span class="ware-t"><b>${p.name}</b><small>${p.desc}</small></span>
-      ${gbtn(maxed ? 'Maxed' : fmt(c), maxed ? 'check' : 'karma', `${maxed || S.karma < c ? 'disabled' : ''} data-perk="${p.id}"`, 'sm')}</section>`;
-  }).join('')}</div>`;
+  <section class="win">${hdr('Gold upgrades')}
+    <div class="upg">${tile(null, null, { r: 4, icon: ui('energy') })}<span class="upg-t"><b>Bigger Vessel</b><small>+25 energy capacity · now ${fmt(cap)}</small></span>${gbtn(fmt(capCost()), 'gold', `data-buycap data-cost="${capCost()}"`, 'sm')}</div>
+    <div class="upg">${tile(null, null, { r: 4, icon: ui('power') })}<span class="upg-t"><b>Purer Energy</b><small>+10% training speed · now ×${energyPower().toFixed(2)}</small></span>${gbtn(fmt(powCost()), 'gold', `data-buypow data-cost="${powCost()}"`, 'sm')}</div>
+  </section>`;
 };
 
 /* ------------------------------------------------------------- market */
@@ -1039,9 +1027,7 @@ function update() {
   setText(goldEl, fmt(S.gold));
   if (Math.floor(S.gold) !== lastGold) { if (S.gold > lastGold) retrigger(goldEl.parentElement, 'bump'); lastGold = Math.floor(S.gold); }
   setText($('#r-bounty'), fmt(S.bounty));
-  setText($('#r-karma'), fmt(S.karma));
   $('#r-bounty').parentElement.hidden = !(S.bounty > 0);
-  $('#r-karma').parentElement.hidden = !(S.karma > 0 || S.rebirths > 0);
 
   // levels / xp
   for (const el of $$('[data-lv]')) setText(el, String(skillLv(el.dataset.lv)));
@@ -1186,8 +1172,6 @@ document.addEventListener('click', (ev) => {
   else if ('releaseall' in d) releaseAll();
   else if ('buycap' in d) buyCap();
   else if ('buypow' in d) buyPow();
-  else if ('rebirth' in d) { if (confirm('Rebirth? All Inner Power training will reset.')) { const g = karmaGain(); if (rebirth()) burst('Reborn', `+${fmt(g)} Karma`, ui('rebirth'), 'var(--soul)'); } }
-  else if (d.perk) buyPerk(d.perk);
   else if ('claim' in d) { claimGoal(); lastUnlockPoll = 0; pollUnlocks(); }
   else if (d.gate) { if (openGate(d.gate)) { flash(); lastUnlockPoll = 0; pollUnlocks(); } }
   else if (d.realmgo) { $('#modal').classList.remove('show', 'nofoot'); setView(d.realmgo); }

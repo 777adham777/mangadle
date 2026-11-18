@@ -44,3 +44,8 @@
 .tc-foot { grid-column: 1 / 4; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 8px; }
 .tc-frag { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--dim); margin-right: auto; }
 .tc-frag b { color: var(--text); }
+
+/* Energy disciplines */
+.train.locked { opacity: .5; }
+.train.locked .tr-ic { color: var(--mute); }
+.en-help { margin: 8px 2px 0; }

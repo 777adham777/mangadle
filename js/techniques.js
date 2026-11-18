@@ -120,7 +120,8 @@ hook('block', (skill, act) => {
 });
 
 /* ------------------------------------------------------------ in battle */
-const strike = (e, mult, label, crit) => dealDamage(e, Math.max(1, Math.round(pMaxHit() * mult * mitig(e.def * hmul('edef')))), !!crit, label);
+const techPower = () => 1 + discFx('tech');
+const strike = (e, mult, label, crit) => dealDamage(e, Math.max(1, Math.round(pMaxHit() * mult * techPower() * mitig(e.def * hmul('edef')))), !!crit, label);
 const alive = () => S.combat.enemy != null;
 const techCd = (id) => (id === 'fire_lotus' && techTier(id, 10) ? 14 : id === 'healing_palm' && techTier(id, 10) ? 8 : TECHNIQUES[id].cd);
 const CAST = {
@@ -138,7 +139,7 @@ const CAST = {
     if (L >= 5) { RT.fx.burn = 4; RT.burnT = 0; }
   },
   healing_palm(e, L) {
-    const m = pMaxHp(), h = Math.round(m * (0.15 + 0.02 * (L - 1)));
+    const m = pMaxHp(), h = Math.round(m * (0.15 + 0.02 * (L - 1)) * techPower());
     S.combat.hp = Math.min(m, S.combat.hp + h);
     if (L >= 5) RT.fx.regen = 5;
     emit('tech', { id: 'healing_palm', heal: h });

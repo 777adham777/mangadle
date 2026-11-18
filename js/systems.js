@@ -115,7 +115,7 @@ function gemSum(k) {
 hook('dmg', () => 1 + gemSum('dmg'));
 hook('def', () => 1 + gemSum('def'));
 hook('hp', () => 1 + gemSum('hp'));
-hook('kill', (e) => { const w = S.equip.weapon; if (w && gearOn()) gearMut(w).xp += e.xp; });
+hook('kill', (e) => { const w = S.equip.weapon; if (w && gearOn()) gearMut(w).xp += e.xp * (1 + discFx('wxp')); });
 function awakenReason(id) {
   const g = gearOf(id), next = RELEASE[g.rel + 1];
   if (!gearOn()) return 'Locked';
@@ -438,9 +438,9 @@ hook('tick', (dt) => { const c = companion(); if (c && beastLv(c) < 20) S.beasts
 function compFx(kind, skill) {
   const c = companion();
   if (!c) return 0;
-  const K = BEASTS[c].kind;
-  if (K === kind) return beastVal(c);
-  if (kind === 'speed' && skill && (K === 'speed:' + skill || (K === 'gather' && SKILLS[skill].type === 'gather'))) return beastVal(c);
+  const K = BEASTS[c].kind, v = beastVal(c) * (1 + discFx('pet'));
+  if (K === kind) return v;
+  if (kind === 'speed' && skill && (K === 'speed:' + skill || (K === 'gather' && SKILLS[skill].type === 'gather'))) return v;
   return 0;
 }
 hook('speed', (skill) => 1 + compFx('speed', skill));

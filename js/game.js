@@ -46,7 +46,6 @@ function defaultState() {
     fruit: null, fruitRank: 0,          // eating copies of your fruit raises its rank (max FRUIT_RANK_MAX)
     shop: {},
     energy: { capLv: 0, powLv: 0, alloc: {}, lvl: {}, prog: {}, step: '10' },
-    karma: 0, karmaTotal: 0, perks: {}, rebirths: 0,
     stats: { kills: 0, actions: 0, playtime: 0, deaths: 0, bossKills: 0, made: {}, voyages: 0, opened: 0 },
     found: {},                          // collection log: item id -> 1 once ever obtained
     pets: {},                           // pet id -> 1
@@ -210,7 +209,6 @@ function gearStat(k) {
   return s;
 }
 const tl = (t) => S.energy.lvl[t] || 0;
-const pl = (p) => S.perks[p] || 0;
 function bountyRank() { let r = 0; BOUNTY_RANKS.forEach((b, i) => { if (S.bounty >= b[0]) r = i; }); return r; }
 
 /* --------------------------------------------- milestones, pets, luck */
@@ -232,11 +230,11 @@ function collectionPct() {
   return (Object.keys(S.found).filter(real).length + Object.keys(S.pets).length) / total;
 }
 
-function dmgMult()  { return hmul('dmg') * (1 + synergyBonus('dmg', 'combat')) * (1 + 0.01 * tl('chakra')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones()) * (1 + 0.03 * bossPets()); }
-function hpMult()   { return hmul('hp') * (1 + synergyBonus('hp', 'combat')) * (1 + 0.01 * tl('reiatsu')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().hp || 0)) * (1 + 0.04 * combatMilestones()) * (1 + 0.03 * bossPets()); }
-function defMult()  { return hmul('def') * (1 + 0.01 * tl('will')) * (1 + 0.04 * combatMilestones()); }
-function goldMult() { return hmul('gold') * (1 + 0.01 * tl('fortune')) * (1 + 0.15 * pl('merchant')) * (1 + (fruitFx().gold || 0)) * (1 + gearStat('gold')); }
-function xpMult()   { return (1 + 0.005 * tl('wisdom')) * (1 + 0.1 * pl('mentor')); }
+function dmgMult()  { return hmul('dmg') * (1 + synergyBonus('dmg', 'combat')) * (1 + discFx('dmg')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones()) * (1 + 0.03 * bossPets()); }
+function hpMult()   { return hmul('hp') * (1 + synergyBonus('hp', 'combat')) * (1 + discFx('hp')) * (1 + (fruitFx().hp || 0)) * (1 + 0.04 * combatMilestones()) * (1 + 0.03 * bossPets()); }
+function defMult()  { return hmul('def') * (1 + discFx('def')) * (1 + 0.04 * combatMilestones()); }
+function goldMult() { return hmul('gold') * (1 + discFx('gold')) * (1 + (fruitFx().gold || 0)) * (1 + gearStat('gold')); }
+function xpMult()   { return 1 + discFx('xp'); }
 
 // Mastery: per-action level from how many times you've done it. Lv L needs (L/2)^2 completions (Lv 99 ~ 2450).
 function masteryLv(skill, act) { return Math.min(99, Math.floor(Math.sqrt(S.mastery[skill + ':' + act] || 0) * 2)); }
@@ -248,7 +246,7 @@ function masteryProg(skill, act) {
 }
 function skillSpeed(skillId, actId) {
   const sk = SKILLS[skillId];
-  let m = (1 + 0.002 * tl('swift')) * (1 + 0.1 * (S.shop['tools_' + sk.realm] || 0)) * (1 + (fruitFx().skill || 0));
+  let m = (1 + discFx('speed')) * (1 + 0.1 * (S.shop['tools_' + sk.realm] || 0)) * (1 + (fruitFx().skill || 0));
   if (actId) m *= 1 + 0.003 * masteryLv(skillId, actId);
   if (sk.type !== 'combat') m *= 1 + milestoneFx(skillId).speed;
   if (hasPetFor(skillId)) m *= 1.05;
@@ -305,8 +303,8 @@ const charLv = () => skillLv('character');
 const statAtk  = () => 8 + 1.5 * charLv() + gearStat('atk');
 const statDef  = () => 1.5 * charLv() + gearStat('def');
 const statVit  = () => 40 + 9 * charLv() + gearStat('hp');
-const statSpd  = () => 0.2 * charLv() + gearStat('spd') + hadd('spdStat');
-const statLuck = () => 0.1 * charLv() + 15 * (S.shop.lucky_coin || 0) + gearStat('luck') + hadd('luckStat');
+const statSpd  = () => 0.2 * charLv() + gearStat('spd') + discFx('spd') + hadd('spdStat');
+const statLuck = () => 0.1 * charLv() + 15 * (S.shop.lucky_coin || 0) + gearStat('luck') + discFx('luck') + hadd('luckStat');
 const pMaxHit = () => statAtk() * dmgMult();
 const pDef    = () => statDef() * defMult();
 const pMaxHp  = () => Math.floor(statVit() * hpMult());
@@ -328,8 +326,8 @@ function zoneDanger(zi) {
 }
 
 /* ------------------------------------------------------------- energy */
-const energyCap   = () => Math.floor((100 + 25 * S.energy.capLv) * (1 + 0.2 * pl('reserves')));
-const energyPower = () => (1 + 0.1 * S.energy.powLv) * (1 + 0.25 * pl('fire')) * hmul('energy');
+const energyCap   = () => Math.floor(100 + 25 * S.energy.capLv);
+const energyPower = () => (1 + 0.1 * S.energy.powLv) * hmul('energy');
 const energyUsed  = () => Object.values(S.energy.alloc).reduce((a, b) => a + b, 0);
 const energyIdle  = () => energyCap() - energyUsed();
 const TRAIN_BY = Object.fromEntries(TRAININGS.map((t) => [t.id, t]));
@@ -337,8 +335,6 @@ const trainCost = (t, L) => TRAIN_BY[t].base * Math.pow(1 + L / 10, 2);
 const capCost = () => Math.floor(50 * Math.pow(1.35, S.energy.capLv));
 const powCost = () => Math.floor(200 * Math.pow(1.55, S.energy.powLv));
 const totalTrain = () => TRAININGS.reduce((a, t) => a + tl(t.id), 0);
-const karmaGain = () => { const t = totalTrain(); return t < 200 ? 0 : Math.floor(Math.pow(t / 40, 1.2)); };
-const perkCost = (p) => pl(p) + 1;
 
 /* ========================================================== simulation */
 function step(dt) {
@@ -666,7 +662,7 @@ function sell(id, n) {
 function tickEnergy(dt) {
   const P = energyPower();
   for (const t of TRAININGS) {
-    const a = S.energy.alloc[t.id];
+    const a = disciplineOpen(t) ? S.energy.alloc[t.id] : 0;
     if (!a) continue;
     let prog = (S.energy.prog[t.id] || 0) + dt * a * P;
     let L = tl(t.id), cost = trainCost(t.id, L), guard = 0;
@@ -682,6 +678,7 @@ function stepAmount() {
   return +st;
 }
 function allocate(t, dir) {
+  if (dir > 0 && !disciplineOpen(TRAIN_BY[t])) return;
   let amt = stepAmount();
   const cur = S.energy.alloc[t] || 0;
   if (dir > 0) amt = Math.min(amt, energyIdle()); else amt = -Math.min(amt, cur);
@@ -693,25 +690,6 @@ function releaseAll() { S.energy.alloc = {}; dirty = true; }
 function buyCap() { const c = capCost(); if (S.gold < c) return; S.gold -= c; S.energy.capLv++; dirty = true; }
 function buyPow() { const c = powCost(); if (S.gold < c) return; S.gold -= c; S.energy.powLv++; dirty = true; }
 
-/* ------------------------------------------------------------ rebirth */
-function rebirth() {
-  const g = karmaGain();
-  if (g <= 0) return false;
-  S.karma += g; S.karmaTotal += g; S.rebirths++;
-  S.energy = { capLv: 0, powLv: 0, alloc: {}, lvl: {}, prog: {}, step: S.energy.step };
-  toast(`Reborn! +${g} Karma.`, 'rare');
-  dirty = true;
-  return true;
-}
-function buyPerk(id) {
-  const p = PERKS.find((x) => x.id === id);
-  if (!p || (p.max && pl(id) >= p.max)) return;
-  const c = perkCost(id);
-  if (S.karma < c) return;
-  S.karma -= c; S.perks[id] = pl(id) + 1;
-  // keep allocations valid if the cap changed
-  dirty = true;
-}
 
 /* --------------------------------------------------------------- shop */
 function shopCost(it) { return it.costs ? it.costs[S.shop[it.id] || 0] : it.cost; }
@@ -735,7 +713,7 @@ function snapshot() {
     train: totalTrain(), kills: S.stats.kills,
   };
 }
-function offlineSeconds(elapsed) { return Math.min(elapsed, (BASE_OFFLINE_HOURS + 2 * pl('dilation')) * 3600); }
+function offlineSeconds(elapsed) { return Math.min(elapsed, BASE_OFFLINE_HOURS * 3600); }
 function serialize() { S.last = Date.now(); return JSON.stringify(S); }
 // v6 made the Leaf Village the first world (Woodcutting start) and Orange Town the second.
 // The whole early game changed, so saves from before it start over.
