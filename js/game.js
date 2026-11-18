@@ -55,7 +55,8 @@ function defaultState() {
     known: {},                          // schematic id -> 1 once learned
     renown: {},                         // world id -> renown points (see systems.js)
     asc: {},                            // world id -> chosen Ascension tier for its zones
-    gear: {},                           // equipment id -> { xp, rel, gems: [], tier } (awakening, sockets, reforge)
+    gear: {},
+    arms: [], armSeq: 0, equipU: null,   // weapon copies and the one you wield (weapons.js)                           // equipment id -> { xp, rel, gems: [], tier } (awakening, sockets, reforge)
     tech: { slots: {}, lv: {}, frag: {}, pity: 0 },   // techniques.js
     avatar: { style: 'flat', color: 'chalk', hat: 'none', face: 'blank', back: 'none', aura: 'none', got: {} },   // see avatar.js
     ki: { form: null, stamina: 100 },
@@ -143,7 +144,8 @@ function on(ev, fn) { (BUS[ev] = BUS[ev] || []).push(fn); }
 function emit(ev, d) { if (!SIM && BUS[ev]) for (const fn of BUS[ev]) fn(d); }
 
 /* -------------------------------------------------------------- items */
-const count = (id) => S.items[id] || 0;
+// Weapons are individual copies (weapons.js): armCount counts the spare ones.
+const count = (id) => (ITEMS[id] && ITEMS[id].slot === 'weapon' && ITEMS[id].type === 'equip' && typeof armCount === 'function' ? armCount(id) : S.items[id] || 0);
 function addItem(id, n) {
   if (n <= 0) return;
   S.items[id] = (S.items[id] || 0) + n;

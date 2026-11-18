@@ -65,3 +65,21 @@
 .exp-last small { display: block; margin-bottom: 4px; font-size: 11.5px; color: var(--dim); }
 .exp-last .tiles { display: flex; flex-wrap: wrap; gap: 4px; }
 .acard.exp[data-state="blocked"] .ac-cta { color: var(--mute); }
+
+
+/* Weapons: rack in the Bank + forge panel */
+.arm-rack { padding: 8px 10px 4px; border-bottom: 1px solid var(--line); }
+.arm-rack small { display: block; margin-bottom: 6px; font-size: 11.5px; color: var(--dim); }
+.arm-grid { display: flex; flex-wrap: wrap; gap: 6px; }
+.arm-grid .tile.eq { box-shadow: 0 0 0 2px var(--ok); }
+.arm-awk { position: absolute; top: 2px; left: 3px; font-size: 9px; color: var(--gold); letter-spacing: -1px; }
+.arm-detail { display: flex; flex-direction: column; gap: 8px; }
+.awk-els { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 6px; }
+.awk-el { display: grid; grid-template-columns: 22px 1fr; column-gap: 6px; text-align: left; padding: 6px 8px; color: var(--text); background: var(--panel2); border: 1px solid var(--line2); cursor: pointer; }
+.awk-el .gi { grid-row: 1 / 3; font-size: 18px; color: var(--gold); }
+.awk-el b { font: 600 13px var(--display); }
+.awk-el small { font-size: 11px; color: var(--dim); }
+.awk-el:hover:not([disabled]) { border-color: var(--gold); }
+.awk-el[disabled] { opacity: .5; cursor: default; }
+.awk-have { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; }
+.awk-have .gi { font-size: 18px; color: var(--gold); flex: none; }

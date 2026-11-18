@@ -41,16 +41,16 @@ function finalizeWorlds() {
 const TECH_MAX = 10;
 const TECH_TIERS = [5, 10];
 const TECHNIQUES = {
-  shadow_strike: { name: 'Shadow Strike', cat: 'attack', realm: 'shinobi', cd: 8, tags: ['melee', 'critical'],
+  shadow_strike: { name: 'Shadow Strike', cat: 'attack', realm: 'shinobi', cd: 8, tags: ['melee', 'critical', 'bleed'],
     desc: (L) => `Strike for ${(2 + 0.2 * (L - 1)).toFixed(1)}× your max hit.`,
     tiers: { 5: 'Always a critical hit (×1.5).', 10: 'Strikes twice.' } },
-  kunai_volley:  { name: 'Kunai Volley', cat: 'attack', realm: 'shinobi', cd: 10, tags: ['projectile', 'multi-hit'],
+  kunai_volley:  { name: 'Kunai Volley', cat: 'attack', realm: 'shinobi', cd: 10, tags: ['projectile', 'multi-hit', 'wind'],
     desc: (L) => `Throw 3 kunai for ${(0.7 + 0.08 * (L - 1)).toFixed(2)}× your max hit each.`,
     tiers: { 5: 'Throws 4 kunai.', 10: 'Throws 5 kunai.' } },
   fire_lotus:    { name: 'Fire Lotus', cat: 'attack', realm: 'shinobi', cd: 20, tags: ['fire', 'zone'],
     desc: (L) => `Burst for ${(4 + 0.4 * (L - 1)).toFixed(1)}× your max hit.`,
     tiers: { 5: 'Sets the foe ablaze: 15% of your max hit every second for 4s.', 10: 'Recharges in 14s.' } },
-  healing_palm:  { name: 'Healing Palm', cat: 'defense', realm: 'shinobi', cd: 12, tags: ['heal'],
+  healing_palm:  { name: 'Healing Palm', cat: 'defense', realm: 'shinobi', cd: 12, tags: ['heal', 'drain'],
     desc: (L) => `Below 60% HP: heal ${15 + 2 * (L - 1)}% of your max HP.`,
     tiers: { 5: 'Then regenerate 2% of max HP per second for 5s.', 10: 'Recharges in 8s.' } },
   mist_step:     { name: 'Mist Step', cat: 'defense', realm: 'shinobi', cd: 15, tags: ['evasion'],
@@ -59,7 +59,7 @@ const TECHNIQUES = {
   iron_skin:     { name: 'Iron Skin', cat: 'defense', realm: 'shinobi', cd: 14, tags: ['guard'],
     desc: (L) => `Once hurt: take ${30 + 3 * (L - 1)}% less damage for 6s.`,
     tiers: { 5: 'Lasts 8s.', 10: 'Also heals 5% of your max HP when it starts.' } },
-  sealing_mark:  { name: 'Sealing Mark', cat: 'support', realm: 'shinobi', cd: 16, tags: ['seal'],
+  sealing_mark:  { name: 'Sealing Mark', cat: 'support', realm: 'shinobi', cd: 16, tags: ['seal', 'lightning'],
     desc: (L) => `For 8s: the foe's defense drops by ${25 + 3 * (L - 1)}%.`,
     tiers: { 5: 'Lasts 12s.', 10: 'You also deal 15% more damage to a marked foe.' } },
 };

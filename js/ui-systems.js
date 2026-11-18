@@ -9,7 +9,7 @@ const costTiles = (cost) => Object.entries(cost).map(([k, n]) => tile(k, `<em da
 
 /* ======================================================= AWAKENING + FORGE */
 UIX.inspector.push((id) => {
-  if (!gearOn() || !ITEMS[id] || ITEMS[id].type !== 'equip') return '';
+  if (!gearOn() || !ITEMS[id] || ITEMS[id].type !== 'equip' || ITEMS[id].slot === 'weapon') return '';
   const it = ITEMS[id], g = gearOf(id), out = [];
   if (it.slot === 'weapon') {
     const next = RELEASE[g.rel + 1];

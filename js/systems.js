@@ -115,7 +115,7 @@ function gemSum(k) {
 hook('dmg', () => 1 + gemSum('dmg'));
 hook('def', () => 1 + gemSum('def'));
 hook('hp', () => 1 + gemSum('hp'));
-hook('kill', (e) => { const w = S.equip.weapon; if (w && gearOn()) gearMut(w).xp += e.xp * (1 + discFx('wxp')); });
+// Weapon battle XP: weapons.js (each copy levels on its own).
 function awakenReason(id) {
   const g = gearOf(id), next = RELEASE[g.rel + 1];
   if (!gearOn()) return 'Locked';

@@ -380,7 +380,7 @@ function farmPanel() {
 const VIEWS = {};
 // Extension points filled by ui-systems.js: each entry returns HTML (or '').
 // realmScene: an animated scene under a skill's banner (seas-ui.js); when one is shown it carries the farm numbers.
-const UIX = { quick: [], homeTop: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [] };
+const UIX = { bagTop: [], quick: [], homeTop: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [] };
 const uix = (k, ...a) => UIX[k].map((f) => f(...a) || '').join('');
 
 /* ------------------------------------------------------------- overview */
@@ -592,6 +592,7 @@ VIEWS.hero = (tab) => {
   const slot = (s, label, icn) => {
     const id = S.equip[s];
     if (!id) return `<div class="eslot empty"><span class="tile r0"><span class="tile-art">${ui(icn)}</span></span><span class="es-t"><small>${label}</small><b class="muted">Empty</b></span></div>`;
+    if (s === 'weapon' && curArm()) return `<div class="eslot">${armTile(curArm())}<span class="es-t"><small>${label} · ${armTag(curArm())}</small><b>${ITEMS[id].name}</b><span class="es-st">${statInline({ atk: armAtk(curArm()) })}</span></span><button class="mini-btn" data-unequip="${s}" title="Unequip">${ui('close')}</button></div>`;
     return `<div class="eslot">${tile(id, null, { tag: 'button', attrs: `data-sel="${id}"` })}<span class="es-t"><small>${label}</small><b>${ITEMS[id].name}</b><span class="es-st">${statInline(ITEMS[id].stats)}</span></span><button class="mini-btn" data-unequip="${s}" title="Unequip">${ui('close')}</button></div>`;
   };
   return `
@@ -606,10 +607,10 @@ VIEWS.hero = (tab) => {
     </section>
     <section class="win bag-win">
       <nav class="bag-tabs">${BAG_TABS.map(([k, icn, l]) => `<button class="${S.ui.bank === k ? 'on' : ''}" data-bankf="${k}" title="${l}">${ui(icn)}<span>${l}</span></button>`).join('')}</nav>
-      <div class="bag-grid">${ids.length ? ids.map((k) => tile(k, `<span data-count="${k}">${fmt(S.items[k])}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: seenItems.has(k) ? '' : '<span class="new">New</span>' })).join('') : '<div class="empty-note">Nothing here yet.</div>'}</div>
+      ${uix('bagTop')}<div class="bag-grid">${ids.length ? ids.map((k) => tile(k, `<span data-count="${k}">${fmt(S.items[k])}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: seenItems.has(k) ? '' : '<span class="new">New</span>' })).join('') : '<div class="empty-note">Nothing here yet.</div>'}</div>
       <div class="bag-foot"><span>${Object.keys(S.items).length} item types</span><span>Bank value ${ui('gold')} ${fmt(worth)}</span></div>
     </section>
-    <section class="win detail">${inspectorHTML()}</section>
+    <section class="win detail">${armDetailHTML() || inspectorHTML()}</section>
   </div>`;
 };
 function itemHead(id, unknown) {

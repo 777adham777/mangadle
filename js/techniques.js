@@ -120,7 +120,8 @@ hook('block', (skill, act) => {
 });
 
 /* ------------------------------------------------------------ in battle */
-const techPower = () => 1 + discFx('tech');
+// Chakra / Cursed Energy, and a weapon whose awakened element matches the technique's tag (weapons.js).
+const techPower = () => (1 + discFx('tech')) * (typeof armTechMult === 'function' ? armTechMult(RT.casting) : 1);
 const strike = (e, mult, label, crit) => dealDamage(e, Math.max(1, Math.round(pMaxHit() * mult * techPower() * mitig(e.def * hmul('edef')))), !!crit, label);
 const alive = () => S.combat.enemy != null;
 const techCd = (id) => (id === 'fire_lotus' && techTier(id, 10) ? 14 : id === 'healing_palm' && techTier(id, 10) ? 8 : TECHNIQUES[id].cd);
@@ -170,7 +171,9 @@ hook('combat', (dt, e) => {
     if ((RT.cd[id] || 0) > 0 || (TECH_WHEN[id] && !TECH_WHEN[id]())) continue;
     RT.cd[id] = techCd(id);
     S.stats.techUses = (S.stats.techUses || 0) + 1;
+    RT.casting = id;
     CAST[id](e, techLv(id));
+    RT.casting = null;
     if (!alive()) return;
   }
 });
