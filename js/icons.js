@@ -605,6 +605,9 @@ ICONS.realm.hex = 'oni';
 Object.assign(ICONS.skill, { exorcism: 'candle-flame' });
 Object.assign(ICONS.technique, { domain_blaze: 'fire-gem', domain_storm: 'lightning-storm', domain_garden: 'spiral-bloom', domain_shrine: 'lotus-flower' });
 ICONS.item.cursed_fragment = 'crystal-shine';
+Object.assign(ICONS.technique, { iron_fist: 'mailed-fist', foresight: 'all-seeing-eye', cannon_volley: 'cannon', reaper_slash: 'reaper-scythe', soul_ward: 'soul', spirit_chain: 'spider-web',
+  ki_blast: 'spark-spirit', battle_instinct: 'swords-power', iron_body: 'abdominal-armor', zen_focus: 'meditation',
+  nen_enhance: 'rolling-energy', nen_emit: 'smoking-orb', nen_conjure: 'spiked-armor', nen_manip: 'puppet', nen_trans: 'vortex', nen_special: 'evil-eyes' });
 Object.assign(ICONS.zone, { alleys: 'spooky-house', shrine: 'paper-lantern', veil: 'portal', matriarch: 'tombstone' });
 Object.assign(ICONS.enemy, { 'Grudge Spirit': 'floating-ghost', 'Hollow Sorcerer': 'warlock-hood', 'Shrine Specter': 'ghost', 'Bound Corpse': 'skull-mask',
   'Veil Walker': 'evil-eyes', 'Elder Curse': 'devil-mask', 'Cursed Matriarch': 'oni' });

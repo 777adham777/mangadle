@@ -125,10 +125,12 @@ const domainOpen = () => (RT.fx.domain || 0) > 0;
 // A technique sharing an element tag with the open domain is 50% stronger.
 const domainMult = (id) => (id && domainOpen() && RT.domainTags && TECHNIQUES[id].tags.some((t) => t !== 'domain' && RT.domainTags.includes(t)) ? 1.5 : 1);
 const techPower = () => (1 + discFx('tech')) * (typeof armTechMult === 'function' ? armTechMult(RT.casting) : 1) * domainMult(RT.casting)
-  * (typeof pactOn === 'function' && pactOn('narrow') ? 1 + 0.3 * pactMult() : 1);
-const strike = (e, mult, label, crit) => dealDamage(e, Math.max(1, Math.round(pMaxHit() * mult * techPower() * mitig(e.def * hmul('edef')))), !!crit, label);
+  * (typeof pactOn === 'function' && pactOn('narrow') ? 1 + 0.3 * pactMult() : 1) * ((RT.fx.scarlet || 0) > 0 ? 1.3 + 0.03 * ((isEquipped('nen_special') ? techLv('nen_special') : 1) - 1) : 1);
+// pierce: share of the foe's defense ignored.
+const strike = (e, mult, label, crit, pierce) => dealDamage(e, Math.max(1, Math.round(pMaxHit() * mult * techPower() * mitig(e.def * hmul('edef') * (1 - (pierce || 0))))), !!crit, label);
 const alive = () => S.combat.enemy != null;
-const techCd = (id) => (id === 'fire_lotus' && techTier(id, 10) ? 14 : id === 'healing_palm' && techTier(id, 10) ? 8 : TECHNIQUES[id].cd);
+const CD10 = { fire_lotus: 14, healing_palm: 8, cannon_volley: 13, ki_blast: 9, nen_enhance: 10 };
+const techCd = (id) => (CD10[id] && techTier(id, 10) ? CD10[id] : TECHNIQUES[id].cd);
 const CAST = {
   shadow_strike(e, L) {
     const m = (2 + 0.2 * (L - 1)) * (L >= 5 ? 1.5 : 1);
@@ -156,6 +158,25 @@ const CAST = {
     emit('tech', { id: 'iron_skin' });
   },
   sealing_mark(e, L) { RT.fx.mark = L >= 5 ? 12 : 8; emit('tech', { id: 'sealing_mark' }); },
+  iron_fist(e, L) { const m = 2.5 + 0.25 * (L - 1), p = L >= 5 ? 0.3 : 0; strike(e, m, 'Armament Fist', false, p); if (L >= 10 && alive()) strike(e, m, '', false, p); },
+  foresight(e, L) { RT.fx.fore = L >= 5 ? 7 : 5; emit('tech', { id: 'foresight' }); },
+  cannon_volley(e, L) { const m = 4.5 + 0.45 * (L - 1); strike(e, m, 'Cannon Volley'); if (L >= 5 && alive()) strike(e, m / 2, ''); },
+  reaper_slash(e, L) { const m = 3 + 0.3 * (L - 1), p = L >= 5 ? 0.25 : 0; strike(e, m, 'Reaper Slash', false, p); if (L >= 10 && alive()) strike(e, m, '', false, p); },
+  soul_ward(e, L) {
+    const mx = pMaxHp(), h = Math.round(mx * (0.1 + 0.015 * (L - 1)) * (L >= 10 ? 2 : 1) * techPower());
+    S.combat.hp = Math.min(mx, S.combat.hp + h); RT.fx.ward = L >= 5 ? 8 : 5; emit('tech', { id: 'soul_ward', heal: h });
+  },
+  spirit_chain(e, L) { RT.fx.chain = L >= 5 ? 12 : 8; emit('tech', { id: 'spirit_chain' }); },
+  ki_blast(e, L) { const m = 3.5 + 0.35 * (L - 1); strike(e, m, 'Ki Blast'); if (L >= 5 && alive()) strike(e, m / 2, ''); },
+  nen_enhance(e, L) { strike(e, 5 + 0.5 * (L - 1), 'Rock Fist', false, L >= 5 ? 0.3 : 0); },
+  nen_emit(e, L) { const n = L >= 10 ? 7 : L >= 5 ? 6 : 5; for (let i = 0; i < n && alive(); i++) strike(e, 0.9 + 0.09 * (L - 1), i ? '' : 'Aura Bullets'); },
+  nen_conjure(e, L) {
+    RT.fx.cshield = L >= 5 ? 7 : 5;
+    if (L >= 10) { const m = pMaxHp(); S.combat.hp = Math.min(m, S.combat.hp + Math.round(m * 0.05)); }
+    emit('tech', { id: 'nen_conjure' });
+  },
+  nen_manip(e, L) { RT.fx.puppet = L >= 5 ? 12 : 8; emit('tech', { id: 'nen_manip' }); },
+  nen_special(e, L) { RT.fx.scarlet = L >= 5 ? 15 : 10; if (L >= 10) strike(e, 8, 'Scarlet Eyes', true); emit('tech', { id: 'nen_special' }); },
   domain_blaze(e, L) { strike(e, 6 + 0.6 * (L - 1), 'Infinite Blaze'); openDomain('domain_blaze', L); },
   domain_storm(e, L) { strike(e, 5 + 0.5 * (L - 1), 'Storm Sanctum'); openDomain('domain_storm', L); },
   domain_garden(e, L) { for (let i = 0; i < 6 && alive(); i++) strike(e, 1 + 0.1 * (L - 1), i ? '' : 'Crimson Garden'); openDomain('domain_garden', L); },
@@ -188,7 +209,8 @@ function infuseTech(id) {
 }
 // Defensive techniques wait for their moment.
 const hurt = () => S.combat.hp < 0.85 * pMaxHp();
-const TECH_WHEN = { healing_palm: () => S.combat.hp < 0.6 * pMaxHp(), mist_step: hurt, iron_skin: hurt };
+const TECH_WHEN = { healing_palm: () => S.combat.hp < 0.6 * pMaxHp(), mist_step: hurt, iron_skin: hurt, foresight: hurt, nen_conjure: hurt,
+  soul_ward: () => S.combat.hp < 0.7 * pMaxHp() };
 hook('combat', (dt, e) => {
   if (!techOn() || !e || (typeof pactOn === 'function' && pactOn('silence'))) return;
   for (const k in RT.cd) RT.cd[k] -= dt;
@@ -201,7 +223,7 @@ hook('combat', (dt, e) => {
   }
   if ((RT.fx.regen || 0) > 0) { const m = pMaxHp(); S.combat.hp = Math.min(m, S.combat.hp + m * 0.02 * dt); }
   for (const id of equipped()) {
-    if ((RT.cd[id] || 0) > 0 || (TECH_WHEN[id] && !TECH_WHEN[id]())) continue;
+    if (TECHNIQUES[id].cat === 'passive' || (RT.cd[id] || 0) > 0 || (TECH_WHEN[id] && !TECH_WHEN[id]())) continue;
     RT.cd[id] = techCd(id);
     S.stats.techUses = (S.stats.techUses || 0) + 1;
     RT.casting = id;
@@ -213,7 +235,22 @@ hook('combat', (dt, e) => {
 hook('tick', () => { if (S.combat.zone == null) { RT.fx = {}; RT.cd = {}; } });
 const fxOn = (k) => (RT.fx[k] || 0) > 0;
 const eqLv = (id) => (isEquipped(id) ? techLv(id) : 0);
-hook('dodge', () => (fxOn('mist') ? 0.4 + 0.03 * (eqLv('mist_step') - 1) : 0));
+hook('dodge', () => (fxOn('mist') ? 0.4 + 0.03 * (eqLv('mist_step') - 1) : 0) + (fxOn('fore') ? 0.35 + 0.03 * (eqLv('foresight') - 1) : 0));
+hook('taken', () => (fxOn('ward') ? 0.8 : 1) * (fxOn('chain') ? 1 - (0.2 + 0.02 * (eqLv('spirit_chain') - 1)) : 1) * (fxOn('cshield') ? 1 - (0.4 + 0.03 * (eqLv('nen_conjure') - 1)) : 1));
+hook('dmg', () => (fxOn('chain') && eqLv('spirit_chain') >= 10 ? 1.15 : 1));
+hook('combat', (dt) => { if (fxOn('puppet')) S.combat.eT += dt * (eqLv('nen_manip') >= 10 ? 0.4 : 0.25); });
+// Passive techniques: a bonus while they sit in the Passive slot.
+const pasLv = (id) => (SLOT_BY.pas.open() && S.tech.slots.pas === id ? techLv(id) : 0);
+hook('dmg', () => { const L = pasLv('battle_instinct'); return L ? 1 + 0.05 + 0.01 * (L - 1) : 1; });
+hook('hp', () => { const a = pasLv('battle_instinct'), b = pasLv('iron_body'); return (a >= 5 ? 1.05 : 1) * (b ? 1 + 0.08 + 0.015 * (b - 1) : 1); });
+hook('def', () => (pasLv('iron_body') >= 5 ? 1.05 : 1));
+hook('spdStat', () => (pasLv('battle_instinct') >= 10 ? 10 : 0));
+hook('speed', () => { const L = pasLv('zen_focus'); return L ? 1 + 0.04 + 0.006 * (L - 1) : 1; });
+hook('xp', () => (pasLv('zen_focus') >= 5 ? 1.05 : 1));
+hook('luckStat', () => (pasLv('zen_focus') >= 10 ? 10 : 0));
+hook('haste', () => (pasLv('nen_trans') >= 5 ? 1.05 : 1));
+hook('combat', (dt) => { if (pasLv('iron_body') >= 10) { const m = pMaxHp(); S.combat.hp = Math.min(m, S.combat.hp + m * 0.01 * dt); } });
+// Scarlet Eyes (Nen Specialization) makes every technique stronger while it lasts: see techPower.
 hook('taken', () => (fxOn('skin') ? 1 - (0.3 + 0.03 * (eqLv('iron_skin') - 1)) : 1));
 hook('edef', () => (fxOn('mark') ? 1 - (0.25 + 0.03 * (eqLv('sealing_mark') - 1)) : 1));
 hook('dmg', () => (fxOn('mark') && eqLv('sealing_mark') >= 10 ? 1.15 : 1));
@@ -221,8 +258,9 @@ hook('dmg', () => (fxOn('mark') && eqLv('sealing_mark') >= 10 ? 1.15 : 1));
 {
   const base = enemyHit;
   enemyHit = function (e) {
-    const hp = S.combat.hp, counter = fxOn('mist') && eqLv('mist_step') >= 10;
+    const hp = S.combat.hp, counter = fxOn('mist') && eqLv('mist_step') >= 10;   // also Foresight level 10 heals on a dodge
     base(e);
     if (counter && S.combat.hp === hp && S.combat.zone != null && alive()) strike(e, 1, 'Counter');
+    if (S.combat.hp === hp && fxOn('fore') && eqLv('foresight') >= 10) S.combat.hp = Math.min(pMaxHp(), S.combat.hp + pMaxHp() * 0.03);
   };
 }

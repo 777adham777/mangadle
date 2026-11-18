@@ -16,7 +16,7 @@ function techSlotHTML(sl) {
   const cur = S.tech.slots[sl.id], pool = Object.keys(TECHNIQUES).filter((id) => techLv(id) && TECHNIQUES[id].cat === sl.cat);
   return `<div class="tslot ${cur ? 'on' : ''}" data-cat="${sl.cat}"><span class="ts-ic">${cur ? ic('technique', cur) : catIc(sl.cat)}</span>
     <select data-techslot="${sl.id}"><option value="">${sl.name} · ${pool.length ? 'empty' : 'no technique yet'}</option>${pool.map((id) => `<option value="${id}" ${cur === id ? 'selected' : ''}>${TECHNIQUES[id].name} · Lv ${techLv(id)}</option>`).join('')}</select>
-    ${cur ? `<small>${TECHNIQUES[cur].desc(techLv(cur))} · ${techCd(cur)}s</small><span class="tcd"><i data-techcd="${cur}"></i></span>` : ''}</div>`;
+    ${cur ? `<small>${TECHNIQUES[cur].desc(techLv(cur))}${TECHNIQUES[cur].cd ? ` · ${techCd(cur)}s` : ''}</small>${TECHNIQUES[cur].cd ? `<span class="tcd"><i data-techcd="${cur}"></i></span>` : ''}` : ''}</div>`;
 }
 // On the Battlefield: the open slots, plus the next one to open.
 UIX.battleSide.push(() => {
@@ -34,7 +34,7 @@ function techCardHTML(id) {
   const tiers = TECH_TIERS.map((t) => `<li class="${L >= t ? 'got' : ''}"><em>Lv ${t}</em>${T.tiers[t]}</li>`).join('');
   return `<div class="tcard ${eqd ? 'eq' : ''}" style="--rc:${rc(T.realm)}">
     <span class="tc-ic">${ic('technique', id)}</span>
-    <div class="tc-main"><b>${T.name}</b><small>${catIc(T.cat)}${TECH_CATS[T.cat].name} · ${T.cd}s ${tagList(id)}</small></div>
+    <div class="tc-main"><b>${T.name}</b><small>${catIc(T.cat)}${TECH_CATS[T.cat].name}${T.cd ? ` · ${T.cd}s` : ''} ${tagList(id)}</small></div>
     <span class="tc-lv"><small>Lv</small>${L}<small>/${TECH_MAX}</small></span>
     <p class="tc-desc">${T.desc(L)}</p>
     <ul class="tc-tiers">${tiers}</ul>

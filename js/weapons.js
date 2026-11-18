@@ -203,13 +203,14 @@ const fightingBoss = () => { const z = zoneOfFight(); return !!(z && z.boss); };
   // Auto-attacks: the element of the wielded weapon, the ranged opener.
   playerHit = function (e) {
     const a = curArm(), el = armEl(a), C = S.combat;
-    const roll = rand(0.5, 1);
-    let m = (el === 'fire' ? 1.15 : 1) * (typeof inDomain === 'function' && inDomain('domain_blaze') && RT.domainLv >= 10 ? 1.25 : 1);
+    const tL = typeof pasLv === 'function' ? pasLv('nen_trans') : 0, scarlet = (RT.fx.scarlet || 0) > 0;
+    const roll = scarlet ? 1 : rand(0.5, 1);
+    let m = (tL ? 1 + 0.08 + 0.01 * (tL - 1) + (tL >= 10 ? 0.1 : 0) : 1) * (scarlet ? 1.5 : 1) * (el === 'fire' ? 1.15 : 1) * (typeof inDomain === 'function' && inDomain('domain_blaze') && RT.domainLv >= 10 ? 1.25 : 1);
     if (armFam(a) === 'ranged' && RT.opener) { m *= 3; RT.opener = false; }
     const def = e.def * hmul('edef') * (el === 'bleed' ? 0.8 : 1);
     const hit = () => {
       const dmg = Math.max(1, Math.round(pMaxHit() * roll * m * mitig(def)));
-      dealDamage(e, dmg, roll > 0.9);
+      dealDamage(e, dmg, scarlet || roll > 0.9);
       if (el === 'drain') C.hp = Math.min(pMaxHp(), C.hp + dmg * 0.08);
     };
     hit();

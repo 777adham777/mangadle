@@ -62,6 +62,58 @@ const TECHNIQUES = {
   sealing_mark:  { name: 'Sealing Mark', cat: 'support', realm: 'shinobi', cd: 16, tags: ['seal', 'lightning'],
     desc: (L) => `For 8s: the foe's defense drops by ${25 + 3 * (L - 1)}%.`,
     tiers: { 5: 'Lasts 12s.', 10: 'You also deal 15% more damage to a marked foe.' } },
+  // Orange Town (Haki and cannons)
+  iron_fist:     { name: 'Armament Fist', cat: 'attack', realm: 'seas', cd: 9, tags: ['melee', 'haki'],
+    desc: (L) => `Punch for ${(2.5 + 0.25 * (L - 1)).toFixed(1)}× your max hit.`,
+    tiers: { 5: 'Ignores 30% of the foe\'s defense.', 10: 'Punches twice.' } },
+  foresight:     { name: 'Foresight', cat: 'defense', realm: 'seas', cd: 14, tags: ['evasion', 'haki', 'wind'],
+    desc: (L) => `Once hurt: ${35 + 3 * (L - 1)}% chance to dodge for 5s.`,
+    tiers: { 5: 'Lasts 7s.', 10: 'Every dodge heals 3% of your max HP.' } },
+  cannon_volley: { name: 'Cannon Volley', cat: 'attack', realm: 'seas', cd: 18, tags: ['fire', 'projectile'],
+    desc: (L) => `Fire for ${(4.5 + 0.45 * (L - 1)).toFixed(1)}× your max hit.`,
+    tiers: { 5: 'A second shot follows for half as much.', 10: 'Recharges in 13s.' } },
+  // Soul City (reapers)
+  reaper_slash:  { name: 'Reaper Slash', cat: 'attack', realm: 'soul', cd: 11, tags: ['melee', 'bleed'],
+    desc: (L) => `Slash for ${(3 + 0.3 * (L - 1)).toFixed(1)}× your max hit.`,
+    tiers: { 5: 'Ignores 25% of the foe\'s defense.', 10: 'Slashes twice.' } },
+  soul_ward:     { name: 'Soul Ward', cat: 'defense', realm: 'soul', cd: 16, tags: ['guard', 'drain'],
+    desc: (L) => `Below 70% HP: heal ${(10 + 1.5 * (L - 1)).toFixed(1)}% of your max HP and take 20% less damage for 5s.`,
+    tiers: { 5: 'The ward lasts 8s.', 10: 'Heals twice as much.' } },
+  spirit_chain:  { name: 'Spirit Chain', cat: 'support', realm: 'soul', cd: 18, tags: ['seal', 'lightning'],
+    desc: (L) => `For 8s: the foe deals ${20 + 2 * (L - 1)}% less damage.`,
+    tiers: { 5: 'Lasts 12s.', 10: 'The chained foe also takes 15% more damage.' } },
+  // Kaio Planet (ki): the first passives
+  ki_blast:      { name: 'Ki Blast', cat: 'attack', realm: 'ki', cd: 12, tags: ['projectile', 'lightning'],
+    desc: (L) => `Blast for ${(3.5 + 0.35 * (L - 1)).toFixed(1)}× your max hit.`,
+    tiers: { 5: 'A second blast follows for half as much.', 10: 'Recharges in 9s.' } },
+  battle_instinct: { name: 'Battle Instinct', cat: 'passive', realm: 'ki', cd: 0, tags: ['passive'],
+    desc: (L) => `While equipped: +${5 + (L - 1)}% damage.`,
+    tiers: { 5: 'Also +5% max HP.', 10: 'Also +10 Speed.' } },
+  iron_body:     { name: 'Iron Body', cat: 'passive', realm: 'ki', cd: 0, tags: ['passive', 'guard'],
+    desc: (L) => `While equipped: +${(8 + 1.5 * (L - 1)).toFixed(1)}% max HP.`,
+    tiers: { 5: 'Also +5% defense.', 10: 'In battle, regenerate 1% of max HP per second.' } },
+  zen_focus:     { name: 'Zen Focus', cat: 'passive', realm: 'ki', cd: 0, tags: ['passive'],
+    desc: (L) => `While equipped: +${(4 + 0.6 * (L - 1)).toFixed(1)}% speed on every skill.`,
+    tiers: { 5: 'Also +5% XP on every skill.', 10: 'Also +10 Luck.' } },
+  // Green Island: the six Nen categories, each a different way to fight
+  nen_enhance:   { name: 'Enhancement: Rock Fist', cat: 'attack', realm: 'hunter', cd: 14, tags: ['melee', 'nen'],
+    desc: (L) => `Strike for ${(5 + 0.5 * (L - 1)).toFixed(1)}× your max hit.`,
+    tiers: { 5: 'Ignores 30% of the foe\'s defense.', 10: 'Recharges in 10s.' } },
+  nen_emit:      { name: 'Emission: Aura Bullets', cat: 'attack', realm: 'hunter', cd: 12, tags: ['projectile', 'multi-hit', 'nen'],
+    desc: (L) => `Fire 5 bullets for ${(0.9 + 0.09 * (L - 1)).toFixed(2)}× your max hit each.`,
+    tiers: { 5: 'Fires 6 bullets.', 10: 'Fires 7 bullets.' } },
+  nen_conjure:   { name: 'Conjuration: Chain Shield', cat: 'defense', realm: 'hunter', cd: 15, tags: ['guard', 'nen'],
+    desc: (L) => `Once hurt: take ${40 + 3 * (L - 1)}% less damage for 5s.`,
+    tiers: { 5: 'Lasts 7s.', 10: 'Also heals 5% of your max HP when it starts.' } },
+  nen_manip:     { name: 'Manipulation: Puppet Thread', cat: 'support', realm: 'hunter', cd: 18, tags: ['seal', 'nen'],
+    desc: () => 'For 8s: the foe attacks 25% slower.',
+    tiers: { 5: 'Lasts 12s.', 10: 'The foe attacks 40% slower.' } },
+  nen_trans:     { name: 'Transmutation: Elastic Aura', cat: 'passive', realm: 'hunter', cd: 0, tags: ['passive', 'nen'],
+    desc: (L) => `While equipped: auto-attacks deal ${8 + (L - 1)}% more damage.`,
+    tiers: { 5: 'Also +5% attack speed.', 10: 'Auto-attacks deal another 10% more.' } },
+  nen_special:   { name: 'Specialization: Scarlet Eyes', cat: 'ultimate', realm: 'hunter', cd: 50, tags: ['nen', 'critical'],
+    desc: (L) => `For 10s: every technique is ${30 + 3 * (L - 1)}% stronger and your auto-attacks are critical hits.`,
+    tiers: { 5: 'Lasts 15s.', 10: 'It starts with a strike of 8× your max hit.' } },
   // Shinjuku: Domain Expansions (Ultimate). Cast: a big hit, then for 10s (15s from level 5) every technique
   // sharing one of the domain's element tags is 50% stronger, plus the domain's own rule.
   domain_blaze:  { name: 'Infinite Blaze', cat: 'ultimate', realm: 'hex', cd: 45, tags: ['domain', 'fire'],
@@ -82,7 +134,7 @@ const TECH_POOLS = {};
 for (const id in TECHNIQUES) (TECH_POOLS[TECHNIQUES[id].realm] = TECH_POOLS[TECHNIQUES[id].realm] || []).push(id);
 // A world's scroll drops from its foes and is read at once: a random technique of that world
 // (unknown ones 3× as likely). A duplicate becomes fragments of that technique.
-const SCROLL_NAME = { shinobi: 'Leaf Scroll', hex: 'Cursed Scroll' };
+const SCROLL_NAME = { shinobi: 'Leaf Scroll', seas: 'Sea Scroll', soul: 'Soul Scroll', ki: 'Ki Scroll', hex: 'Cursed Scroll', hunter: 'Hunter Scroll' };
 for (const r in TECH_POOLS) defItem('scroll_' + r, SCROLL_NAME[r] || `${REALMS[r].name} Scroll`, '📜', 40, { type: 'scroll', pool: r });
 // Crafted scrolls teach one chosen technique (the deterministic way to target it).
 for (const id in TECHNIQUES) defItem('scroll_' + id, 'Scroll: ' + TECHNIQUES[id].name, '📜', 50, { type: 'scroll', tech: id });
