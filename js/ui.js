@@ -406,7 +406,7 @@ VIEWS.home = () => {
       ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
     ${gateHTML() ? '' : nextUnlockHTML('win ov-next')}</div>
   <section class="win adv-win">${hdr('Adventurer')}
-    ${featureOpen('avatar') ? `<button class="adv-av" data-nav="hero:avatar" title="Customize your avatar">${avatarSVG()}</button>` : ''}<div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Rebirths', fmt(S.rebirths))}</div>
+    ${featureOpen('avatar') ? `<button class="adv-av" data-nav="hero:avatar" title="Customize your avatar">${avatarSVG(null, { ctx: 'auto' })}</button>` : ''}<div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Rebirths', fmt(S.rebirths))}</div>
   </section>`;
 };
 
@@ -556,7 +556,7 @@ function zoneRow(z, i) {
 function stageHTML() {
   const C = S.combat, e = curEnemy();
   const me = `<div class="fighter me">
-    <div class="f-art av-art" data-portrait="player">${typeof avatarSVG === 'function' ? avatarSVG() : ui('hero')}</div>
+    <div class="f-art av-art" data-portrait="player">${typeof avatarSVG === 'function' ? avatarSVG(null, { ctx: 'battle' }) : ui('hero')}</div>
     <div class="f-body"><div class="f-name"><b>You</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(pMaxHit())}</span><span title="Defense">${ui('def')}${fmt(pDef())}</span><span title="Attack speed">${ui('spd')}${pSpeed().toFixed(1)}s</span>${pDodge() ? `<span title="Dodge">${ui('dodge')}${pct(pDodge())}</span>` : ''}</span></div>
       <div class="hpbar"><i data-php></i><span data-phptext></span></div><div class="atkbar"><i data-patk></i></div>${uix('stageMe')}</div>
   </div>`;

@@ -1,61 +1,89 @@
 'use strict';
 /* ==========================================================================
    TRI-REALM IDLE — avatar
-   A customizable stick figure: ink colour, hat, face, back and aura.
-   Cosmetics are purely visual and are earned from in-world feats
-   (bosses, skill levels, voyages, rebirths…), never bought.
+   A rigged stick figure drawn in SVG.
+
+   How it is built (classic stick-figure animation practice):
+   - Skeleton with fixed bone lengths and forward kinematics: upper limbs are
+     set with an absolute angle, elbows and knees bend relative to them.
+     The figure is grounded automatically so the feet always touch the floor.
+   - The spine is a smooth curve (the line of action), not a straight line,
+     and poses use contrapposto, C and S curves, asymmetry.
+   - Limbs are tapered "skeletal strokes" (thick at the shoulder, thin at the
+     wrist), far-side limbs are darker for depth, every body part has its own
+     ink outline so overlaps read clearly. The head is a rigid 3/4 shape.
+   - Animation is pose to pose with easing, plus breathing and secondary
+     motion (capes, scarves, wings follow with a delay).
+
+   Cosmetics are purely visual and earned from feats, never bought.
    Loaded after ui.js, before ui-systems.js.
    ========================================================================== */
 
+/* ================================================================ cosmetics */
 const kzOf = (z) => S.combat.kills[z] || 0;
 const lvOf = (k) => (S.skills[k] ? skillLv(k) : 0);
-// slot -> list of { id, name, need(), hint }. The first of each slot is free.
+const FREE = () => true;
+// r = rarity 1–5 (frame colour). The first entry of each slot is the default.
 const COSMETICS = {
+  build: [
+    { id: 'athletic', name: 'Athletic', r: 1, need: FREE, b: { w: 1, h: 1, head: 1 } },
+    { id: 'slim',     name: 'Slim',     r: 1, need: FREE, b: { w: 0.78, h: 1.04, head: 0.96 } },
+    { id: 'stout',    name: 'Stout',    r: 1, need: FREE, b: { w: 1.4, h: 0.93, head: 1.06 } },
+    { id: 'tall',     name: 'Tall',     r: 1, need: FREE, b: { w: 0.92, h: 1.12, head: 0.94 } },
+  ],
+  stance: [
+    { id: 'relaxed',  name: 'Relaxed',  r: 1, need: FREE },
+    { id: 'guard',    name: 'On Guard', r: 2, need: () => S.stats.kills >= 50, hint: 'Defeat 50 foes' },
+    { id: 'swagger',  name: 'Swagger',  r: 3, need: () => S.stats.voyages >= 10, hint: 'Return from 10 voyages' },
+    { id: 'heroic',   name: 'Heroic',   r: 4, need: () => kzOf('admiral') >= 1, hint: 'Defeat the Admiral of the Tide' },
+    { id: 'meditate', name: 'Meditate', r: 4, need: () => lvOf('chakra') >= 20, hint: 'Reach Chakra Focus level 20' },
+  ],
   color: [
-    { id: 'chalk',   name: 'Chalk',      ink: '#eef1f6', need: () => true },
-    { id: 'tide',    name: 'Tide Blue',  ink: '#4cc3ff', need: () => lvOf('fishing') >= 15, hint: 'Reach Fishing level 15' },
-    { id: 'coral',   name: 'Coral',      ink: '#ff8a7a', need: () => lvOf('cooking') >= 20, hint: 'Reach Cooking level 20' },
-    { id: 'pine',    name: 'Pine',       ink: '#5fd38a', need: () => lvOf('herbalism') >= 20, hint: 'Reach Herbalism level 20' },
-    { id: 'spirit',  name: 'Spirit',     ink: '#a98bff', need: () => lvOf('harvest') >= 20, hint: 'Reach Soul Harvest level 20' },
-    { id: 'crimson', name: 'Crimson',    ink: '#ff4d5e', need: () => S.stats.kills >= 1000, hint: 'Defeat 1,000 foes' },
-    { id: 'gilded',  name: 'Gilded',     ink: '#f4c66a', need: () => totalLevel() >= 500, hint: 'Reach total level 500' },
-    { id: 'void',    name: 'Void',       ink: '#7d6bff', need: () => S.rebirths >= 5, hint: 'Rebirth 5 times' },
+    { id: 'chalk',   name: 'Chalk',     r: 1, ink: '#eef1f6', need: FREE },
+    { id: 'tide',    name: 'Tide Blue', r: 2, ink: '#4cc3ff', need: () => lvOf('fishing') >= 15, hint: 'Reach Fishing level 15' },
+    { id: 'coral',   name: 'Coral',     r: 2, ink: '#ff8a7a', need: () => lvOf('cooking') >= 20, hint: 'Reach Cooking level 20' },
+    { id: 'pine',    name: 'Pine',      r: 3, ink: '#5fd38a', need: () => lvOf('herbalism') >= 20, hint: 'Reach Herbalism level 20' },
+    { id: 'spirit',  name: 'Spirit',    r: 3, ink: '#b49bff', need: () => lvOf('harvest') >= 20, hint: 'Reach Soul Harvest level 20' },
+    { id: 'crimson', name: 'Crimson',   r: 4, ink: '#ff4d5e', need: () => S.stats.kills >= 1000, hint: 'Defeat 1,000 foes' },
+    { id: 'gilded',  name: 'Gilded',    r: 5, ink: '#f4c66a', need: () => totalLevel() >= 500, hint: 'Reach total level 500' },
+    { id: 'void',    name: 'Void',      r: 5, ink: '#8b7bff', need: () => S.rebirths >= 5, hint: 'Rebirth 5 times' },
   ],
   hat: [
-    { id: 'none',     name: 'No hat',          need: () => true },
-    { id: 'bucket',   name: "Fisher's Bucket", need: () => (S.stats.made.minnow || 0) >= 100, hint: 'Catch 100 Minnows' },
-    { id: 'bandana',  name: 'Deckhand Bandana', need: () => kzOf('shoals') >= 25, hint: 'Defeat 25 foes at Rookie Shoals' },
-    { id: 'chef',     name: 'Chef Toque',      need: () => lvOf('cooking') >= 30, hint: 'Reach Cooking level 30' },
-    { id: 'tricorn',  name: 'Admiral Tricorn', need: () => kzOf('admiral') >= 1, hint: 'Defeat the Admiral of the Tide' },
-    { id: 'hood',     name: 'Shinobi Hood',    need: () => kzOf('fox') >= 1, hint: 'Defeat the Ashen Fox Beast' },
-    { id: 'horns',    name: 'Bone Horns',      need: () => kzOf('sovereign') >= 1, hint: 'Defeat the Masked Sovereign' },
-    { id: 'crown',    name: 'Rift Crown',      need: () => kzOf('convergence') >= 1, hint: 'Defeat the Rift Emperor' },
+    { id: 'none',     name: 'No hat',           r: 1, need: FREE },
+    { id: 'bucket',   name: "Fisher's Bucket",  r: 2, need: () => (S.stats.made.minnow || 0) >= 100, hint: 'Catch 100 Minnows' },
+    { id: 'bandana',  name: 'Deckhand Bandana', r: 2, need: () => kzOf('shoals') >= 25, hint: 'Defeat 25 foes at Rookie Shoals' },
+    { id: 'chef',     name: 'Chef Toque',       r: 3, need: () => lvOf('cooking') >= 30, hint: 'Reach Cooking level 30' },
+    { id: 'tricorn',  name: 'Admiral Tricorn',  r: 4, need: () => kzOf('admiral') >= 1, hint: 'Defeat the Admiral of the Tide' },
+    { id: 'hood',     name: 'Shinobi Headband', r: 4, need: () => kzOf('fox') >= 1, hint: 'Defeat the Ashen Fox Beast' },
+    { id: 'horns',    name: 'Bone Horns',       r: 4, need: () => kzOf('sovereign') >= 1, hint: 'Defeat the Masked Sovereign' },
+    { id: 'crown',    name: 'Rift Crown',       r: 5, need: () => kzOf('convergence') >= 1, hint: 'Defeat the Rift Emperor' },
   ],
   face: [
-    { id: 'dots',   name: 'Calm',       need: () => true },
-    { id: 'smile',  name: 'Cheerful',   need: () => true },
-    { id: 'fierce', name: 'Fierce',     need: () => S.stats.kills >= 100, hint: 'Defeat 100 foes' },
-    { id: 'scar',   name: 'Battle Scar', need: () => S.stats.deaths >= 1, hint: 'Lose a fight' },
-    { id: 'shades', name: 'Sea Shades', need: () => S.stats.voyages >= 25, hint: 'Return from 25 voyages' },
-    { id: 'mask',   name: 'Half Mask',  need: () => lvOf('chakra') >= 30, hint: 'Reach Chakra Focus level 30' },
+    { id: 'dots',   name: 'Calm',        r: 1, need: FREE },
+    { id: 'smile',  name: 'Cheerful',    r: 1, need: FREE },
+    { id: 'fierce', name: 'Fierce',      r: 2, need: () => S.stats.kills >= 100, hint: 'Defeat 100 foes' },
+    { id: 'scar',   name: 'Battle Scar', r: 2, need: () => S.stats.deaths >= 1, hint: 'Lose a fight' },
+    { id: 'shades', name: 'Sea Shades',  r: 3, need: () => S.stats.voyages >= 25, hint: 'Return from 25 voyages' },
+    { id: 'mask',   name: 'Half Mask',   r: 4, need: () => lvOf('chakra') >= 30, hint: 'Reach Chakra Focus level 30' },
   ],
   back: [
-    { id: 'none',   name: 'Nothing',      need: () => true },
-    { id: 'scarf',  name: 'Sailor Scarf', need: () => S.stats.voyages >= 3, hint: 'Return from 3 voyages' },
-    { id: 'cape',   name: 'Wanderer Cape', need: () => !!S.gates.shinobi, hint: 'Open the Shinobi Lands' },
-    { id: 'coat',   name: 'Captain Coat', need: () => lvOf('smithing') >= 30, hint: 'Reach Bladesmithing level 30' },
-    { id: 'pack',   name: 'Treasure Pack', need: () => (S.stats.opened || 0) >= 50, hint: 'Open 50 chests' },
-    { id: 'wings',  name: 'Echo Wings',   need: () => collectionPct() >= 0.5, hint: 'Fill 50% of the Collection Log' },
+    { id: 'none',   name: 'Nothing',       r: 1, need: FREE },
+    { id: 'scarf',  name: 'Sailor Scarf',  r: 2, need: () => S.stats.voyages >= 3, hint: 'Return from 3 voyages' },
+    { id: 'cape',   name: 'Wanderer Cape', r: 3, need: () => !!S.gates.shinobi, hint: 'Open the Shinobi Lands' },
+    { id: 'pack',   name: 'Treasure Pack', r: 3, need: () => (S.stats.opened || 0) >= 50, hint: 'Open 50 chests' },
+    { id: 'coat',   name: 'Captain Coat',  r: 4, need: () => lvOf('smithing') >= 30, hint: 'Reach Bladesmithing level 30' },
+    { id: 'wings',  name: 'Echo Wings',    r: 5, need: () => collectionPct() >= 0.5, hint: 'Fill 50% of the Collection Log' },
   ],
   aura: [
-    { id: 'none',    name: 'No aura',      need: () => true },
-    { id: 'bubbles', name: 'Sea Bubbles',  need: () => lvOf('fishing') >= 40, hint: 'Reach Fishing level 40' },
-    { id: 'embers',  name: 'Chakra Embers', need: () => S.rebirths >= 1, hint: 'Rebirth for the first time' },
-    { id: 'pets',    name: 'Lucky Sparkle', need: () => Object.keys(S.pets).length >= 3, hint: 'Find 3 pets' },
-    { id: 'storm',   name: 'Rift Storm',   need: () => !!S.gates.rift, hint: 'Tear open the Convergence' },
+    { id: 'none',    name: 'No aura',       r: 1, need: FREE },
+    { id: 'bubbles', name: 'Sea Bubbles',   r: 3, need: () => lvOf('fishing') >= 40, hint: 'Reach Fishing level 40' },
+    { id: 'pets',    name: 'Lucky Sparkle', r: 3, need: () => Object.keys(S.pets).length >= 3, hint: 'Find 3 pets' },
+    { id: 'embers',  name: 'Chakra Embers', r: 4, need: () => S.rebirths >= 1, hint: 'Rebirth for the first time' },
+    { id: 'storm',   name: 'Rift Storm',    r: 5, need: () => !!S.gates.rift, hint: 'Tear open the Convergence' },
   ],
 };
-const COS_SLOTS = [['color', 'Colour'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
+const COS_SLOTS = [['build', 'Build'], ['stance', 'Stance'], ['color', 'Colour'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
+const COS_RARITY = ['', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
 const cosOf = (slot, id) => COSMETICS[slot].find((c) => c.id === id) || COSMETICS[slot][0];
 const avatarOn = () => isUnlocked('feature:avatar');
 function avState() {
@@ -66,7 +94,6 @@ function avState() {
   return A;
 }
 const cosOwned = (slot, c) => !!avState().got[slot + ':' + c.id] || c.need();
-// Marks newly earned cosmetics; returns them (for announcements).
 function checkCosmetics() {
   const A = avState(), fresh = [];
   for (const [s] of COS_SLOTS) for (const c of COSMETICS[s]) {
@@ -78,89 +105,393 @@ function checkCosmetics() {
 const cosCount = () => COS_SLOTS.reduce((a, [s]) => a + COSMETICS[s].filter((c) => cosOwned(s, c)).length, 0);
 const cosTotal = () => COS_SLOTS.reduce((a, [s]) => a + COSMETICS[s].length, 0);
 
-/* ------------------------------------------------------------- drawing */
-// viewBox 0 0 100 120. Head at (50, 30), feet at y 108. `over` replaces any slot (for previews).
-function avatarSVG(over, cls) {
-  const A = Object.assign({}, avState(), over || {});
-  const ink = cosOf('color', A.color).ink;
-  const w = 'stroke-linecap="round" stroke-linejoin="round"';
-  const aura = {
-    none: '',
-    bubbles: `<g class="av-bub" fill="none" stroke="#4cc3ff" stroke-width="1.6" opacity=".8"><circle cx="20" cy="80" r="4"/><circle cx="80" cy="64" r="3"/><circle cx="26" cy="46" r="2.5"/><circle cx="76" cy="96" r="3.5"/></g>`,
-    embers: `<g class="av-flame"><ellipse cx="50" cy="68" rx="34" ry="46" fill="#ff9a4d" opacity=".16"/><ellipse cx="50" cy="72" rx="24" ry="38" fill="#ffcf6a" opacity=".14"/></g>`,
-    pets: `<g class="av-spark" fill="#f4c66a"><path d="M18 40l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/><path d="M82 30l1.5 4 4 1.5-4 1.5-1.5 4-1.5-4-4-1.5 4-1.5z"/><path d="M80 88l2 5 5 2-5 2-2 5-2-5-5-2 5-2z"/></g>`,
-    storm: `<g class="av-storm"><ellipse cx="50" cy="66" rx="40" ry="50" fill="#a98bff" opacity=".14"/><path d="M14 50l8 6-5 3 9 8M86 40l-7 7 5 2-8 9" fill="none" stroke="#c4b4ff" stroke-width="2" ${w}/></g>`,
-  }[A.aura] || '';
-  const back = {
-    none: '',
-    scarf: `<path d="M46 46 L30 58 L36 60 L28 70" fill="none" stroke="#4cc3ff" stroke-width="4" ${w}/>`,
-    cape: `<path d="M44 45 Q30 70 28 92 L50 86 L72 92 Q70 70 56 45 Z" fill="#c0394a" opacity=".9"/>`,
-    coat: `<path d="M42 46 L34 96 L50 90 L66 96 L58 46 Z" fill="#2c3a5a" stroke="#f4c66a" stroke-width="1.5"/>`,
-    pack: `<rect x="56" y="48" width="16" height="20" rx="3" fill="#8a5a2b" stroke="#f4c66a" stroke-width="1.5"/>`,
-    wings: `<g fill="#a9e4ff" opacity=".75"><path d="M48 52 Q22 30 10 46 Q20 54 14 64 Q30 62 48 58Z"/><path d="M52 52 Q78 30 90 46 Q80 54 86 64 Q70 62 52 58Z"/></g>`,
-  }[A.back] || '';
-  const face = {
-    dots: `<circle cx="45.5" cy="29" r="1.8"/><circle cx="54.5" cy="29" r="1.8"/>`,
-    smile: `<circle cx="45.5" cy="28" r="1.8"/><circle cx="54.5" cy="28" r="1.8"/><path d="M45 33 Q50 37 55 33" fill="none" stroke="${ink}" stroke-width="1.6" ${w}/>`,
-    fierce: `<path d="M42.5 25.5l5 2M57.5 25.5l-5 2" stroke="${ink}" stroke-width="1.6" ${w}/><circle cx="45.5" cy="29.5" r="1.6"/><circle cx="54.5" cy="29.5" r="1.6"/><path d="M46 35h8" stroke="${ink}" stroke-width="1.6" ${w}/>`,
-    scar: `<circle cx="45.5" cy="29" r="1.8"/><circle cx="54.5" cy="29" r="1.8"/><path d="M55 23l4 9" stroke="#ff4d5e" stroke-width="1.6" ${w}/>`,
-    shades: `<path d="M41 28h18" stroke="#111" stroke-width="1.5"/><rect x="41.5" y="27" width="7" height="4.5" rx="1.5" fill="#111"/><rect x="51.5" y="27" width="7" height="4.5" rx="1.5" fill="#111"/><path d="M46 35 Q50 37 54 35" fill="none" stroke="${ink}" stroke-width="1.5" ${w}/>`,
-    mask: `<circle cx="45.5" cy="28" r="1.8"/><circle cx="54.5" cy="28" r="1.8"/><path d="M39 31 H61 Q60 41 50 42 Q40 41 39 31Z" fill="#3a4152" stroke="${ink}" stroke-width="1"/>`,
-  }[A.face] || '';
-  const hat = {
-    none: '',
-    bucket: `<path d="M38 22 Q39 12 50 12 Q61 12 62 22Z" fill="#c9a66b"/><path d="M33 22.5h34" stroke="#a8844a" stroke-width="3.5" ${w}/>`,
-    bandana: `<path d="M38.5 24 Q40 14 50 14 Q60 14 61.5 24Z" fill="#d8434f"/><path d="M61 22l7 3-5 3" fill="#d8434f"/><circle cx="46" cy="18" r="1" fill="#fff"/><circle cx="54" cy="19" r="1" fill="#fff"/>`,
-    chef: `<rect x="42" y="12" width="16" height="10" fill="#fff"/><circle cx="44" cy="10" r="5" fill="#fff"/><circle cx="50" cy="7" r="6" fill="#fff"/><circle cx="56" cy="10" r="5" fill="#fff"/>`,
-    tricorn: `<path d="M30 21 Q34 6 50 6 Q66 6 70 21 Q60 15 50 19 Q40 15 30 21Z" fill="#1d2433" stroke="#f4c66a" stroke-width="1.5" stroke-linejoin="round"/><path d="M47 11l3-3 3 3-3 3z" fill="#f4c66a"/>`,
-    hood: `<path d="M36 34 Q34 12 50 12 Q66 12 64 34 L60 32 Q60 18 50 18 Q40 18 40 32Z" fill="#3b4660"/><path d="M38 22h24" stroke="#9aa6bf" stroke-width="3"/><rect x="46" y="20" width="8" height="4" fill="#cfd6e4"/>`,
-    horns: `<path d="M40 22 Q32 14 34 4 Q40 14 44 18Z M60 22 Q68 14 66 4 Q60 14 56 18Z" fill="#e8e2d4" stroke="#9c9586" stroke-width="1"/>`,
-    crown: `<path d="M38 22 L38 10 L44 16 L50 6 L56 16 L62 10 L62 22Z" fill="#f4c66a" stroke="#a87b22" stroke-width="1"/><circle cx="50" cy="15" r="2" fill="#a98bff"/>`,
-  }[A.hat] || '';
-  const blade = S.equip && S.equip.weapon ? `<path d="M70 70 L84 44" stroke="#cfd6e4" stroke-width="2.6" ${w}/><path d="M66 66 L74 72" stroke="#f4c66a" stroke-width="2.6" ${w}/>` : '';
-  return `<svg class="avatar ${cls || ''}" viewBox="0 0 100 120" aria-hidden="true">
-    ${aura}${back}
-    <g class="av-body" fill="none" stroke="${ink}" stroke-width="4" ${w}>
-      <path d="M50 44 V76"/><path d="M50 52 L34 66 L30 78"/><path d="M50 52 L66 64 L70 70"/>
-      <path d="M50 76 L38 108"/><path d="M50 76 L62 108"/>
-    </g>
-    ${blade}
-    <circle cx="50" cy="30" r="12" fill="#151821" stroke="${ink}" stroke-width="3.5"/>
-    <g fill="${ink}">${face}</g>${hat}
-  </svg>`;
+/* ================================================================ poses */
+// Angles in degrees: 0 points down, 90 forward (the figure faces right), 180 up, -90 back.
+// t1: abdomen (absolute) · t2: chest (relative) · n: neck (relative) · h: head tilt
+// aF / aB: front / back arm [upper (absolute), elbow bend] · lF / lB: legs [thigh (absolute), knee bend]
+// fF / fB: foot tilt · g: weapon angle relative to the forearm · dy: crouch · air: float above the ground
+const POSES = {
+  relaxed:  { sh: 1, t1: 177, t2: -5, n: 8,  h: 5,   aF: [12, 24],   aB: [-14, 16],  lF: [16, -26], lB: [-6, -4],  fF: 6,  fB: 0,  g: -150, dy: 0 },
+  guard:    { t1: 166, t2: 8,  n: -6, h: -8,  aF: [58, 72],   aB: [26, 96],   lF: [34, -46], lB: [-30, -12], fF: 0,  fB: -8, g: -70,  dy: 10 },
+  swagger:  { sh: 1, t1: 186, t2: -8, n: -4, h: -12, aF: [36, -118], aB: [-44, 116], lF: [10, -8],  lB: [-14, -2], fF: 10, fB: 0,  g: -170, dy: 0 },
+  heroic:   { t1: 180, t2: -6, n: -8, h: -10, aF: [176, -12], aB: [-38, 112], lF: [22, -6],  lB: [-20, -4], fF: 4,  fB: 0,  g: -6,   dy: 0 },
+  meditate: { sh: 1, t1: 180, t2: 0,  n: 6,  h: 8,   aF: [24, 66],   aB: [-6, 78],   lF: [84, -152], lB: [76, -146], fF: 60, fB: 60, g: -150, dy: 0, air: 18 },
+  windup:   { t1: 192, t2: -12, n: 8, h: -4,  aF: [196, -46], aB: [62, 70],   lF: [30, -40], lB: [-34, -14], fF: 0,  fB: -8, g: -40,  dy: 12 },
+  strike:   { t1: 150, t2: 12, n: -12, h: -10, aF: [98, 6],   aB: [-48, 36],  lF: [54, -66], lB: [-46, -2], fF: -6, fB: -20, g: -4,  dy: 18 },
+  hurt:     { t1: 198, t2: -14, n: 16, h: 16, aF: [-26, 44],  aB: [-8, 54],   lF: [12, -24], lB: [-22, -8], fF: 10, fB: 0,  g: -150, dy: 6, expr: 'hurt' },
+  victory:  { t1: 182, t2: -6, n: -12, h: -14, aF: [186, -8], aB: [-150, -40], lF: [20, -6], lB: [-22, -4], fF: 4,  fB: 0,  g: 0,    dy: 0, expr: 'happy' },
+  fish:     { sh: 1, t1: 172, t2: 4,  n: 2,  h: 6,   aF: [52, 44],   aB: [34, 70],   lF: [18, -20], lB: [-12, -6], fF: 4,  fB: 0,  g: -36,  dy: 2, prop: 'rod' },
+  cook:     { sh: 1, t1: 170, t2: 6,  n: 6,  h: 12,  aF: [44, 50],   aB: [20, 92],   lF: [14, -14], lB: [-12, -6], fF: 2,  fB: 0,  g: -90,  dy: 2, prop: 'pan' },
+};
+const POSE_KEYS = ['t1', 't2', 'n', 'h', 'fF', 'fB', 'g', 'dy', 'air'];
+function lerpPose(a, b, k) {
+  const o = {};
+  for (const key of POSE_KEYS) o[key] = (a[key] || 0) + ((b[key] || 0) - (a[key] || 0)) * k;
+  for (const key of ['aF', 'aB', 'lF', 'lB']) o[key] = [0, 1].map((i) => a[key][i] + (b[key][i] - a[key][i]) * k);
+  o.expr = k < 0.5 ? a.expr : b.expr;
+  o.prop = k < 0.5 ? a.prop : b.prop;
+  o.sh = k < 0.5 ? a.sh : b.sh;
+  return o;
+}
+const ease = {
+  io: (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
+  out: (x) => 1 - Math.pow(1 - x, 3),
+  back: (x) => 1 + 2.4 * Math.pow(x - 1, 3) + 1.4 * Math.pow(x - 1, 2),
+};
+
+/* ================================================================ geometry */
+const D2R = Math.PI / 180;
+const dir = (a) => [Math.sin(a * D2R), Math.cos(a * D2R)];
+const add = (p, a, len) => { const d = dir(a); return [p[0] + d[0] * len, p[1] + d[1] * len]; };
+const r1 = (v) => Math.round(v * 10) / 10;
+const pt = (p) => `${r1(p[0])},${r1(p[1])}`;
+const circ = (p, r) => `M${r1(p[0] - r)},${r1(p[1])}a${r1(r)},${r1(r)} 0 1,0 ${r1(2 * r)},0a${r1(r)},${r1(r)} 0 1,0 ${r1(-2 * r)},0`;
+// A tapered stroke through points with per-point widths, round caps and joints.
+function taper(pts, ws) {
+  const L = [], R = [];
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)];
+    let tx = b[0] - a[0], ty = b[1] - a[1];
+    const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+    const h = ws[i] / 2;
+    L.push([pts[i][0] - ty * h, pts[i][1] + tx * h]);
+    R.push([pts[i][0] + ty * h, pts[i][1] - tx * h]);
+  }
+  let d = 'M' + L.map(pt).join('L') + 'L' + R.reverse().map(pt).join('L') + 'Z';
+  for (let i = 0; i < pts.length; i++) d += circ(pts[i], ws[i] / 2);
+  return d;
+}
+// Quadratic curve through a middle point, sampled (for the spine).
+function curveThrough(a, m, b, n) {
+  const c = [2 * m[0] - (a[0] + b[0]) / 2, 2 * m[1] - (a[1] + b[1]) / 2], out = [];
+  for (let i = 0; i <= n; i++) {
+    const t = i / n, u = 1 - t;
+    out.push([u * u * a[0] + 2 * u * t * c[0] + t * t * b[0], u * u * a[1] + 2 * u * t * c[1] + t * t * b[1]]);
+  }
+  return out;
+}
+function shade(hex, f) {   // f < 0 darkens, f > 0 lightens
+  const n = parseInt(hex.slice(1), 16);
+  const ch = [n >> 16, (n >> 8) & 255, n & 255].map((c) => Math.round(f < 0 ? c * (1 + f) : c + (255 - c) * f));
+  return '#' + ch.map((c) => c.toString(16).padStart(2, '0')).join('');
+}
+const OL = '#0a0c11';
+// One body part: an ink outline behind its fill, so overlapping parts stay readable.
+const part = (d, fill, ow) => `<path d="${d}" fill="${OL}" stroke="${OL}" stroke-width="${ow || 3.2}" stroke-linejoin="round"/><path d="${d}" fill="${fill}"/>`;
+
+/* ================================================================ rig */
+const GROUND = 226;
+function solve(P, B) {
+  const s = B.h;
+  const len = { ab: 24 * s, ch: 25 * s, nk: 8 * s, ua: 29 * s, fa: 27 * s, th: 37 * s, sh: 37 * s, ft: 12 * s };
+  const pelvis = [100, 128 + P.dy];
+  const waist = add(pelvis, P.t1, len.ab);
+  const chestA = P.t1 + P.t2;
+  const chest = add(waist, chestA, len.ch);
+  const neckA = chestA + P.n;
+  const shoulder = add(chest, chestA, -4 * s);
+  const headR = 21 * B.head;
+  const neck = add(chest, neckA, len.nk);
+  const head = add(neck, neckA, headR - 2);
+  const arm = (a) => { const e = add(shoulder, a[0], len.ua); return [shoulder, e, add(e, a[0] + a[1], len.fa)]; };
+  const leg = (l, ft) => {
+    const k = add(pelvis, l[0], len.th), an = add(k, l[0] + l[1], len.sh);
+    return [pelvis, k, an, add(an, 90 + ft, len.ft)];
+  };
+  const J = { pelvis, waist, chest, shoulder, neck, head, headR, chestA, neckA,
+    aF: arm(P.aF), aB: arm(P.aB), lF: leg(P.lF, P.fF), lB: leg(P.lB, P.fB) };
+  // ground the figure: the lowest foot point rests on the floor (unless floating)
+  const low = Math.max(J.lF[2][1], J.lF[3][1], J.lB[2][1], J.lB[3][1]);
+  const shift = GROUND - low - (P.air || 0);
+  const mv = (p) => [p[0], p[1] + shift];
+  for (const k of ['pelvis', 'waist', 'chest', 'shoulder', 'neck', 'head']) J[k] = mv(J[k]);
+  for (const k of ['aF', 'aB', 'lF', 'lB']) J[k] = J[k].map(mv);
+  J.foreA = { aF: P.aF[0] + P.aF[1], aB: P.aB[0] + P.aB[1] };
+  return J;
 }
 
-/* ------------------------------------------------------------- view */
-let avSlot = 'hat';
+/* ================================================================ drawing */
+// Head-local drawings: head centre at 0,0, radius 19, facing right (3/4 view).
+const HATS = {
+  bucket: `<path d="M-15,-9 Q-15,-27 1,-27 Q16,-27 16,-9Z" fill="#c9a66b" stroke="${OL}" stroke-width="2.4"/><path d="M-15,-13 H16" stroke="#7d5f30" stroke-width="3"/><ellipse cx="1" cy="-9" rx="25" ry="4.6" fill="#b08e55" stroke="${OL}" stroke-width="2.4"/>`,
+  bandana: `<path d="M-18,-16 l-13,-5 l2,9Z M-18,-14 l-11,8 l7,2Z" fill="#b8323f" stroke="${OL}" stroke-width="2.2" stroke-linejoin="round"/><path d="M-19.5,-3 Q-20,-22 0,-22.5 Q19,-22 19.5,-6 Q2,-12 -19.5,-3Z" fill="#d8434f" stroke="${OL}" stroke-width="2.4"/><circle cx="-6" cy="-15" r="1.6" fill="#fff"/><circle cx="4" cy="-17" r="1.6" fill="#fff"/><circle cx="12" cy="-13" r="1.6" fill="#fff"/>`,
+  chef: `<g stroke="${OL}" stroke-width="2.4"><circle cx="-10" cy="-31" r="9" fill="#fff"/><circle cx="11" cy="-31" r="9" fill="#fff"/><circle cx="0" cy="-37" r="11" fill="#fff"/><path d="M-14,-14 L-14,-27 H14 L14,-14Z" fill="#fff"/></g><path d="M-9,-30 Q0,-34 9,-30" fill="none" stroke="#d6dbe6" stroke-width="2"/><path d="M-14,-17 H14" stroke="#d6dbe6" stroke-width="2"/>`,
+  tricorn: `<path d="M-27,-11 Q-24,-35 0,-35 Q24,-35 30,-9 Q15,-20 1,-16 Q-13,-20 -27,-11Z" fill="#1d2433" stroke="${OL}" stroke-width="2.4" stroke-linejoin="round"/><path d="M-24,-13 Q-12,-21 1,-18 Q15,-21 27,-11" fill="none" stroke="#f4c66a" stroke-width="2"/><path d="M0,-30 l4,4 -4,4 -4,-4Z" fill="#f4c66a" stroke="${OL}" stroke-width="1.2"/>`,
+  hood: `<path d="M-17,-11 Q-27,-14 -36,-6 M-17,-9 Q-26,-4 -33,4" fill="none" stroke="${OL}" stroke-width="6" stroke-linecap="round"/><path d="M-17,-11 Q-27,-14 -36,-6 M-17,-9 Q-26,-4 -33,4" fill="none" stroke="#3b4660" stroke-width="3.2" stroke-linecap="round"/><path d="M-19,-6 Q-18,-17 0,-17.5 Q17,-17 19,-8 L18.5,-2 Q2,-10 -19,0Z" fill="#3b4660" stroke="${OL}" stroke-width="2.4"/><rect x="2" y="-15" width="13" height="8" rx="1.5" fill="#c7cfdd" stroke="${OL}" stroke-width="1.8" transform="rotate(8 8 -11)"/><path d="M5.5,-11.5 l3,-2 3,2 -3,2z" fill="#56627a"/>`,
+  horns: `<g stroke="${OL}" stroke-width="2.2" stroke-linejoin="round"><path d="M-9,-16 Q-24,-24 -21,-43 Q-14,-28 -1,-19Z" fill="#d8d0bd"/><path d="M8,-18 Q15,-34 6,-47 Q21,-38 17,-14Z" fill="#ece5d4"/></g><path d="M-15,-28 l4,2 M-17,-34 l4,1 M11,-30 l4,1 M11,-37 l4,0" stroke="#9c9586" stroke-width="1.4"/>`,
+  crown: `<path d="M-14,-15 L-17,-34 L-8,-25 L0,-39 L8,-25 L17,-34 L14,-15Z" fill="#f4c66a" stroke="${OL}" stroke-width="2.4" stroke-linejoin="round"/><path d="M-14,-19 H14" stroke="#a87b22" stroke-width="2"/><circle cx="0" cy="-23" r="3" fill="#a98bff" stroke="${OL}" stroke-width="1.4"/><circle cx="-17" cy="-34" r="2" fill="#fff"/><circle cx="17" cy="-34" r="2" fill="#fff"/><circle cx="0" cy="-39" r="2.2" fill="#fff"/>`,
+};
+function faceSVG(face, expr) {
+  const e = `fill="${OL}"`, st = `stroke="${OL}" stroke-width="2.2" stroke-linecap="round" fill="none"`;
+  const scar = face === 'scar' ? `<path d="M13,-12 L18,1" stroke="#ff4d5e" stroke-width="2.2" stroke-linecap="round"/>` : '';
+  const plain = ['dots', 'smile', 'fierce', 'scar'].includes(face);
+  if (expr === 'hurt' && plain) return `<path d="M1,-5 l5,3 -5,3 M16,-5 l-5,3 5,3" ${st}/><path d="M5,9 Q9,6 13,9" ${st}/>` + scar;
+  if (expr === 'happy' && plain) return `<path d="M1,-1 Q4,-6 7,-1 M10,-1 Q13,-6 16,-1" ${st}/><path d="M4,6 Q9.5,13 15,5" ${st}/>` + scar;
+  const eyes = `<ellipse cx="4" cy="-2" rx="2" ry="3" ${e}/><ellipse cx="13" cy="-2" rx="2.3" ry="3.2" ${e}/>`;
+  switch (face) {
+    case 'smile': return eyes + `<path d="M4,6 Q9.5,12 15,5" ${st}/>`;
+    case 'fierce': return `<path d="M0,-9 L7,-5 M17,-9 L11,-5" ${st}/><ellipse cx="4" cy="-1" rx="2" ry="2.4" ${e}/><ellipse cx="13" cy="-1" rx="2.2" ry="2.6" ${e}/><path d="M5,8 H14" ${st}/>`;
+    case 'scar': return eyes + scar + `<path d="M6,7 H12" ${st}/>`;
+    case 'shades': return `<path d="M-8,-4 H19" stroke="${OL}" stroke-width="2.2"/><path d="M-1,-5 h10 l-1,6 q-4,2 -8,0z M10,-5 h9 l-1,5.5 q-4,2 -7,0z" fill="#11141b" stroke="${OL}" stroke-width="1.4"/><path d="M1,-3 l3,0 M12,-3 l3,0" stroke="#7fd3ff" stroke-width="1.2"/><path d="M5,9 Q10,11 14,8" ${st}/>`;
+    case 'mask': return `<ellipse cx="4" cy="-3" rx="2" ry="2.8" ${e}/><ellipse cx="13" cy="-3" rx="2.2" ry="3" ${e}/><path d="M-5,2 H19 Q18,15 8,16.5 Q-2,15 -5,2Z" fill="#323a4b" stroke="${OL}" stroke-width="2"/><path d="M0,7 H15 M2,11 H13" stroke="#4c566b" stroke-width="1.2"/>`;
+    default: return eyes;
+  }
+}
+// Weapon drawn along +x from the grip (0,0); its shape follows the equipped item.
+function weaponKind(id) {
+  const n = id || '';
+  return /bow/.test(n) ? 'bow' : /hammer/.test(n) ? 'hammer' : /cannon/.test(n) ? 'cannon' : /gauntlet/.test(n) ? 'fist'
+    : /claw/.test(n) ? 'claw' : /sickle/.test(n) ? 'sickle' : /lance/.test(n) ? 'lance' : /cleaver/.test(n) ? 'cleaver'
+    : /katana|blade/.test(n) ? 'katana' : /kunai|senbon|tanto|fang|wakizashi/.test(n) ? 'short' : 'cutlass';
+}
+const RCOL = ['#9aa3b5', '#9aa3b5', '#5fd38a', '#4cc3ff', '#b07cff', '#f4c66a', '#ff7a59'];
+function weaponSVG(id) {
+  const r = typeof rarity === 'function' ? rarity(id) : 1, c = RCOL[Math.min(6, r)] || RCOL[1];
+  const m = '#dfe4ee', o = `stroke="${OL}" stroke-width="2" stroke-linejoin="round"`;
+  const glow = (d) => (r >= 4 ? `<path d="${d}" fill="none" stroke="${c}" stroke-width="7" opacity=".28" stroke-linejoin="round"/>` : '');
+  const grip = `<rect x="-9" y="-2.4" width="10" height="4.8" rx="1.5" fill="#5a3d26" ${o}/><circle cx="-10" cy="0" r="2.8" fill="${c}" ${o}/>`;
+  const guard = `<rect x="0" y="-7" width="3.6" height="14" rx="1.5" fill="${c}" ${o}/>`;
+  let b;
+  switch (weaponKind(id)) {
+    case 'katana': b = 'M3,-2.2 Q30,-5 56,-6 Q44,1 3,2.2Z'; return glow(b) + grip + `<path d="${b}" fill="${m}" ${o}/><path d="M5,-1 Q30,-3.5 50,-4.6" stroke="#fff" stroke-width="1" fill="none"/><ellipse cx="2" cy="0" rx="2.6" ry="6" fill="${c}" ${o}/>`;
+    case 'short': b = 'M3,-2.4 L26,-1 L31,0 L26,1.2 L3,2.4Z'; return glow(b) + grip + `<path d="${b}" fill="${m}" ${o}/>` + guard;
+    case 'cleaver': b = 'M3,-3 L40,-11 Q46,-4 42,6 L3,3Z'; return glow(b) + grip + `<path d="${b}" fill="${m}" ${o}/><path d="M6,-1 L40,-7" stroke="#fff" stroke-width="1"/>` + guard;
+    case 'hammer': b = 'M30,-12 h14 v24 h-14z'; return glow(b) + `<rect x="-8" y="-2.2" width="40" height="4.4" rx="1.5" fill="#5a3d26" ${o}/><path d="${b}" fill="#6c7385" ${o}/><path d="M33,-12 v24" stroke="${c}" stroke-width="2"/>`;
+    case 'sickle': b = 'M30,-2 Q30,-26 8,-30 Q22,-20 24,-2Z'; return glow(b) + `<rect x="-8" y="-2.2" width="38" height="4.4" rx="1.5" fill="#3d2f2a" ${o}/><path d="${b}" fill="${m}" ${o}/>`;
+    case 'lance': b = 'M54,-5 L72,0 L54,5Z'; return glow(b) + `<rect x="-14" y="-2" width="70" height="4" rx="1.5" fill="#d8d0bd" ${o}/><path d="${b}" fill="${m}" ${o}/><circle cx="52" cy="0" r="3" fill="${c}" ${o}/>`;
+    case 'bow': b = 'M4,-38 Q30,0 4,38'; return glow(b) + `<path d="M4,-38 L4,38" stroke="#e8e2d4" stroke-width="1"/><path d="${b}" fill="none" stroke="${OL}" stroke-width="6" stroke-linecap="round"/><path d="${b}" fill="none" stroke="${c}" stroke-width="3" stroke-linecap="round"/>`;
+    case 'cannon': b = 'M0,-6 h30 v12 h-30z'; return glow(b) + `<path d="M-6,0 l-4,10 h6 l3,-8z" fill="#5a3d26" ${o}/><path d="${b}" fill="#3a404d" ${o}/><rect x="26" y="-7.5" width="6" height="15" rx="1.5" fill="${c}" ${o}/>`;
+    case 'fist': return `<circle cx="2" cy="0" r="8.5" fill="#6c7385" ${o}/><path d="M-2,-6 v12 M3,-7 v14" stroke="${c}" stroke-width="2"/>`;
+    case 'claw': b = 'M2,-4 Q20,-12 30,-4 M2,0 Q22,-2 32,4 M2,4 Q18,10 28,12'; return `<path d="${b}" fill="none" stroke="${OL}" stroke-width="5" stroke-linecap="round"/><path d="${b}" fill="none" stroke="${m}" stroke-width="2.6" stroke-linecap="round"/>`;
+    default: b = 'M3,-2.6 Q26,-7 46,-3 Q34,4 3,2.6Z'; return glow(b) + grip + `<path d="${b}" fill="${m}" ${o}/><path d="M6,-1.6 Q26,-4.6 42,-2.6" stroke="#fff" stroke-width="1" fill="none"/>` + guard;
+  }
+}
+// rotate() so that local +x points along angle a (our angle convention)
+const rotTo = (a) => r1(90 - a);
+
+function drawAvatar(A, P, t, opt) {
+  const B = cosOf('build', A.build).b, ink = cosOf('color', A.color).ink;
+  const inkB = shade(ink, -0.4), inkS = shade(ink, -0.16);
+  const J = solve(P, B), W = B.w * 1.32, out = [];
+  const feetX = (J.lF[3][0] + J.lB[3][0] + J.lF[2][0] + J.lB[2][0]) / 4;
+  const cx = (J.pelvis[0] + J.chest[0]) / 2, cy = (J.pelvis[1] + J.chest[1]) / 2;
+  const air = P.air || 0;
+  // ground shadow (smaller when floating)
+  out.push(`<ellipse cx="${r1(feetX)}" cy="${GROUND + 1}" rx="${r1(34 - air * 0.5)}" ry="5" fill="#000" opacity="${r1(0.42 - air * 0.01)}"/>`);
+  out.push(`<g style="mix-blend-mode:screen">${auraSVG(A.aura, cx, cy, t)}</g>`);
+  out.push(backSVG(A.back, J, t, B, P));
+  const worn = opt.weapon !== false && S.equip && S.equip.weapon;
+  if (worn && P.sh && !['fist', 'claw'].includes(weaponKind(worn))) out.push(`<g transform="translate(${pt(add(add(J.shoulder, J.chestA, 6), J.chestA - 90, 7))}) rotate(${rotTo(J.chestA - 205)})">${weaponSVG(worn)}</g>`);
+  const armW = [7.2 * W, 6 * W, 4.6 * W], legW = [9 * W, 7.2 * W, 5.4 * W];
+  const limb = (pts, ws, fill) => part(taper(pts, ws), fill);
+  const foot = (L, fill) => part(taper([L[2], L[3]], [5.4 * W, 4.4 * W]), fill);
+  // far side (darker): back leg, back arm
+  out.push(limb(J.lB.slice(0, 3), legW, inkB) + foot(J.lB, inkB));
+  out.push(limb(J.aB, armW, inkB) + part(circ(J.aB[2], 4.6 * W), inkB, 2.6));
+  // torso: curved spine through the waist (the line of action), tapered hip → chest
+  const spine = curveThrough(J.pelvis, J.waist, J.chest, 6);
+  out.push(part(taper(spine, spine.map((_, i) => (9.5 + (i / 6) * 4) * W)), ink));
+  // near leg
+  out.push(limb(J.lF.slice(0, 3), legW, inkS) + foot(J.lF, inkS));
+  // neck + head (rigid, tilts with the neck)
+  out.push(part(taper([J.chest, J.neck], [6 * W, 5 * W]), ink));
+  const ha = (P.h || 0) + (180 - J.neckA) * 0.6;
+  out.push(`<g transform="translate(${pt(J.head)}) rotate(${r1(ha)}) scale(${r1(J.headR / 19 * 100) / 100})">
+    <circle r="19" fill="${ink}" stroke="${OL}" stroke-width="3.2"/>
+    <path d="M-12,-11 A15,15 0 0,1 4,-16 A17,17 0 0,0 -13,-4Z" fill="#fff" opacity=".35"/>
+    <path d="M-17,6 A18,18 0 0,0 10,16 A20,20 0 0,1 -14,-2Z" fill="#000" opacity=".16"/>
+    ${faceSVG(A.face, P.expr)}${HATS[A.hat] || ''}</g>`);
+  // weapon / tool in the near hand, then the near arm over its grip
+  const hand = J.aF[2], fa = J.foreA.aF, prop = P.prop;
+  const weapon = !prop && worn && (!P.sh || ['fist', 'claw'].includes(weaponKind(worn))) ? worn : null;
+  if (weapon) out.push(`<g transform="translate(${pt(hand)}) rotate(${rotTo(fa + P.g)})">${weaponSVG(weapon)}</g>`);
+  if (prop === 'rod') out.push(rodSVG(hand, fa + P.g, t));
+  if (prop === 'pan') out.push(panSVG(hand, fa + P.g, t));
+  out.push(limb(J.aF, armW, ink) + part(circ(hand, 4.8 * W), ink, 2.6));
+  if (A.back === 'scarf') out.push(part(taper([add(J.chest, J.chestA, -2), J.neck], [10 * W, 9 * W]), '#4cc3ff', 2.6));
+  return out.join('');
+}
+
+function rodSVG(hand, a, t) {
+  const tip = add(hand, a, 74), bob = [tip[0] + 22, GROUND - 6 + Math.sin(t * 2.4) * 2.5];
+  return `<path d="M${pt(tip)} Q${r1((tip[0] + bob[0]) / 2 + 4)},${r1(bob[1] - 30)} ${pt(bob)}" fill="none" stroke="#cfd6e4" stroke-width="1" opacity=".8"/>`
+    + part(taper([add(hand, a, -10), tip], [4.2, 1.8]), '#8a5a2b', 2.4)
+    + `<circle cx="${r1(bob[0])}" cy="${r1(bob[1])}" r="3.4" fill="#ff4d5e" stroke="${OL}" stroke-width="1.6"/><path d="M${r1(bob[0] - 3.4)},${r1(bob[1])} h6.8" stroke="#fff" stroke-width="1.4"/>`;
+}
+function panSVG(hand, a, t) {
+  const end = add(hand, a, 16), c = add(end, a, 15), flip = (t * 1.3) % 1, up = Math.sin(flip * Math.PI) * 26;
+  return part(taper([hand, end], [3.6, 3.6]), '#3b3f4a', 2.2)
+    + `<ellipse cx="${r1(c[0])}" cy="${r1(c[1])}" rx="16" ry="5" fill="#2a2e38" stroke="${OL}" stroke-width="2.4"/>`
+    + `<g transform="translate(${r1(c[0])},${r1(c[1] - 4 - up)}) rotate(${r1(flip * 360)})"><ellipse rx="7" ry="3" fill="#ffb36b" stroke="${OL}" stroke-width="1.6"/><path d="M6,0 l4,-3 v6z" fill="#ffb36b" stroke="${OL}" stroke-width="1.2"/></g>`;
+}
+function backSVG(id, J, t, B, P) {
+  const W = B.w, sh = J.shoulder, pel = J.pelvis, sway = Math.sin(t * 2.1);
+  switch (id) {
+    case 'cape': {
+      const hemY = pel[1] + 54 * B.h, back = -30 - sway * 5 - (P.t1 < 170 ? 14 : 0);
+      const d = `M${pt([sh[0] + 4, sh[1] - 2])} Q${r1(sh[0] - 22)},${r1(sh[1] + 30)} ${r1(pel[0] + back)},${r1(hemY)} Q${r1(pel[0] + back / 2 + 4)},${r1(hemY + 6 + sway * 3)} ${r1(pel[0] - 2)},${r1(hemY - 4)} Q${r1(pel[0] + 2)},${r1(sh[1] + 30)} ${r1(sh[0] + 8)},${r1(sh[1])}Z`;
+      return `<path d="${d}" fill="#a52a3b" stroke="${OL}" stroke-width="3" stroke-linejoin="round"/><path d="M${r1(sh[0] - 2)},${r1(sh[1] + 6)} Q${r1(sh[0] - 14)},${r1(sh[1] + 34)} ${r1(pel[0] + back * 0.7)},${r1(hemY - 4)}" fill="none" stroke="#7e1f2d" stroke-width="2.4"/>`;
+    }
+    case 'coat': {
+      const fl = 24 + sway * 3;
+      const d = `M${pt([sh[0] - 9 * W, sh[1]])} L${pt([sh[0] + 9 * W, sh[1]])} L${r1(pel[0] + 10 * W)},${r1(pel[1] + 30)} L${r1(pel[0] - 4)},${r1(pel[1] + 22)} L${r1(pel[0] - fl)},${r1(pel[1] + 36)} Z`;
+      return `<path d="${d}" fill="#3a5688" stroke="${OL}" stroke-width="3" stroke-linejoin="round"/><path d="M${pt([sh[0] - 7 * W, sh[1] + 2])} L${r1(pel[0] - fl + 3)},${r1(pel[1] + 33)}" stroke="#f4c66a" stroke-width="2"/>`;
+    }
+    case 'pack': return `<g transform="translate(${pt(J.waist)}) rotate(${r1(rotTo(J.chestA) + 90)})"><rect x="-26" y="-14" width="19" height="24" rx="4" fill="#8a5a2b" stroke="${OL}" stroke-width="2.6"/><rect x="-26" y="-14" width="19" height="8" rx="3" fill="#a8743f" stroke="${OL}" stroke-width="2"/><circle cx="-16.5" cy="-5" r="2.4" fill="#f4c66a" stroke="${OL}" stroke-width="1.2"/></g>`;
+    case 'wings': {
+      const f = Math.sin(t * 3) * 10, base = add(J.chest, J.chestA, -10);
+      const wing = (s, op) => `<g transform="translate(${pt(base)}) rotate(${r1(-20 + f * s)})" opacity="${op}"><path d="M0,0 Q-36,-40 -62,-26 Q-46,-18 -54,-6 Q-38,-8 -40,4 Q-22,-2 0,6Z" fill="#a9e4ff" stroke="${OL}" stroke-width="2.6" stroke-linejoin="round"/><path d="M-6,0 Q-30,-24 -52,-22 M-6,3 Q-28,-8 -44,-4" fill="none" stroke="#e8f8ff" stroke-width="1.6"/></g>`;
+      return wing(0.6, 0.65) + wing(1, 0.95);
+    }
+    case 'scarf': {
+      const n = J.neck, w = (k) => Math.sin(t * 4 + k) * 4;
+      const tail = (dy, k) => taper([[n[0] - 2, n[1] + 3], [n[0] - 16, n[1] + 5 + dy + w(k)], [n[0] - 30, n[1] + 3 + dy * 1.6 + w(k + 1)]], [5, 4.4, 3]);
+      return part(tail(2, 0), '#2f8fd6', 2.6) + part(tail(9, 1.2), '#4cc3ff', 2.6);
+    }
+    default: return '';
+  }
+}
+function auraSVG(id, cx, cy, t) {
+  switch (id) {
+    case 'bubbles': return [0, 1, 2, 3, 4].map((i) => {
+      const k = (t * 0.35 + i / 5) % 1, x = cx + Math.sin(i * 2.4 + t) * 42, y = 220 - k * 170;
+      return `<circle cx="${r1(x)}" cy="${r1(y)}" r="${r1(3 + (i % 3) * 1.6)}" fill="none" stroke="#7fd3ff" stroke-width="1.6" opacity="${r1(0.9 - k * 0.8)}"/>`;
+    }).join('');
+    case 'embers': {
+      // three flame tongues licking up around the body, plus rising sparks
+      const tongue = (dx, h, w, k) => { const f = Math.sin(t * 8 + k) * 5, x = cx + dx, top = 214 - h;
+        return `M${r1(x - w)},214 Q${r1(x - w * 0.9)},${r1(top + h * 0.45)} ${r1(x + f * 0.6)},${r1(top + f)} Q${r1(x + w * 0.9)},${r1(top + h * 0.45)} ${r1(x + w)},214Z`; };
+      return `<path d="${tongue(-26, 110, 18, 1)}${tongue(26, 120, 18, 2)}${tongue(0, 160, 26, 3)}" fill="#ff6a1f" opacity=".5"/>`
+        + `<path d="${tongue(-22, 80, 10, 4)}${tongue(22, 90, 10, 5)}${tongue(0, 120, 15, 6)}" fill="#ffd36a" opacity=".55"/>`
+        + [0, 1, 2, 3].map((i) => { const k = (t * 0.6 + i / 4) % 1; return `<circle cx="${r1(cx - 30 + i * 20 + Math.sin(t * 3 + i) * 6)}" cy="${r1(200 - k * 150)}" r="2.2" fill="#ffe08a" opacity="${r1(1 - k)}"/>`; }).join('');
+    }
+    case 'pets': return [0, 1, 2, 3].map((i) => {
+      const a = t * 1.2 + i * Math.PI / 2, x = cx + Math.cos(a) * 52, y = cy + Math.sin(a) * 20 - 10, s = 0.7 + Math.sin(t * 5 + i) * 0.35;
+      return `<path transform="translate(${r1(x)},${r1(y)}) scale(${r1(s)})" d="M0,-7 L2,-2 L7,0 L2,2 L0,7 L-2,2 L-7,0 L-2,-2Z" fill="#f4c66a" opacity="${Math.sin(a) > 0 ? 1 : 0.55}"/>`;
+    }).join('');
+    case 'storm': {
+      const on = Math.sin(t * 9) > 0.55, X = (d) => r1(cx + d), Y = (d) => r1(cy + d);
+      return `<ellipse cx="${r1(cx)}" cy="${r1(cy)}" rx="58" ry="84" fill="#8b7bff" opacity="${r1(0.12 + Math.sin(t * 2) * 0.04)}"/>`
+        + (on ? `<path d="M${X(-48)},${Y(-40)} l12,14 -7,4 13,16 M${X(50)},${Y(-20)} l-10,12 7,3 -12,16" fill="none" stroke="#d8cfff" stroke-width="2.4" stroke-linejoin="round"/>` : '');
+    }
+    default: return '';
+  }
+}
+
+/* ================================================================ animation */
+// Every <svg class="avatar" data-av="battle|auto|preview"> on screen is animated (~30 fps).
+const AVS = new WeakMap();
+function basePose(el) {
+  const A = avState(), ctx = el.dataset.av;
+  if (ctx === 'preview') return el.dataset.pose || A.stance;
+  if (ctx === 'battle') return S.combat.zone != null ? 'guard' : A.stance;
+  if (S.action) return S.action.skill === 'fishing' ? 'fish' : S.action.skill === 'cooking' ? 'cook' : A.stance;
+  return A.stance;
+}
+function avAnim(el) {
+  let st = AVS.get(el);
+  if (!st) {
+    const p = POSES[basePose(el)] || POSES.relaxed;
+    st = { from: p, to: p, cur: p, t0: 0, dur: 1, easing: 'io', seq: [], cut: false };
+    AVS.set(el, st);
+  }
+  return st;
+}
+// Play a list of [pose, ms, easing] steps, then return to the base pose.
+function avPlay(el, steps) { if (!el) return; const st = avAnim(el); st.seq = steps.slice(); st.cut = true; }
+let avLast = 0;
+const avCalm = () => typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
+function avFrame(now) {
+  requestAnimationFrame(avFrame);
+  if (now - avLast < 33 || !S || document.hidden) return;
+  avLast = now;
+  const els = document.querySelectorAll('svg.avatar[data-av]');
+  if (!els.length) return;
+  const calm = avCalm(), A = avState(), t = calm ? 0.6 : now / 1000;
+  for (const el of els) {
+    const st = avAnim(el);
+    if (st.cut || now - st.t0 >= st.dur) {
+      const nx = st.seq.shift();
+      if (nx) Object.assign(st, { from: st.cur, to: POSES[nx[0]], t0: now, dur: nx[1], easing: nx[2] || 'io' });
+      else {
+        const want = POSES[basePose(el)] || POSES.relaxed;
+        if (want !== st.to) Object.assign(st, { from: st.cur, to: want, t0: now, dur: 380, easing: 'io' });
+      }
+      st.cut = false;
+    }
+    const k = Math.min(1, (now - st.t0) / st.dur);
+    const P = lerpPose(st.from, st.to, ease[st.easing](k));
+    st.cur = P;
+    // breathing: the chest rises, the head and arms follow a little behind
+    const br = calm ? 0 : Math.sin(t * 2.2);
+    const Pd = Object.assign({}, P, { t2: P.t2 + br * 1.6, n: P.n - br * 1.2, aF: [P.aF[0] + br * 1.4, P.aF[1]], aB: [P.aB[0] - br * 1.4, P.aB[1]] });
+    if (P.air) Pd.air = P.air + Math.sin(t * 1.6) * 4;
+    el.innerHTML = drawAvatar(A, Pd, t, {});
+  }
+}
+requestAnimationFrame(avFrame);
+
+// Public: an avatar <svg>. opts: { ctx: 'battle'|'auto'|'preview', pose, still, cls }. over: { slot: id } for previews.
+function avatarSVG(over, opts) {
+  opts = opts || {};
+  const A = Object.assign({}, avState(), over || {});
+  const pose = POSES[opts.pose || A.stance] || POSES.relaxed;
+  const anim = opts.still ? '' : `data-av="${opts.ctx || 'auto'}"${opts.pose ? ` data-pose="${opts.pose}"` : ''}`;
+  return `<svg class="avatar ${opts.cls || ''}" viewBox="22 18 156 218" aria-hidden="true" ${anim}>${drawAvatar(A, pose, 0.6, {})}</svg>`;
+}
+const STRIKE = [['windup', 110, 'out'], ['strike', 90, 'back'], ['strike', 110], ['guard', 260]];
+const playerAv = () => document.querySelector('[data-portrait="player"] svg.avatar');
+on('hit', (d) => {
+  if (d.target === 'enemy') avPlay(playerAv(), STRIKE);
+  else if (!d.dodge) avPlay(playerAv(), [['hurt', 90, 'out'], ['hurt', 160], ['guard', 320]]);
+});
+on('kill', () => avPlay(playerAv(), [['victory', 220, 'back'], ['victory', 500], ['guard', 400]]));
+
+/* ================================================================ view */
+let avSlot = 'build', avPreview = '';
+const PREVIEWS = [['', 'Stance'], ['guard', 'Guard'], ['strike', 'Attack'], ['victory', 'Victory'], ['hurt', 'Hurt'], ['fish', 'Fishing'], ['cook', 'Cooking']];
 function avatarHTML() {
   const A = avState();
-  const list = COSMETICS[avSlot];
   return `
   ${ptitle('Hero', 'Avatar', heroTabs('avatar'))}
   <div class="av-layout">
     <section class="win av-stage">
-      <div class="av-big">${avatarSVG(null, 'big')}</div>
-      <div class="av-worn">${COS_SLOTS.map(([s, l]) => `<span><small>${l}</small><b>${esc(cosOf(s, A[s]).name)}</b></span>`).join('')}</div>
-      <p class="muted small">Cosmetics are only for looks. Each one is earned from a feat somewhere in the worlds. ${cosCount()} / ${cosTotal()} found.</p>
+      <div class="av-floor">${avatarSVG(null, { ctx: 'preview', pose: avPreview || undefined, cls: 'big' })}</div>
+      <nav class="av-poses">${PREVIEWS.map(([k, l]) => `<button class="${avPreview === k ? 'on' : ''}" data-avpose="${k}">${l}</button>`).join('')}</nav>
+      <div class="av-worn">${COS_SLOTS.map(([s, l]) => `<button class="${s === avSlot ? 'on' : ''}" data-avslot="${s}"><small>${l}</small><b class="r${cosOf(s, A[s]).r}">${esc(cosOf(s, A[s]).name)}</b></button>`).join('')}</div>
+      <div class="av-foot"><span class="muted small">${cosCount()} / ${cosTotal()} found · only for looks, each earned from a feat</span>${gbtn('Random look', 'star', 'data-avrandom', 'dark')}</div>
     </section>
     <section class="win av-pick">
-      <nav class="seg">${COS_SLOTS.map(([s, l]) => `<button class="${s === avSlot ? 'on' : ''}" data-avslot="${s}">${l}<em>${COSMETICS[s].filter((c) => cosOwned(s, c)).length}/${COSMETICS[s].length}</em></button>`).join('')}</nav>
-      <div class="av-grid">${list.map((c) => {
+      <nav class="seg av-tabs">${COS_SLOTS.map(([s, l]) => `<button class="${s === avSlot ? 'on' : ''}" data-avslot="${s}">${l}<em>${COSMETICS[s].filter((c) => cosOwned(s, c)).length}/${COSMETICS[s].length}</em></button>`).join('')}</nav>
+      <div class="av-grid">${COSMETICS[avSlot].map((c) => {
         const own = cosOwned(avSlot, c), on = A[avSlot] === c.id;
-        return `<button class="av-card ${on ? 'on' : ''} ${own ? '' : 'locked'}" ${own ? `data-cos="${avSlot}:${c.id}"` : ''} title="${esc(own ? c.name : c.hint || '')}">
-          <span class="av-mini">${avatarSVG({ [avSlot]: c.id }, own ? '' : 'dim')}</span>
-          <b>${esc(c.name)}</b><small>${on ? 'Worn' : own ? 'Click to wear' : `${ui('lock')} ${esc(c.hint)}`}</small></button>`;
+        const pose = avSlot === 'stance' ? c.id : undefined;
+        return `<button class="av-card r${c.r} ${on ? 'on' : ''} ${own ? '' : 'locked'}" ${own ? `data-cos="${avSlot}:${c.id}"` : ''} title="${esc(own ? c.name : c.hint || '')}">
+          <span class="av-mini">${avatarSVG({ [avSlot]: c.id }, { still: true, pose, cls: own ? '' : 'dim' })}</span>
+          <span class="av-rar">${COS_RARITY[c.r]}</span>
+          <b>${esc(c.name)}</b><small>${on ? `${ui('check')} Worn` : own ? 'Click to wear' : `${ui('lock')} ${esc(c.hint)}`}</small></button>`;
       }).join('')}</div>
     </section>
   </div>`;
 }
 
-/* ------------------------------------------------------------- input + announcements */
+/* ================================================================ input + announcements */
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-avslot], [data-cos]');
+  const t = ev.target.closest('[data-avslot], [data-cos], [data-avpose], [data-avrandom]');
   if (!t) return;
+  const A = avState();
   if (t.dataset.avslot) avSlot = t.dataset.avslot;
-  else { const [s, id] = t.dataset.cos.split(':'); avState()[s] = id; }
+  else if (t.dataset.cos) { const [s, id] = t.dataset.cos.split(':'); A[s] = id; }
+  else if ('avpose' in t.dataset) {
+    avPreview = t.dataset.avpose;
+    if (avPreview === 'strike') { avPreview = 'guard'; setTimeout(() => avPlay(document.querySelector('.av-floor svg.avatar'), STRIKE.concat(STRIKE)), 80); }
+  } else if ('avrandom' in t.dataset) {
+    for (const [s] of COS_SLOTS) {
+      if (s === 'build') continue;
+      const own = COSMETICS[s].filter((c) => cosOwned(s, c));
+      A[s] = own[Math.floor(Math.random() * own.length)].id;
+    }
+  }
   dirty = true;
 });
 let lastCosPoll = 0;
