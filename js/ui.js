@@ -76,7 +76,7 @@ function rarity(id) {
 }
 const rarityVoy = (a) => (a.level < 25 ? 3 : a.level < 55 ? 4 : 5);
 const actRarity = (a) => (a.loot ? rarityVoy(a) : a.out ? rarity(Object.keys(a.out)[0]) : a.level < 30 ? 3 : a.level < 60 ? 4 : 5);
-const TYPE_LABEL = { res: 'Material', food: 'Food', gem: 'Gem', chest: 'Treasure', fruit: 'Devil Fruit', schematic: 'Schematic' };
+const TYPE_LABEL = { trade: 'Trade good', res: 'Material', food: 'Food', gem: 'Gem', chest: 'Treasure', fruit: 'Devil Fruit', schematic: 'Schematic' };
 const typeLabel = (id) => { const it = ITEMS[id]; if (it.relic) return `Relic · ${REALMS[it.relic].name}`; if (it.type === 'equip' && SCHEM_OF[id]) return 'Iconic ' + it.slot; return it.type === 'equip' ? it.slot[0].toUpperCase() + it.slot.slice(1) : TYPE_LABEL[it.type] || 'Item'; };
 const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Devil Fruit' : id === 'GEM' ? 'Random gem' : ITEMS[id].name);
 function stars(r) { return `<span class="stars">${'<i></i>'.repeat(r)}</span>`; }

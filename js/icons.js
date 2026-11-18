@@ -976,6 +976,11 @@ const ICON_COLOR = {
   wyvern_bow: '#c8b088', beastlord_mantle: '#c88a4a', chimera_fang: '#f0e0c0', ripple_gloves: '#ffd86a', stone_mask: '#b8b0a0', sunlit_armor: '#ffe08a',
   sea_salt: '#f4f8ff', peppercorns: '#a48e78', sea_kelp: '#4fb87a', fire_chili: '#ff3a2a', gold_saffron: '#ffb020', coral_lemon: '#ffe14d',
 };
+// Crafting carvings (trade goods), tinted like the wood they come from.
+Object.assign(ICONS.item, { pine_crate: 'cargo-crate', cedar_toolbox: 'toolbox', bamboo_puppet: 'puppet', mist_mask: 'drama-masks',
+  ironwood_beam: 'wood-beam', blossom_lantern: 'paper-lantern', oak_totem: 'totem-mask', heart_shrine: 'shinto-shrine' });
+Object.assign(ICON_COLOR, { pine_crate: '#d8b27a', cedar_toolbox: '#c8703e', bamboo_puppet: '#9fdc6a', mist_mask: '#a8b8d8',
+  ironwood_beam: '#8a9098', blossom_lantern: '#ff9ec4', oak_totem: '#7fe0b0', heart_shrine: '#ffd36a' });
 for (const id in ITEMS) if (ITEMS[id].type === 'tool') ICON_COLOR[id] = ['#d48b4c', '#d3dae4', '#ffd23f'][Math.min(2, (ITEMS[id].tier || 1) - 1)];
 const itemColor = (id) => { const it = ITEMS[id]; return ICON_COLOR[id] || (it && it.base && ICON_COLOR[it.base]) || '#e6e9f0'; };
 

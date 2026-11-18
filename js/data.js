@@ -329,6 +329,19 @@ for (const a of SKILLS.smithing.actions) {
   a.in = inp;
   SKILLS.arts.actions.push(a);
 }
+// Carvings: one recipe per tree, made from that wood alone, so Crafting always has a recipe you can
+// spam with nothing but Woodcutting. They are trade goods: 1 log in, worth 1.6× the log at sale.
+// Same level and time as the tree, so an hour of carving uses about an hour of chopping.
+const CARVINGS = [
+  ['pine_crate', 'Pine Crate', 'pine_log'], ['cedar_toolbox', 'Cedar Toolbox', 'cedar_log'], ['bamboo_puppet', 'Bamboo Puppet', 'bamboo'],
+  ['mist_mask', 'Mistwood Mask', 'mistwood'], ['ironwood_beam', 'Ironwood Beam', 'ironwood'], ['blossom_lantern', 'Blossom Lantern', 'blossomwood'],
+  ['oak_totem', 'Spirit Oak Totem', 'spirit_oak'], ['heart_shrine', 'Heartwood Shrine', 'heartwood'],
+];
+for (const [id, name, log] of CARVINGS) {
+  const tree = SKILLS.woodcutting.actions.find((a) => a.id === log);
+  defItem(id, name, '🪵', Math.round(ITEMS[log].value * 1.6), { type: 'trade', desc: `Carved from ${ITEMS[log].name}. A trade good: sell it at the Bank.` });
+  SKILLS.arts.actions.push(craft(id, tree.level, tree.time, { [log]: 1 }));
+}
 SKILLS.arts.actions.sort((a, b) => a.level - b.level);
 SKILLS.smithing.actions = [
   craft('reishi_ingot', 1, 3, { spirit_ore: 2, pine_log: 1 }),

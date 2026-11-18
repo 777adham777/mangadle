@@ -10,7 +10,7 @@ Object.assign(ICONS.ui, { search: 'ws-search', sort: 'ws-sort' });
 const WS_CATS = [
   ['weapon', 'weapon', 'Weapons', 'equip'], ['armor', 'armor', 'Armor', 'equip'], ['accessory', 'accessory', 'Accessories', 'equip'],
   ['food', 'k-food', 'Consumables', 'food'], ['scroll', 'k-scroll', 'Scrolls', 'scroll'], ['tool', 'k-tool', 'Tools', 'tool'],
-  ['res', 'k-res', 'Materials', 'res'], ['chest', 'k-chest', 'Treasure', 'chest'],
+  ['res', 'k-res', 'Materials', 'res'], ['trade', 'gold', 'Trade goods', 'chest'], ['chest', 'k-chest', 'Treasure', 'chest'],
 ];
 const WS_STATUS = [['open', 'Available'], ['ready', 'Craftable'], ['locked', 'Upcoming']];
 const wsCan = (a) => (a.in ? Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(stock(k) / n))) : Infinity);
@@ -28,7 +28,7 @@ const WS_SORTS = {
 function wsCat(a) {
   const o = wsOut(a), it = o && ITEMS[o];
   if (!it) return 'res';
-  return it.type === 'equip' ? it.slot : itemKind(o);
+  return it.type === 'equip' ? it.slot : it.type === 'trade' ? 'trade' : itemKind(o);
 }
 const wsLocked = (st) => st === 'locked' || st === 'schem';
 const wsRank = (s, a) => { const st = actState(s, a); return st === 'active' ? 3 : st === 'ready' ? 2 : wsLocked(st) ? 0 : 1; };
