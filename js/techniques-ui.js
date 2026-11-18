@@ -14,7 +14,7 @@ const scrollName = (r) => SCROLL_NAME[r] || `${REALMS[r].name} Scroll`;
 function techSlotHTML(sl) {
   if (!sl.open()) return `<div class="tslot locked">${catIc(sl.cat)}<span><b>${sl.name}</b> · ${sl.hint}</span></div>`;
   const cur = S.tech.slots[sl.id], pool = Object.keys(TECHNIQUES).filter((id) => techLv(id) && TECHNIQUES[id].cat === sl.cat);
-  return `<div class="tslot ${cur ? 'on' : ''}" data-cat="${sl.cat}"><span class="ts-ic">${cur ? ic('technique', cur) : catIc(sl.cat)}</span>
+  return `<div class="tslot ${cur ? 'on' : ''}" data-cat="${sl.cat}"><span class="ts-ic"${cur ? ` data-ttip="${cur}"` : ''}>${cur ? ic('technique', cur) : catIc(sl.cat)}</span>
     <select data-techslot="${sl.id}"><option value="">${sl.name} · ${pool.length ? 'empty' : 'no technique yet'}</option>${pool.map((id) => `<option value="${id}" ${cur === id ? 'selected' : ''}>${TECHNIQUES[id].name} · Lv ${techLv(id)}</option>`).join('')}</select>
     ${cur ? `<small>${TECHNIQUES[cur].desc(techLv(cur))}${TECHNIQUES[cur].cd ? ` · ${techCd(cur)}s` : ''}</small>${TECHNIQUES[cur].cd ? `<span class="tcd"><i data-techcd="${cur}"></i></span>` : ''}` : ''}</div>`;
 }
@@ -29,7 +29,7 @@ UIX.battleSide.push(() => {
 
 function techCardHTML(id) {
   const T = TECHNIQUES[id], L = techLv(id);
-  if (!L) return `<div class="tcard unknown"><span class="tc-ic">${ui('lock')}</span><div class="tc-main"><b>???</b><small>${TECH_CATS[T.cat].name} · ${esc(scrollName(T.realm))}</small></div></div>`;
+  if (!L) return `<div class="tcard unknown"><span class="tc-ic" data-ttip="${id}">${ui('lock')}</span><div class="tc-main"><b>???</b><small>${TECH_CATS[T.cat].name} · ${esc(scrollName(T.realm))}</small></div></div>`;
   const c = fragCost(id), f = techFrag(id), eqd = isEquipped(id);
   const tiers = TECH_TIERS.map((t) => `<li class="${L >= t ? 'got' : ''}"><em>Lv ${t}</em>${T.tiers[t]}</li>`).join('');
   return `<div class="tcard ${eqd ? 'eq' : ''}" style="--rc:${rc(T.realm)}">

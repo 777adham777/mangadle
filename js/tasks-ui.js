@@ -46,7 +46,7 @@ UIX.collectionTop.push(() => {
   const foes = [...new Set(ZONES.filter((z) => !z.tear && !REALMS[z.realm].hidden || S.gates[z.realm]).flatMap((z) => z.enemies.map((e) => e.name)))];
   const seen = S.stats.foes || {}, met = foes.filter((n) => seen[n]);
   const beasts = Object.keys(BEASTS), caught = beasts.filter((b) => S.beasts[b]);
-  const techTile = (id) => tile(null, techLv(id) ? `Lv ${techLv(id)}` : null, { r: techLv(id) ? Math.min(5, 1 + Math.floor(techLv(id) / 3)) : 0, icon: ic('technique', id), unknown: !techLv(id), cls: 'xs', title: techLv(id) ? TECHNIQUES[id].name : 'Unknown technique' });
+  const techTile = (id) => tile(null, techLv(id) ? `Lv ${techLv(id)}` : null, { r: techLv(id) ? Math.min(5, 1 + Math.floor(techLv(id) / 3)) : 0, icon: ic('technique', id), unknown: !techLv(id), cls: 'xs', tip: `data-ttip="${id}"` });
   const foeTile = (n) => tile(null, seen[n] ? fmt(seen[n]) : null, { r: seen[n] ? 2 : 0, icon: ic('enemy', n), unknown: !seen[n], cls: 'xs', title: seen[n] ? `${n} · defeated ${fmt(seen[n])}` : 'Unknown foe' });
   const beastTile = (b) => tile(null, S.beasts[b] ? `Lv ${beastLv(b)}` : null, { r: S.beasts[b] ? 4 : 0, icon: ic('beast', b), unknown: !S.beasts[b], cls: 'xs', title: S.beasts[b] ? BEASTS[b].name : 'Unknown beast' });
   return `<section class="win col-extra">

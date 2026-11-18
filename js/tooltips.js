@@ -1,9 +1,10 @@
 'use strict';
 /* ==========================================================================
    TRI-REALM IDLE — item tooltips
-   Every item tile and item icon carries data-tip="<item id>" (ui.js tile / itemIc).
-   Hovering one (or a long press on touch) shows a card: name, rarity, family,
-   what the item does, where it comes from, how many you own and what it is worth.
+   Every item tile and item icon carries data-tip="<item id>" (ui.js tile / itemIc), every
+   technique icon data-ttip="<technique id>" (ui.js ic). Hovering one shows a card; on touch,
+   a tap on a plain icon or a long press on a button does. Items: name, rarity, family, what it
+   does, where it comes from, owned and worth. Techniques: effect at your level, tiers, progress, source.
    ========================================================================== */
 
 // What the item does, as attribute rows [icon, label, value] plus an optional line of text.
@@ -102,12 +103,38 @@ function tipHTML(id) {
     <div class="it-foot"><span>Owned <b>${fmt(n)}</b></span><span>${ui('gold')}<b>${fmt(it.value)}</b> g each</span></div></div>`;
 }
 
+// Techniques: what they do at your level, their Lv 5 / Lv 10 tiers, progress and where to get them.
+// Unknown techniques keep their secret: only their type, world and source show.
+function techTipHTML(id) {
+  const T = TECHNIQUES[id];
+  if (!T) return '';
+  const L = techLv(id), cat = TECH_CATS[T.cat], world = REALMS[T.realm];
+  const cd = T.cd ? `${typeof techCd === 'function' ? techCd(id) : T.cd}s cooldown` : 'no cooldown';
+  const slot = TECH_SLOTS.find((s) => S.tech.slots[s.id] === id);
+  const src = [[ic('realm', T.realm), `${scrollName(T.realm)} · dropped by ${world ? world.name : ''} foes`, '']];
+  for (const k in SKILLS) for (const a of SKILLS[k].actions || []) if (a.out && a.out['scroll_' + id]) src.push([ic('skill', k), `${SKILLS[k].name} · writes this scroll`, `Lv ${a.level}`]);
+  const rows = L ? [
+    ['star', 'Level', `${L} / ${TECH_MAX}`],
+    L < TECH_MAX ? ['frag', 'Fragments', `${techFrag(id)} / ${fragCost(id)}`] : ['star', 'Fragments', 'Mastered'],
+    ['check', 'Slot', slot ? slot.name : slotFor(id) ? 'Not equipped · a slot is free' : 'Not equipped'],
+  ] : [];
+  return `<div class="it-card tt" style="--rgc:${rc(T.realm)}"><div class="it-head">${tile(null, null, { r: L ? Math.min(5, 1 + Math.floor(L / 3)) : 0, icon: ic('technique', id), unknown: !L, cls: 's' })}
+      <div><b class="it-name">${L ? esc(T.name) : 'Unknown technique'}</b><small>${esc(cat.name)} · ${esc(world ? world.name : '')}${L ? ' · ' + cd : ''}</small></div></div>
+    ${L ? `<p class="it-text">${T.desc(L)}</p>
+      <ul class="it-tiers">${TECH_TIERS.map((t) => `<li class="${L >= t ? 'got' : ''}"><em>Lv ${t}</em>${esc(T.tiers[t])}</li>`).join('')}</ul>
+      <div class="it-rows">${rows.map(([icn, l, v]) => `<div><i>${ui(icn)}</i><span>${l}</span><b>${esc(v)}</b></div>`).join('')}</div>
+      ${T.tags && T.tags.length ? `<div class="it-tags">${T.tags.map((t) => `<i>${esc(t)}</i>`).join('')}</div>` : ''}`
+    : `<p class="it-text">Not learned yet. A scroll of ${esc(world ? world.name : 'its world')} teaches a random technique; unknown ones come up 3× as often.</p>`}
+    <div class="it-src"><small>Where to get it</small>${src.map(([i, t, v]) => `<div><i>${i}</i><span>${esc(t)}</span>${v ? `<b>${v}</b>` : ''}</div>`).join('')}</div>
+    ${L && L < TECH_MAX ? `<div class="it-foot"><span>Each copy found gives <b>${FRAG_PER_DUP}</b> fragments</span></div>` : ''}</div>`;
+}
+
 (() => {
   const el = document.createElement('div');
   el.id = 'itip';
   el.setAttribute('role', 'tooltip');
   document.body.appendChild(el);
-  let anchor = null, tipId = null, lastX = 0, lastY = 0, press = null, pressed = false;
+  let anchor = null, tipId = null, lastX = 0, lastY = 0, press = null, pressed = false, touchy = false;
 
   const place = () => {
     const a = anchor.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight, vw = innerWidth, vh = innerHeight, m = 8;
@@ -123,13 +150,14 @@ function tipHTML(id) {
     el.style.left = Math.round(x) + 'px';
     el.style.top = Math.round(y) + 'px';
   };
+  // data-tip = item id, data-ttip = technique id
   const show = (t) => {
-    const id = t.dataset.tip;
-    if (!ITEMS[id]) return;
+    const tech = t.dataset.ttip, id = tech ? 't:' + tech : t.dataset.tip;
+    if (tech ? !TECHNIQUES[tech] : !ITEMS[id]) return;
     anchor = t;
     if (id !== tipId || !el.classList.contains('show')) {
       let html = '';
-      try { html = tipHTML(id); } catch (e) { html = `<div class="it-head"><b class="it-name">${esc(ITEMS[id].name)}</b></div>`; }
+      try { html = tech ? techTipHTML(tech) : tipHTML(id); } catch (e) { html = `<div class="it-card"><b class="it-name">${esc(tech ? TECHNIQUES[tech].name : ITEMS[id].name)}</b></div>`; }
       el.innerHTML = html;
       tipId = id;
     }
@@ -137,7 +165,7 @@ function tipHTML(id) {
     place();
   };
   const hide = () => { el.classList.remove('show'); anchor = null; tipId = null; };
-  const target = (node) => (node && node.closest ? node.closest('[data-tip]') : null);
+  const target = (node) => (node && node.closest ? node.closest('[data-tip], [data-ttip]') : null);
 
   document.addEventListener('pointerover', (e) => {
     if (e.pointerType !== 'mouse') return;
@@ -149,7 +177,8 @@ function tipHTML(id) {
   document.addEventListener('pointerout', (e) => { if (e.pointerType === 'mouse' && anchor && !target(e.relatedTarget)) hide(); });
   // Touch: a long press shows the card (and swallows the click that follows); the next touch hides it.
   document.addEventListener('pointerdown', (e) => {
-    if (e.pointerType === 'mouse') return;
+    touchy = e.pointerType !== 'mouse';
+    if (!touchy) return;
     pressed = false;
     if (el.classList.contains('show')) hide();
     const t = target(e.target);
@@ -159,7 +188,12 @@ function tipHTML(id) {
   const cancel = () => clearTimeout(press);
   document.addEventListener('pointerup', cancel);
   document.addEventListener('pointercancel', cancel);
-  document.addEventListener('click', (e) => { if (pressed) { pressed = false; e.preventDefault(); e.stopPropagation(); } }, true);
+  document.addEventListener('click', (e) => {
+    if (pressed) { pressed = false; e.preventDefault(); e.stopPropagation(); return; }
+    // touch: a plain tap on something that does nothing else (an icon, a drop list...) shows its card too
+    const t = touchy && target(e.target);
+    if (t && !t.closest('button, a, label, input, select, textarea, [data-act], [data-nav]')) show(t);
+  }, true);
   document.addEventListener('contextmenu', (e) => { if (target(e.target) && e.pointerType !== 'mouse' && pressed) e.preventDefault(); });
   addEventListener('scroll', () => { if (anchor) hide(); }, true);
   addEventListener('blur', hide);

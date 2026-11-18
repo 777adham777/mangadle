@@ -23,14 +23,15 @@ const rc = (r) => RC[r] || (REALMS[r] && REALMS[r].ui) || RC.hub;
 
 /* =============================================================== icons */
 const hasIcons = () => typeof ICONS !== 'undefined' && typeof GI !== 'undefined';
-function gi(name, cls) { return name ? `<svg class="gi${cls ? ' ' + cls : ''}" aria-hidden="true"><use href="#gi-${name}"/></svg>` : ''; }
+function gi(name, cls, attrs) { return name ? `<svg class="gi${cls ? ' ' + cls : ''}"${attrs ? ' ' + attrs : ''} aria-hidden="true"><use href="#gi-${name}"/></svg>` : ''; }
 function icName(kind, id) {
   if (!hasIcons()) return null;
   const t = ICONS[kind];
   const n = t ? t[id] : null;
   return n && GI[n] ? n : (ICONS.ui && GI[ICONS.ui.info] ? ICONS.ui.info : null);
 }
-const ic = (kind, id, cls) => gi(icName(kind, id), cls);
+// Technique icons carry data-ttip: hovering one anywhere shows the technique's tooltip (tooltips.js).
+const ic = (kind, id, cls) => gi(icName(kind, id), cls, kind === 'technique' ? `data-ttip="${id}"` : '');
 const ui = (k, cls) => ic('ui', k, cls);
 // Item art: the item's own glyph in its own colour (ICON_COLOR, icons.js); schematics are drawn as blueprints.
 function itemIc(id, cls) {
@@ -105,7 +106,7 @@ function tile(id, n, o) {
   const art = o.unknown ? '<b class="q">?</b>' : (o.icon || itemIc(id)) + (o.mark != null ? o.mark : !o.icon && id ? itemMark(id) : '')
     + (real ? kindCorner(itemKind(id)) : '');
   // Real items get the rich tooltip (tooltips.js) instead of a plain title.
-  const tip = real ? `data-tip="${id}"` : `title="${esc(o.title || (o.unknown ? 'Undiscovered' : id ? fruitLabel(id) : ''))}"`;
+  const tip = real ? `data-tip="${id}"` : o.tip ? o.tip : `title="${esc(o.title || (o.unknown ? 'Undiscovered' : id ? fruitLabel(id) : ''))}"`;
   return `<${tag} class="tile r${r} ${o.cls || ''}" ${o.attrs || ''} ${tip}>`
     + `<span class="tile-art">${art}${o.corner || ''}</span>`
     + `${n == null || n === '' ? '' : `<span class="tile-n" ${o.nattrs || ''}>${n}</span>`}</${tag}>`;
