@@ -88,3 +88,18 @@
 .chamber-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px 0; }
 .chamber-row .pbar { flex: 1; }
 .chamber p { padding: 0 10px 10px; margin: 6px 0 0; }
+
+
+/* Elites */
+.boss-tag.elite { background: #6b4fd8; }
+
+/* Daily / weekly objectives */
+.task-list { display: grid; gap: 6px; padding: 8px 10px 10px; }
+.task { display: grid; grid-template-columns: auto 1fr auto; align-items: center; gap: 10px; padding: 6px 8px; background: var(--panel2); border: 1px solid var(--line); }
+.task.done { border-color: var(--ok); }
+.task.claimed { opacity: .55; }
+.tk-main { min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.tk-main b { font: 600 13.5px var(--display); }
+.tk-main small { display: flex; align-items: center; gap: 4px; font-size: 11.5px; color: var(--dim); }
+.tk-cta { display: flex; align-items: center; gap: 6px; }
+.tk-cta small { font-size: 12px; color: var(--dim); }

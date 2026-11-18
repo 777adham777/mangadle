@@ -73,6 +73,7 @@ function defaultState() {
     museum: {},
     quality: { log: {}, rec: {} },      // Shiny & Perfect logs (variant id -> how many), fish weight records (quality.js)
     kitchen: { spice: null },
+    tasks: { day: '', daily: [], week: '', weekly: [] },   // daily / weekly objectives (tasks.js)
     exped: { ships: [], dur: 600, food: true, repeat: true, last: null },   // expeditions.js           // seasoning picked in the Cooking spice rack (seas.js)
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),
@@ -491,7 +492,27 @@ function stopCombat() {
   C.zone = null; C.enemy = null;
   dirty = true;
 }
-const curEnemy = () => { const C = S.combat; return C.zone != null && C.enemy != null ? enemyAt(C.zone, C.enemy) : null; };
+// Elites and mini-bosses (GDD §3): in a stage without a boss, 1 foe in 20 is an Elite (stronger, triple rewards,
+// drop chances ×3), and every 50th foe is the stage's Alpha, a mini-boss (×5 rewards, drop chances ×5).
+const RANKED = {};
+const RANK = [null, { tag: 'Elite', hp: 3, atk: 1.35, def: 1.2, rew: 3 }, { tag: 'Alpha', hp: 8, atk: 1.7, def: 1.4, rew: 5 }];
+function rankedEnemy(e, r) {
+  const key = e.name + ':' + e.hp + ':' + r;
+  if (RANKED[key]) return RANKED[key];
+  const R = RANK[r];
+  return (RANKED[key] = Object.assign({}, e, {
+    name: `${R.tag} ${e.name}`, base: e.base || e.name, rank: r,
+    hp: Math.round(e.hp * R.hp), atk: Math.round(e.atk * R.atk), def: Math.round(e.def * R.def),
+    xp: Math.round(e.xp * R.rew), gold: [Math.round(e.gold[0] * R.rew), Math.round(e.gold[1] * R.rew)],
+    drops: e.drops.map(([d, ch, q]) => [d, Math.min(1, ch * R.rew), q]),
+  }));
+}
+const curEnemy = () => {
+  const C = S.combat;
+  if (C.zone == null || C.enemy == null) return null;
+  const e = enemyAt(C.zone, C.enemy);
+  return C.rank ? rankedEnemy(e, C.rank) : e;
+};
 function clog(m, c) { if (SIM) return; const L = S.combat.log; L.unshift({ m, c }); if (L.length > 40) L.pop(); logVer++; }
 
 function tickCombat(dt) {
@@ -518,6 +539,12 @@ function tickCombat(dt) {
 function spawnEnemy() {
   const C = S.combat, z = ZONES[C.zone];
   C.enemy = Math.floor(Math.random() * z.enemies.length);
+  C.rank = 0;
+  if (!z.boss && !z.tear) {
+    C.spawns = (C.spawns || 0) + 1;
+    if (C.spawns % 50 === 0) { C.rank = 2; C.enemy = z.enemies.length - 1; }
+    else if (Math.random() < 0.05) C.rank = 1;
+  }
   const e = curEnemy();
   C.eHp = e.hp; C.pT = 0.4; C.eT = e.spd * 0.8;
   hrun('spawn', e);
@@ -558,6 +585,7 @@ function killEnemy(e) {
     }
   }
   C.kills[z.id] = (C.kills[z.id] || 0) + 1;
+  if (e.rank) { S.stats.elites = (S.stats.elites || 0) + 1; if (e.rank === 2) S.stats.alphas = (S.stats.alphas || 0) + 1; }
   hrun('kill', e, z, loot, dropped);
   const pet = PETS.find((p) => p.zone === z.id);
   if (pet && !S.pets[pet.id] && Math.random() < pet.chance * luckMult()) givePet(pet);
@@ -574,6 +602,14 @@ function enemyHit(e) {
   C.hp -= dmg;
   emit('hit', { target: 'player', dmg });
   autoEat();
+  if (C.hp <= 0 && e.rank) {
+    // An Elite or Alpha that beats you gets away; you recover and keep fighting (idle runs never stall on them).
+    C.hp = Math.round(pMaxHp() * 0.5);
+    clog(`${e.name} overpowers you and slips away.`, 'lose');
+    emit('death', e);
+    C.enemy = null; C.respawn = 2; C.rank = 0;
+    return;
+  }
   if (C.hp <= 0) {
     C.hp = 0;
     S.stats.deaths++;

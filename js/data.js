@@ -665,6 +665,8 @@ const UNLOCKS = [
     hint: () => 'Reach Cooking level 8', why: 'The galley cook lends you her spice rack. Season dishes for small battle buffs; your catches now bring up sea salt.' },
   { id: 'skill:voyaging',     name: 'Voyaging',        need: () => skillLv('cooking') >= 10 || usedSkill('voyaging'),
     hint: () => 'Reach Cooking level 10', why: 'With proper provisions and timber for the hull, a captain agrees to take you aboard.' },
+  { id: 'feature:tasks',      name: 'Daily objectives', need: () => !!S.gates.seas,
+    hint: () => 'Reach Orange Town', why: 'The harbour board posts new jobs every day and every week, in every world you know. See the Overview.' },
   worldUnlock('soul', 'Soul City'),
   { id: 'skill:mining',       name: 'Reishi Mining',   need: () => !!S.gates.soul || usedSkill('mining') },
   { id: 'skill:smithing',     name: 'Smelting',        need: () => skillLv('mining') >= 5 || usedSkill('smithing'),
