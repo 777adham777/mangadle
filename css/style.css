@@ -1537,7 +1537,9 @@ body { background: var(--bg); }
 @keyframes moteDrift { 0%, 100% { opacity: 0; transform: translate(0, 0); } 30%, 70% { opacity: 0.7; } 50% { transform: translate(6vw, -3vh); } }
 @media (prefers-reduced-motion: reduce) { .particles { display: none; } }
 @media (max-width: 860px) {
-  #rail { background: rgba(12, 12, 15, 0.95); }
+  /* the drawer must sit above content + scrim; the hud's backdrop-filter would trap the fixed activity bar inside it */
+  #rail { z-index: 50; background: #0c0c0f; }
+  #hud { -webkit-backdrop-filter: none; backdrop-filter: none; background: rgba(12, 12, 15, 0.97); }
   #tabbar { position: fixed; z-index: 40; background: rgba(12, 12, 15, 0.9); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
   .sk-banner { min-height: 0; }
 }
