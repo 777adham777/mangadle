@@ -89,9 +89,8 @@ function maxSystems() {
   for (const [s] of COS_SLOTS) for (const c of COSMETICS[s]) A.got[s + ':' + c.id] = 1;
   A.seeded = 1;
   for (const r of WORLD_ORDER) S.renown[r] = Math.max(renownPts(r), RENOWN_K * 100 * 100);
-  for (const id in TECHNIQUES) S.tech.rank[id] = 5;
-  const free = Object.keys(TECHNIQUES).filter((id) => !S.tech.slots.includes(id));
-  S.tech.slots = S.tech.slots.map((x, i) => x || (i < techSlots() ? free.shift() || null : null));
+  for (const id in TECHNIQUES) S.tech.lv[id] = TECH_MAX;
+  for (const id in TECHNIQUES) if (!isEquipped(id)) { const sl = slotFor(id); if (sl) S.tech.slots[sl.id] = id; }
   for (const id in ITEMS) { const it = ITEMS[id]; if (it.type === 'tool') S.tools[it.toolFor] = Math.max(toolTier(it.toolFor), it.tier); }
   for (const k in CARDS) S.cards[k] = 1;
   for (const id in ARTIFACTS) S.museum[id] = 1;
@@ -228,7 +227,7 @@ VIEWS.dev = () => {
     </section>
     <section class="win">${hdr('Systems')}
       <div class="btn-row">${btn('systems', 'Max every system', 'crown')}${btn('pets', 'All pets', 'pet')}${btn('looks', 'All avatar looks', 'avatar')}${btn('renown', 'Renown 100', 'trophy')}</div>
-      <p class="muted small">Max every system: pets, avatar looks, Renown 100, techniques at rank 5, every tool, full Greed Island Cards and museum, every beast at level 20, an Echo graded A, Gold Hunter licence, a set of Dragon Balls.</p>
+      <p class="muted small">Max every system: pets, avatar looks, Renown 100, techniques at level 10, every tool, full Greed Island Cards and museum, every beast at level 20, an Echo graded A, Gold Hunter licence, a set of Dragon Balls.</p>
     </section>
   </div>
   <section class="win">${hdr('Items', `${Object.keys(S.items).length} kinds in the bank`)}

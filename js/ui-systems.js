@@ -4,39 +4,8 @@
    Loaded last: registers its views, then boots the game.
    ========================================================================== */
 
-/* ================================================================ TECHNIQUES */
 const costTiles = (cost) => Object.entries(cost).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(count(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (count(k) < n ? 'short' : ''), title: ITEMS[k].name })).join('');
-UIX.battleSide.push(() => {
-  if (!techOn()) return '';
-  const learned = Object.keys(TECHNIQUES).filter(techRank);
-  const n = techSlots();
-  const slot = (i) => {
-    const cur = S.tech.slots[i];
-    if (i >= n) return `<div class="tslot locked">${ui('lock')}<span>Chakra Focus ${i === 1 ? 30 : 60}</span></div>`;
-    return `<div class="tslot ${cur ? 'on' : ''}"><span class="ts-ic">${cur ? ic('technique', cur) : ui('technique')}</span>
-      <select data-techslot="${i}"><option value="">— empty —</option>${learned.map((id) => `<option value="${id}" ${cur === id ? 'selected' : ''}>${TECHNIQUES[id].name} · R${techRank(id)}</option>`).join('')}</select>
-      ${cur ? `<small>${TECHNIQUES[cur].desc(techRank(cur))} · ${techCost(cur)} chakra · ${TECHNIQUES[cur].cd}s</small>` : ''}</div>`;
-  };
-  return `<section class="win techs">${hdr('Techniques', learned.length ? 'fire on their own when ready' : 'brew scrolls in Shinobi Arts')}
-    <div class="tslots">${[0, 1, 2].map(slot).join('')}</div></section>`;
-});
-UIX.stageMe.push(() => (techOn() ? `<div class="chakrabar" title="Chakra: pays for techniques"><i data-chakra></i><span data-chakratxt></span></div>` : ''));
-UIX.actLines.push((skill, a) => {
-  const it = a.out && ITEMS[Object.keys(a.out)[0]];
-  if (!it || it.type !== 'scroll') return '';
-  const r = techRank(it.tech), T = TECHNIQUES[it.tech];
-  return `<div class="ac-note tech-note"><span>${ic('technique', it.tech)}${r ? `Rank ${r}/5` : 'Not learned'}</span><span class="muted">${T.desc(Math.min(5, r + (r < 5 ? 1 : 0)))}</span></div>`;
-});
-UPD.push(() => {
-  const el = $('[data-chakra]');
-  if (el) { el.style.width = (RT.chakra / chakraMax()) * 100 + '%'; setText($('[data-chakratxt]'), `${fmt(RT.chakra)} / ${fmt(chakraMax())}`); }
-});
-on('technique', (d) => { burst(d.rank === 1 ? 'Technique learned' : 'Technique ranked up', `${TECHNIQUES[d.id].name} · Rank ${d.rank}`, ic('technique', d.id), rc('shinobi')); });
-on('tech', (d) => {
-  if (!inBattleView()) return;
-  const el = $('[data-portrait="player"]');
-  floatAt(el, d.heal ? `+${fmt(d.heal)}${ui('hp')}` : `<small>${esc(TECHNIQUES[d.id].name)}</small>`, d.heal ? 'heal' : 'xp', 0, -30);
-});
+// Techniques: techniques-ui.js
 
 /* ======================================================= AWAKENING + FORGE */
 UIX.inspector.push((id) => {
@@ -410,10 +379,6 @@ document.addEventListener('click', (ev) => {
     const [id, q] = d.salvage.split(':'), got = salvage(id, q === 'all' ? count(id) : 1);
     if (got) toast(`Salvaged: ${Object.entries(got).map(([k, n]) => `${ITEMS[k].name} ×${n}`).join(', ')}`, 'good');
   }
-});
-document.addEventListener('change', (ev) => {
-  const d = ev.target.dataset;
-  if (d.techslot !== undefined) { equipTech(+d.techslot, ev.target.value); ev.target.blur(); }
 });
 
 /* ====================================================================== boot */

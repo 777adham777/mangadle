@@ -33,21 +33,49 @@ function finalizeWorlds() {
   GATES.rift.boss = ZONES[ri - 1].id;
 }
 
-/* ============================================== SHINOBI: technique scrolls */
-// Brewed in Shinobi Arts. Each craft teaches the technique or raises its rank (max 5).
-// Effects live in systems.js (TECHNIQUES). 'val' scales with rank.
+/* =================================================================== TECHNIQUES */
+// Collectable abilities (GDD §2.2). Learned techniques stay in your collection; only the ones in a slot fight.
+// cat: attack · defense · support · passive · ultimate (one slot type each). Levels 1-10: numbers grow every level,
+// and level 5 and 10 change how the technique behaves (tiers). Engine: techniques.js. Effects scale with L.
+// realm: the world whose scrolls teach it. Every foe of that world can drop its scroll (random technique).
+const TECH_MAX = 10;
+const TECH_TIERS = [5, 10];
 const TECHNIQUES = {
-  shadow_strike: { name: 'Shadow Strike', cost: 20, cd: 8,  desc: (r) => `Strike for ${2 + 0.5 * r}× your max hit.` },
-  healing_palm:  { name: 'Healing Palm',  cost: 25, cd: 12, desc: (r) => `Below 60% HP: heal ${15 + 5 * r}% of max HP.` },
-  mist_step:     { name: 'Mist Step',     cost: 20, cd: 15, desc: (r) => `For 5s: ${50 + 5 * r}% chance to dodge.` },
-  iron_skin:     { name: 'Iron Skin',     cost: 20, cd: 14, desc: (r) => `For 6s: take ${35 + 5 * r}% less damage.` },
-  sealing_mark:  { name: 'Sealing Mark',  cost: 25, cd: 16, desc: (r) => `For 8s: enemy defense −${30 + 6 * r}%.` },
-  fire_lotus:    { name: 'Fire Lotus',    cost: 45, cd: 20, desc: (r) => `Burst for ${4 + r}× your max hit.` },
+  shadow_strike: { name: 'Shadow Strike', cat: 'attack', realm: 'shinobi', cd: 8, tags: ['melee', 'critical'],
+    desc: (L) => `Strike for ${(2 + 0.2 * (L - 1)).toFixed(1)}× your max hit.`,
+    tiers: { 5: 'Always a critical hit (×1.5).', 10: 'Strikes twice.' } },
+  kunai_volley:  { name: 'Kunai Volley', cat: 'attack', realm: 'shinobi', cd: 10, tags: ['projectile', 'multi-hit'],
+    desc: (L) => `Throw 3 kunai for ${(0.7 + 0.08 * (L - 1)).toFixed(2)}× your max hit each.`,
+    tiers: { 5: 'Throws 4 kunai.', 10: 'Throws 5 kunai.' } },
+  fire_lotus:    { name: 'Fire Lotus', cat: 'attack', realm: 'shinobi', cd: 20, tags: ['fire', 'zone'],
+    desc: (L) => `Burst for ${(4 + 0.4 * (L - 1)).toFixed(1)}× your max hit.`,
+    tiers: { 5: 'Sets the foe ablaze: 15% of your max hit every second for 4s.', 10: 'Recharges in 14s.' } },
+  healing_palm:  { name: 'Healing Palm', cat: 'defense', realm: 'shinobi', cd: 12, tags: ['heal'],
+    desc: (L) => `Below 60% HP: heal ${15 + 2 * (L - 1)}% of your max HP.`,
+    tiers: { 5: 'Then regenerate 2% of max HP per second for 5s.', 10: 'Recharges in 8s.' } },
+  mist_step:     { name: 'Mist Step', cat: 'defense', realm: 'shinobi', cd: 15, tags: ['evasion'],
+    desc: (L) => `Once hurt: ${40 + 3 * (L - 1)}% chance to dodge for 5s.`,
+    tiers: { 5: 'Lasts 7s.', 10: 'Every dodge strikes back for 1× your max hit.' } },
+  iron_skin:     { name: 'Iron Skin', cat: 'defense', realm: 'shinobi', cd: 14, tags: ['guard'],
+    desc: (L) => `Once hurt: take ${30 + 3 * (L - 1)}% less damage for 6s.`,
+    tiers: { 5: 'Lasts 8s.', 10: 'Also heals 5% of your max HP when it starts.' } },
+  sealing_mark:  { name: 'Sealing Mark', cat: 'support', realm: 'shinobi', cd: 16, tags: ['seal'],
+    desc: (L) => `For 8s: the foe's defense drops by ${25 + 3 * (L - 1)}%.`,
+    tiers: { 5: 'Lasts 12s.', 10: 'You also deal 15% more damage to a marked foe.' } },
 };
+// Technique pools: which world's scroll teaches what. Each world adds its own as it is reworked.
+const TECH_POOLS = {};
+for (const id in TECHNIQUES) (TECH_POOLS[TECHNIQUES[id].realm] = TECH_POOLS[TECHNIQUES[id].realm] || []).push(id);
+// A world's scroll drops from its foes and is read at once: a random technique of that world
+// (unknown ones 3× as likely). A duplicate becomes fragments of that technique.
+const SCROLL_NAME = { shinobi: 'Leaf Scroll' };
+for (const r in TECH_POOLS) defItem('scroll_' + r, SCROLL_NAME[r] || `${REALMS[r].name} Scroll`, '📜', 40, { type: 'scroll', pool: r });
+// Crafted scrolls teach one chosen technique (the deterministic way to target it).
 for (const id in TECHNIQUES) defItem('scroll_' + id, 'Scroll: ' + TECHNIQUES[id].name, '📜', 50, { type: 'scroll', tech: id });
 SKILLS.arts.actions.push(
   craft('scroll_shadow_strike', 8, 5, { chakra_shard: 8, healing_leaf: 6 }),
   craft('scroll_healing_palm', 14, 5, { healing_leaf: 12, chakra_orb: 3 }),
+  craft('scroll_kunai_volley', 18, 5, { cedar_log: 10, chakra_orb: 4 }),
   craft('scroll_mist_step', 20, 6, { mist_steel: 3, chakra_orb: 5 }),
   craft('scroll_iron_skin', 28, 6, { beast_fang: 2, storm_chakra: 4, cloud_fern: 6 }),
   craft('scroll_sealing_mark', 36, 7, { storm_chakra: 6, shadowroot: 6, jade: 1 }),

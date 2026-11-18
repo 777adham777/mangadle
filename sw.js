@@ -1,6 +1,6 @@
 /* Service worker: makes the game installable and playable offline.
    Bump VERSION on every deploy so players get the new files. */
-const VERSION = 'tri-realm-v45';
+const VERSION = 'tri-realm-v46';
 const SHELL = [
   './',
   './index.html',
@@ -14,6 +14,7 @@ const SHELL = [
   './js/scene.js',
   './js/game.js',
   './js/systems.js',
+  './js/techniques.js',
   './js/quality.js',
   './js/seas.js',
   './js/guide.js',
@@ -23,6 +24,7 @@ const SHELL = [
   './js/seas-ui.js',
   './js/shinobi-ui.js',
   './js/dev.js',
+  './js/techniques-ui.js',
   './js/ui-systems.js',
   './manifest.webmanifest',
   './icons/icon-192.png',

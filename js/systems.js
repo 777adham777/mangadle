@@ -77,63 +77,9 @@ hook('kill', (e, z, loot, dropped) => {
   }
 });
 
-/* =========================================================== TECHNIQUES */
-// Leaf Village. Up to 3 techniques fire on their own in combat when ready, paid with a chakra bar
-// that Chakra Focus grows. Slot 2 at Chakra 30, slot 3 at Chakra 60.
-const techOn = () => isUnlocked('feature:techniques');
-const techRank = (id) => S.tech.rank[id] || 0;
-const techSlots = () => 1 + (skillLv('chakra') >= 30 ? 1 : 0) + (skillLv('chakra') >= 60 ? 1 : 0);
-const chakraMax = () => 40 + 2 * skillLv('chakra');
-const chakraRegen = () => 2 + 0.05 * skillLv('chakra');
-const techCost = (id) => Math.round(TECHNIQUES[id].cost * Math.max(0.5, 1 - synergyBonus('techcost', 'chakra')));
-const RT = { chakra: 0, cd: {}, fx: {} };     // combat runtime (not saved)
-function equipTech(slot, id) {
-  if (slot >= techSlots() || (id && !techRank(id))) return;
-  S.tech.slots = S.tech.slots.map((x, i) => (i === slot ? id || null : x === id ? null : x));
-  dirty = true;
-}
-hook('action', (skill, act) => {
-  const o = act.out && Object.keys(act.out)[0], it = o && ITEMS[o];
-  if (!it || it.type !== 'scroll') return;
-  removeItem(o, count(o));
-  const before = techRank(it.tech);
-  S.tech.rank[it.tech] = Math.min(5, before + 1);
-  if (!before) { const free = S.tech.slots.findIndex((x, i) => !x && i < techSlots()); if (free >= 0) S.tech.slots[free] = it.tech; }
-  emit('technique', { id: it.tech, rank: S.tech.rank[it.tech] });
-  dirty = true;
-});
-hook('block', (skill, act) => {
-  const it = act.out && ITEMS[Object.keys(act.out)[0]];
-  return it && it.type === 'scroll' && techRank(it.tech) >= 5 ? 'Mastered. This technique is already rank 5.' : '';
-});
-const CAST = {
-  shadow_strike: (e, r) => dealDamage(e, Math.round(pMaxHit() * (2 + 0.5 * r) * mitig(e.def * hmul('edef'))), false, 'Shadow Strike'),
-  fire_lotus:    (e, r) => dealDamage(e, Math.round(pMaxHit() * (4 + r) * mitig(e.def * hmul('edef'))), false, 'Fire Lotus'),
-  healing_palm:  (e, r) => { const m = pMaxHp(), h = Math.round(m * (0.15 + 0.05 * r)); S.combat.hp = Math.min(m, S.combat.hp + h); emit('tech', { id: 'healing_palm', heal: h }); },
-  mist_step:     () => { RT.fx.mist = 5; emit('tech', { id: 'mist_step' }); },
-  iron_skin:     () => { RT.fx.skin = 6; emit('tech', { id: 'iron_skin' }); },
-  sealing_mark:  () => { RT.fx.mark = 8; emit('tech', { id: 'sealing_mark' }); },
-};
-const TECH_WHEN = { healing_palm: () => S.combat.hp < 0.6 * pMaxHp() };
-hook('combat', (dt, e) => {
-  if (!techOn() || !e || (typeof pactOn === 'function' && pactOn('silence'))) return;
-  RT.chakra = Math.min(chakraMax(), RT.chakra + chakraRegen() * dt);
-  for (const k in RT.cd) RT.cd[k] -= dt;
-  for (const k in RT.fx) RT.fx[k] -= dt;
-  for (const id of S.tech.slots.slice(0, techSlots())) {
-    if (!id || !techRank(id) || (RT.cd[id] || 0) > 0) continue;
-    const T = TECHNIQUES[id], cost = techCost(id);
-    if (RT.chakra < cost || (TECH_WHEN[id] && !TECH_WHEN[id]())) continue;
-    RT.chakra -= cost; RT.cd[id] = T.cd;
-    S.stats.techUses = (S.stats.techUses || 0) + 1;
-    CAST[id](e, techRank(id));
-    if (S.combat.enemy == null) return;
-  }
-});
-hook('tick', (dt) => { if (S.combat.zone == null) { RT.chakra = Math.min(chakraMax(), RT.chakra + 10 * dt); RT.fx = {}; } });
-hook('dodge', () => ((RT.fx.mist || 0) > 0 ? 0.5 + 0.05 * techRank('mist_step') : 0));
-hook('taken', () => ((RT.fx.skin || 0) > 0 ? 0.65 - 0.05 * techRank('iron_skin') : 1));
-hook('edef', () => ((RT.fx.mark || 0) > 0 ? 0.7 - 0.06 * techRank('sealing_mark') : 1));
+/* =========================================================== COMBAT RUNTIME */
+// Not saved: technique cooldowns (cd) and running effects (fx), Domain Release flag. Techniques live in techniques.js.
+const RT = { cd: {}, fx: {} };
 
 /* ==================================================== AWAKENING + FORGE */
 // Soul City. Per item (all copies share it): { xp, rel, gems, tier }.

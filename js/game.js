@@ -57,7 +57,7 @@ function defaultState() {
     renown: {},                         // world id -> renown points (see systems.js)
     asc: {},                            // world id -> chosen Ascension tier for its zones
     gear: {},                           // equipment id -> { xp, rel, gems: [], tier } (awakening, sockets, reforge)
-    tech: { slots: [null, null, null], rank: {} },
+    tech: { slots: {}, lv: {}, frag: {}, pity: 0 },   // techniques.js
     avatar: { style: 'flat', color: 'chalk', hat: 'none', face: 'blank', back: 'none', aura: 'none', got: {} },   // see avatar.js
     ki: { form: null, stamina: 100 },
     farm: { plots: [], auto: false },
@@ -744,6 +744,12 @@ function loadFrom(json) {
   const d = JSON.parse(json);
   if (!isObj(d) || !d.skills) throw new Error('Not a valid save');
   if ((d.v || 1) < SAVE_V) throw new Error('This save comes from an older version of the game');
+  // Techniques: ranks 1-5 in 3 untyped slots became levels 1-10 in typed slots (techniques.js).
+  if (d.tech && Array.isArray(d.tech.slots)) {
+    const lv = {};
+    for (const id in d.tech.rank || {}) if (TECHNIQUES[id]) lv[id] = Math.min(TECH_MAX, d.tech.rank[id] * 2);
+    d.tech = { slots: {}, lv, frag: {}, pity: 0 };
+  }
   // The three combat skills became one character level: keep the best of them.
   if (d.skills.strength && !d.skills.character) d.skills.character = { xp: Math.max(...['strength', 'defense', 'vitality'].map((k) => (d.skills[k] ? d.skills[k].xp : 0))) };
   S = mergeDefaults(d, defaultState());

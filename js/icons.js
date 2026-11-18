@@ -572,8 +572,8 @@ ICONS.ui.dev = 'dev-code';
 
 // Technique scrolls
 for (const id in ITEMS) if (ITEMS[id].type === 'scroll') ICONS.item[id] = 'tied-scroll';
-ICONS.technique = { shadow_strike: 'hooded-assassin', healing_palm: 'heart-plus', mist_step: 'fog', iron_skin: 'mailed-fist', sealing_mark: 'yin-yang', fire_lotus: 'fire' };
-Object.assign(ICONS.ui, { technique: 'shuriken', awaken: 'shining-sword', socket: 'gems', reforge: 'anvil-impact', chakra: 'concentration-orb' });
+ICONS.technique = { shadow_strike: 'hooded-assassin', kunai_volley: 'triple-needle', healing_palm: 'heart-plus', mist_step: 'fog', iron_skin: 'mailed-fist', sealing_mark: 'yin-yang', fire_lotus: 'fire' };
+Object.assign(ICONS.ui, { tsup: 'magic-swirl', tpas: 'aura', tult: 'falling-star', frag: 'crystal-shine', technique: 'shuriken', awaken: 'shining-sword', socket: 'gems', reforge: 'anvil-impact', chakra: 'concentration-orb' });
 
 // ---- Kaio Planet
 ICONS.realm.ki = 'falling-star';
@@ -691,6 +691,7 @@ const ICON_MARK = {};
   for (const id in ITEMS) {
     const it = ITEMS[id];
     if (it.type === 'schematic') set(id, ICONS.item[it.teaches], 'scroll-unfurled');
+    else if (it.type === 'scroll' && it.pool) set(id, 'tied-scroll', ICONS.realm[it.pool]);
     else if (it.type === 'scroll') set(id, ICONS.technique[it.tech], 'tied-scroll');
     else if (it.type === 'tool') set(id, ICONS.skill[it.toolFor], 'cog', ROMAN[it.tier]);
     else if (it.type === 'seed') set(id, ICONS.item[id.slice(5)], 'leaf-swirl');
