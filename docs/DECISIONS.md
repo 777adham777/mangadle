@@ -19,8 +19,11 @@ Choix validés avec le joueur le 2026-11-18, puis propositions à valider.
 
 | Sujet | Proposition |
 | --- | --- |
-| Soin dans le monde 1 | Pas de Cooking avant le monde 2 : le monde 1 est équilibré pour se jouer sans nourriture (régénération complète hors combat, technique défensive de soin). Les ennemis lâchent parfois des Soldier Pills utilisables comme nourriture. |
-| Herbes (ex-Herbalism) | Deviennent des sous-produits de Woodcutting (le sous-bois) et, plus tard, de Farming. |
+| Soin dans le monde 1 | Crafting fabrique les Soldier Pills avec les Healing Leaves que donne Woodcutting (sous-bois). Les techniques défensives (Healing Palm, Iron Skin, Mist Step) complètent. |
+| Herbes (ex-Herbalism) | Sous-produits de Woodcutting : chaque arbre donne l'herbe de son palier (25-30 %), les arbres anciens un peu de chakra brut. |
 | Cristaux de chakra (ex-Chakra Focus) | Deviennent des drops de combat du monde 1, utilisés par Crafting. |
 | Restes d'âmes (ex-Soul Harvest) | Deviennent des drops de combat du monde 3. |
-| Crafting | Shinobi Arts devient Crafting, l'unique skill de fabrication d'armes et d'objets (Bladesmithing y sera fusionné au monde 3, après Smelting). |
+| Crafting | Shinobi Arts devient Crafting, l'unique skill de fabrication d'armes et d'objets (Bladesmithing y sera fusionné au monde 3, après Smelting). La première arme est l'Épée en bois. |
+| Personnage : formules | Attack = 8 + 1,5 × niv + équipement ; Defense = 1,5 × niv ; Vitality (PV de base) = 40 + 9 × niv ; Speed = 0,2 × niv (+1 % vitesse d'attaque / point) ; Luck = 0,1 × niv + 15 par Lucky Coin (+1 % de chance rare / point). Paliers 10/25/50/75/99 : +4 % dégâts, défense, PV. |
+| Techniques : chiffres | Niveaux 1-10, paliers de comportement aux niveaux 5 et 10. Un doublon = 5 fragments ; coûts 3-20 fragments par niveau (83 au total). Parchemin : 1/40 par ennemi commun, 1/4 par boss, garanti après 60 victoires sans parchemin, le premier au plus tard à la 10e victoire. Techniques inconnues 3× plus probables. |
+| Slots de techniques | Attaque I au départ, Défense au niveau 8, Attaque II au niveau 15, Attaque III au niveau 35, Support à Soul City, Passive à Kaio Planet, Ultimate à Shinjuku. |

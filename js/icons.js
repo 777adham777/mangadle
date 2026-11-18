@@ -362,7 +362,7 @@ const ICONS = {
   skill: {
     herbalism: 'herbs-bundle',
     chakra: 'meditation',
-    arts: 'scroll-unfurled',
+    arts: 'warhammer',
     harvest: 'ghost',
     mining: 'war-pick',
     smithing: 'anvil-impact',
@@ -543,7 +543,7 @@ Object.assign(GI, {
 });
 Object.assign(ICONS.item, {
   pine_log: 'wood-log', cedar_log: 'wood-log', bamboo: 'bamboo-stalks', mistwood: 'wood-log', ironwood: 'wood-log',
-  blossomwood: 'wood-log', spirit_oak: 'wood-log', heartwood: 'wood-log', bird_nest: 'bird-nest', training_kunai: 'broad-dagger',
+  blossomwood: 'wood-log', spirit_oak: 'wood-log', heartwood: 'wood-log', bird_nest: 'bird-nest', training_kunai: 'broadsword',
 });
 ICONS.skill.woodcutting = 'wood-axe';
 ICONS.pet.woodpecker = 'bird-nest';

@@ -54,7 +54,7 @@ VIEWS.techniques = () => {
     <div class="tslots wide">${TECH_SLOTS.map(techSlotHTML).join('')}</div></section>
   <p class="muted small tc-help">Every foe drops its world's scroll now and then (bosses often). A scroll teaches a random technique of that world; unknown ones come up 3× as often.
   A technique you already know gives <b>${FRAG_PER_DUP} fragments</b> instead, and fragments level it up. Levels 5 and 10 change how it works.
-  Shinobi Arts can also write the scroll of one chosen technique.</p>
+  Crafting can also write the scroll of one chosen technique.</p>
   ${byWorld}`;
 };
 

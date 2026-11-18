@@ -12,20 +12,20 @@
 // One entry per early objective (same index as GOALS).
 // act/zone: what the objective wants running. nav: how to get there. start: what to click. run: tip while it runs.
 const GUIDE = [
-  // Leaf Village: wood → first weapon → herbs and pills → first fights
+  // Leaf Village: wood → first weapon → pills → first fights → techniques
   { skill: 'woodcutting', nav: 'Open <b>Woodcutting</b>. Everything in the village starts with wood.', start: 'Click <b>Pine Log</b> to start chopping.', run: 'Woodcutting repeats on its own, even while the game is closed. No need to watch it: come back later and the logs are waiting.' },
-  { skill: 'woodcutting', nav: 'Back to <b>Woodcutting</b>.', start: 'Keep chopping <b>Pine Logs</b>.', run: 'Every log gives Woodcutting XP. Higher levels unlock new trees (Cedar at level 10), and each tree has its own <b>Mastery</b> that makes it faster. Reach level 5 and the village carpenter will teach you to carve.' },
-  { act: 'arts:training_kunai', nav: '<b>Shinobi Arts</b> is now open. Open it.', start: 'Click <b>Training Kunai</b>. It uses 5 Pine Logs.', run: 'Your very first weapon is on the bench. Crafting skills turn what you gather into gear, pills and more.' },
-  { equip: true, nav: 'Your kunai is ready: open your <b>Bank</b>.' },
-  { skill: 'herbalism', nav: '<b>Herbalism</b> is open. A weapon will not keep you alive: open it.', start: 'Click <b>Healing Leaf</b> to start foraging.', run: 'Healing Leaves are brewed into Soldier Pills in Shinobi Arts. Pills heal you in battle.' },
-  { act: 'arts:soldier_pill', nav: 'Back to <b>Shinobi Arts</b>.', start: 'Click <b>Soldier Pill</b>. Each one uses 2 Healing Leaves.', run: 'Brew 5 pills and the instructors will let you fight. Out of leaves? Go back to Herbalism, then come back.' },
+  { skill: 'woodcutting', nav: 'Back to <b>Woodcutting</b>.', start: 'Keep chopping <b>Pine Logs</b>.', run: 'The undergrowth also gives <b>Healing Leaves</b>. Higher levels unlock new trees, and each tree has its own <b>Mastery</b>. Reach level 5 and the village carpenter will teach you to craft.' },
+  { act: 'arts:training_kunai', nav: '<b>Crafting</b> is now open. Open it.', start: 'Click <b>Wooden Sword</b>. It uses 5 Pine Logs.', run: 'Your very first weapon is on the bench. Crafting turns wood, herbs and battle spoils into gear, pills and technique scrolls.' },
+  { equip: true, nav: 'Your sword is ready: open your <b>Bank</b>.' },
+  { act: 'arts:soldier_pill', nav: 'Back to <b>Crafting</b>.', start: 'Click <b>Soldier Pill</b>. Each one uses 2 Healing Leaves from your woodcutting.', run: 'Brew 5 pills and the instructors will let you fight. Out of leaves? Chop more Pine Logs, then come back.' },
   { food: true, nav: 'Before you fight, pack your pills: open your <b>Bank</b>.' },
-  { zone: 0, nav: 'Pills packed. Open the <b>Battlefield</b>.', start: 'Pick the <b>Training Grounds</b>. It is an Easy stage.', run: 'Combat is automatic. When your HP drops low you eat a pill on your own. Run out and you lose: forage and brew more.' },
-  { act: 'chakra:chakra_shard', nav: '<b>Chakra Focus</b> is open. Open it.', start: 'Click <b>Chakra Shard</b> to meditate.', run: 'Chakra goes into kunai, armor and every technique scroll. At level 5 you can learn techniques.' },
-  { skill: 'chakra', nav: 'Back to <b>Chakra Focus</b>.', start: 'Keep meditating.', run: 'At Chakra Focus level 5 your chakra is steady enough to shape techniques. Brew a scroll in Shinobi Arts, then equip it on the Battlefield.' },
+  { zone: 0, nav: 'Pills packed. Open the <b>Battlefield</b>.', start: 'Pick the <b>Training Grounds</b>. It is an Easy stage.', run: 'Combat is automatic. When your HP drops low you eat a pill on your own. Foes drop gold, chakra crystals and, now and then, a <b>technique scroll</b>.' },
+  { zone: 0, nav: 'Back to the <b>Battlefield</b>.', start: 'Keep fighting at the <b>Training Grounds</b>.', run: 'A scroll is read at once and teaches a technique. It goes into a slot on its own and fires in battle when ready.' },
+  { zone: 0, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight at the <b>Training Grounds</b>.', run: 'Every foe gives Character XP. Each level raises your five stats: Attack, Defense, Vitality, Speed and Luck.' },
   { market: true, nav: 'The <b>Market</b> is open. Spend your gold there.' },
   { zone: 1, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in the <b>Misty Forest</b>.', run: 'Every world ends with a guardian. Beat the Ashen Fox to reach a new world.' },
-  { skill: 'chakra', nav: 'Open <b>Chakra Focus</b>.', start: 'Meditate on anything.', run: 'At level 15 you can train your Inner Power.' },
+  { techup: true, nav: 'Open <b>Techniques</b>.' },
+  { zone: 1, nav: 'Open the <b>Battlefield</b>.', start: 'Fight in the <b>Misty Forest</b>.', run: 'At Character level 20 your chakra runs deep enough to train your Inner Power.' },
   { power: true, nav: '<b>Inner Power</b> is open. Open it.' },
   { zone: 2, nav: 'Open the <b>Battlefield</b>.', start: 'Fight in <b>Fang Ravine</b>.', run: 'Some foes drop a <b>schematic</b>: it teaches a recipe for an iconic weapon forever.' },
   { zone: 3, nav: 'Time for the guardian: open the <b>Battlefield</b>.', start: 'Challenge the <b>Ashen Fox Beast</b>. Bring plenty of pills.', run: 'Its relic, the Ashen Fox Tail, is part of the gate offering.' },
@@ -92,7 +92,7 @@ function guideStep() {
     const best = SKILLS[G.skill].actions.filter((a) => actState(G.skill, a) === 'ready').pop();
     if (best) return { sels: [`[data-card="${G.skill}:${best.id}"]`], text: G.start };
     if (G.skill === 'cooking') return { sels: navSels('realm:seas:fishing'), text: 'Out of fish! Open <b>Fishing</b> and catch more Minnows, then come back to cook.' };
-    if (G.skill === 'arts') return { sels: navSels('realm:shinobi:herbalism'), text: 'Out of materials! Gather more, then come back.' };
+    if (G.skill === 'arts') return { sels: navSels('realm:shinobi:woodcutting'), text: 'Out of materials! Chop more wood, then come back.' };
     return null;
   }
   if (G.zone != null) {
@@ -107,6 +107,11 @@ function guideStep() {
     const id = Object.keys(S.items).find((k) => ITEMS[k].slot === 'weapon');
     return id ? { sels: [`.bag-grid [data-sel="${id}"]`], text: `Click your <b>${ITEMS[id].name}</b> to see what it does.` } : null;
   }
+  if (G.techup) {
+    if (S.ui.view !== 'techniques') return nav;
+    if ($$('[data-techup]:not([disabled])').length) return { sels: ['[data-techup]:not([disabled])'], text: 'Spend your fragments: click <b>Level</b>. Levels 5 and 10 change how a technique works.' };
+    return { sels: ['.tc-frag'], info: true, text: 'A scroll of a technique you already know gives <b>fragments</b>. Keep fighting, then come back to level it up.' };
+  }
   if (G.power) {
     if (S.ui.view !== 'power') return nav;
     return { sels: ['[data-alloc="chakra:1"]'], text: 'Click <b>+</b> to put energy into a training. Trainings level up forever, even offline.' };
@@ -114,7 +119,7 @@ function guideStep() {
   if (G.food) {
     if (S.ui.view !== 'hero') return nav;
     const id = Object.keys(S.items).find((k) => ITEMS[k].type === 'food');
-    if (!id) return { sels: navSels('realm:shinobi:arts'), text: 'You have no pills left. Brew some first.' };
+    if (!id) return { sels: navSels('realm:shinobi:arts'), text: 'You have no pills left. Brew some in Crafting first.' };
     if (selItem === id) return { sels: ['[data-setfood]'], text: 'Click <b>Equip as battle food</b>. In battle you eat it on your own when your HP gets low.' };
     if (!['all', 'food'].includes(S.ui.bank)) return { sels: ['[data-bankf="food"]'], text: 'Open the <b>Food</b> tab.' };
     return { sels: [`.bag-grid [data-sel="${id}"]`], text: `Click your <b>${ITEMS[id].name}</b>.` };
@@ -211,7 +216,8 @@ function showWelcome() {
     <ol class="wl-loop">
       ${step(ic('skill', 'woodcutting'), 'Chop', 'Fell trees. Wood is how everything starts.')}
       ${step(ic('skill', 'arts'), 'Craft', 'Carve your first weapon, then brew pills that heal you.')}
-      ${step(ui('battle'), 'Fight', 'Equip your weapon and pills and fight. Foes drop gear, gold and relics.')}
+      ${step(ui('battle'), 'Fight', 'Equip your weapon and pills and fight. Foes drop gear, gold and technique scrolls.')}
+      ${step(ui('technique'), 'Build', 'Equip the techniques you find and level them up. Beat the guardian to open the next world.')}
     </ol>
     <ul class="wl-points">
       <li><i>${ui('time')}</i><span><b>It plays itself.</b> An activity repeats on its own, even while the game is closed (up to 12 hours).</span></li>
@@ -230,11 +236,11 @@ function welcomeChoice(go) {
 /* ------------------------------------------------------------ first-time scenes */
 // The two early unlocks that teach the core loop get a short scene instead of a banner.
 const INTRO = {
-  'skill:arts': { icon: () => ic('skill', 'arts'), kicker: 'New skill', title: 'Shinobi Arts',
+  'skill:arts': { icon: () => ic('skill', 'arts'), kicker: 'New skill', title: 'Crafting',
     text: 'The village carpenter looks at your pile of logs. "Good wood. Let me show you how a shinobi makes their own tools."',
-    points: [[() => ic('item', 'pine_log'), '5 Pine Logs → 1 Training Kunai', 'Your very first weapon.'],
-             [() => ui('battle'), 'Gear and pills', 'Arts makes weapons, armor and the pills that heal you.'],
-             [() => ui('lock'), 'Carve a Training Kunai', 'Then an old medic will teach you Herbalism.']],
+    points: [[() => ic('item', 'pine_log'), '5 Pine Logs → 1 Wooden Sword', 'Your very first weapon.'],
+             [() => ic('item', 'healing_leaf'), 'Healing Leaves → Soldier Pills', 'The undergrowth you clear while chopping becomes pills that heal you.'],
+             [() => ui('lock'), 'Brew 5 Soldier Pills', 'Then the instructors will let you fight.']],
     go: 'realm:shinobi:arts', btn: 'Start carving' },
   'skill:cooking': { icon: () => ic('skill', 'cooking'), kicker: 'New skill', title: 'Cooking',
     text: 'A ship cook eyes your bucket. "Raw fish will not keep you alive out there. Let me show you."',

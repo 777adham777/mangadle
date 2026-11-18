@@ -42,7 +42,7 @@ function defaultState() {
     action: null,                       // { skill, id, prog }
     combat: { zone: null, enemy: null, eHp: 0, pT: 0, eT: 0, respawn: 0, hp: 50,
               food: null, kills: {}, log: [] },   // food is equipped by the player
-    equip: { weapon: null, armor: null, accessory: null, gadget: null },   // your first weapon is carved in Shinobi Arts
+    equip: { weapon: null, armor: null, accessory: null, gadget: null },   // your first weapon is carved in Crafting
     fruit: null, fruitRank: 0,          // eating copies of your fruit raises its rank (max FRUIT_RANK_MAX)
     shop: {},
     energy: { capLv: 0, powLv: 0, alloc: {}, lvl: {}, prog: {}, step: '10' },
@@ -739,7 +739,9 @@ function offlineSeconds(elapsed) { return Math.min(elapsed, (BASE_OFFLINE_HOURS 
 function serialize() { S.last = Date.now(); return JSON.stringify(S); }
 // v6 made the Leaf Village the first world (Woodcutting start) and Orange Town the second.
 // The whole early game changed, so saves from before it start over.
-const SAVE_V = 6;
+// v7: the GDD rework (character level, techniques, World 1 = Woodcutting + Crafting + Combat).
+// The whole early game changed, so saves from before it start over (see docs/DECISIONS.md).
+const SAVE_V = 7;
 function loadFrom(json) {
   const d = JSON.parse(json);
   if (!isObj(d) || !d.skills) throw new Error('Not a valid save');

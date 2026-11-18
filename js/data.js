@@ -99,7 +99,7 @@ defItem('storm_pill',      'Storm Pill',       '🟣', 200, food(520));
 // Equipment
 const eq = (slot, stats) => ({ type: 'equip', slot, stats });
 // crafted weapons
-defItem('training_kunai',  'Training Kunai',   '🪵', 3,     eq('weapon', { atk: 2 }));     // your very first weapon (Shinobi Arts)
+defItem('training_kunai',  'Wooden Sword',     '🪵', 3,     eq('weapon', { atk: 2 }));     // your very first weapon (Crafting)
 defItem('rusty_cutlass',   'Rusty Cutlass',    '🗡️', 60,    eq('weapon', { atk: 20 }));
 defItem('iron_wakizashi',  'Iron Wakizashi',   '🔪', 15,    eq('weapon', { atk: 6 }));
 defItem('spirit_katana',   'Spirit Katana',    '🗡️', 80,    eq('weapon', { atk: 15 }));
@@ -159,7 +159,7 @@ defItem('tide_pearl',      'Tide Pearl',          '🫧', 600,  relic('seas'));
 defItem('leviathan_scale', 'Leviathan Scale',     '🐉', 900,  relic('seas'));
 defItem('tide_heart',      'Heart of the Tide',   '🌊', 5000, relic('seas'));
 
-// More pills: Shinobi Arts keeps you alive until Orange Town's cooks take over.
+// More pills: Crafting keeps you alive until Orange Town's cooks take over.
 defItem('moon_pill',       'Moonpetal Pill',      '🌕', 25,  food(90));
 defItem('shadow_pill',     'Shadowroot Pill',     '🌑', 45,  food(150));
 
@@ -224,10 +224,8 @@ const GEM_TABLE = [['jade', 60], ['sapphire', 25], ['ruby', 12], ['void_diamond'
 
 /* ----------------------------------------------------------------- skills */
 const SKILLS = {
-  woodcutting: { name: 'Woodcutting', realm: 'shinobi', icon: '🪓', type: 'gather', desc: 'Fell the trees around the hidden village. Logs become kunai and weapon hafts, and patch the hulls of Orange Town ships.' },
-  herbalism: { name: 'Herbalism',     realm: 'shinobi', icon: '🌿', type: 'gather', desc: 'Forage medicinal herbs. They become pills, armor cloth and seasoning.' },
-  chakra:    { name: 'Chakra Focus',  realm: 'shinobi', icon: '🌀', type: 'gather', desc: 'Meditate under waterfalls to condense chakra crystals: kunai, pills and the power inside every iconic craft.' },
-  arts:      { name: 'Shinobi Arts',  realm: 'shinobi', icon: '📃', type: 'craft',  desc: 'Brew healing pills, craft kunai and weave armor. Your first source of gear and healing.' },
+  woodcutting: { name: 'Woodcutting', realm: 'shinobi', icon: '🪓', type: 'gather', desc: 'Fell the trees around the hidden village. Logs become weapons and hafts, the undergrowth gives healing herbs, and wood patches the hulls of Orange Town ships.' },
+  arts:      { name: 'Crafting',      realm: 'shinobi', icon: '🔨', type: 'craft',  desc: 'Turn wood, herbs and battle spoils into weapons, armor, healing pills and technique scrolls.' },
   harvest:   { name: 'Soul Harvest',  realm: 'soul',    icon: '👻', type: 'gather', desc: 'Guide wandering spirits onward. Their remains bind blades, jewelry and pills.' },
   mining:    { name: 'Reishi Mining', realm: 'soul',    icon: '⛏️', type: 'gather', desc: 'Mine ore crystallized from pure spiritual particles. Gems hide in the rock.' },
   smithing:  { name: 'Bladesmithing', realm: 'soul',    icon: '⚒️', type: 'craft',  desc: 'Forge soul-bound blades and set gems into jewelry. Most iconic weapons are made here.' },
@@ -258,25 +256,15 @@ SKILLS.woodcutting.actions = [
   gather('spirit_oak', 72, 6),
   gather('heartwood', 88, 7),
 ];
-SKILLS.herbalism.actions = [
-  gather('healing_leaf', 1, 3),
-  gather('moonpetal', 10, 3.5),
-  gather('cloud_fern', 20, 4),
-  gather('shadowroot', 32, 4.5),
-  gather('sage_lotus', 45, 5),
-  gather('spirit_orchid', 58, 5.5),
-  gather('dragon_moss', 72, 6),
-  gather('world_tree_leaf', 88, 7),
-];
-SKILLS.chakra.actions = [
-  gather('chakra_shard', 1, 3),
-  gather('chakra_orb', 12, 3.5),
-  gather('storm_chakra', 25, 4),
-  gather('nature_essence', 40, 5),
-  gather('beast_ember', 55, 5.5),
-  gather('lightning_core', 70, 6),
-  gather('sage_chakra', 84, 7),
-];
+// The forest floor: every tree also turns up herbs, and the old woods hold raw chakra.
+// (Herbs and chakra used to have their own skills; the GDD's first world is Woodcutting + Crafting + Combat.)
+const UNDERGROWTH = {
+  pine_log: [['healing_leaf', 0.3, [1, 2]]], cedar_log: [['moonpetal', 0.25, [1, 2]]], bamboo: [['cloud_fern', 0.25, [1, 2]]],
+  mistwood: [['shadowroot', 0.25, [1, 2]]], ironwood: [['sage_lotus', 0.25, [1, 2]], ['nature_essence', 0.08, [1, 1]]],
+  blossomwood: [['spirit_orchid', 0.25, [1, 2]], ['nature_essence', 0.1, [1, 1]]],
+  spirit_oak: [['dragon_moss', 0.25, [1, 2]], ['lightning_core', 0.06, [1, 1]]], heartwood: [['world_tree_leaf', 0.25, [1, 2]], ['sage_chakra', 0.06, [1, 1]]],
+};
+for (const a of SKILLS.woodcutting.actions) if (UNDERGROWTH[a.id]) a.extra = UNDERGROWTH[a.id];
 SKILLS.arts.actions = [
   craft('training_kunai', 1, 4, { pine_log: 5 }),
   craft('soldier_pill', 1, 3, { healing_leaf: 2 }),
@@ -381,9 +369,7 @@ SKILLS.character.actions = [];
 /* --------------------------------------------- rare finds, pets, milestones */
 // Rolled on every completed action of that skill (chance per action). 'GEM' rolls GEM_TABLE.
 const RARE_FINDS = {
-  woodcutting: [['bird_nest', 1 / 150]],
-  herbalism: [['herb_pouch', 1 / 150]],
-  chakra:    [['sealed_scroll', 1 / 150]],
+  woodcutting: [['bird_nest', 1 / 150], ['herb_pouch', 1 / 300]],
   harvest:   [['lost_lantern', 1 / 150]],
   mining:    [['GEM', 1 / 80]],
   fishing:   [['sunken_chest', 1 / 200], ['FRUIT', 1 / 2500]],
@@ -397,8 +383,6 @@ const GLOBAL_RARE = [['rift_shard', 1 / 30000]];   // any non-combat action
 const PET_HOURS = 10;
 const PETS = [
   { id: 'woodpecker',    name: 'Woodpecker',         icon: '🐦', skill: 'woodcutting' },
-  { id: 'leaf_toad',     name: 'Leaf Toad',          icon: '🐸', skill: 'herbalism' },
-  { id: 'sage_slug',     name: 'Sage Slug',          icon: '🐌', skill: 'chakra' },
   { id: 'scroll_cat',    name: 'Scroll Cat',         icon: '🐈', skill: 'arts' },
   { id: 'hell_moth',     name: 'Hell Butterfly',     icon: '🦋', skill: 'harvest' },
   { id: 'ore_badger',    name: 'Ore Badger',         icon: '🦡', skill: 'mining' },
@@ -430,19 +414,19 @@ const en = (name, icon, hp, atk, def, spd, xp, gold, drops) => ({ name, icon, hp
 const ZONES = [
   // World 1 — Leaf Village
   { id: 'training', name: 'Training Grounds', realm: 'shinobi', rec: 1, enemies: [
-    en('Bandit Thug', '🗡️', 25, 4, 0, 3, 10, [2, 6], [['healing_leaf', 0.4, [1, 3]], ['pine_log', 0.3, [2, 4]], ['soldier_pill', 0.08, [1, 2]], ['old_compass', 1 / 400, [1, 1]]]),
+    en('Bandit Thug', '🗡️', 25, 4, 0, 3, 10, [2, 6], [['healing_leaf', 0.4, [1, 3]], ['pine_log', 0.3, [2, 4]], ['chakra_shard', 0.15, [1, 2]], ['soldier_pill', 0.08, [1, 2]], ['old_compass', 1 / 400, [1, 1]]]),
     en('Rogue Apprentice', '🥷', 35, 5, 2, 2.8, 15, [4, 9], [['chakra_shard', 0.3, [1, 3]], ['soldier_pill', 0.05, [1, 1]], ['shinobi_headband', 1 / 150, [1, 1]]]),
   ] },
   { id: 'mist', name: 'Misty Forest', realm: 'shinobi', rec: 10, enemies: [
-    en('Mist Assassin', '🌫️', 100, 14, 8, 2.6, 32, [10, 22], [['moonpetal', 0.3, [1, 3]], ['mist_steel', 0.12, [1, 2]], ['senbon', 1 / 40, [1, 1]], ['schem_fog_cleaver', 1 / 80, [1, 1]]]),
+    en('Mist Assassin', '🌫️', 100, 14, 8, 2.6, 32, [10, 22], [['moonpetal', 0.3, [1, 3]], ['chakra_orb', 0.15, [1, 2]], ['sealed_scroll', 1 / 80, [1, 1]], ['mist_steel', 0.12, [1, 2]], ['senbon', 1 / 40, [1, 1]], ['schem_fog_cleaver', 1 / 80, [1, 1]]]),
     en('Puppet Drone', '🪆', 130, 12, 15, 3, 36, [12, 24], [['chakra_orb', 0.25, [1, 2]], ['mist_steel', 0.18, [1, 2]], ['puppet_plating', 1 / 40, [1, 1]], ['bird_nest', 1 / 40, [1, 1]]]),
   ] },
   { id: 'ravine', name: 'Fang Ravine', realm: 'shinobi', rec: 22, enemies: [
-    en('Ninken Alpha', '🐺', 220, 24, 18, 2.4, 65, [20, 40], [['shadowroot', 0.3, [1, 3]], ['beast_fang', 0.15, [1, 2]], ['wolf_fang', 1 / 50, [1, 1]], ['herb_pouch', 1 / 40, [1, 1]], ['schem_sealing_talisman', 1 / 100, [1, 1]]]),
+    en('Ninken Alpha', '🐺', 220, 24, 18, 2.4, 65, [20, 40], [['shadowroot', 0.3, [1, 3]], ['storm_chakra', 0.15, [1, 2]], ['sealed_scroll', 1 / 60, [1, 1]], ['beast_fang', 0.15, [1, 2]], ['wolf_fang', 1 / 50, [1, 1]], ['herb_pouch', 1 / 40, [1, 1]], ['schem_sealing_talisman', 1 / 100, [1, 1]]]),
     en('Stone Golem', '🗿', 320, 22, 35, 3.2, 80, [25, 45], [['storm_chakra', 0.25, [1, 2]], ['mist_steel', 0.15, [1, 3]], ['jade', 1 / 30, [1, 1]], ['golem_heart', 1 / 60, [1, 1]]]),
   ] },
   { id: 'fox', name: 'Den of the Ashen Fox', realm: 'shinobi', rec: 32, boss: true, enemies: [
-    en('Ashen Fox Beast', '🦊', 1600, 45, 35, 2.5, 700, [300, 600], [['storm_chakra', 1, [2, 4]], ['ashen_tail', 0.5, [1, 1]], ['sealed_scroll', 0.25, [1, 2]], ['fox_tail_charm', 1 / 8, [1, 1]], ['schem_ashen_fang', 1 / 6, [1, 1]]]),
+    en('Ashen Fox Beast', '🦊', 1600, 45, 35, 2.5, 700, [300, 600], [['storm_chakra', 1, [2, 4]], ['beast_ember', 0.5, [1, 2]], ['ashen_tail', 0.5, [1, 1]], ['sealed_scroll', 0.25, [1, 2]], ['fox_tail_charm', 1 / 8, [1, 1]], ['schem_ashen_fang', 1 / 6, [1, 1]]]),
   ] },
   // World 2 — Orange Town
   { id: 'shoals', name: 'Rookie Shoals', realm: 'seas', rec: 38, enemies: [
@@ -529,20 +513,20 @@ const gate = (r) => () => [S.gates[r] ? 1 : 0];
 // and keep ICONS.goal (icons.js) and GUIDE (guide.js) in step.
 const G = (text, go, n, prog, reward) => ({ text, go, n, prog, reward });
 const GOALS = [
-  // Leaf Village
+  // Leaf Village: wood → first weapon → pills → fights → techniques → guardian
   G('Chop 10 Pine Logs', 'realm:shinobi:woodcutting', 10, made('pine_log'), 20),
   G('Reach Woodcutting level 5', 'realm:shinobi:woodcutting', 5, lvl('woodcutting'), 25),
-  G('Carve a Training Kunai', 'realm:shinobi:arts', 1, made('training_kunai'), 30),
-  G('Equip your Training Kunai', 'hero', 1, () => [S.equip.weapon ? 1 : 0], 30),
-  G('Gather 10 Healing Leaves', 'realm:shinobi:herbalism', 10, made('healing_leaf'), 30),
+  G('Carve a Wooden Sword', 'realm:shinobi:arts', 1, made('training_kunai'), 30),
+  G('Equip your Wooden Sword', 'hero', 1, () => [S.equip.weapon ? 1 : 0], 30),
   G('Brew 5 Soldier Pills', 'realm:shinobi:arts', 5, made('soldier_pill'), 40),
   G('Equip food for battle', 'hero', 1, () => [S.combat.food ? 1 : 0], 60),
   G('Defeat 10 foes at the Training Grounds', 'battle', 10, kills('training'), 60),
-  G('Condense 10 Chakra Shards', 'realm:shinobi:chakra', 10, made('chakra_shard'), 200),
-  G('Equip a technique', 'battle', 1, () => [Object.values(S.tech.slots).some(Boolean) ? 1 : 0], 250),
+  G('Learn your first technique', 'battle', 1, () => [Object.keys(S.tech.lv).length], 150),
+  G('Reach Character level 10', 'battle', 10, () => [charLv()], 200),
   G('Buy any upgrade in the Market', 'market', 1, () => [['tools_shinobi', 'tools_soul', 'tools_seas', 'abundance', 'satchel', 'lucky_coin'].reduce((a, k) => a + (S.shop[k] || 0), 0)], 300),
   G('Defeat 10 foes in the Misty Forest', 'battle', 10, kills('mist'), 400),
-  G('Reach Chakra Focus level 15', 'realm:shinobi:chakra', 15, lvl('chakra'), 500),
+  G('Level up a technique', 'techniques', 1, () => [Object.values(S.tech.lv).some((l) => l > 1) ? 1 : 0], 500),
+  G('Reach Character level 20', 'battle', 20, () => [charLv()], 500),
   G('Put energy into any training', 'power', 1, () => [energyUsed() > 0 ? 1 : 0], 500),
   G('Learn a schematic from a defeated foe', 'battle', 1, () => [Object.keys(S.known).length], 600),
   G('Defeat the Ashen Fox Beast', 'battle', 1, kills('fox'), 1000),
@@ -610,14 +594,13 @@ const GOALS = [
 const SYNERGIES = [
   { from: 'woodcutting', to: 'arts',    kind: 'double', per: 0.002, name: 'Fine Grain',       desc: 'Good wood: chance to craft two items at once' },
   { from: 'fishing',   to: 'cooking',   kind: 'double', per: 0.002, name: 'Fresh Catch',      desc: 'Fat fish: chance to cook two dishes at once' },
-  { from: 'herbalism', to: 'cooking',   kind: 'heal',   per: 0.005, name: 'Seasoning',        desc: 'Herbs make every dish heal more in battle' },
   { from: 'cooking',   to: 'voyaging',  kind: 'speed',  per: 0.004, name: 'Good Provisions',  desc: 'A well-fed crew sails faster' },
   { from: 'voyaging',  to: 'all',       kind: 'rare',   per: 0.004, name: "Explorer's Eye",   desc: 'Rare finds are more likely on every skill' },
   { from: 'mining',    to: 'smithing',  kind: 'double', per: 0.002, name: 'Pure Ore',         desc: 'Chance to forge two items from one batch' },
   { from: 'smithing',  to: 'gather',    kind: 'speed',  per: 0.002, name: 'Sharp Tools',      desc: 'Every gathering skill works faster' },
   { from: 'harvest',   to: 'craft',     kind: 'xp',     per: 0.003, name: 'Guiding Spirits',  desc: 'Wandering souls steady your hands: more crafting XP' },
-  { from: 'chakra',    to: 'combat',    kind: 'dmg',    per: 0.003, name: 'Chakra Strikes',   desc: 'Chakra-infused attacks deal more damage' },
   { from: 'arts',      to: 'combat',    kind: 'hp',     per: 0.003, name: 'Body Seals',       desc: 'Protective seals raise your max HP' },
+  { from: 'woodcutting', to: 'cooking', kind: 'heal',   per: 0.005, name: 'Seasoning',        desc: 'Forest herbs make every dish heal more in battle' },
 ];
 
 /* ------------------------------------------------------------------ gates */
@@ -648,14 +631,10 @@ const worldUnlock = (r, name) => ({ id: 'realm:' + r, name, need: () => !!S.gate
 const UNLOCKS = [
   { id: 'realm:shinobi',      name: 'Leaf Village',   need: () => true },
   { id: 'skill:woodcutting',  name: 'Woodcutting',     need: () => true },
-  { id: 'skill:arts',         name: 'Shinobi Arts',    need: () => skillLv('woodcutting') >= 5 || usedSkill('arts'),
-    hint: () => 'Reach Woodcutting level 5', why: 'The village carpenter shows you how to carve your own kunai.' },
-  { id: 'skill:herbalism',    name: 'Herbalism',       need: () => (S.stats.made.training_kunai || 0) >= 1 || usedSkill('herbalism'),
-    hint: () => 'Carve a Training Kunai', why: 'An old medic shakes her head: "A blade will not keep you alive. Let me show you the healing herbs."' },
+  { id: 'skill:arts',         name: 'Crafting',        need: () => skillLv('woodcutting') >= 5 || usedSkill('arts'),
+    hint: () => 'Reach Woodcutting level 5', why: 'The village carpenter shows you how to carve your own sword.' },
   { id: 'feature:battle',     name: 'Battlefield',     need: () => (S.stats.made.soldier_pill || 0) >= 5 || S.stats.kills > 0,
     hint: () => 'Brew 5 Soldier Pills', why: 'Armed and with pills in your pouch, the instructors let you train with real opponents.' },
-  { id: 'skill:chakra',       name: 'Chakra Focus',    need: () => (S.combat.kills.training || 0) >= 10 || usedSkill('chakra'),
-    hint: () => 'Defeat 10 foes at the Training Grounds', why: 'A beaten rogue apprentice teaches you to mould chakra.' },
   { id: 'feature:avatar',     name: 'Avatar',          need: () => S.stats.kills >= 30,
     why: 'A village painter wants to sketch the new fighter. Dress your hero in Bank → Avatar; feats across the worlds unlock new looks.' },
   { id: 'feature:techniques', name: 'Techniques',      need: () => Object.keys(S.tech.lv).length > 0,
@@ -664,8 +643,8 @@ const UNLOCKS = [
     hint: () => 'Discover 12 different items', why: 'You start keeping a journal of everything you find.' },
   { id: 'feature:market',     name: 'Market',          need: () => S.gold >= 500 || Object.keys(S.shop).length > 0,
     hint: () => 'Carry 500 gold', why: 'A travelling merchant noticed your heavy purse.' },
-  { id: 'feature:power',      name: 'Inner Power',     need: () => skillLv('chakra') >= 15 || S.rebirths > 0 || S.karma > 0,
-    hint: () => 'Reach Chakra Focus level 15', why: 'Your chakra runs deep enough to train your inner power.' },
+  { id: 'feature:power',      name: 'Inner Power',     need: () => charLv() >= 20 || S.rebirths > 0 || S.karma > 0,
+    hint: () => 'Reach Character level 20', why: 'Your chakra runs deep enough to train your inner power.' },
   worldUnlock('seas', 'Orange Town'),
   { id: 'skill:fishing',      name: 'Fishing',         need: () => !!S.gates.seas || usedSkill('fishing') },
   { id: 'skill:cooking',      name: 'Cooking',         need: () => skillLv('fishing') >= 5 || usedSkill('cooking'),

@@ -186,8 +186,8 @@ const EXTRA_USES = [];
   ['1×', '10×', '50×', '100×', '200×', '400×', '800×'].forEach((g, i) => { SKILLS.gravity.actions[i].name = `${g} Gravity Session`; });
   SKILLS.farming.actions = [];
   // Tools: one line per gathering skill, 3 tiers each, +15% speed per tier. Built from that skill's own materials + ki.
-  const toolSkills = ['fishing', 'herbalism', 'chakra', 'mining', 'harvest', 'gravity'];
-  const toolNames = { fishing: 'Sonar Rod', herbalism: 'Auto-Sickle', chakra: 'Focus Lens', mining: 'Ki Drill', harvest: 'Spirit Lantern', gravity: 'Gravity Rig' };
+  const toolSkills = ['fishing', 'woodcutting', 'mining', 'harvest', 'gravity'];
+  const toolNames = { fishing: 'Sonar Rod', woodcutting: 'Chakra Saw', mining: 'Ki Drill', harvest: 'Spirit Lantern', gravity: 'Gravity Rig' };
   const tinker = [];
   toolSkills.forEach((sk, si) => {
     const mats = SKILLS[sk].actions.map((a) => Object.keys(a.out)[0]);
@@ -212,7 +212,7 @@ const EXTRA_USES = [];
   );
   SKILLS.tinkering.actions = tinker.sort((a, b) => a.level - b.level);
   for (const s of ['gravity', 'farming', 'tinkering']) { RARE_FINDS[s] = []; }
-  RARE_FINDS.herbalism.push(['seed_vital_bean', 1 / 60], ['seed_sun_wheat', 1 / 120], ['seed_moon_rice', 1 / 250], ['seed_fire_pepper', 1 / 500]);
+  RARE_FINDS.woodcutting.push(['seed_vital_bean', 1 / 60], ['seed_sun_wheat', 1 / 120], ['seed_moon_rice', 1 / 250], ['seed_fire_pepper', 1 / 500]);
   RARE_FINDS.gravity.push(['seed_frost_melon', 1 / 400], ['seed_thunder_root', 1 / 700], ['seed_star_fruit', 1 / 1200]);
   SHOP.push(
     { id: 'buy_beans', cat: 'Supplies', realm: 'ki', name: '5× Vital Bean Seed', icon: '🌱', desc: 'Starter seeds for your first plots.', cost: 400, give: ['seed_vital_bean', 5] },
@@ -333,7 +333,6 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
   SHOP.push({ id: 'tools_hex', cat: 'Tools', realm: 'hex', name: 'Warded Satchel', icon: '🛠️', desc: '+10% speed for Shinjuku skills per tier.', costs: [50000, 200000, 800000, 3e6, 9e6] });
   SYNERGIES.push(
     { from: 'exorcism',   to: 'harvest', kind: 'speed',    per: 0.003, name: 'Spirit Sense',  desc: 'Soul Harvest goes faster' },
-    { from: 'sigilcraft', to: 'chakra',  kind: 'techcost', per: 0.003, name: 'Sealed Script', desc: 'Techniques cost less chakra' },
     { from: 'pacts',      to: 'gravity', kind: 'speed',    per: 0.003, name: 'Iron Vow',      desc: 'Gravity Training goes faster' },
   );
   // Tinkering learns a tool for Exorcism too
@@ -452,7 +451,7 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
   for (const s of ['tracking', 'trapcraft', 'taming']) RARE_FINDS[s] = [];
   SHOP.push({ id: 'tools_hunter', cat: 'Tools', realm: 'hunter', name: 'Hunter Kit', icon: '🛠️', desc: "+10% speed for Green Island skills per tier.", costs: [120000, 500000, 2e6, 7e6, 2e7] });
   SYNERGIES.push(
-    { from: 'tracking',  to: 'herbalism', kind: 'rare',   per: 0.004, name: 'Wild Seeds', desc: 'More rare finds (and seeds) while foraging' },
+    { from: 'tracking',  to: 'woodcutting', kind: 'rare', per: 0.004, name: 'Wild Seeds', desc: 'More rare finds (and seeds) in the undergrowth' },
     { from: 'trapcraft', to: 'fishing',   kind: 'double', per: 0.002, name: 'Bait Craft', desc: 'Chance to catch two fish' },
     { from: 'taming',    to: 'farming',   kind: 'double', per: 0.003, name: 'Beast Plough', desc: 'Chance for a double harvest' },
   );
