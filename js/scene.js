@@ -195,9 +195,24 @@ function sceneSVG(kind, cls) {
   sceneMotes.kind = SCENES[kind] ? kind : 'hub';
   return `<svg class="scene-svg ${cls || ''}" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${f()}</svg>`;
 }
+// Painted backdrops: public-domain Japanese landscape prints (credits in README / Settings).
+// pos = which part of the print stays in frame when it is cropped to a wide banner.
+const WORLD_ART = {
+  seas: { src: 'img/worlds/seas.jpg', pos: '50% 60%' },
+  shinobi: { src: 'img/worlds/shinobi.jpg', pos: '70% 45%' },
+  soul: { src: 'img/worlds/soul.jpg', pos: '50% 55%' },
+  ki: { src: 'img/worlds/ki.jpg', pos: '50% 40%' },
+  hex: { src: 'img/worlds/hex.jpg', pos: '50% 55%' },
+  hunter: { src: 'img/worlds/hunter.jpg', pos: '50% 30%' },
+  echo: { src: 'img/worlds/echo.jpg', pos: '50% 40%' },
+};
 // Cache: scenes are deterministic, build each once.
 const SCENE_CACHE = {};
 function sceneHTML(kind, cls) {
   const k = kind + '|' + (cls || '');
-  return SCENE_CACHE[k] || (SCENE_CACHE[k] = sceneSVG(kind, cls));
+  if (SCENE_CACHE[k]) return SCENE_CACHE[k];
+  const a = WORLD_ART[kind];
+  return (SCENE_CACHE[k] = a
+    ? `<div class="scene-art ${cls || ''}" style="background-image:url('${a.src}');background-position:${a.pos}" role="presentation"></div>`
+    : sceneSVG(kind, cls));
 }

@@ -54,3 +54,12 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 Icons from [game-icons.net](https://game-icons.net) by Lorc, Delapouite, Skoll, Caro Asercion, sbed, Cathelineau,
 DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue and Zeromancer,
 licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+
+World backdrops (`img/worlds/`) are public-domain Japanese landscape prints, cropped and resized, via Wikimedia Commons:
+Endless Blue: Utagawa Hiroshige, *The Whirlpools of Awa* (Metropolitan Museum of Art, CC0) ·
+Shinobi Lands: Katsushika Hokusai, *South Wind, Clear Sky (Red Fuji)* (Met, CC0) ·
+Soul Afterlands: Hiroshige, *Full Moon over a Mountain Landscape* (public domain) ·
+Ki Frontier: Hiroshige, *Mountain and River on the Kiso Road* (Cleveland Museum of Art, CC0) ·
+Hexbound City: Hiroshige, *Night Rain at Karasaki* (Cleveland Museum of Art, CC0) ·
+Hunter's Wilds: Hokusai, *Lake Suwa in Shinano Province* (Met, CC0) ·
+Echo Quarter: Hiroshige, *Vesper Bells at Mii Temple* (Met, CC0).
