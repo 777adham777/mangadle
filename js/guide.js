@@ -14,8 +14,8 @@
 const GUIDE = [
   { skill: 'fishing', nav: 'Open <b>Fishing</b>. Fish are the start of everything here.', start: 'Click <b>Minnow</b> to start fishing.', run: 'Fishing repeats on its own, even while the game is closed. At level 5, the ship cook will want your catch.' },
   { act: 'cooking:grilled_minnow', nav: '<b>Cooking</b> is now open. Open it.', start: 'Click <b>Grilled Minnow</b>. Each one uses 1 Minnow.', run: 'Food heals you in battle. Cook 5 and the Battlefield opens.' },
-  { zone: 0, nav: 'The <b>Battlefield</b> is open. Go fight!', start: 'Pick <b>Rookie Shoals</b>. It is an Easy stage.', run: 'Combat is automatic. You eat on your own when your HP gets low: fish → cook → fight is the core loop.' },
-  { equip: true, nav: 'Open your <b>Bank</b> and equip the Rusty Cutlass.' },
+  { equip: true, nav: 'The <b>Battlefield</b> is open, but arm yourself first: open your <b>Bank</b> and equip the Rusty Cutlass.' },
+  { zone: 0, nav: 'Cutlass in hand, open the <b>Battlefield</b>.', start: 'Pick <b>Rookie Shoals</b>. It is an Easy stage.', run: 'Combat is automatic. You eat on your own when your HP gets low: fish → cook → fight is the core loop.' },
   { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook whatever you can.', run: 'At Cooking level 10, a captain will take you on voyages.' },
   { act: 'voyaging:coastal', nav: '<b>Voyaging</b> is open. Ships bring back gold, chests and relics.', start: 'Click <b>Coastal Run</b>. Each voyage uses 2 Grilled Minnows as supplies.', run: 'Voyages are slow but pay well.' },
   { market: true, nav: 'The <b>Market</b> is open. Spend your gold there.' },
@@ -163,7 +163,7 @@ function showWelcome() {
     <div class="wl-ic">${ui('hero')}</div>
     <small>Tri-Realm Idle</small>
     <h2>Welcome, Wanderer</h2>
-    <p>Worlds have collided: the endless sea, ninja lands, the afterlife, and more beyond. You wash ashore in the Endless Blue with a rusty cutlass. Each world is sealed behind a guardian: beat it to cross over.</p>
+    <p>Worlds have collided: the endless sea, ninja lands, the afterlife, and more beyond. You wash ashore in the Endless Blue with a fishing line and a rusty cutlass. Catch fish, learn to cook them, then fight with a full bag. Each world is sealed behind a guardian: beat it to cross over.</p>
     <ul class="wl-points">
       <li><i>${ui('play')}</i><span><b>Pick an activity.</b> It repeats on its own and earns items and XP.</span></li>
       <li><i>${ui('time')}</i><span><b>Progress never stops.</b> It keeps going while the game is closed, up to 12 hours.</span></li>

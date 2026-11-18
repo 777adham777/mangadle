@@ -169,13 +169,14 @@ function renderRail() {
     if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
     return `<button class="nq ${isOn(k) ? 'on' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}</button>`;
   }).join('')}</div>`);
-  if (featureOpen('battle')) groups.push(`<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
-    ${navRow('battle', ui('battle'), S.combat.zone != null ? ZONES[S.combat.zone].name : 'Battlefield', { color: rc('combat'), busy: S.combat.zone != null })}
-    <div class="nav-cskills">${['strength', 'defense', 'vitality'].map((k) => `<button class="ncs" data-nav="battle" title="${SKILLS[k].name}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><span class="nr-xp"><i data-xpbar="${k}"></i></span></button>`).join('')}</div></div>`);
   for (const r of openRealms()) {
     groups.push(`<div class="nav-group"><div class="nav-sec" style="--rc:${rc(r)}">${ic('realm', r)}${REALMS[r].name}</div>
       ${openSkillsOf(r).map((k) => navRow(`realm:${r}:${k}`, ic('skill', k), SKILLS[k].name, { skill: k, color: rc(r), busy: S.action && S.action.skill === k })).join('')}</div>`);
   }
+  // Combat sits under the starting world: you fish and cook before you fight.
+  if (featureOpen('battle')) groups.splice(Math.min(2, groups.length), 0, `<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
+    ${navRow('battle', ui('battle'), S.combat.zone != null ? ZONES[S.combat.zone].name : 'Battlefield', { color: rc('combat'), busy: S.combat.zone != null })}
+    <div class="nav-cskills">${['strength', 'defense', 'vitality'].map((k) => `<button class="ncs" data-nav="battle" title="${SKILLS[k].name}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><span class="nr-xp"><i data-xpbar="${k}"></i></span></button>`).join('')}</div></div>`);
   $('#rail').innerHTML = `<div class="nav-quest" id="navquest">${goalHTML()}</div>${groups.join('')}${nextUnlockHTML('nav-next')}`;
   $('#tabbar').innerHTML = [
     `<button class="tab-btn" data-menu>${ui('menu')}<span>Menu</span></button>`,
@@ -400,7 +401,7 @@ VIEWS.home = () => {
   ${gateHTML()}
   ${uix('homeTop')}
   ${hdr('Skills', `Total level ${totalLevel()} · ${UNLOCKS.filter((u) => S.unlocked[u.id]).length} / ${UNLOCKS.length} discovered`)}
-  <div class="ov-grid">${[...openRealms(), ...(featureOpen('battle') ? ['combat'] : [])].map((r) => `
+  <div class="ov-grid">${[...openRealms().slice(0, 1), ...(featureOpen('battle') ? ['combat'] : []), ...openRealms().slice(1)].map((r) => `
     <section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${r === 'combat' ? ui('battle') : ic('realm', r)}${r === 'combat' ? 'Combat' : REALMS[r].name}</h3>
       ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
     ${gateHTML() ? '' : nextUnlockHTML('win ov-next')}</div>

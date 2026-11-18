@@ -507,8 +507,8 @@ const GOALS = [
   // Endless Blue
   G('Reach Fishing level 5', 'realm:seas:fishing', 5, lvl('fishing'), 40),
   G('Cook 5 Grilled Minnows', 'realm:seas:cooking', 5, made('grilled_minnow'), 60),
-  G('Defeat 10 foes at Rookie Shoals', 'battle', 10, kills('shoals'), 120),
   G('Equip a weapon', 'hero', 1, () => [S.equip.weapon ? 1 : 0], 120),
+  G('Defeat 10 foes at Rookie Shoals', 'battle', 10, kills('shoals'), 120),
   G('Reach Cooking level 10', 'realm:seas:cooking', 10, lvl('cooking'), 200),
   G('Return from 3 voyages', 'realm:seas:voyaging', 3, () => [S.stats.voyages], 250),
   G('Buy any upgrade in the Market', 'market', 1, () => [['tools_shinobi', 'tools_soul', 'tools_seas', 'abundance', 'satchel', 'lucky_coin'].reduce((a, k) => a + (S.shop[k] || 0), 0)], 300),
