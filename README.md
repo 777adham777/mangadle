@@ -1,25 +1,28 @@
 # Tri-Realm Idle
 
-An idle RPG in the spirit of Melvor Idle and NGU Idle, across seven collided anime-inspired worlds.
-Each world adds one new system, and every system also applies to the worlds before it, so nothing goes stale.
+An idle RPG across six manga-inspired worlds, built from the Game Design Document in `docs/GDD.md`
+(audit of the old game in `docs/GDD-AUDIT.md`, design choices in `docs/DECISIONS.md`).
+One character and one progression cross every world; each world adds activities and deepens the shared systems.
 
-| # | World | Skills | System it adds |
+| # | World | Activities | What it adds |
 | --- | --- | --- | --- |
-| 1 | Orange Town | Fishing, Cooking, Voyaging | The core loop: fish → cook → fight; voyages |
-| 2 | Leaf Village | Herbalism, Chakra Focus, Shinobi Arts | Techniques: 3 combat slots paid with chakra |
-| 3 | Soul City | Soul Harvest, Reishi Mining, Bladesmithing | Weapon awakening, gem sockets, reforging any gear |
-| 4 | Kaio Planet | Gravity Training, Farming, Tinkering | Transformations, real-time farm plots, tools for every gathering skill, gadgets, Dragon Balls |
-| 5 | Shinjuku | Exorcism, Sigilcraft, Pacts | Your Domain (a 3×3 sigil board) and binding vows |
-| 6 | Green Island | Tracking, Trapcraft, Beast Taming | Hunter Licence contracts across every world, companions, the Greed Island Cards |
-| 7 | Echo Quarter | Archaeology, Restoration, Echo Bonding | An Echo that runs a second activity in parallel; museum; ancient gear |
-| ∞ | The Rift | — | Final bosses and an hourly Rift Tear mixing two worlds |
+| 1 | Leaf Village | Woodcutting, Crafting, Combat | Character level and five stats; technique collection (scrolls from battle, fragments, typed slots); Chakra |
+| 2 | Orange Town | Fishing, Cooking, Voyaging | Passive expeditions (10 min to 8 h, in parallel); spice rack; Haki |
+| 3 | Soul City | Reishi Mining, Smelting | Ingots; every weapon copy levels, refines (+10) and awakens (element, family passive); Reiatsu |
+| 4 | Kaio Planet | Gravity Training, Farming, Tinkering | Transformations, farm plots, Dragon Balls; Ki *(rework pending)* |
+| 5 | Shinjuku | Exorcism, Sigilcraft, Pacts | Domain, binding vows; Cursed Energy *(rework pending)* |
+| 6 | Green Island | Tracking, Trapcraft, Beast Taming | Contracts, companions, Greed Island Cards; Nen *(rework pending)* |
+| 7 | Echo Quarter | Archaeology, Restoration, Echo Bonding | Post-game: an Echo that runs a second activity, museum |
+| ∞ | The Rift | — | Post-game: final bosses and an hourly Rift Tear |
 
-- Worlds open after their guardian falls and you make an offering at the gate; skills and menus open from in-world events, one "Next unlock" at a time
-- Renown per world (bonuses, then Ascension tiers that replay old stages for the newest relics), synergies between professions, schematics and world relics for iconic gear
-- Loot rarity (Common → Legendary) follows how hard an item is to get; every world has a chest, drop-only gear with a perk, and a very rare Rift Shard on its guardian. Drop-only gear salvages into relics, duplicate fruits raise their rank, Rift Shards Rift-forge gear to tier 6
-- **Shiny & Perfect** (game-wide, opted in skill by skill): gathering can bring up a shiny find, crafting can make a perfect item. Each skill keeps a log of its firsts, and filling 25 / 50 / 75 / 100 % of it pays a set bonus. Live on Fishing (shiny fish) and Cooking (perfect dishes: +50%)
-- **Orange Town overhaul** (worlds are being polished one at a time): animated scenes of your avatar fishing (pier → reef → open sea → abyss), cooking in the galley and sailing voyages; catch weights and records; the Cooking spice rack (six seasonings from fishing, voyages, foes and the Market) gives seasoned dishes a battle buff
-- Combat skills to 120, everything else to 99; 58 guided objectives; offline progress, autosave, installable PWA
+- **Character**: one level earned in battle raises Attack, Defense, Vitality, Speed and Luck; gear, techniques, companions, cards and food add to them
+- **Techniques**: foes drop their world's scroll (random technique, unknown ones favoured, pity counter); duplicates become fragments that level a technique to 10, with behaviour changes at 5 and 10; slots Attack I-III, Defense, Support, Passive, Ultimate open over the game; they fire on cooldown
+- **Energy disciplines** (Chakra, Haki, Reiatsu, Ki, Cursed Energy, Nen): split your energy between them, one more per world
+- **Weapons**: each copy keeps its own level (1-50), refinement (+1 to +10 with ingots and gems) and awakening
+- **Expeditions**: ships sail in parallel with anything else, need hull wood, optional dishes bring back more
+- Worlds open after their guardian falls and you make an offering at the gate; skills and menus open one at a time
+- Renown and Ascension per world, synergies between activities, schematics and relics for iconic gear, loot rarity, chests, Devil Fruits
+- **Shiny & Perfect** collection logs (Fishing, Cooking so far); offline progress (12 h), autosave, installable PWA
 
 ## Run locally
 
@@ -51,7 +54,12 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `js/data.js` | Core content: worlds 1-3, items, zones, shop, objectives, synergies, gates, unlock order |
 | `js/loot.js` | Loot pass: world chests, drop-only gear with utility perks, rarity from drop rates, salvage values |
 | `js/worlds.js` | Worlds 4-7 and the Rift finale, registered with `addWorld()`; content for techniques and awakening |
-| `js/systems.js` | World systems (Renown, Ascension, techniques, awakening, farming, transformations, Domain, pacts, contracts, beasts, cards, Echo...), plugged into engine hooks |
+| `js/systems.js` | World systems (Renown, Ascension, armor sockets/reforge, farming, transformations, Domain, pacts, contracts, beasts, cards, Echo...), plugged into engine hooks |
+| `js/techniques.js`, `js/techniques-ui.js` | Technique collection, scrolls, fragments, typed slots, combat casting; Techniques page |
+| `js/expeditions.js`, `js/expeditions-ui.js` | Passive expeditions (ships, hauls, provisions); Harbour panel and destination cards |
+| `js/weapons.js`, `js/weapons-ui.js` | Weapon copies: level, refinement, awakening, elements and families; weapon rack and forge panel |
+| `css/gdd.css` | Styles for the GDD rework (stats, techniques, disciplines, harbour, weapons) |
+| `docs/` | Game Design Document, audit, design decisions |
 | `js/quality.js` | Shiny & Perfect: variant items (shiny / perfect / seasoned, created on demand), quality rolls, logs and their set bonuses |
 | `js/seas.js` | Orange Town overhaul: seasonings and their battle buffs, where they drop, catch weights and records |
 | `js/seas-ui.js` | Animated skill scenes (fishing, galley, voyages), spice rack, Shiny & Perfect logs, celebrations |

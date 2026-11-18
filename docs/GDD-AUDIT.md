@@ -78,6 +78,16 @@ Légende : ✅ conforme · 🟡 existe mais diffère · ❌ absent · ➕ existe
 `SAVE_V = 6` : les sauvegardes antérieures sont refusées. Les objectifs sont stockés par index (`S.goal`) :
 insérer un objectif décale tous les suivants et demande une migration.
 
+## Avancement (2026-11-18)
+
+Fait : noms du GDD · niveau de personnage + 5 stats · techniques (parchemins, fragments, slots typés, paliers, recharges) ·
+monde 1 (Woodcutting, Crafting, Combat) · disciplines énergétiques · expéditions passives · Soul City (Smelting, armes par exemplaire :
+niveau, raffinage, éveil).
+
+Reste : Kaio Planet (Time Chamber, retrait de Tinkering), Shinjuku (Cursed Research, Binding Vows hors skill, Domain = couche des
+techniques, retrait de Sigilcraft), Green Island (Hunting, slots de compagnons, cartes en sets), pools de techniques des mondes 2-6,
+élites et mini-boss, objectifs quotidiens / hebdomadaires, Collection Log étendu (techniques, ennemis, armes).
+
 ## Ordre de travail proposé (GDD §9)
 
 1. **Socle transversal** : niveau de personnage + 5 stats, techniques (drops, fragments, slots typés, paliers), progression d'arme (niveau, raffinage, éveil).
