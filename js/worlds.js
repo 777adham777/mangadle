@@ -186,7 +186,7 @@ const EXTRA_USES = [];
   ['1×', '10×', '50×', '100×', '200×', '400×', '800×'].forEach((g, i) => { SKILLS.gravity.actions[i].name = `${g} Gravity Session`; });
   SKILLS.farming.actions = [];
   // Tools: one line per gathering skill, 3 tiers each, +15% speed per tier. Built from that skill's own materials + ki.
-  const toolSkills = ['fishing', 'woodcutting', 'mining', 'harvest', 'gravity'];
+  const toolSkills = ['fishing', 'woodcutting', 'mining', 'gravity'];
   const toolNames = { fishing: 'Sonar Rod', woodcutting: 'Chakra Saw', mining: 'Ki Drill', harvest: 'Spirit Lantern', gravity: 'Gravity Rig' };
   const tinker = [];
   toolSkills.forEach((sk, si) => {
@@ -332,7 +332,7 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
   for (const s of ['exorcism', 'sigilcraft', 'pacts']) RARE_FINDS[s] = [];
   SHOP.push({ id: 'tools_hex', cat: 'Tools', realm: 'hex', name: 'Warded Satchel', icon: '🛠️', desc: '+10% speed for Shinjuku skills per tier.', costs: [50000, 200000, 800000, 3e6, 9e6] });
   SYNERGIES.push(
-    { from: 'exorcism',   to: 'harvest', kind: 'speed',    per: 0.003, name: 'Spirit Sense',  desc: 'Soul Harvest goes faster' },
+    { from: 'exorcism',   to: 'mining',  kind: 'speed',    per: 0.003, name: 'Spirit Sense',  desc: 'Reishi Mining goes faster' },
     { from: 'pacts',      to: 'gravity', kind: 'speed',    per: 0.003, name: 'Iron Vow',      desc: 'Gravity Training goes faster' },
   );
   // Tinkering learns a tool for Exorcism too
@@ -576,7 +576,7 @@ const ECHOES = [
   SHOP.push({ id: 'tools_echo', cat: 'Tools', realm: 'echo', name: "Curator's Kit", icon: '🛠️', desc: '+10% speed for Echo Quarter skills per tier.', costs: [300000, 1.2e6, 5e6, 2e7, 6e7] });
   SYNERGIES.push(
     { from: 'archaeology', to: 'mining',   kind: 'rare', per: 0.004, name: 'Strata Reading', desc: 'More gems and rare finds while mining' },
-    { from: 'restoration', to: 'smithing', kind: 'xp',   per: 0.003, name: 'Old Techniques', desc: 'More Bladesmithing XP' },
+    { from: 'restoration', to: 'smithing', kind: 'xp',   per: 0.003, name: 'Old Techniques', desc: 'More Smelting XP' },
     { from: 'bonding',     to: 'all',      kind: 'xp',   per: 0.001, name: 'Shared Will',    desc: 'A little more XP on every skill' },
   );
   defItem('sigil_echo', 'Echo Sigil', '🔯', 300, { type: 'sigil' });

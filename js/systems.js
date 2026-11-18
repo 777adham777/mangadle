@@ -121,7 +121,7 @@ function awakenReason(id) {
   if (!gearOn()) return 'Locked';
   if (ITEMS[id].slot !== 'weapon') return 'Only weapons awaken';
   if (!next) return 'Fully released';
-  if (skillLv('smithing') < next.smith) return `Needs Bladesmithing ${next.smith}`;
+  if (skillLv('smithing') < next.smith) return `Needs Smelting ${next.smith}`;
   if (g.xp < relNeed(id, g.rel)) return 'Not enough battle XP';
   if (!canAfford(relCost(id, g.rel))) return 'Missing souls';
   return '';
@@ -146,7 +146,7 @@ function reforgeReason(id) {
   const c = reforgeCost(id);
   if (!gearOn()) return 'Locked';
   if (gearOf(id).tier >= REFORGE_MAX) return 'Max tier';
-  if (skillLv('smithing') < c.smith) return `Needs Bladesmithing ${c.smith}`;
+  if (skillLv('smithing') < c.smith) return `Needs Smelting ${c.smith}`;
   if (S.gold < c.gold) return 'Not enough gold';
   if (!c.relic || count(c.relic) < c.n) return 'Missing relics';
   return '';

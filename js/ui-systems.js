@@ -17,7 +17,7 @@ UIX.inspector.push((id) => {
       const need = relNeed(id, g.rel), why = awakenReason(id);
       out.push(`${hdr('Awakening', g.rel ? RELEASE[g.rel].name : 'Sealed')}
         <div class="aw-row"><span class="pbar"><i style="width:${Math.min(100, (g.xp / need) * 100)}%"></i></span><small>${fmt(g.xp)} / ${fmt(need)} battle XP</small></div>
-        <p class="muted small">${next.name}: +${next.atk * 100}% weapon attack${g.rel === 0 ? ' and a gem socket' : ' and a 2nd socket'}. Needs Bladesmithing ${next.smith}.</p>
+        <p class="muted small">${next.name}: +${next.atk * 100}% weapon attack${g.rel === 0 ? ' and a gem socket' : ' and a 2nd socket'}. Needs Smelting ${next.smith}.</p>
         <div class="aw-cost">${costTiles(relCost(id, g.rel))}</div>
         ${gbtn(why || next.name, 'awaken', `data-awaken="${id}" ${why ? 'disabled' : ''}`, 'sm')}`);
     } else out.push(`${hdr('Awakening', RELEASE[g.rel].name)}<p class="muted small">Fully released: +${RELEASE[g.rel].atk * 100}% weapon attack.</p>`);

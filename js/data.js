@@ -63,6 +63,11 @@ defItem('black_iron',      'Black Iron',       '⚫', 32);
 defItem('starsteel',       'Starsteel',        '🌟', 48);
 defItem('sunstone',        'Sunstone',         '🔶', 80);
 defItem('rift_ore',        'Rift Ore',         '🟪', 150);
+// Soul — ingots (Smelting): weapons are forged from them in Crafting, and refined with them
+const ingot = (id, name, value) => defItem(id, name, '🟫', value, { ingot: true });
+ingot('reishi_ingot', 'Reishi Ingot', 5); ingot('silver_ingot', 'Silver Ingot', 18); ingot('frost_ingot', 'Frost Ingot', 30);
+ingot('void_ingot', 'Void Ingot', 50); ingot('black_ingot', 'Black Iron Ingot', 80); ingot('star_ingot', 'Starsteel Ingot', 120);
+ingot('sun_ingot', 'Sun Ingot', 200); ingot('rift_ingot', 'Rift Ingot', 380);
 // Seas — fish
 defItem('minnow',          'Minnow',           '🐟', 2);
 defItem('reef_bass',       'Reef Bass',        '🐠', 6);
@@ -226,9 +231,8 @@ const GEM_TABLE = [['jade', 60], ['sapphire', 25], ['ruby', 12], ['void_diamond'
 const SKILLS = {
   woodcutting: { name: 'Woodcutting', realm: 'shinobi', icon: '🪓', type: 'gather', desc: 'Fell the trees around the hidden village. Logs become weapons and hafts, the undergrowth gives healing herbs, and wood patches the hulls of Orange Town ships.' },
   arts:      { name: 'Crafting',      realm: 'shinobi', icon: '🔨', type: 'craft',  desc: 'Turn wood, herbs and battle spoils into weapons, armor, healing pills and technique scrolls.' },
-  harvest:   { name: 'Soul Harvest',  realm: 'soul',    icon: '👻', type: 'gather', desc: 'Guide wandering spirits onward. Their remains bind blades, jewelry and pills.' },
   mining:    { name: 'Reishi Mining', realm: 'soul',    icon: '⛏️', type: 'gather', desc: 'Mine ore crystallized from pure spiritual particles. Gems hide in the rock.' },
-  smithing:  { name: 'Bladesmithing', realm: 'soul',    icon: '⚒️', type: 'craft',  desc: 'Forge soul-bound blades and set gems into jewelry. Most iconic weapons are made here.' },
+  smithing:  { name: 'Smelting',      realm: 'soul',    icon: '🔥', type: 'craft',  desc: 'Smelt Soul City ore over a wood fire into ingots. Crafting forges weapons and jewelry from them, and they refine your weapons.' },
   fishing:   { name: 'Fishing',       realm: 'seas',    icon: '🎣', type: 'gather', desc: 'Cast your line into the endless blue. Fruit eaters fish 40% slower.' },
   cooking:   { name: 'Cooking',       realm: 'seas',    icon: '🍳', type: 'craft',  desc: 'A good cook keeps the crew alive. Food heals in combat, and packed as provisions it brings back more from expeditions.' },
   voyaging:  { name: 'Voyaging',      realm: 'seas',    icon: '⛵', type: 'voyage', desc: 'Send ships on expeditions of 10 minutes to 8 hours. They sail while you do anything else and come back with gold, spices, relics and treasure.' },
@@ -287,16 +291,6 @@ SKILLS.arts.actions = [
   needs('schem_tide_mantle', craft('tide_mantle', 84, 9, { tide_heart: 1, leviathan_scale: 6, phantom_silk: 8, sage_chakra: 4 })),
   craft('storm_mantle', 86, 8, { phantom_silk: 8, sage_chakra: 4, sunstone: 8 }),
 ];
-SKILLS.harvest.actions = [
-  gather('soul_fragment', 1, 3),
-  gather('wisp_flame', 10, 3.5),
-  gather('spirit_core', 20, 4),
-  gather('husk_mask', 35, 4.5),
-  gather('grave_dust', 50, 5),
-  gather('abyssal_essence', 63, 5.5),
-  gather('phantom_silk', 75, 6),
-  gather('echo_soul', 88, 7),
-];
 SKILLS.mining.actions = [
   gather('spirit_ore', 1, 3),
   gather('silver_reishi', 12, 3.5),
@@ -324,6 +318,27 @@ SKILLS.smithing.actions = [
   needs('schem_stormcaller', craft('stormcaller', 78, 9, { leviathan_scale: 4, sunstone: 10, lightning_core: 4, tide_pearl: 3 })),
   craft('void_band', 80, 7, { void_diamond: 1, sunstone: 4, echo_soul: 2 }),
   needs('schem_rift_cleaver', craft('rift_cleaver', 90, 10, { rift_ore: 20, echo_soul: 10, rift_shard: 1, ashen_tail: 2, sovereign_shard: 2, tide_heart: 1, heartwood: 5 })),
+];
+// Smelting became Smelting (GDD): its weapon and jewelry recipes move to Crafting, made from ingots
+// (2 ore → 1 ingot, so an old recipe's ore count is halved). Smelting turns ore into ingots over a wood fire.
+const INGOT_OF = { spirit_ore: 'reishi_ingot', silver_reishi: 'silver_ingot', frost_crystal: 'frost_ingot', void_stone: 'void_ingot',
+  black_iron: 'black_ingot', starsteel: 'star_ingot', sunstone: 'sun_ingot', rift_ore: 'rift_ingot' };
+for (const a of SKILLS.smithing.actions) {
+  const inp = {};
+  for (const k in a.in) { const ig = INGOT_OF[k]; if (ig) inp[ig] = (inp[ig] || 0) + Math.ceil(a.in[k] / 2); else inp[k] = a.in[k]; }
+  a.in = inp;
+  SKILLS.arts.actions.push(a);
+}
+SKILLS.arts.actions.sort((a, b) => a.level - b.level);
+SKILLS.smithing.actions = [
+  craft('reishi_ingot', 1, 3, { spirit_ore: 2, pine_log: 1 }),
+  craft('silver_ingot', 12, 3.5, { silver_reishi: 2, cedar_log: 1 }),
+  craft('frost_ingot', 22, 4, { frost_crystal: 2, bamboo: 1 }),
+  craft('void_ingot', 32, 4.5, { void_stone: 2, mistwood: 1 }),
+  craft('black_ingot', 45, 5, { black_iron: 2, ironwood: 1 }),
+  craft('star_ingot', 58, 5.5, { starsteel: 2, blossomwood: 1 }),
+  craft('sun_ingot', 72, 6, { sunstone: 2, spirit_oak: 1 }),
+  craft('rift_ingot', 88, 7, { rift_ore: 2, heartwood: 1 }),
 ];
 SKILLS.fishing.actions = [
   gather('minnow', 1, 3),
@@ -370,7 +385,6 @@ SKILLS.character.actions = [];
 // Rolled on every completed action of that skill (chance per action). 'GEM' rolls GEM_TABLE.
 const RARE_FINDS = {
   woodcutting: [['bird_nest', 1 / 150], ['herb_pouch', 1 / 300]],
-  harvest:   [['lost_lantern', 1 / 150]],
   mining:    [['GEM', 1 / 80]],
   fishing:   [['sunken_chest', 1 / 200], ['FRUIT', 1 / 2500]],
   voyaging:  [['treasure_map', 1 / 25]],
@@ -384,7 +398,6 @@ const PET_HOURS = 10;
 const PETS = [
   { id: 'woodpecker',    name: 'Woodpecker',         icon: '🐦', skill: 'woodcutting' },
   { id: 'scroll_cat',    name: 'Scroll Cat',         icon: '🐈', skill: 'arts' },
-  { id: 'hell_moth',     name: 'Hell Butterfly',     icon: '🦋', skill: 'harvest' },
   { id: 'ore_badger',    name: 'Ore Badger',         icon: '🦡', skill: 'mining' },
   { id: 'forge_newt',    name: 'Forge Salamander',   icon: '🦎', skill: 'smithing' },
   { id: 'sea_otter',     name: 'Sea Otter',          icon: '🦦', skill: 'fishing' },
@@ -445,19 +458,19 @@ const ZONES = [
     en('Admiral of the Tide', '🎖️', 9000, 160, 110, 2.4, 2800, [1500, 3000], [['tide_heart', 0.6, [1, 1]], ['nature_essence', 0.5, [2, 4]], ['treasure_map', 0.15, [1, 1]], ['admiral_coat', 1 / 8, [1, 1]], ['storm_crown', 1 / 8, [1, 1]], ['FRUIT', 1 / 25, [1, 1]], ['schem_tide_mantle', 1 / 6, [1, 1]], ['schem_rift_cleaver', 1 / 5, [1, 1]]]),
   ] },
   { id: 'districts', name: 'Outer Districts', realm: 'soul', rec: 68, enemies: [
-    en('Lesser Husk', '👹', 2000, 130, 100, 2.5, 380, [120, 220], [['soul_fragment', 0.5, [2, 5]], ['husk_heart', 0.1, [1, 1]], ['husk_claw', 1 / 120, [1, 1]]]),
+    en('Lesser Husk', '👹', 2000, 130, 100, 2.5, 380, [120, 220], [['soul_fragment', 0.5, [2, 5]], ['wisp_flame', 0.3, [1, 3]], ['husk_heart', 0.1, [1, 1]], ['husk_claw', 1 / 120, [1, 1]]]),
     en('Lurking Husk', '👺', 2600, 150, 120, 3, 440, [150, 260], [['spirit_core', 0.2, [1, 2]], ['husk_heart', 0.12, [1, 1]], ['reaper_scarf', 1 / 120, [1, 1]], ['lost_lantern', 1 / 50, [1, 1]], ['schem_reapers_edge', 1 / 120, [1, 1]]]),
   ] },
   { id: 'desert', name: 'Desert of Endless Night', realm: 'soul', rec: 74, enemies: [
     en('Towering Husk', '🏜️', 3400, 200, 150, 2.3, 620, [200, 350], [['husk_mask', 0.2, [1, 2]], ['husk_heart', 0.15, [1, 2]], ['husk_carapace', 1 / 150, [1, 1]]]),
-    en('Sand Wraith', '🌪️', 3000, 240, 130, 2.1, 600, [200, 350], [['void_stone', 0.3, [1, 3]], ['sapphire', 1 / 60, [1, 1]], ['wraith_sickle', 1 / 150, [1, 1]]]),
+    en('Sand Wraith', '🌪️', 3000, 240, 130, 2.1, 600, [200, 350], [['void_stone', 0.3, [1, 3]], ['grave_dust', 0.2, [1, 2]], ['sapphire', 1 / 60, [1, 1]], ['wraith_sickle', 1 / 150, [1, 1]]]),
   ] },
   { id: 'spire', name: 'The Bone Spire', realm: 'soul', rec: 82, enemies: [
-    en('Masked Lancer', '💀', 6500, 320, 200, 3, 1100, [350, 600], [['husk_mask', 0.3, [1, 3]], ['bone_ivory', 0.15, [1, 2]], ['bone_lance', 1 / 200, [1, 1]]]),
-    en('Bone Priest', '☠️', 5200, 360, 190, 2.2, 1050, [350, 600], [['grave_dust', 0.15, [1, 2]], ['bone_ivory', 0.15, [1, 2]], ['ruby', 1 / 80, [1, 1]], ['prayer_beads', 1 / 200, [1, 1]], ['schem_ferryman_robe', 1 / 120, [1, 1]]]),
+    en('Masked Lancer', '💀', 6500, 320, 200, 3, 1100, [350, 600], [['husk_mask', 0.3, [1, 3]], ['abyssal_essence', 0.12, [1, 2]], ['bone_ivory', 0.15, [1, 2]], ['bone_lance', 1 / 200, [1, 1]]]),
+    en('Bone Priest', '☠️', 5200, 360, 190, 2.2, 1050, [350, 600], [['grave_dust', 0.15, [1, 2]], ['phantom_silk', 0.08, [1, 1]], ['bone_ivory', 0.15, [1, 2]], ['ruby', 1 / 80, [1, 1]], ['prayer_beads', 1 / 200, [1, 1]], ['schem_ferryman_robe', 1 / 120, [1, 1]]]),
   ] },
   { id: 'sovereign', name: 'Throne of Masks', realm: 'soul', rec: 90, boss: true, enemies: [
-    en('Masked Sovereign', '🎭', 22000, 520, 280, 2.4, 9000, [6000, 12000], [['abyssal_essence', 1, [3, 6]], ['lost_lantern', 0.5, [1, 3]], ['sovereign_shard', 0.6, [1, 2]], ['sovereign_mask', 1 / 10, [1, 1]], ['sovereign_cloak', 1 / 12, [1, 1]], ['schem_eclipse_blade', 1 / 6, [1, 1]]]),
+    en('Masked Sovereign', '🎭', 22000, 520, 280, 2.4, 9000, [6000, 12000], [['abyssal_essence', 1, [3, 6]], ['phantom_silk', 0.6, [1, 3]], ['echo_soul', 0.5, [1, 2]], ['lost_lantern', 0.5, [1, 3]], ['sovereign_shard', 0.6, [1, 2]], ['sovereign_mask', 1 / 10, [1, 1]], ['sovereign_cloak', 1 / 12, [1, 1]], ['schem_eclipse_blade', 1 / 6, [1, 1]]]),
   ] },
   { id: 'convergence', name: 'The Convergence', realm: 'rift', rec: 99, boss: true, enemies: [
     en('Rift Emperor', '👁️', 60000, 900, 400, 2.2, 30000, [30000, 60000], [['rift_shard', 1, [1, 1]], ['rift_eye', 1 / 25, [1, 1]], ['FRUIT', 1 / 2, [1, 1]]]),
@@ -543,8 +556,9 @@ const GOALS = [
   G('Open the Drowned Seal', 'home', 1, gate('soul'), 3500),
   // Soul City
   G('Mine 20 Spirit Ore', 'realm:soul:mining', 20, made('spirit_ore'), 2000),
+  G('Smelt 10 Reishi Ingots', 'realm:soul:smithing', 10, made('reishi_ingot'), 2500),
   G('Defeat 10 foes in the Outer Districts', 'battle', 10, kills('districts'), 2500),
-  G('Forge a Spirit Katana', 'realm:soul:smithing', 1, made('spirit_katana'), 3000),
+  G('Craft a Spirit Katana from ingots', 'realm:shinobi:arts', 1, made('spirit_katana'), 3000),
   G('Awaken a weapon (First Release)', 'hero', 1, () => [Object.values(S.gear || {}).some((g) => g.rel > 0) ? 1 : 0], 4000),
   G('Reach Reiatsu level 10', 'power', 10, () => [S.energy.lvl.reiatsu || 0], 5000),
   G('Reach Renown 25 in any world', 'home', 25, () => [Math.max(0, ...WORLD_ORDER.map(renownLv))], 6000),
@@ -580,7 +594,7 @@ const GOALS = [
   G('Summon Shenron with the 7 Dragon Balls', 'realm:ki:gravity', 1, () => [Object.values(S.wishes || {}).reduce((a, b) => a + b, 0)], 150000),
   G('Eat an Devil Fruit', 'hero', 1, () => [S.fruit ? 1 : 0], 100000),
   G('Defeat the Rift Emperor', 'battle', 1, kills('convergence'), 400000),
-  G('Forge the Rift Cleaver', 'realm:soul:smithing', 1, made('rift_cleaver'), 500000),
+  G('Forge the Rift Cleaver', 'realm:shinobi:arts', 1, made('rift_cleaver'), 500000),
   G('Fill 75% of the Collection Log', 'hero:collection', 75, () => [Math.floor(collectionPct() * 100)], 500000),
 ];
 
@@ -593,9 +607,8 @@ const SYNERGIES = [
   { from: 'fishing',   to: 'cooking',   kind: 'double', per: 0.002, name: 'Fresh Catch',      desc: 'Fat fish: chance to cook two dishes at once' },
   { from: 'cooking',   to: 'voyaging',  kind: 'speed',  per: 0.004, name: 'Good Provisions',  desc: 'A well-fed crew sails faster' },
   { from: 'voyaging',  to: 'all',       kind: 'rare',   per: 0.004, name: "Explorer's Eye",   desc: 'Rare finds are more likely on every skill' },
-  { from: 'mining',    to: 'smithing',  kind: 'double', per: 0.002, name: 'Pure Ore',         desc: 'Chance to forge two items from one batch' },
+  { from: 'mining',    to: 'smithing',  kind: 'double', per: 0.002, name: 'Pure Ore',         desc: 'Chance to smelt two ingots from one batch' },
   { from: 'smithing',  to: 'gather',    kind: 'speed',  per: 0.002, name: 'Sharp Tools',      desc: 'Every gathering skill works faster' },
-  { from: 'harvest',   to: 'craft',     kind: 'xp',     per: 0.003, name: 'Guiding Spirits',  desc: 'Wandering souls steady your hands: more crafting XP' },
   { from: 'arts',      to: 'combat',    kind: 'hp',     per: 0.003, name: 'Body Seals',       desc: 'Protective seals raise your max HP' },
   { from: 'woodcutting', to: 'cooking', kind: 'heal',   per: 0.005, name: 'Seasoning',        desc: 'Forest herbs make every dish heal more in battle' },
 ];
@@ -652,12 +665,10 @@ const UNLOCKS = [
     hint: () => 'Reach Cooking level 10', why: 'With proper provisions and timber for the hull, a captain agrees to take you aboard.' },
   worldUnlock('soul', 'Soul City'),
   { id: 'skill:mining',       name: 'Reishi Mining',   need: () => !!S.gates.soul || usedSkill('mining') },
-  { id: 'skill:smithing',     name: 'Bladesmithing',   need: () => skillLv('mining') >= 5 || usedSkill('smithing'),
+  { id: 'skill:smithing',     name: 'Smelting',        need: () => skillLv('mining') >= 5 || usedSkill('smithing'),
     hint: () => 'Reach Reishi Mining level 5', why: 'A soul smith offers you his spare anvil for your ore.' },
-  { id: 'skill:harvest',      name: 'Soul Harvest',    need: () => (S.combat.kills.districts || 0) >= 10 || usedSkill('harvest'),
-    hint: () => 'Defeat 10 foes in the Outer Districts', why: 'Freed husks leave wandering souls behind. Someone has to guide them.' },
   { id: 'feature:awakening',  name: 'Weapon Awakening', need: () => skillLv('smithing') >= 15 || Object.values(S.gear || {}).some((g) => g.rel > 0),
-    hint: () => 'Reach Bladesmithing level 15', why: 'Your blades start to answer you. Awaken, socket and reforge them from the Bank.' },
+    hint: () => 'Reach Smelting level 15', why: 'Your blades start to answer you. Awaken, socket and reforge them from the Bank.' },
   { id: 'feature:renown',     name: 'Renown & Ascension', need: () => !!S.gates.soul,
     hint: () => 'Open Soul City', why: 'Word of you spreads across worlds. Every world now tracks your Renown.' },
 ];

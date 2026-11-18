@@ -365,7 +365,7 @@ const ICONS = {
     arts: 'warhammer',
     harvest: 'ghost',
     mining: 'war-pick',
-    smithing: 'anvil-impact',
+    smithing: 'fire-gem',
     fishing: 'fishing-pole',
     cooking: 'cooking-pot',
     voyaging: 'sailboat',
@@ -680,7 +680,7 @@ ICONS.echo = { gilded_hand: 'two-coins', rewind: 'hourglass', star_fist: 'mailed
 // a small badge for the family plus an optional tier tag. ICON_MARK: item id -> { b: badge GI, t: tag }.
 const ICON_MARK = {};
 (() => {
-  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII'];
+  const ROMAN = ['', 'I', 'II', 'III', 'IV', 'V', 'VI', 'VII', 'VIII'];
   const SIGIL = { tide: 'waves', leaf: 'leaf-swirl', soul: 'soul', ki: 'falling-star', hex: 'oni', blade: 'broadsword', ward: 'shield',
     heart: 'heart-plus', coin: 'coins-pile', lore: 'open-book', luck: 'clover', hunt: 'bow-arrow', echo: 'spark-spirit' };
   const TRAP = { snare: 'paw', net_trap: 'spider-web', cage_trap: 'padlock', spirit_trap: 'lantern-flame', wyrm_trap: 'sea-serpent', chimera_trap: 'claw' };
@@ -693,6 +693,7 @@ const ICON_MARK = {};
     if (it.type === 'schematic') set(id, ICONS.item[it.teaches], 'scroll-unfurled');
     else if (it.type === 'scroll' && it.pool) set(id, 'tied-scroll', ICONS.realm[it.pool]);
     else if (it.type === 'scroll') set(id, ICONS.technique[it.tech], 'tied-scroll');
+    else if (it.ingot) set(id, 'metal-bar', null, ROMAN[Object.keys(ITEMS).filter((k) => ITEMS[k].ingot).indexOf(id) + 1]);
     else if (it.type === 'tool') set(id, ICONS.skill[it.toolFor], 'cog', ROMAN[it.tier]);
     else if (it.type === 'seed') set(id, ICONS.item[id.slice(5)], 'leaf-swirl');
     else if (it.type === 'sigil') set(id, SIGIL[id.slice(6)], 'magic-swirl');
