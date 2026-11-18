@@ -57,6 +57,7 @@ function rarity(id) {
   if (id === 'GEM') return 3;
   const it = ITEMS[id];
   if (!it) return 1;
+  if (it.rarity) return it.rarity;   // set in loot.js from how hard the item is to get
   if (it.type === 'fruit' || id === 'rift_shard') return 5;
   if (it.type === 'schematic') return 4;
   if (it.type === 'gem') return it.value >= 180 ? 4 : 3;
@@ -605,7 +606,7 @@ VIEWS.hero = (tab) => {
     <section class="win equip-win">
       ${hdr('Equipment')}
       <div class="eslots">${slot('weapon', 'Weapon', 'weapon')}${slot('armor', 'Armor', 'armor')}${slot('accessory', 'Accessory', 'accessory')}${skillOpen('tinkering') || S.equip.gadget ? slot('gadget', 'Gadget', 'gadget') : ''}${featureOpen('battle') ? foodSlot() : ''}
-        ${S.fruit ? `<div class="eslot fruit">${tile(S.fruit, null)}<span class="es-t"><small>Abyss Fruit</small><b>${ITEMS[S.fruit].name}</b></span></div>` : ''}</div>
+        ${S.fruit ? `<div class="eslot fruit">${tile(S.fruit, null)}<span class="es-t"><small>Abyss Fruit · rank ${fruitRank()}</small><b>${ITEMS[S.fruit].name}</b></span></div>` : ''}</div>
       ${hdr('Attributes')}
       ${attrList([['atk', 'Max hit', fmt(pMaxHit())], ['def', 'Defense', fmt(pDef())], ['hp', 'Max HP', fmt(pMaxHp())], ['spd', 'Attack speed', pSpeed().toFixed(1) + 's'], ['gold', 'Gold bonus', '×' + goldMult().toFixed(2)], ['xp', 'XP bonus', '×' + xpMult().toFixed(2)]])}
     </section>
@@ -619,16 +620,21 @@ VIEWS.hero = (tab) => {
 };
 function itemHead(id, unknown) {
   const it = ITEMS[id], r = unknown ? 0 : rarity(id);
-  return `<div class="dt-hero r${r}"><div class="dt-name"><small>${unknown ? 'Undiscovered' : typeLabel(id)}</small><h2>${unknown ? '???' : esc(it.name)}</h2>${unknown ? '' : stars(r)}</div>
+  return `<div class="dt-hero r${r}"><div class="dt-name"><small>${unknown ? 'Undiscovered' : `<span class="rar r${r}">${RARITY_NAME[r] || ''}</span> · ${typeLabel(id)}`}</small><h2>${unknown ? '???' : esc(it.name)}</h2>${unknown ? '' : stars(r)}</div>
     <div class="dt-art">${unknown ? '<b class="q">?</b>' : itemIc(id)}</div></div>`;
 }
 function inspectorHTML() {
   if (!selItem || (!count(selItem) && !Object.values(S.equip).includes(selItem))) return `<div class="empty-note big">${ui('info')}<span>Select an item to see its details.</span></div>`;
   const it = ITEMS[selItem], n = count(selItem), equipped = !n;
   const body = [], acts = [];
-  if (it.type === 'equip') { body.push(attrList(statRows(Object.fromEntries(Object.keys(it.stats).map((k) => [k, itemStat(selItem, k)]))))); body.push(uix('inspector', selItem)); if (!equipped) acts.push(gbtn('Equip', 'check', `data-equip="${selItem}"`)); }
+  if (it.type === 'equip') { body.push(attrList(statRows(Object.fromEntries(Object.keys(it.stats).map((k) => [k, itemStat(selItem, k)]))))); body.push(uix('inspector', selItem)); if (!equipped) acts.push(gbtn('Equip', 'check', `data-equip="${selItem}"`));
+    if (it.salvage && !equipped) body.push(`${hdr('Salvage', 'drop-only gear breaks down into relics')}<div class="aw-cost">${costTiles(it.salvage)}</div><div class="dt-cta">${gbtn('Salvage 1', 'salvage', `data-salvage="${selItem}:1"`, 'sm')}${n > 1 ? gbtn(`Salvage all ×${fmt(n)}`, 'salvage', `data-salvage="${selItem}:all"`, 'sm dark') : ''}</div>`); }
   else if (it.type === 'food') { body.push(attrList([['hp', 'Heals in battle', foodHeal(selItem) + ' HP']])); body.push('<p class="muted">Also used as voyage supplies.</p>'); acts.push(S.combat.food === selItem ? gbtn('Equipped as battle food', 'check', 'disabled') : gbtn('Equip as battle food', 'eat', `data-setfood="${selItem}"`)); }
-  else if (it.type === 'fruit') { body.push(`<p class="lore">${it.desc}</p><p class="muted">Only one fruit at a time — eating replaces the old one. Fruit eaters fish 40% slower.</p>`); acts.push(gbtn('Eat', 'fruit', `data-eat="${selItem}"`)); }
+  else if (it.type === 'fruit') {
+    const mine = S.fruit === selItem, rk = mine ? fruitRank() : 0;
+    body.push(`<p class="lore">${it.desc}</p>${mine ? attrList([['star', 'Your rank', `${rk} / ${FRUIT_RANK_MAX} · power ×${(1 + 0.25 * (rk - 1)).toFixed(2)}`]]) : ''}<p class="muted">Only one fruit at a time — eating another kind replaces it. Eat copies of yours to raise its rank (+25% power each). Fruit eaters fish 40% slower.</p>`);
+    acts.push(mine ? (rk >= FRUIT_RANK_MAX ? gbtn('Max rank', 'fruit', 'disabled') : gbtn(`Eat: rank ${rk + 1}`, 'fruit', `data-eat="${selItem}"`)) : gbtn('Eat', 'fruit', `data-eat="${selItem}"`));
+  }
   else if (it.type === 'chest') {
     const tot = it.loot.reduce((a, l) => a + l[1], 0);
     body.push(`${hdr('Contents', `${fmt(it.gold[0])}–${fmt(it.gold[1])} gold + one of`)}<ul class="srcs">${it.loot.map(([id, w, q]) => `<li><span><i>${itemIc(id)}</i>${esc(fruitLabel(id))}${q[1] > 1 ? ` ×${q[0]}–${q[1]}` : ''}</span><b>${fmtRate(w / tot)}</b></li>`).join('')}</ul>`);
@@ -639,7 +645,9 @@ function inspectorHTML() {
     for (const k in SKILLS) for (const a of SKILLS[k].actions) if (a.in && a.in[selItem]) uses.push([k, a]);
     for (const r in GATES) if (GATES[r].offer[selItem] && !S.gates[r]) uses.unshift(['gate', { name: GATES[r].name, level: '' }]);
     if (it.relic) body.push(`<p class="lore">A relic of the ${REALMS[it.relic].name}. Iconic gear from that world is forged from it.</p>`);
-    if (uses.length) body.push(`${hdr('Used in')}<ul class="srcs">${uses.slice(0, 8).map(([k, a]) => k === 'gate' ? `<li><span><i>${ui('gate')}</i>${esc(a.name)}</span><b>World gate</b></li>` : `<li><span><i>${ic('skill', k)}</i>${esc(a.name)}${a.schem ? ' <em class="muted">· schematic</em>' : ''}</span><b>${SKILLS[k].name} ${a.level}</b></li>`).join('')}</ul>`);
+    if (typeof reforgeRelic === 'function' && reforgeRelic() === selItem) uses.push(['use', 'Reforge any gear (tiers 1-5)']);
+    for (const [k, txt] of EXTRA_USES) if (k === selItem) uses.push(['use', txt]);
+    if (uses.length) body.push(`${hdr('Used in')}<ul class="srcs">${uses.slice(0, 10).map(([k, a]) => k === 'use' ? `<li><span><i>${ui('star')}</i>${esc(a)}</span><b>System</b></li>` : k === 'gate' ? `<li><span><i>${ui('gate')}</i>${esc(a.name)}</span><b>World gate</b></li>` : `<li><span><i>${ic('skill', k)}</i>${esc(a.name)}${a.schem ? ' <em class="muted">· schematic</em>' : ''}</span><b>${SKILLS[k].name} ${a.level}</b></li>`).join('')}</ul>`);
   }
   body.push(uix('inspectorAny', selItem));
   body.push(`${hdr('Where to find')}${sourcesHTML(selItem)}`);
@@ -1167,7 +1175,7 @@ document.addEventListener('click', (ev) => {
   else if (d.bankf) { S.ui.bank = d.bankf; dirty = true; }
   else if (d.equip) { equip(d.equip); toast(`Equipped ${ITEMS[d.equip].name}`, 'good'); }
   else if (d.unequip) unequip(d.unequip);
-  else if (d.eat) { if (!S.fruit || confirm(`Replace your ${ITEMS[S.fruit].name}? Its power will be lost.`)) { eatFruit(d.eat); burst('Power awakened', ITEMS[d.eat].desc, itemIc(d.eat), 'var(--gold)'); } }
+  else if (d.eat) { if (!S.fruit || S.fruit === d.eat || confirm(`Replace your ${ITEMS[S.fruit].name}? Its power will be lost.`)) { eatFruit(d.eat); burst('Power awakened', ITEMS[d.eat].desc, itemIc(d.eat), 'var(--gold)'); } }
   else if ('unfood' in d) { S.combat.food = null; dirty = true; }
   else if (d.setfood) { S.combat.food = d.setfood; toast(`${ITEMS[d.setfood].name} will be eaten in battle.`, 'good'); dirty = true; }
   else if (d.sell) {

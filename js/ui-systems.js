@@ -65,7 +65,7 @@ UIX.inspector.push((id) => {
   }
   const c = reforgeCost(id), why = reforgeReason(id);
   out.push(`${hdr('Reforge', `tier ${g.tier} / ${REFORGE_MAX}`)}
-    <p class="muted small">+12% to every stat per tier. Costs the newest world's relics, so any favourite can keep up.</p>
+    <p class="muted small">+12% to every stat per tier. Costs the newest world's relics, so any favourite can keep up. Tier 6 is Rift-forged with a Rift Shard.</p>
     ${g.tier < REFORGE_MAX ? `<div class="aw-cost">${tile(null, fmt(c.gold), { r: 3, icon: ui('gold'), cls: 'xs ' + (S.gold < c.gold ? 'short' : ''), title: 'Gold' })}${c.relic ? costTiles({ [c.relic]: c.n }) : ''}</div>
     ${gbtn(why || `Reforge to tier ${g.tier + 1}`, 'reforge', `data-reforge="${id}" ${why ? 'disabled' : ''}`, 'sm')}` : ''}`);
   return `<div class="forge-box">${out.join('')}</div>`;
@@ -406,6 +406,10 @@ document.addEventListener('click', (ev) => {
   if (d.awaken) awaken(d.awaken);
   else if (d.socket) { const [id, i, gm] = d.socket.split(':'); socketGem(id, +i, gm); }
   else if (d.reforge) reforge(d.reforge);
+  else if (d.salvage) {
+    const [id, q] = d.salvage.split(':'), got = salvage(id, q === 'all' ? count(id) : 1);
+    if (got) toast(`Salvaged: ${Object.entries(got).map(([k, n]) => `${ITEMS[k].name} ×${n}`).join(', ')}`, 'good');
+  }
 });
 document.addEventListener('change', (ev) => {
   const d = ev.target.dataset;

@@ -647,6 +647,15 @@ for (const id in ITEMS) {
 Object.assign(ICONS.shop, { tools_echo: 'open-book' });
 Object.assign(ICONS.ui, { echo: 'aura', awaken2: 'crystal-shine', museum: 'bookshelf' });
 ICONS.beast.stone_owl = 'evil-eyes';
+
+// ---- Loot pass (loot.js): world chests and drop-only gear
+Object.assign(ICONS.item, {
+  capsule_crate: 'locked-chest', cursed_box: 'open-chest', hunters_cache: 'backpack', echo_reliquary: 'open-treasure-chest',
+  battle_scouter: 'third-eye', weighted_gi: 'kimono', crimson_knuckles: 'mailed-fist', paper_blade: 'katana', veil_shroud: 'wing-cloak',
+  matriarch_rosary: 'prayer-beads', wyvern_bow: 'bow-arrow', beastlord_mantle: 'cape-armor', chimera_fang: 'fangs',
+  ripple_gloves: 'rolling-energy', stone_mask: 'cracked-mask', sunlit_armor: 'chest-armor',
+});
+ICONS.ui.salvage = 'recycle';
 ICONS.echo = { gilded_hand: 'two-coins', rewind: 'hourglass', star_fist: 'mailed-fist', silent_tide: 'waves', paper_moon: 'night-sleep', iron_bloom: 'flower-twirl' };
 
 // ---- Composite item icons: families that used to share one picture now show their subject

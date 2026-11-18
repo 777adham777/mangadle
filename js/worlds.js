@@ -71,7 +71,8 @@ const RELEASE_COST = [
   [Infinity, { phantom_silk: 10, echo_soul: 4 },        { echo_soul: 12, sovereign_shard: 2 }],
 ];
 const GEM_FX = { jade: { hp: 0.06 }, sapphire: { def: 0.06 }, ruby: { dmg: 0.06 }, void_diamond: { dmg: 0.04, def: 0.04, hp: 0.04 } };
-const REFORGE_MAX = 5;
+// Tiers 1-5 cost the newest world's relics; tier 6 (Rift-forged) costs a Rift Shard.
+const REFORGE_MAX = 6;
 
 /* ======================================================= WORLDS 4-7 (below) */
 const CROPS = [];          // Farming (Ki Frontier)

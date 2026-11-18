@@ -1597,3 +1597,6 @@ body { background: var(--bg); }
 .av-world .gi { width: 12px; height: 12px; }
 .av-world.free { color: var(--dim); }
 .av-card.locked .av-world { opacity: 0.7; }
+
+/* rarity word in item detail headers (loot.js) */
+.dt-name .rar { color: var(--rgc); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }

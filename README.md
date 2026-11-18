@@ -16,6 +16,7 @@ Each world adds one new system, and every system also applies to the worlds befo
 
 - Worlds open after their guardian falls and you make an offering at the gate; skills and menus open from in-world events, one "Next unlock" at a time
 - Renown per world (bonuses, then Ascension tiers that replay old stages for the newest relics), synergies between professions, schematics and world relics for iconic gear
+- Loot rarity (Common → Legendary) follows how hard an item is to get; every world has a chest, drop-only gear with a perk, and a very rare Rift Shard on its guardian. Drop-only gear salvages into relics, duplicate fruits raise their rank, Rift Shards Rift-forge gear to tier 6
 - Combat skills to 120, everything else to 99; 55 guided objectives; offline progress, autosave, installable PWA
 
 ## Run locally
@@ -39,6 +40,7 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `index.html` | Page shell |
 | `css/style.css` | All styling |
 | `js/data.js` | Core content: worlds 1-3, items, zones, shop, objectives, synergies, gates, unlock order |
+| `js/loot.js` | Loot pass: world chests, drop-only gear with utility perks, rarity from drop rates, salvage values |
 | `js/worlds.js` | Worlds 4-7 and the Rift finale, registered with `addWorld()`; content for techniques and awakening |
 | `js/systems.js` | World systems (Renown, Ascension, techniques, awakening, farming, transformations, Domain, pacts, contracts, beasts, cards, Echo...), plugged into engine hooks |
 | `js/ui-systems.js` | Interface for those systems; boots the game |

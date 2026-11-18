@@ -43,7 +43,7 @@ function defaultState() {
     combat: { zone: null, enemy: null, eHp: 0, pT: 0, eT: 0, respawn: 0, hp: 50,
               style: 'strength', food: null, kills: {}, log: [] },   // food is equipped by the player
     equip: { weapon: 'rusty_cutlass', armor: null, accessory: null, gadget: null },
-    fruit: null,
+    fruit: null, fruitRank: 0,          // eating copies of your fruit raises its rank (max FRUIT_RANK_MAX)
     shop: {},
     energy: { capLv: 0, powLv: 0, alloc: {}, lvl: {}, prog: {}, step: '10' },
     karma: 0, karmaTotal: 0, perks: {}, rebirths: 0,
@@ -177,7 +177,15 @@ let scaleEnemy = (zi, e) => e;
 const enemyAt = (zi, i) => scaleEnemy(zi, ZONES[zi].enemies[i]);
 
 /* -------------------------------------------------------- multipliers */
-const fruitFx = () => (S.fruit ? ITEMS[S.fruit].fx : {});
+// Rank r multiplies the fruit's upsides by 1 + 0.25 × (r − 1); its drawbacks (slower attacks) stay as they are.
+const FRUIT_RANK_MAX = 5;
+const fruitRank = () => (S.fruit ? Math.max(1, S.fruitRank || 1) : 0);
+function fruitFx() {
+  if (!S.fruit) return {};
+  const fx = ITEMS[S.fruit].fx, m = 1 + 0.25 * (fruitRank() - 1), o = {};
+  for (const k in fx) o[k] = k === 'atkSpeed' ? fx[k] : fx[k] * m;
+  return o;
+}
 function gearStat(k) {
   let s = 0;
   for (const slot in S.equip) { const id = S.equip[slot]; if (id) s += itemStat(id, k); }
@@ -602,10 +610,22 @@ function equip(id) {
 function unequip(slot) { const id = S.equip[slot]; if (!id) return; addItem(id, 1); S.equip[slot] = null; dirty = true; }
 function eatFruit(id) {
   if (ITEMS[id].type !== 'fruit' || count(id) < 1) return;
+  if (S.fruit === id && fruitRank() >= FRUIT_RANK_MAX) return toast(`Your ${ITEMS[id].name} is already rank ${FRUIT_RANK_MAX}.`, 'bad');
   removeItem(id, 1);
-  S.fruit = id;
-  toast(`You ate the ${ITEMS[id].name}. ${ITEMS[id].desc}`, 'rare');
+  if (S.fruit === id) { S.fruitRank = fruitRank() + 1; toast(`${ITEMS[id].name} deepens to rank ${S.fruitRank}.`, 'rare'); }
+  else { S.fruit = id; S.fruitRank = 1; toast(`You ate the ${ITEMS[id].name}. ${ITEMS[id].desc}`, 'rare'); }
   dirty = true;
+}
+// Drop-only gear breaks down into its world's relics (ITEMS[id].salvage, set in loot.js).
+function salvage(id, n) {
+  const it = ITEMS[id];
+  n = Math.min(n, count(id));
+  if (!it || !it.salvage || n <= 0) return null;
+  removeItem(id, n);
+  const got = {};
+  for (const k in it.salvage) { got[k] = it.salvage[k] * n; addItem(k, got[k]); }
+  dirty = true;
+  return got;
 }
 function sell(id, n) {
   n = Math.min(n, count(id));
