@@ -1,6 +1,6 @@
 /* Service worker: makes the game installable and playable offline.
    Bump VERSION on every deploy so players get the new files. */
-const VERSION = 'tri-realm-v31';
+const VERSION = 'tri-realm-v32';
 const SHELL = [
   './',
   './index.html',
@@ -54,7 +54,7 @@ self.addEventListener('fetch', (e) => {
 
   // Game files: network first (always fresh when online), cache as fallback (offline play).
   e.respondWith(
-    fetch(req)
+    fetch(req, { cache: 'no-cache' })
       .then((res) => {
         if (res.ok) { const copy = res.clone(); caches.open(VERSION).then((c) => c.put(req, copy)); }
         return res;
