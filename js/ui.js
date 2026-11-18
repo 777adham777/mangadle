@@ -40,7 +40,7 @@ function itemIc(id, cls) {
   if (!n) return '';
   const bp = ITEMS[id] && ITEMS[id].type === 'schematic';
   const c = typeof itemColor === 'function' ? itemColor(id) : null;
-  return `<svg class="gi ic${bp ? ' bp' : ''}${cls ? ' ' + cls : ''}"${c ? ` style="--ic:${c}"` : ''} aria-hidden="true"><use href="#gi-${n}"/></svg>`;
+  return `<svg class="gi ic${bp ? ' bp' : ''}${cls ? ' ' + cls : ''}"${c ? ` style="--ic:${c}"` : ''} data-tip="${id}" aria-hidden="true"><use href="#gi-${n}"/></svg>`;
 }
 // Actions without an item output (beast hunts, echo rituals...) carry their own icon: a.icon = [kind, id].
 const actIc = (skill, a, cls) => (a.loot ? ic('voyage', a.id, cls) : a.icon ? ic(a.icon[0], a.icon[1], cls) : a.out ? itemIc(Object.keys(a.out)[0], cls) : ic('skill', skill, cls));
@@ -101,9 +101,12 @@ function tile(id, n, o) {
   o = o || {};
   const r = o.unknown ? 0 : (o.r || rarity(id));
   const tag = o.tag || 'span';
+  const real = !o.unknown && !o.icon && id && ITEMS[id];
   const art = o.unknown ? '<b class="q">?</b>' : (o.icon || itemIc(id)) + (o.mark != null ? o.mark : !o.icon && id ? itemMark(id) : '')
-    + (!o.icon && id && ITEMS[id] ? kindCorner(itemKind(id)) : '');
-  return `<${tag} class="tile r${r} ${o.cls || ''}" ${o.attrs || ''} title="${esc(o.title || (o.unknown ? 'Undiscovered' : id ? fruitLabel(id) : ''))}">`
+    + (real ? kindCorner(itemKind(id)) : '');
+  // Real items get the rich tooltip (tooltips.js) instead of a plain title.
+  const tip = real ? `data-tip="${id}"` : `title="${esc(o.title || (o.unknown ? 'Undiscovered' : id ? fruitLabel(id) : ''))}"`;
+  return `<${tag} class="tile r${r} ${o.cls || ''}" ${o.attrs || ''} ${tip}>`
     + `<span class="tile-art">${art}${o.corner || ''}</span>`
     + `${n == null || n === '' ? '' : `<span class="tile-n" ${o.nattrs || ''}>${n}</span>`}</${tag}>`;
 }
