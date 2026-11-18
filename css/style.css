@@ -1477,6 +1477,17 @@ button.acard:hover { border-color: var(--line2); background: #202126; }
    Schematics are a blueprint of the gear they teach. Shiny / perfect variants keep their gold (seas.css). */
 .tile .tile-art > .gi.ic, .dt-art .gi.ic, .spop .tile-art > .gi.ic { fill: var(--ic); }
 .tile .tile-art > .gi.ic.bp, .dt-art .gi.ic.bp { fill: #143a5c; stroke: #8fdcff; stroke-width: 30px; }
+/* Item families (ui.js KINDS): a coloured corner on every item tile; the bank filters and the inspector use the same colour. */
+.k-res { --kc: #a9b7c8; } .k-food { --kc: #6fdc7a; } .k-equip { --kc: #ff6b5b; } .k-tool { --kc: #4fd0e8; } .k-scroll { --kc: #c59bff; } .k-chest { --kc: #ffc94a; }
+.tile-kind { position: absolute; right: 0; bottom: 0; z-index: 1; width: 40%; aspect-ratio: 1; background: rgba(6, 7, 10, 0.85); clip-path: polygon(100% 0, 100% 100%, 0 100%); pointer-events: none; }
+.tile-kind::before { content: ''; position: absolute; inset: 0; background: var(--kc); clip-path: polygon(100% 11%, 100% 100%, 11% 100%); }
+.tile-art .tile-kind .gi { position: absolute; right: 6%; bottom: 6%; width: 46%; height: 46%; fill: #0d0f14; stroke: none; filter: none; }
+.tile.dim .tile-kind { opacity: 0.5; }
+.bag-tabs button[class*="k-"] .gi { fill: var(--kc); }
+.bag-tabs button.on[class*="k-"] { box-shadow: inset 0 -3px 0 var(--kc); }
+.bag-tabs button.on[class*="k-"] .gi { fill: color-mix(in srgb, var(--kc) 50%, #000); }
+.kind-lab { color: var(--kc); white-space: nowrap; }
+.kind-lab .gi { display: inline-block; width: 1em; height: 1em; fill: currentColor; vertical-align: -0.15em; margin-right: 3px; }
 .attrs .attr:nth-child(odd), .srcs li:nth-child(odd) { background: rgba(255, 255, 255, 0.025); }
 .equip-win { border-right: 0; padding-right: 14px; }
 .syn-ic, .tr-ic, .ts-ic, .ct-ic, .gt-ic, .ec-ic, .q-ic, .wl-ic, .lc-badge, .nx-ic { border-radius: 2px; }

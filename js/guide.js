@@ -128,7 +128,7 @@ function guideStep() {
     const id = Object.keys(S.items).find((k) => ITEMS[k].type === 'food');
     if (!id) return { sels: navSels('realm:shinobi:arts'), text: 'You have no pills left. Brew some in Crafting first.' };
     if (selItem === id) return { sels: ['[data-setfood]'], text: 'Click <b>Equip as battle food</b>. In battle you eat it on your own when your HP gets low.' };
-    if (!['all', 'food'].includes(S.ui.bank)) return { sels: ['[data-bankf="food"]'], text: 'Open the <b>Food</b> tab.' };
+    if (!['all', 'food'].includes(S.ui.bank)) return { sels: ['[data-bankf="food"]'], text: 'Open the <b>Consumables</b> tab.' };
     return { sels: [`.bag-grid [data-sel="${id}"]`], text: `Click your <b>${ITEMS[id].name}</b>.` };
   }
   if (G.spice) {

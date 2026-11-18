@@ -80,12 +80,29 @@ const typeLabel = (id) => { const it = ITEMS[id]; if (it.relic) return `Relic ·
 const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Devil Fruit' : id === 'GEM' ? 'Random gem' : ITEMS[id].name);
 function stars(r) { return `<span class="stars">${'<i></i>'.repeat(r)}</span>`; }
 
-// An item tile: art area tinted by rarity + a light count strip.
+// Item families, readable at a glance: every item tile carries its family's coloured corner (.tile-kind),
+// the inspector names it in the same colour, and the bank filters by family. Keys reuse type ids
+// ('equip', 'food'...) so saved bank filters and guide steps keep working.
+const KINDS = {
+  res:    { name: 'Materials',   one: 'Material' },
+  food:   { name: 'Consumables', one: 'Consumable' },
+  equip:  { name: 'Gear',        one: 'Gear' },
+  tool:   { name: 'Tools',       one: 'Tool' },
+  scroll: { name: 'Scrolls',     one: 'Scroll' },
+  chest:  { name: 'Treasure',    one: 'Treasure' },
+};
+const KIND_OF = { res: 'res', gem: 'res', spice: 'res', seed: 'res', equip: 'equip', food: 'food', meal: 'food', bait: 'food', fruit: 'food',
+  chest: 'chest', wish: 'chest', artifact: 'chest', scroll: 'scroll', schematic: 'scroll', tool: 'tool', trap: 'tool' };
+const itemKind = (id) => (ITEMS[id] ? KIND_OF[ITEMS[id].type] || 'res' : null);
+const kindCorner = (k) => (k ? `<span class="tile-kind k-${k}" aria-hidden="true">${ui('k-' + k)}</span>` : '');
+
+// An item tile: art area tinted by rarity + family corner + a light count strip.
 function tile(id, n, o) {
   o = o || {};
   const r = o.unknown ? 0 : (o.r || rarity(id));
   const tag = o.tag || 'span';
-  const art = o.unknown ? '<b class="q">?</b>' : (o.icon || itemIc(id)) + (o.mark != null ? o.mark : !o.icon && id ? itemMark(id) : '');
+  const art = o.unknown ? '<b class="q">?</b>' : (o.icon || itemIc(id)) + (o.mark != null ? o.mark : !o.icon && id ? itemMark(id) : '')
+    + (!o.icon && id && ITEMS[id] ? kindCorner(itemKind(id)) : '');
   return `<${tag} class="tile r${r} ${o.cls || ''}" ${o.attrs || ''} title="${esc(o.title || (o.unknown ? 'Undiscovered' : id ? fruitLabel(id) : ''))}">`
     + `<span class="tile-art">${art}${o.corner || ''}</span>`
     + `${n == null || n === '' ? '' : `<span class="tile-n" ${o.nattrs || ''}>${n}</span>`}</${tag}>`;
@@ -585,11 +602,13 @@ const heroTabs = (tab) => `<nav class="seg big-seg">
   <button class="${!tab ? 'on' : ''}" data-nav="hero">${ui('hero')}<span>Bank & Gear</span></button>
   ${featureOpen('avatar') ? `<button class="${tab === 'avatar' ? 'on' : ''}" data-nav="hero:avatar">${ui('avatar')}<span>Avatar</span></button>` : ''}
   ${featureOpen('collection') ? `<button class="${tab === 'collection' ? 'on' : ''}" data-nav="hero:collection">${ui('collection')}<span>Collection</span><em>${Math.floor(collectionPct() * 100)}%</em></button>` : `<button class="locked" data-locked="collection" title="${esc(lockedNote('collection'))}">${ui('lock')}<span>Collection</span></button>`}</nav>`;
-const BAG_TABS = [['all', 'equip', 'All'], ['res', 'gem', 'Materials'], ['gem', 'gem', 'Gems'], ['chest', 'chest', 'Treasure'], ['food', 'food', 'Food'], ['meal', 'meal', 'Meals'], ['seed', 'farm', 'Seeds'], ['equip', 'weapon', 'Gear'], ['fruit', 'fruit', 'Fruit']];
+// Bank filters: one per item family (KINDS), each in its family colour.
+const BAG_TABS = [['all', 'equip', 'All'], ...Object.keys(KINDS).map((k) => [k, 'k-' + k, KINDS[k].name])];
 VIEWS.hero = (tab) => {
   if (tab === 'collection') return collectionHTML();
   if (tab === 'avatar') return avatarHTML();
-  const ids = Object.keys(S.items).filter((k) => S.ui.bank === 'all' || ITEMS[k].type === S.ui.bank)
+  if (S.ui.bank !== 'all') S.ui.bank = KIND_OF[S.ui.bank] || 'all';   // older saves filtered by type
+  const ids = Object.keys(S.items).filter((k) => S.ui.bank === 'all' || itemKind(k) === S.ui.bank)
     .sort((a, b) => rarity(b) - rarity(a) || ITEMS[b].value - ITEMS[a].value);
   const worth = Object.keys(S.items).reduce((a, k) => a + ITEMS[k].value * S.items[k], 0);
   // Battle food: eaten automatically when HP gets low.
@@ -615,7 +634,7 @@ VIEWS.hero = (tab) => {
       ${attrList([['atk', 'Max hit', fmt(pMaxHit())], ['def', 'Defense', fmt(pDef())], ['hp', 'Max HP', fmt(pMaxHp())], ['spd', 'Attack speed', pSpeed().toFixed(1) + 's'], ['gold', 'Gold bonus', '×' + goldMult().toFixed(2)], ['xp', 'XP bonus', '×' + xpMult().toFixed(2)]])}
     </section>
     <section class="win bag-win">
-      <nav class="bag-tabs">${BAG_TABS.map(([k, icn, l]) => `<button class="${S.ui.bank === k ? 'on' : ''}" data-bankf="${k}" title="${l}">${ui(icn)}<span>${l}</span></button>`).join('')}</nav>
+      <nav class="bag-tabs">${BAG_TABS.map(([k, icn, l]) => `<button class="${S.ui.bank === k ? 'on' : ''}${KINDS[k] ? ' k-' + k : ''}" data-bankf="${k}" title="${l}">${ui(icn)}<span>${l}</span></button>`).join('')}</nav>
       ${uix('bagTop')}<div class="bag-grid">${ids.length ? ids.map((k) => tile(k, `<span data-count="${k}">${fmt(S.items[k])}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: seenItems.has(k) ? '' : '<span class="new">New</span>' })).join('') : '<div class="empty-note">Nothing here yet.</div>'}</div>
       <div class="bag-foot"><span>${Object.keys(S.items).length} item types</span><span>Bank value ${ui('gold')} ${fmt(worth)}</span></div>
     </section>
@@ -624,7 +643,7 @@ VIEWS.hero = (tab) => {
 };
 function itemHead(id, unknown) {
   const it = ITEMS[id], r = unknown ? 0 : rarity(id);
-  return `<div class="dt-hero r${r}"><div class="dt-name"><small>${unknown ? 'Undiscovered' : `<span class="rar r${r}">${RARITY_NAME[r] || ''}</span> · ${typeLabel(id)}`}</small><h2>${unknown ? '???' : esc(it.name)}</h2>${unknown ? '' : stars(r)}</div>
+  return `<div class="dt-hero r${r}"><div class="dt-name"><small>${unknown ? 'Undiscovered' : `<span class="rar r${r}">${RARITY_NAME[r] || ''}</span> · <span class="kind-lab k-${itemKind(id)}">${ui('k-' + itemKind(id))}${KINDS[itemKind(id)].one}</span>${typeLabel(id) !== KINDS[itemKind(id)].one ? ' · ' + typeLabel(id) : ''}`}</small><h2>${unknown ? '???' : esc(it.name)}</h2>${unknown ? '' : stars(r)}</div>
     <div class="dt-art">${unknown ? '<b class="q">?</b>' : itemIc(id)}</div></div>`;
 }
 function inspectorHTML() {

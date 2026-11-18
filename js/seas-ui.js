@@ -21,7 +21,6 @@ Object.assign(ICONS.ui, { spices: 'salt-shaker', shiny: 'sparkles', perfect: 'ro
 ICONS.shop.buy_pepper = 'pepper-grains';
 Object.assign(TYPE_LABEL, { spice: 'Seasoning' });
 COL_GROUPS.push(['spice', 'Seasonings']);
-BAG_TABS.splice(BAG_TABS.findIndex((t) => t[0] === 'food') + 1, 0, ['spice', 'spices', 'Spices']);
 
 /* ================================================================ tiles */
 // Shiny tiles shimmer, perfect ones get a gold frame, seasoned ones a spice badge (ICON_MARK, quality.js).
