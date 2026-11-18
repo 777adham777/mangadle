@@ -177,7 +177,7 @@ function renderRail() {
   // Combat sits under the starting world: you fish and cook before you fight.
   if (featureOpen('battle')) groups.splice(Math.min(2, groups.length), 0, `<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
     ${navRow('battle', ui('battle'), S.combat.zone != null ? ZONES[S.combat.zone].name : 'Battlefield', { color: rc('combat'), busy: S.combat.zone != null })}
-    <div class="nav-cskills">${['strength', 'defense', 'vitality'].map((k) => `<button class="ncs" data-nav="battle" title="${SKILLS[k].name}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><span class="nr-xp"><i data-xpbar="${k}"></i></span></button>`).join('')}</div></div>`);
+    <div class="nav-cskills"><button class="ncs" data-nav="battle" title="Character level">${ic('skill', 'character')}<span>Character</span><b data-lv="character">${skillLv('character')}</b><span class="nr-xp"><i data-xpbar="character"></i></span></button></div></div>`);
   $('#rail').innerHTML = `<div class="nav-quest" id="navquest">${goalHTML()}</div>${groups.join('')}${nextUnlockHTML('nav-next')}`;
   $('#tabbar').innerHTML = [
     `<button class="tab-btn" data-menu>${ui('menu')}<span>Menu</span></button>`,
@@ -509,7 +509,6 @@ function rareTiles(skill) {
 VIEWS.battle = () => {
   const C = S.combat;
   const foods = Object.keys(S.items).filter((k) => ITEMS[k].type === 'food');
-  const style = (s, icn, l) => `<button class="${C.style === s ? 'on' : ''}" data-style="${s}">${ui(icn)}<span>${l}</span></button>`;
   const cskill = (k) => `<div class="cskill"><span class="cs-ic">${ic('skill', k)}</span><span class="cs-main"><span><b>${SKILLS[k].name}</b><em>Lv <span data-lv="${k}">${skillLv(k)}</span></em></span><span class="xpbar thin"><i data-xpbar="${k}"></i></span></span></div>`;
   let lastRealm = null, groups = '';
   ZONES.forEach((z, i) => {
@@ -525,7 +524,7 @@ VIEWS.battle = () => {
   });
   const z = C.zone != null ? ZONES[C.zone] : null;
   return `
-  ${ptitle('Battlefield', z ? z.name : 'Choose a stage', `<div class="cskills">${cskill('strength')}${cskill('defense')}${cskill('vitality')}</div>`)}
+  ${ptitle('Battlefield', z ? z.name : 'Choose a stage', `<div class="cskills">${cskill('character')}</div>`)}
   <div class="battle-layout">
     <div class="battle-main">
       ${z ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
@@ -533,19 +532,30 @@ VIEWS.battle = () => {
       <div class="battle-row">
         <section class="win controls">
           ${hdr('Tactics')}
-          <div class="ctrl"><label>Train</label><div class="seg">${style('strength', 'atk', 'Strength')}${style('defense', 'def', 'Defense')}${style('balanced', 'star', 'Both')}</div></div>
           <div class="ctrl"><label>Auto-eat</label><div class="food-pick">${C.food && count(C.food) ? tile(C.food, null, { cls: 'xs' }) : `<span class="tile r0 xs"><span class="tile-art">${ui('food')}</span></span>`}
             <select data-food>${foods.length ? (C.food ? '' : '<option value="" selected>No food equipped</option>') : '<option value="">No food — cook some first</option>'}${foods.map((f) => `<option value="${f}" ${C.food === f ? 'selected' : ''}>${ITEMS[f].name} ×${fmt(count(f))} (+${foodHeal(f)} HP)</option>`).join('')}</select></div></div>
-          <div class="muted small">Eats below ${pct(autoEatThreshold())} HP. Vitality always gains XP.</div>
+          <div class="muted small">Eats below ${pct(autoEatThreshold())} HP.</div>
         </section>
+        <section class="win char-stats">${hdr('Character', `Lv ${charLv()}`)}${charStatsHTML()}</section>
         ${uix('battleSide')}
         <section class="win log-win">${hdr('Battle log')}<div class="log" id="clog">${logHTML()}</div></section>
       </div>
-      <section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), ['strength', 'defense', 'vitality'].flatMap(synergiesFrom))}</section>
+      <section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), synergiesFrom('character'))}</section>
     </div>
     <section class="win stages">${hdr('Stages')}<div class="stage-list">${groups}</div></section>
   </div>`;
 };
+// The five character stats: base value (level + gear) and what it does once every multiplier applies.
+function charStatsHTML() {
+  const row = (icn, name, val, eff, tip) => `<div class="cstat" title="${esc(tip)}"><span class="cst-ic">${ui(icn)}</span><b>${name}</b><em>${val}</em><small>${eff}</small></div>`;
+  return `<div class="cstats">
+    ${row('atk', 'Attack', fmt(statAtk()), `max hit ${fmt(pMaxHit())}`, 'Raises the damage you deal')}
+    ${row('def', 'Defense', fmt(statDef()), `−${pct(1 - mitig(pDef()))} damage`, 'Reduces the damage you take')}
+    ${row('vit', 'Vitality', fmt(statVit()), `${fmt(pMaxHp())} HP`, 'Raises your max HP')}
+    ${row('spd', 'Speed', fmt(statSpd()), `${pSpeed().toFixed(2)}s / attack`, 'Each point: +1% attack speed')}
+    ${row('luck', 'Luck', fmt(statLuck()), `rare ×${luckMult().toFixed(2)}`, 'Each point: +1% chance on every rare find')}
+  </div>`;
+}
 function zoneRow(z, i) {
   const C = S.combat;
   if (!zoneUnlocked(i)) {
@@ -1156,7 +1166,6 @@ document.addEventListener('click', (ev) => {
   else if (d.zone !== undefined) startCombat(+d.zone);
   else if (d.asc) { const [r, t] = d.asc.split(':'); setAsc(r, +t); }
   else if ('stopcombat' in d) stopCombat();
-  else if (d.style) { S.combat.style = d.style; dirty = true; }
   else if (d.sel) { selItem = d.sel; dirty = true; }
   else if (d.bankf) { S.ui.bank = d.bankf; dirty = true; }
   else if (d.equip) { equip(d.equip); toast(`Equipped ${ITEMS[d.equip].name}`, 'good'); }

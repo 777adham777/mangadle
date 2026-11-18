@@ -41,7 +41,7 @@ function defaultState() {
     mastery: {},
     action: null,                       // { skill, id, prog }
     combat: { zone: null, enemy: null, eHp: 0, pT: 0, eT: 0, respawn: 0, hp: 50,
-              style: 'strength', food: null, kills: {}, log: [] },   // food is equipped by the player
+              food: null, kills: {}, log: [] },   // food is equipped by the player
     equip: { weapon: null, armor: null, accessory: null, gadget: null },   // your first weapon is carved in Shinobi Arts
     fruit: null, fruitRank: 0,          // eating copies of your fruit raises its rank (max FRUIT_RANK_MAX)
     shop: {},
@@ -89,6 +89,7 @@ function mergeDefaults(target, def) {
 function sanitize() {
   if (typeof restoreVariants === 'function') restoreVariants();   // shiny / perfect / seasoned items are created on demand
   for (const id in S.items) if (!ITEMS[id] || !(S.items[id] > 0)) delete S.items[id];
+  for (const k in S.skills) if (!SKILLS[k]) delete S.skills[k];
   for (const slot in S.equip) if (S.equip[slot] && !ITEMS[S.equip[slot]]) S.equip[slot] = null;
   if (S.fruit && !ITEMS[S.fruit]) S.fruit = null;
   if (S.action && (!SKILLS[S.action.skill] || !findAction(S.action.skill, S.action.id))) S.action = null;
@@ -180,7 +181,7 @@ function addXp(id, amt) {
 // Multiplier hooks return a factor (1 = no change); 'double' hooks return an added chance.
 const HOOKS = { dmg: [], hp: [], def: [], gold: [], xp: [], speed: [], double: [], rare: [], taken: [], dodge: [], edef: [],
                 tick: [], combat: [], action: [], kill: [], spawn: [], block: [], energy: [],
-                haste: [], heal: [], eat: [], shiny: [], perfect: [] };
+                haste: [], heal: [], eat: [], shiny: [], perfect: [], spdStat: [], luckStat: [] };
 // Why an action cannot run right now ('' = it can). Systems add reasons (max rank reached, no free plot...).
 const actionBlock = (skill, act) => { for (const f of HOOKS.block) { const r = f(skill, act); if (r) return r; } return ''; };
 const hook = (name, fn) => HOOKS[name].push(fn);
@@ -221,8 +222,8 @@ function milestoneFx(skill) {
   for (const m of MILESTONES) if (L >= m.lv) { fx.speed += m.speed || 0; fx.dbl += m.dbl || 0; fx.rare += m.rare || 0; }
   return fx;
 }
-const combatMilestones = (skill) => COMBAT_MILESTONES.filter((lv) => skillLv(skill) >= lv).length;
-const luckMult = () => 1 + 0.15 * (S.shop.lucky_coin || 0);
+const combatMilestones = () => COMBAT_MILESTONES.filter((lv) => charLv() >= lv).length;
+const luckMult = () => 1 + statLuck() / 100;
 const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult() * (1 + synergyBonus('rare', skill)) * hmul('rare', skill);
 // Shiny / perfect / seasoned variants have their own logs (quality.js): they do not count here.
 function collectionPct() {
@@ -231,9 +232,9 @@ function collectionPct() {
   return (Object.keys(S.found).filter(real).length + Object.keys(S.pets).length) / total;
 }
 
-function dmgMult()  { return hmul('dmg') * (1 + synergyBonus('dmg', 'combat')) * (1 + 0.01 * tl('chakra')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones('strength')) * (1 + 0.03 * bossPets()); }
-function hpMult()   { return hmul('hp') * (1 + synergyBonus('hp', 'combat')) * (1 + 0.01 * tl('reiatsu')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().hp || 0)) * (1 + 0.04 * combatMilestones('vitality')) * (1 + 0.03 * bossPets()); }
-function defMult()  { return hmul('def') * (1 + 0.01 * tl('will')) * (1 + 0.04 * combatMilestones('defense')); }
+function dmgMult()  { return hmul('dmg') * (1 + synergyBonus('dmg', 'combat')) * (1 + 0.01 * tl('chakra')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones()) * (1 + 0.03 * bossPets()); }
+function hpMult()   { return hmul('hp') * (1 + synergyBonus('hp', 'combat')) * (1 + 0.01 * tl('reiatsu')) * (1 + 0.1 * pl('warrior')) * (1 + (fruitFx().hp || 0)) * (1 + 0.04 * combatMilestones()) * (1 + 0.03 * bossPets()); }
+function defMult()  { return hmul('def') * (1 + 0.01 * tl('will')) * (1 + 0.04 * combatMilestones()); }
 function goldMult() { return hmul('gold') * (1 + 0.01 * tl('fortune')) * (1 + 0.15 * pl('merchant')) * (1 + (fruitFx().gold || 0)) * (1 + gearStat('gold')); }
 function xpMult()   { return (1 + 0.005 * tl('wisdom')) * (1 + 0.1 * pl('mentor')); }
 
@@ -297,10 +298,19 @@ const synergiesFrom = (k) => SYNERGIES.filter((s) => s.from === k);
 const synTargetOpen = (s) => (s.to === 'combat' ? isUnlocked('feature:battle') : SKILLS[s.to] ? skillOpen(s.to) : true);
 
 /* ------------------------------------------------------- combat stats */
-const pMaxHit = () => (8 + 1.5 * skillLv('strength') + gearStat('atk')) * dmgMult();
-const pDef    = () => (1.5 * skillLv('defense') + gearStat('def')) * defMult();
-const pMaxHp  = () => Math.floor((40 + 10 * skillLv('vitality') + gearStat('hp')) * hpMult());
-const pSpeed  = () => 2.4 * (1 + (fruitFx().atkSpeed || 0)) / hmul('haste');
+// One character level (earned in battle) raises the five stats. Gear, techniques, companions, cards and food add to them.
+//   Attack: max hit before multipliers · Defense: armour before multipliers · Vitality: max HP before multipliers
+//   Speed: +1% attack speed per point · Luck: +1% chance on every rare find per point
+const charLv = () => skillLv('character');
+const statAtk  = () => 8 + 1.5 * charLv() + gearStat('atk');
+const statDef  = () => 1.5 * charLv() + gearStat('def');
+const statVit  = () => 40 + 9 * charLv() + gearStat('hp');
+const statSpd  = () => 0.2 * charLv() + gearStat('spd') + hadd('spdStat');
+const statLuck = () => 0.1 * charLv() + 15 * (S.shop.lucky_coin || 0) + gearStat('luck') + hadd('luckStat');
+const pMaxHit = () => statAtk() * dmgMult();
+const pDef    = () => statDef() * defMult();
+const pMaxHp  = () => Math.floor(statVit() * hpMult());
+const pSpeed  = () => 2.4 * (1 + (fruitFx().atkSpeed || 0)) / hmul('haste') / (1 + statSpd() / 100);
 const pDodge  = () => Math.min(0.9, (fruitFx().dodge || 0) + hadd('dodge'));
 const mitig   = (def) => 100 / (100 + def);
 const autoEatThreshold = () => [0.4, 0.55, 0.7][S.shop.satchel || 0];
@@ -531,11 +541,7 @@ function killEnemy(e) {
   const C = S.combat, z = ZONES[C.zone];
   const g = Math.floor(randInt(e.gold[0], e.gold[1]) * goldMult());
   S.gold += g;
-  const vitShare = e.xp / 3;
-  if (C.style === 'strength') addXp('strength', e.xp);
-  else if (C.style === 'defense') addXp('defense', e.xp);
-  else { addXp('strength', e.xp / 2); addXp('defense', e.xp / 2); }
-  addXp('vitality', vitShare);
+  addXp('character', e.xp);
   S.bounty += e.xp * 10;
   const dropped = [], loot = {};
   for (const [id, ch, q] of e.drops) {
@@ -738,6 +744,8 @@ function loadFrom(json) {
   const d = JSON.parse(json);
   if (!isObj(d) || !d.skills) throw new Error('Not a valid save');
   if ((d.v || 1) < SAVE_V) throw new Error('This save comes from an older version of the game');
+  // The three combat skills became one character level: keep the best of them.
+  if (d.skills.strength && !d.skills.character) d.skills.character = { xp: Math.max(...['strength', 'defense', 'vitality'].map((k) => (d.skills[k] ? d.skills[k].xp : 0))) };
   S = mergeDefaults(d, defaultState());
   sanitize();
 }

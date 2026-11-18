@@ -234,9 +234,7 @@ const SKILLS = {
   fishing:   { name: 'Fishing',       realm: 'seas',    icon: '🎣', type: 'gather', desc: 'Cast your line into the endless blue. Fruit eaters fish 40% slower.' },
   cooking:   { name: 'Cooking',       realm: 'seas',    icon: '🍳', type: 'craft',  desc: 'A good cook keeps the crew alive. Food heals in combat and supplies voyages.' },
   voyaging:  { name: 'Voyaging',      realm: 'seas',    icon: '⛵', type: 'voyage', desc: 'Set sail on expeditions. Consumes food as supplies and returns with gold and treasure.' },
-  strength:  { name: 'Strength',      realm: 'combat',  icon: '💪', type: 'combat', desc: 'Raises your max hit. Trained by fighting with the Strength style.' },
-  defense:   { name: 'Defense',       realm: 'combat',  icon: '🛡️', type: 'combat', desc: 'Reduces the damage you take. Trained by fighting with the Defense style.' },
-  vitality:  { name: 'Vitality',      realm: 'combat',  icon: '❤️', type: 'combat', desc: '+10 base max HP per level. Always earns a share of combat XP.' },
+  character: { name: 'Character',    realm: 'combat',  icon: '🧍', type: 'combat', desc: 'Your hero. Every foe defeated gives XP; every level raises Attack, Defense, Vitality, Speed and Luck.' },
 };
 
 // One knob for the whole XP economy: XP per second of work grows smoothly with the level an action unlocks at.
@@ -378,9 +376,7 @@ SKILLS.voyaging.actions = [
   voyage('worldsedge', 'Edge of the World', '🌌', 82, 26, { angler_feast: 2, spirit_oak: 2 },
     { gold: [1800, 4000], table: [['phantom_silk', [1, 3]], ['lightning_core', [1, 3]], ['sunstone', [1, 3]]], rare: [['storm_crown', 1 / 60], ['leviathan_scale', 1 / 20], ['tide_heart', 1 / 200], ['FRUIT', 1 / 50]] }),
 ];
-SKILLS.strength.actions = [];
-SKILLS.defense.actions = [];
-SKILLS.vitality.actions = [];
+SKILLS.character.actions = [];
 
 /* --------------------------------------------- rare finds, pets, milestones */
 // Rolled on every completed action of that skill (chance per action). 'GEM' rolls GEM_TABLE.
@@ -424,9 +420,8 @@ const MILESTONES = [
   { lv: 75, name: 'Master',      desc: 'Rare finds ×1.5',         rare: 0.5 },
   { lv: 99, name: 'Grandmaster', desc: '+10% speed, +10% double, rare finds ×2', speed: 0.10, dbl: 0.10, rare: 0.5 },
 ];
-// Combat skills: each milestone gives +4% of that skill's stat.
+// Character level: each milestone gives +4% damage, defense and max HP.
 const COMBAT_MILESTONES = [10, 25, 50, 75, 99];
-const COMBAT_STAT = { strength: 'damage', defense: 'defense', vitality: 'max HP' };
 
 /* ----------------------------------------------------------------- combat */
 // enemy: hp, atk (max hit), def, spd (seconds per attack), xp, gold [min,max], drops [[item, chance, [min,max]]]
@@ -516,7 +511,7 @@ const SHOP = [
   { id: 'tools_soul',    cat: 'Tools', name: 'Soul Lantern',       icon: '🏮', desc: '+10% speed for Soul City skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
   { id: 'tools_seas',    cat: 'Tools', name: 'Ship Upgrades',      icon: '🛠️', desc: '+10% speed for Orange Town skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
   { id: 'abundance',     cat: 'Charms', name: 'Abundance Charm',   icon: '🍀', desc: '+5% chance per tier to double gathering output.', costs: [500, 5000, 50000, 500000] },
-  { id: 'lucky_coin',    cat: 'Charms', name: 'Lucky Coin',        icon: '🎲', desc: '+15% chance per tier for every rare find (chests, gems, pets, rare drops).', costs: [2000, 20000, 200000] },
+  { id: 'lucky_coin',    cat: 'Charms', name: 'Lucky Coin',        icon: '🎲', desc: '+15 Luck per tier: every rare find is more likely (chests, gems, pets, rare drops).', costs: [2000, 20000, 200000] },
   { id: 'satchel',       cat: 'Charms', name: 'Auto-Eat Satchel',  icon: '👝', desc: 'Raises the auto-eat threshold: 40% → 55% → 70% HP.', costs: [1000, 20000] },
   { id: 'buy_pills',     cat: 'Supplies', name: '10× Soldier Pill',   icon: '💊', desc: 'Emergency pills for a struggling adventurer.', cost: 80, give: ['soldier_pill', 10] },
   { id: 'buy_shards',    cat: 'Supplies', name: '20× Chakra Shard',   icon: '🔹', desc: 'A pouch of raw chakra crystals.', cost: 60, give: ['chakra_shard', 20] },
@@ -623,9 +618,6 @@ const SYNERGIES = [
   { from: 'harvest',   to: 'craft',     kind: 'xp',     per: 0.003, name: 'Guiding Spirits',  desc: 'Wandering souls steady your hands: more crafting XP' },
   { from: 'chakra',    to: 'combat',    kind: 'dmg',    per: 0.003, name: 'Chakra Strikes',   desc: 'Chakra-infused attacks deal more damage' },
   { from: 'arts',      to: 'combat',    kind: 'hp',     per: 0.003, name: 'Body Seals',       desc: 'Protective seals raise your max HP' },
-  { from: 'strength',  to: 'mining',    kind: 'speed',  per: 0.003, name: 'Heavy Swing',      desc: 'Strong arms break rock faster' },
-  { from: 'defense',   to: 'harvest',   kind: 'speed',  per: 0.003, name: 'Steady Nerves',    desc: 'Spirits trust a calm guardian: faster harvest' },
-  { from: 'vitality',  to: 'herbalism', kind: 'speed',  per: 0.003, name: 'Endurance',        desc: 'Forage longer without rest' },
 ];
 
 /* ------------------------------------------------------------------ gates */
