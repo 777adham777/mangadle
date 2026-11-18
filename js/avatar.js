@@ -147,7 +147,7 @@ const cosTotal = () => COS_SLOTS.reduce((a, [s]) => a + COSMETICS[s].length, 0);
 // fF / fB: foot tilt · g: weapon angle relative to the forearm · dy: crouch · air: float above the ground
 const POSES = {
   relaxed:  { sh: 1, t1: 176, t2: -6, n: 8,  h: 6,   aF: [14, 20],   aB: [-16, 14],  lF: [18, -24], lB: [-8, -2],  fF: 6,  fB: 0,  g: -150, dy: 0 },
-  guard:    { t1: 158, t2: 12, n: -10, h: -10, aF: [64, 70],  aB: [34, 100],  lF: [44, -64], lB: [-40, -8],  fF: 0,  fB: -8, g: -70,  dy: 18 },
+  guard:    { t1: 158, t2: 12, n: -10, h: -10, aF: [46, 60],  aB: [34, 100],  lF: [44, -64], lB: [-40, -8],  fF: 0,  fB: -8, g: 26,   dy: 18 },
   swagger:  { sh: 1, t1: 188, t2: -10, n: -4, h: -14, aF: [36, -118], aB: [-46, 118], lF: [12, -8], lB: [-16, -2], fF: 10, fB: 0,  g: -170, dy: 0 },
   heroic:   { t1: 182, t2: -8, n: -10, h: -12, aF: [178, -12], aB: [-42, 114], lF: [28, -8],  lB: [-26, -4], fF: 4,  fB: 0,  g: -6,   dy: 0 },
   striking: { sh: 1, t1: 198, t2: -18, n: -20, h: -20, aF: [150, 72], aB: [-64, -96], lF: [34, -74], lB: [-12, -4], fF: 34, fB: 0, g: -150, dy: 0 },
@@ -254,26 +254,82 @@ function solve(P, B) {
 
 /* ================================================================ drawing */
 // Head-local drawings: head centre at 0,0, radius 19, facing right (3/4 view).
+// Art direction for every accessory: a bold readable silhouette that hugs the
+// skull (edges sit on the head outline, radius ~20.5), one ink outline, a base
+// colour, one shadow tone and one highlight. No tiny details that vanish small.
+const HO = `stroke="${OL}" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"`;
+const hl = (d, c, w) => `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w || 2}" stroke-linecap="round" stroke-linejoin="round"/>`;
 const LAUREL = (() => {
-  let s = '';
-  for (let i = 0; i < 9; i++) {
-    const a = (198 + i * 17) * D2R, x = Math.cos(a) * 19.5, y = Math.sin(a) * 19.5 + 4, rot = (a / D2R) + 90 + (i % 2 ? 28 : -28);
-    s += `<ellipse cx="${r1(x)}" cy="${r1(y)}" rx="5.2" ry="2.4" transform="rotate(${r1(rot)} ${r1(x)} ${r1(y)})" fill="${i % 2 ? '#e8c35a' : '#d4a83a'}" stroke="${OL}" stroke-width="1.2"/>`;
+  let s = `<path d="M-19,-4 Q-25,2 -27,10 L-23,10 Q-21,4 -17,0Z M-19,-3 Q-22,6 -20,14 L-17,12 Q-18,6 -16,1Z" fill="#c99a2e" ${HO}/>`;
+  s += hl('M-20.2,-2 A20,20 0 0,1 15.5,-12.5', OL, 4.6) + hl('M-20.2,-2 A20,20 0 0,1 15.5,-12.5', '#8a6a1c', 2.2);
+  for (let i = 0; i < 8; i++) {
+    const th = (200 + i * 17) * D2R, x = Math.cos(th) * 20, y = Math.sin(th) * 20;
+    for (const side of [-1, 1]) {
+      const rot = r1(th / D2R - 90 + side * 32);
+      s += `<path d="M0,0 Q5.5,-3.6 11,0 Q5.5,3.6 0,0Z" transform="translate(${r1(x)},${r1(y)}) rotate(${rot})" fill="${side > 0 ? '#f0cf62' : '#d4a83a'}" stroke="${OL}" stroke-width="1.3" stroke-linejoin="round"/>`;
+    }
   }
-  return s + `<path d="M-18,6 q-6,6 -4,14 M-17,7 q-9,3 -10,10" fill="none" stroke="#d4a83a" stroke-width="2" stroke-linecap="round"/>`;
+  return s;
 })();
 const HATS = {
-  bucket: `<path d="M-15,-9 Q-15,-27 1,-27 Q16,-27 16,-9Z" fill="#c9a66b" stroke="${OL}" stroke-width="2.4"/><path d="M-15,-13 H16" stroke="#7d5f30" stroke-width="3"/><ellipse cx="1" cy="-9" rx="25" ry="4.6" fill="#b08e55" stroke="${OL}" stroke-width="2.4"/>`,
-  bandana: `<path d="M-18,-16 l-13,-5 l2,9Z M-18,-14 l-11,8 l7,2Z" fill="#b8323f" stroke="${OL}" stroke-width="2.2" stroke-linejoin="round"/><path d="M-19.5,-3 Q-20,-22 0,-22.5 Q19,-22 19.5,-6 Q2,-12 -19.5,-3Z" fill="#d8434f" stroke="${OL}" stroke-width="2.4"/><circle cx="-6" cy="-15" r="1.6" fill="#fff"/><circle cx="4" cy="-17" r="1.6" fill="#fff"/><circle cx="12" cy="-13" r="1.6" fill="#fff"/>`,
-  chef: `<g stroke="${OL}" stroke-width="2.4"><circle cx="-10" cy="-31" r="9" fill="#fff"/><circle cx="11" cy="-31" r="9" fill="#fff"/><circle cx="0" cy="-37" r="11" fill="#fff"/><path d="M-14,-14 L-14,-27 H14 L14,-14Z" fill="#fff"/></g><path d="M-9,-30 Q0,-34 9,-30" fill="none" stroke="#d6dbe6" stroke-width="2"/><path d="M-14,-17 H14" stroke="#d6dbe6" stroke-width="2"/>`,
-  tricorn: `<path d="M-27,-11 Q-24,-35 0,-35 Q24,-35 30,-9 Q15,-20 1,-16 Q-13,-20 -27,-11Z" fill="#1d2433" stroke="${OL}" stroke-width="2.4" stroke-linejoin="round"/><path d="M-24,-13 Q-12,-21 1,-18 Q15,-21 27,-11" fill="none" stroke="#f4c66a" stroke-width="2"/><path d="M0,-30 l4,4 -4,4 -4,-4Z" fill="#f4c66a" stroke="${OL}" stroke-width="1.2"/><path d="M-10,-28 q4,-6 8,-3" fill="none" stroke="#fff" stroke-width="1.4" opacity=".6"/>`,
-  hood: `<path d="M-17,-11 Q-27,-14 -38,-5 M-17,-9 Q-26,-3 -34,6" fill="none" stroke="${OL}" stroke-width="6" stroke-linecap="round"/><path d="M-17,-11 Q-27,-14 -38,-5 M-17,-9 Q-26,-3 -34,6" fill="none" stroke="#3b4660" stroke-width="3.2" stroke-linecap="round"/><path d="M-19,-6 Q-18,-17 0,-17.5 Q17,-17 19,-8 L18.5,-2 Q2,-10 -19,0Z" fill="#3b4660" stroke="${OL}" stroke-width="2.4"/><rect x="2" y="-15" width="13" height="8" rx="1.5" fill="#c7cfdd" stroke="${OL}" stroke-width="1.8" transform="rotate(8 8 -11)"/><path d="M5,-11 q3.5,-3 7,0" fill="none" stroke="#56627a" stroke-width="1.6"/>`,
-  horns: `<g stroke="${OL}" stroke-width="2.2" stroke-linejoin="round"><path d="M-9,-16 Q-24,-24 -21,-43 Q-14,-28 -1,-19Z" fill="#d8d0bd"/><path d="M8,-18 Q15,-34 6,-47 Q21,-38 17,-14Z" fill="#ece5d4"/></g><path d="M-15,-28 l4,2 M-17,-34 l4,1 M11,-30 l4,1 M11,-37 l4,0" stroke="#9c9586" stroke-width="1.4"/>`,
-  martial: `<path d="M-18,-6 C-30,-9 -36,0 -48,-8 M-18,-4 C-28,2 -34,10 -44,8" fill="none" stroke="${OL}" stroke-width="6.4" stroke-linecap="round"/><path d="M-18,-6 C-30,-9 -36,0 -48,-8 M-18,-4 C-28,2 -34,10 -44,8" fill="none" stroke="#e8443a" stroke-width="3.6" stroke-linecap="round"/><path d="M-19.6,-5 Q-18,-15 0,-15.5 Q18,-15 19.6,-8 L19.6,-2 Q2,-8 -19.6,1Z" fill="#e8443a" stroke="${OL}" stroke-width="2.2"/><circle cx="-19" cy="-4" r="3.4" fill="#c22f27" stroke="${OL}" stroke-width="1.6"/>`,
-  talisman: `<path d="M-18,-9 Q-4,-21 9,-18" fill="none" stroke="#c0392b" stroke-width="1.6"/><g transform="rotate(-5 10 -14)"><rect x="4.5" y="-19" width="11" height="34" rx="1" fill="#f5e6a8" stroke="${OL}" stroke-width="1.8"/><path d="M10,-15 v9 M6.5,-11 h7 M7,-3 q3,3.5 6,0 M10,0 v10 M7,8 h6" fill="none" stroke="#c0392b" stroke-width="1.6" stroke-linecap="round"/></g>`,
-  beast: `<g stroke="${OL}" stroke-width="2.2" stroke-linejoin="round"><path d="M-13,-17 L-18,-38 L-2,-22Z M3,-22 L10,-40 L15,-18Z" fill="#9a6a3c"/><path d="M-12,-21 L-15,-32 L-6,-23Z M5,-23 L9,-33 L12,-21Z" fill="#e0a07a" stroke="none"/><path d="M-21,10 Q-25,-22 0,-23 Q18,-23 20.5,-11 Q8,-17 -5,-12 Q-14,-4 -12,11Z" fill="#9a6a3c"/></g><path d="M-16,4 l-4,3 M-17,-4 l-5,1 M-12,-16 l-2,-4" stroke="#6e4a28" stroke-width="1.6" stroke-linecap="round"/>`,
+  // Endless Blue
+  bucket: `<path d="M-17,-8 Q-18,-28 0,-29 Q18,-28 17,-9 Q0,-14 -17,-8Z" fill="#c9a66b" ${HO}/>`
+    + `<path d="M-16.6,-13 Q0,-19 16.8,-14 L17,-9 Q0,-14 -17,-8Z" fill="#3f6688" ${HO}/>`
+    + hl('M-9,-24 Q-1,-27 7,-25.5', '#e6cb94', 2.4)
+    + `<path d="M-28,-3 Q-20,-13 0,-13.5 Q20,-13 29,-4 Q30,0 25,0 Q12,-8 0,-8 Q-14,-8 -24,1 Q-29,0 -28,-3Z" fill="#b08e55" ${HO}/>`
+    + hl('M-22,-4 Q-10,-10 0,-10.5', '#d4b47a', 1.8)
+    + `<path d="M-10,-15 L-15,-24 L-7,-19Z" fill="#ff5d73" ${HO} stroke-width="1.4"/><circle cx="-10" cy="-15.5" r="2" fill="#f4c66a" stroke="${OL}" stroke-width="1.2"/>`,
+  bandana: `<path d="M-19,-6 Q-29,-9 -35,-2 L-28,1 Q-25,-3 -19,-2Z M-19,-4 Q-27,3 -29,11 L-22,9 Q-21,3 -17,-1Z" fill="#a82a37" ${HO}/>`
+    + `<path d="M-20.6,-1 A20.6,20.6 0 0,1 18.8,-8.5 Q2,-11.5 -20.6,-1Z" fill="#d8434f" ${HO}/>`
+    + hl('M17,-8.8 Q2,-11.5 -19,-2.2', '#a82a37', 2.4)
+    + `<g fill="#fff"><circle cx="-7" cy="-15" r="1.7"/><circle cx="3" cy="-17.5" r="1.7"/><circle cx="11" cy="-13.5" r="1.7"/><circle cx="-14" cy="-9" r="1.7"/></g>`
+    + `<circle cx="-19.6" cy="-4" r="3.8" fill="#b8323f" ${HO}/>`,
+  chef: `<g transform="rotate(-8 0 -14)"><g fill="${OL}"><circle cx="-9" cy="-32" r="11.2"/><circle cx="10" cy="-32" r="11.2"/><circle cx="0" cy="-39" r="13.2"/></g>`
+    + `<g fill="#fff"><circle cx="-9" cy="-32" r="9"/><circle cx="10" cy="-32" r="9"/><circle cx="0" cy="-39" r="11"/></g>`
+    + hl('M-13,-33 Q-12,-38 -7,-40 M2,-46 Q6,-46 8,-43', '#dfe4ee', 2.2)
+    + `<path d="M-14.5,-13 L-15.5,-28 Q0,-31 15.5,-28 L14.5,-14 Q0,-17 -14.5,-13Z" fill="#fff" ${HO}/>`
+    + hl('M-8,-26.5 V-16 M0,-27.5 V-16 M8,-26.5 V-16', '#c8cfdc', 1.6) + '</g>',
+  tricorn: `<path d="M-14,-29 Q-28,-42 -38,-30 Q-28,-32 -22,-24Z" fill="#f2f2f2" ${HO}/>` + hl('M-16,-28 Q-26,-35 -33,-31', '#c8cfdc', 1.4)
+    + `<path d="M-32,-13 Q-28,-20 -19,-18 Q-16,-36 1,-36 Q18,-36 21,-19 Q29,-21 34,-14 Q31,-8 23,-11 Q1,-19 -21,-9 Q-31,-7 -32,-13Z" fill="#1f2738" ${HO}/>`
+    + hl('M-18,-19 Q1,-24 20,-19', '#121722', 3)
+    + hl('M-29,-12.5 Q-26,-16 -20,-14.2 Q1,-21 23,-14 Q28,-16 31,-13.5', '#f4c66a', 2)
+    + hl('M-9,-31 Q0,-33.5 8,-32', '#3c4864', 2.2)
+    + `<circle cx="7" cy="-24" r="4.4" fill="#f4c66a" ${HO} stroke-width="1.6"/><circle cx="7" cy="-24" r="1.8" fill="#8e2433"/>`,
+  // Shinobi Lands
+  hood: `<path d="M-19,-8 Q-30,-13 -43,-7 L-41,-1 Q-30,-6 -19,-3Z M-19,-5 Q-28,0 -37,9 L-32,12 Q-25,3 -18,-1Z" fill="#2f3a55" ${HO}/>`
+    + `<path d="M-20.4,-7 Q-2,-19.5 19.6,-11.5 L20.5,-3.5 Q0,-10.5 -20.5,1Z" fill="#2f3a55" ${HO}/>`
+    + hl('M-19,-1 Q0,-9 19,-4.6', '#1e2638', 2)
+    + `<g transform="rotate(-14 11 -10)"><rect x="3.5" y="-15.5" width="15" height="10" rx="2.2" fill="#c7cfdd" ${HO} stroke-width="1.8"/>`
+    + hl('M5.8,-13.6 H16', '#fff', 1.4) + hl('M7,-8.6 Q11,-12.6 15,-8.6', '#56627a', 1.8) + '</g>',
+  // Soul Afterlands
+  horns: `<path d="M4,-18 C7,-26 7,-34 15,-41 C15,-31 15,-23 13,-14Z" fill="#b9ae96" ${HO}/>`
+    + `<path d="M-13,-13 C-17,-24 -15,-35 -24,-45 C-9,-39 -2,-29 -2,-19Z" fill="#efe8d6" ${HO}/>`
+    + hl('M-13.6,-23 L-5.4,-24.6 M-16,-30.5 L-8.6,-32.4 M-19.2,-37.6 L-13.4,-39', '#b8ad95', 1.6) + hl('M7,-25 L13,-25 M9,-32 L14.4,-32.4', '#968b74', 1.4)
+    + hl('M-9,-18 Q-11,-28 -17,-37', '#fff', 1.4),
+  // Ki Frontier
+  martial: `<path d="M-19,-6 C-30,-11 -38,-2 -51,-8 L-49,-1 C-38,4 -30,-4 -19,-2Z M-19,-4 C-27,4 -32,12 -45,12 L-41,18 C-30,17 -25,6 -18,0Z" fill="#e8443a" ${HO}/>`
+    + `<path d="M-20.4,-6 Q-2,-17.5 19.7,-10.5 L20.4,-4 Q0,-10 -20.5,0Z" fill="#e8443a" ${HO}/>`
+    + hl('M-19,-0.6 Q0,-9 19.5,-4.6', '#b02a22', 2) + hl('M-12,-11 Q0,-15 10,-13', '#ff8a7a', 1.6)
+    + `<circle cx="-19.6" cy="-3" r="3.8" fill="#c22f27" ${HO}/>`,
+  // Hexbound City
+  talisman: hl('M-20.4,-5 Q0,-18 19.6,-9', OL, 4.4) + hl('M-20.4,-5 Q0,-18 19.6,-9', '#c0392b', 2)
+    + `<g transform="rotate(-6 12 -14)"><path d="M5.5,-21 H18.5 V11 L15.3,8.6 L12,11 L8.7,8.6 L5.5,11Z" fill="#f3e2a0" ${HO} stroke-width="1.8"/>`
+    + hl('M12,-15.5 V-8 M8.5,-12 H15.5 M9,-4.5 Q12,-1.5 15,-4.5 M12,-2.5 V5 M9.5,3 H14.5', '#c0392b', 1.8)
+    + `<circle cx="12" cy="-18.5" r="1.8" fill="#c0392b"/></g>`,
+  // Hunter's Wilds
+  beast: `<path d="M3,-19 L9,-39 L17,-15Z" fill="#6e4520" ${HO}/>`
+    + `<path d="M-21,11 Q-25,-21 0,-22.6 Q18,-22.4 21,-8 Q10,-13.5 -1,-11.5 Q-13,-6 -12,13Z" fill="#8a5a2f" ${HO}/>`
+    + `<path d="M-13,-18 L-17,-40 L-1,-23Z" fill="#8a5a2f" ${HO}/><path d="M-12,-21.5 L-14.4,-34 L-5,-23.5Z" fill="#e0a07a"/>`
+    + hl('M-15,-12 Q-15,-19 -5,-20.5', '#b07a44', 2.4)
+    + `<path d="M19,-8.4 L17.3,-3 L15,-8.8Z M12.5,-10.6 L11.2,-5 L8.6,-10.6Z M5.5,-11.6 L4.6,-6.2 L1.8,-11.2Z" fill="#fff" ${HO} stroke-width="1.2"/>`,
+  // Echo Quarter
   laurel: LAUREL,
-  crown: `<path d="M-14,-15 L-17,-34 L-8,-25 L0,-39 L8,-25 L17,-34 L14,-15Z" fill="#f4c66a" stroke="${OL}" stroke-width="2.4" stroke-linejoin="round"/><path d="M-14,-19 H14" stroke="#a87b22" stroke-width="2"/><circle cx="0" cy="-23" r="3" fill="#ff3fb4" stroke="${OL}" stroke-width="1.4"/><circle cx="-17" cy="-34" r="2" fill="#ffd0ee"/><circle cx="17" cy="-34" r="2" fill="#ffd0ee"/><circle cx="0" cy="-39" r="2.2" fill="#ffd0ee"/>`,
+  // The Rift
+  crown: `<g transform="rotate(-8 0 -20)">`
+    + `<path d="M-15,-13 L-18.5,-36 L-9,-26 L0,-41 L9,-26 L18.5,-36 L15,-13 Q0,-17 -15,-13Z" fill="#f4c66a" ${HO}/>`
+    + `<path d="M-14.6,-17 Q0,-21 14.6,-17 L15,-13 Q0,-17 -15,-13Z" fill="#c9952e"/>` + hl('M-11.5,-25 L-14,-31 M3,-33 L1,-36', '#fff3c4', 1.8)
+    + `<circle cx="0" cy="-22" r="3.6" fill="#ff3fb4" ${HO} stroke-width="1.4"/><circle cx="-1" cy="-23" r="1.1" fill="#ffd0ee"/>`
+    + `<g fill="#ffd0ee" stroke="${OL}" stroke-width="1.2"><circle cx="-18.5" cy="-36" r="2.4"/><circle cx="0" cy="-41" r="2.6"/><circle cx="18.5" cy="-36" r="2.4"/></g></g>`,
 };
 function faceSVG(face, expr, eye) {
   if (face === 'blank') return '';
@@ -339,6 +395,16 @@ const STYLES = {
 function curvy(a, j, b) { const c = [2 * j[0] - (a[0] + b[0]) / 2, 2 * j[1] - (a[1] + b[1]) / 2]; return `M${pt(a)}Q${pt(c)} ${pt(b)}`; }
 const stroke = (d, w, col, rim, rw) => `<path d="${d}" fill="none" stroke="${rim}" stroke-width="${r1(w + rw * 2)}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${r1(w)}" stroke-linecap="round" stroke-linejoin="round"/>`;
 
+// A sub-curve of curvy() from parameter t0 to the end (de Casteljau split).
+function curvyFrom(a, j, b, t0) {
+  const c = [2 * j[0] - (a[0] + b[0]) / 2, 2 * j[1] - (a[1] + b[1]) / 2];
+  const L = (p, q, k) => [p[0] + (q[0] - p[0]) * k, p[1] + (q[1] - p[1]) * k];
+  const p0 = L(L(a, c, t0), L(c, b, t0), t0), p1 = L(c, b, t0);
+  return `M${pt(p0)}Q${pt(p1)} ${pt(b)}`;
+}
+// Local frame at a point on the torso: +x forward (the way the figure faces), +y down the spine.
+const frame = (J, p, inner) => `<g transform="translate(${pt(p)}) rotate(${r1(180 - J.chestA)})">${inner}</g>`;
+
 function drawAvatar(A, P, t, opt) {
   const B = cosOf('build', A.build).b, ink = A.ink || cosOf('color', A.color).ink;
   const St = STYLES[A.style] ? STYLES[A.style](ink) : STYLES.flat(ink);
@@ -349,47 +415,168 @@ function drawAvatar(A, P, t, opt) {
   out.push(`<ellipse cx="${r1(feetX)}" cy="${GROUND + 1}" rx="${r1(32 - air * 0.5)}" ry="5" fill="#000" opacity="${r1(0.42 - air * 0.01)}"/>`);
   const aura = auraSVG(A.aura, cx, cy, t);
   if (aura) out.push(AURA_GLOW[A.aura] ? `<g style="mix-blend-mode:screen">${aura}</g>` : aura);
-  const fig = [];
-  fig.push(backSVG(A.back, J, t, B, P));
   // opt.weapon: an item id, '' for bare hands, or undefined for your equipped weapon
   const worn = opt.weapon !== undefined ? opt.weapon || null : S.equip && S.equip.weapon;
   const kind = worn && weaponKind(worn);
-  if (worn && P.sh && !['fist', 'claw'].includes(kind)) fig.push(`<g transform="translate(${pt(add(add(J.shoulder, J.chestA, 10), J.chestA - 90, 14))}) rotate(${rotTo(J.chestA - 232)})">${weaponSVG(worn)}</g>`);
+  const onHand = ['fist', 'claw'].includes(kind);
+  const sheathed = worn && !onHand && (P.sh || P.prop) ? worn : null;
+  // Gear in three layers: behind the body, worn over the torso, over the front arm.
+  const G = gearSVG(A, J, P, t, B, { LW, TW, sheathed });
+  const fig = [G.back];
   if (P.fx) fig.push(fxSVG(P.fx, J, worn ? RCOL[Math.min(6, typeof rarity === 'function' ? rarity(worn) : 1)] : ink));
   // The body is one silhouette: every rim first, then every fill on top,
   // so limbs, torso and head melt together with no seams between them.
+  // When something is worn over the torso, the front arm is drawn after it.
+  const arm = [J.aF[0], J.aF[1], J.aF[2]], armW = LW * 0.92;
   const parts = [
-    [curvy(J.lB[0], J.lB[1], J.lB[2]), LW], [curvy(J.aB[0], J.aB[1], J.aB[2]), LW * 0.92],
-    [curvy(J.pelvis, J.waist, J.neck), TW],
-    [curvy(J.lF[0], J.lF[1], J.lF[2]), LW], [curvy(J.aF[0], J.aF[1], J.aF[2]), LW * 0.92],
+    [curvy(J.lB[0], J.lB[1], J.lB[2]), LW], [curvy(J.aB[0], J.aB[1], J.aB[2]), armW],
+    [curvy(J.pelvis, J.waist, J.neck), TW], [curvy(J.lF[0], J.lF[1], J.lF[2]), LW],
   ];
+  if (!G.under) parts.push([curvy(...arm), armW]);
   const line = (d, w, col) => `<path d="${d}" fill="none" stroke="${col}" stroke-width="${r1(w)}" stroke-linecap="round" stroke-linejoin="round"/>`;
   const head = (r, col) => `<circle cx="${r1(J.head[0])}" cy="${r1(J.head[1])}" r="${r1(r)}" fill="${col}"/>`;
   fig.push(parts.map(([d, w]) => line(d, w + St.rw * 2, St.rim)).join('') + head(J.headR + St.rw, St.rim));
   fig.push(parts.map(([d, w]) => line(d, w, St.body)).join('') + head(J.headR, St.body));
+  if (G.under) {
+    // the arm's outline starts below the shoulder, so it never cuts a seam into the torso
+    fig.push(G.under + line(curvyFrom(...arm, 0.38), armW + St.rw * 2, St.rim) + line(curvy(...arm), armW, St.body));
+  }
+  fig.push(G.over);
   // head details ride on the head (rigid, tilting with the neck)
   const ha = (P.h || 0) + (180 - J.neckA) * 0.6;
   const gloss = A.style === 'flat' || !A.style ? `<path d="M-11,-10 A13,13 0 0,1 2,-14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".35"/>` : '';
   fig.push(`<g transform="translate(${pt(J.head)}) rotate(${r1(ha)}) scale(${r1(J.headR / 19 * 100) / 100})">${gloss}${faceSVG(A.face, P.expr, St.eye)}${HATS[A.hat] || ''}</g>`);
   // weapon or tool in the near hand; the hand is redrawn over the grip
   const hand = J.aF[2], fa = J.foreA.aF, prop = P.prop;
-  const weapon = !prop && worn && (!P.sh || ['fist', 'claw'].includes(kind)) ? worn : null;
-  if (weapon) fig.push(`<g transform="translate(${pt(hand)}) rotate(${rotTo(fa + P.g)})">${weaponSVG(weapon)}</g>`);
+  const weapon = !prop && worn && !sheathed ? worn : null;
+  if (weapon) fig.push(`<g transform="translate(${pt(hand)}) rotate(${rotTo(fa + P.g)}) scale(1.15)">${weaponSVG(weapon)}</g>`);
   if (prop === 'rod') fig.push(rodSVG(hand, fa + P.g, t));
   if (prop === 'pan') fig.push(panSVG(hand, fa + P.g, t));
-  if (weapon || prop) fig.push(`<circle cx="${r1(hand[0])}" cy="${r1(hand[1])}" r="${r1(LW * 0.46)}" fill="${St.body}"/>`);
-  if (A.back === 'scarf') fig.push(part(taper([add(J.chest, J.chestA, -2), J.neck], [9 * W, 8 * W]), '#ff8a2b', 2.2));
+  if (weapon || prop) fig.push(`<circle cx="${r1(hand[0])}" cy="${r1(hand[1])}" r="${r1(LW * 0.48)}" fill="${St.body}" stroke="${St.rim}" stroke-width="${St.rw}"/>`);
   out.push(St.filter ? `<g filter="url(#${St.filter})">${fig.join('')}</g>` : fig.join(''));
   return out.join('');
+}
+
+// A weapon carried at the waist: blades sit in a scabbard on the hip (hilt forward),
+// heavy weapons hang from the belt, long ones (lance, bow) are slung behind the hip.
+function sheathSVG(id) {
+  const r = typeof rarity === 'function' ? rarity(id) : 1, c = RCOL[Math.min(6, r)] || RCOL[1];
+  const o = `stroke="${OL}" stroke-width="2" stroke-linejoin="round"`;
+  const grip = `<rect x="-9" y="-2.4" width="10" height="4.8" rx="1.5" fill="#5a3d26" ${o}/><circle cx="-10" cy="0" r="2.8" fill="${c}" ${o}/>`;
+  const L = { katana: 54, short: 30, cutlass: 44 }[weaponKind(id)];
+  if (!L) return weaponSVG(id);
+  const guard = weaponKind(id) === 'katana' ? `<ellipse cx="2" cy="0" rx="2.6" ry="6" fill="${c}" ${o}/>` : `<rect x="0" y="-6" width="3.6" height="12" rx="1.5" fill="${c}" ${o}/>`;
+  return grip + `<path d="M3,-3.4 L${L},-2.6 Q${L + 4},0 ${L},2.8 L3,3.4Z" fill="#2b2230" ${o}/>`
+    + `<path d="M6,-1.6 L${L - 4},-1.1" stroke="#4a3b52" stroke-width="1.4" stroke-linecap="round"/>`
+    + `<path d="M${L - 7},-2.8 L${L},-2.6 Q${L + 4},0 ${L},2.8 L${L - 7},3Z" fill="${c}" ${o}/>`
+    + `<rect x="5" y="-3.8" width="4" height="7.6" rx="1" fill="${c}" ${o}/>` + guard;
+}
+// Where a carried weapon hangs: [layer, angle from the spine, distance along spine, forward offset, scale]
+const CARRY = { katana: ['front', -52, 7, 3, 1], short: ['front', -48, 7, 3, 1], cutlass: ['front', -50, 7, 3, 1], cleaver: ['front', -40, 7, 2, 0.9],
+  hammer: ['front', -24, 8, -3, 0.85], sickle: ['front', -18, 8, -3, 0.9], cannon: ['front', -14, 6, 1, 0.9],
+  lance: ['back', -64, 9, 6, 0.9], bow: ['back', -90, 10, -8, 0.85] };
+
+// Everything the figure wears besides the hat and face.
+// back: behind the body · under: over the torso, under the front arm · over: over the front arm.
+function gearSVG(A, J, P, t, B, o) {
+  const back = [], under = [], over = [];
+  const W = B.w, sway = Math.sin(t * 2.1), pel = J.pelvis, N = J.chest, sp = P.t1;
+  const strap = (d, col) => `<path d="${d}" fill="none" stroke="${OL}" stroke-width="5.2" stroke-linecap="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="2.8" stroke-linecap="round"/>`;
+  // a cape: hangs from a collar at the base of the neck and trails behind
+  const cape = (c) => {
+    back.push(capeSVG(J, B, P, t, c));
+    under.push(frame(J, N, collarSVG(c)));
+  };
+  switch (A.back) {
+    case 'shroud': cape({ fill: '#2a2238', fold: '#1a1424', edge: '#9b6bff', jag: 1, len: 64, collar: 'hood', cc: '#3a2f4f', clasp: '#e9e3d2' }); break;
+    case 'pelt':   cape({ fill: '#c8873a', fold: '#a46a28', edge: '#e8c08a', stripes: 1, len: 50, collar: 'fur', cc: '#efe0c4', clasp: '#e8443a' }); break;
+    case 'mantle': cape({ fill: '#1a0f2a', fold: '#2c1846', edge: '#ff3fb4', stars: 1, len: 62, collar: 'high', cc: '#2c1846', clasp: '#ff3fb4' }); break;
+    case 'coat': {
+      // captain's coat: long tails flaring behind, a fitted body with a gold edge, a cuffed sleeve, an epaulette
+      const top = add(pel, sp, 14), hb = add(top, sp + 90, 5 * W), L = B.h;
+      const tailA = [pel[0] - 30 - sway * 4, pel[1] + 50 * L], tailB = [pel[0] - 12, pel[1] + 46 * L];
+      const tails = `M${pt(top)} L${pt(hb)} Q${r1(pel[0] - 20)},${r1(pel[1] + 14)} ${pt(tailA)} L${r1(pel[0] - 19)},${r1(pel[1] + 41 * L)} L${pt(tailB)} L${r1(pel[0] + 6)},${r1(pel[1] + 34 * L)} Z`;
+      back.push(`<path d="${tails}" fill="#7a1d2b" stroke="${OL}" stroke-width="2.6" stroke-linejoin="round"/>`
+        + `<path d="M${pt(hb)} Q${r1(pel[0] - 20)},${r1(pel[1] + 14)} ${pt(tailA)} L${r1(pel[0] - 19)},${r1(pel[1] + 41 * L)} L${pt(tailB)}" fill="none" stroke="#f4c66a" stroke-width="2" stroke-linejoin="round"/>`
+        + `<path d="M${r1(pel[0] - 4)},${r1(pel[1] + 8)} L${r1(pel[0] - 15)},${r1(pel[1] + 38 * L)}" stroke="#5c1420" stroke-width="2"/>`);
+      const body = curvy(add(pel, sp, -6), J.waist, N);
+      under.push(`<path d="${body}" fill="none" stroke="${OL}" stroke-width="${r1(o.TW + 5)}" stroke-linecap="round"/><path d="${body}" fill="none" stroke="#8e2433" stroke-width="${r1(o.TW + 1)}" stroke-linecap="round"/>`);
+      const edge = (k) => add([pel[0] + (N[0] - pel[0]) * k, pel[1] + (N[1] - pel[1]) * k], sp - 90, o.TW / 2 - 1);
+      under.push(`<path d="M${pt(edge(0.02))}L${pt(edge(0.5))}L${pt(edge(0.9))}" fill="none" stroke="#f4c66a" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>`
+        + [0.3, 0.55].map((k) => { const p = add(edge(k), sp + 90, 3); return `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="1.8" fill="#f4c66a" stroke="${OL}" stroke-width="1"/>`; }).join(''));
+      under.push(frame(J, N, `<path d="M-8,4 L-10,-7 Q-2,-3 3,-1 L8,4 Q0,7 -8,4Z" fill="#8e2433" ${HO}/>` + hl('M-9,-5 Q-3,-2 2,0', '#f4c66a', 1.8)));
+      const a = J.aF, w = o.LW * 0.92, end = [a[1][0] + (a[2][0] - a[1][0]) * 0.4, a[1][1] + (a[2][1] - a[1][1]) * 0.4];
+      const sl = `M${pt(a[0])}L${pt(a[1])}L${pt(end)}`;
+      over.push(`<path d="${sl}" fill="none" stroke="${OL}" stroke-width="${r1(w + 4)}" stroke-linecap="round" stroke-linejoin="round"/><path d="${sl}" fill="none" stroke="#a82d3e" stroke-width="${r1(w + 0.6)}" stroke-linecap="round" stroke-linejoin="round"/>`
+        + `<circle cx="${r1(end[0])}" cy="${r1(end[1])}" r="${r1(w / 2 + 1.2)}" fill="#f4c66a" stroke="${OL}" stroke-width="1.6"/>`);
+      over.push(frame(J, J.shoulder, `<path d="M-7,-3 Q0,-7 8,-3 L7,2 Q0,0 -7,2Z" fill="#f4c66a" ${HO} stroke-width="1.6"/>` + hl('M-5,2.5 v4 M-1.5,2 v4.6 M2,2 v4.6 M5.5,2.5 v4', '#f4c66a', 1.4)));
+      break;
+    }
+    case 'scarf': {
+      const n = add(N, sp + 90, 2), w = (k) => Math.sin(t * 4 + k) * 4;
+      const tail = (dy, k) => taper([[n[0] - 4, n[1] - 2], [n[0] - 20, n[1] + dy * 0.6 + w(k)], [n[0] - 40, n[1] + dy + w(k + 1)]], [6, 5, 3.4]);
+      back.push(part(tail(6, 0), '#c4501a', 2.6) + part(tail(16, 1.2), '#ff8a2b', 2.6));
+      under.push(frame(J, N, `<path d="M-9,-7 Q0,-3 8,-7 L9,1 Q0,5 -9,1Z" fill="#ff8a2b" ${HO}/>` + hl('M-8,-2 Q0,1 8,-2', '#c4501a', 1.8) + `<circle cx="-8" cy="-3" r="3.6" fill="#e06a24" ${HO}/>`));
+      break;
+    }
+    case 'pack':
+      back.push(frame(J, N, `<path d="M-15,-2 V-12" stroke="${OL}" stroke-width="3.6"/><path d="M-15,-2 V-12" stroke="#cfd6e4" stroke-width="1.8"/><circle cx="-15" cy="-13" r="3.2" fill="#ff8a2b" ${HO} stroke-width="1.6"/>`
+        + `<rect x="-27" y="-1" width="22" height="30" rx="10" fill="#f2f2f2" ${HO} stroke-width="2.6"/><path d="M-27,11 H-5 V17 H-27Z" fill="#ff8a2b" ${HO} stroke-width="1.6"/>`
+        + hl('M-23,4 Q-23,1 -19,1', '#fff', 2) + `<circle cx="-16" cy="7" r="2.4" fill="#4cc3ff" stroke="${OL}" stroke-width="1.2"/>`));
+      under.push(frame(J, N, strap(`M-5,1 Q3,6 3,${r1(20 * B.h)}`, '#5b6475')));
+      break;
+    case 'quiver':
+      back.push(frame(J, N, `<g transform="rotate(-24 -14 14)"><g stroke="${OL}" stroke-width="1.4" stroke-linejoin="round"><path d="M-22,-8 l-4,-11 l6,4Z" fill="#e8443a"/><path d="M-15,-9 l-1,-12 l5,5Z" fill="#f2f2f2"/><path d="M-9,-8 l2,-11 l4,6Z" fill="#9be15d"/></g>`
+        + hl('M-21,-10 v6 M-14.5,-11 v7 M-8,-10 v6', '#5a3d26', 2)
+        + `<rect x="-26" y="-6" width="21" height="40" rx="6" fill="#8a5a2b" ${HO} stroke-width="2.6"/>` + hl('M-26,1 H-5 M-26,25 H-5', '#5a3d26', 2.4) + hl('M-22,6 V20', '#b07a44', 2) + '</g>'));
+      under.push(frame(J, N, strap(`M-6,0 Q1,8 6,${r1(18 * B.h)}`, '#5a3d26')));
+      break;
+    case 'sigil': {
+      const c = add(add(N, J.chestA, -18), J.chestA + 90, 12), rot = r1(t * 30);
+      const ticks = [...Array(12)].map((_, i) => { const a = i * 30; return `M${pt(add([0, 0], a, 30))}L${pt(add([0, 0], a, 35))}`; }).join('');
+      const runes = [...Array(6)].map((_, i) => { const p = add([0, 0], i * 60 + 15, 24); return `<path d="M${r1(p[0] - 2.5)},${r1(p[1] - 3)} l5,3 -5,3" fill="none" stroke="#36d6a8" stroke-width="1.6"/>`; }).join('');
+      back.push(`<g transform="translate(${pt(c)})"><circle r="38" fill="#36d6a8" opacity=".08"/><g transform="rotate(${rot})"><circle r="35" fill="none" stroke="#36d6a8" stroke-width="2.4"/><circle r="28" fill="none" stroke="#36d6a8" stroke-width="1.4" stroke-dasharray="4 3"/><path d="${ticks}" stroke="#36d6a8" stroke-width="2"/>${runes}</g><g transform="rotate(${-rot * 1.5})"><path d="M0,-18 L15.6,9 L-15.6,9Z M0,18 L15.6,-9 L-15.6,-9Z" fill="none" stroke="#7ff0d0" stroke-width="1.4"/></g></g>`);
+      break;
+    }
+    case 'wings': {
+      const f = Math.sin(t * 3) * 8;
+      const wing = (s, op, k) => `<g transform="translate(-4,9) rotate(${r1(-18 + f * s)}) scale(${k})" opacity="${op}"><path d="M0,0 Q-30,-46 -70,-34 Q-52,-24 -62,-12 Q-44,-12 -48,1 Q-28,-4 -26,8 Q-12,2 0,7Z" fill="#f4f1ea" ${HO} stroke-width="2.6"/>`
+        + hl('M-6,1 Q-30,-28 -58,-28 M-6,4 Q-28,-10 -46,-6 M-6,6 Q-20,0 -30,4', '#d4a83a', 1.8) + hl('M0,0 Q-30,-46 -70,-34', '#d4a83a', 2.2) + '</g>';
+      back.push(frame(J, N, wing(0.6, 0.65, 0.9) + wing(1, 1, 1.08)));
+      break;
+    }
+  }
+  // a weapon that is put away hangs at the waist, on a belt
+  if (o.sheathed) {
+    const k = weaponKind(o.sheathed), c = CARRY[k] || CARRY.cutlass;
+    const at = add(add(pel, sp, c[2]), sp - 90, c[3]);
+    const g = `<g transform="translate(${pt(at)}) rotate(${rotTo(sp - 180 + c[1])}) scale(${c[4]})">${sheathSVG(o.sheathed)}</g>`;
+    (c[0] === 'back' ? back : under).push(g);
+  }
+  if (o.sheathed || A.back === 'coat') {
+    const bp = add(pel, sp, 7), hw = o.TW / 2 + 1.5;
+    const d = `M${pt(add(bp, sp + 90, hw))}L${pt(add(bp, sp - 90, hw))}`;
+    under.unshift(`<path d="${d}" stroke="${OL}" stroke-width="6.6" stroke-linecap="round"/><path d="${d}" stroke="#3a2a22" stroke-width="3.8" stroke-linecap="round"/>`
+      + frame(J, bp, `<rect x="${r1(hw - 4.5)}" y="-3" width="5" height="6" rx="1" fill="#f4c66a" stroke="${OL}" stroke-width="1.4"/>`));
+  }
+  return { back: back.join(''), under: under.join(''), over: over.join('') };
+}
+// The collar a cape hangs from (neck-base frame: +x forward, +y down).
+function collarSVG(c) {
+  const clasp = `<circle cx="6" cy="2" r="3.2" fill="${c.clasp}" ${HO} stroke-width="1.6"/><circle cx="5.2" cy="1.2" r="1" fill="#fff" opacity=".7"/>`;
+  if (c.collar === 'fur') return `<path d="M-11,-1 Q-9,-6 -5,-3 Q-3,-7 1,-3 Q3,-7 7,-3 Q11,-5 10,1 Q12,5 8,6 Q5,9 1,6 Q-2,9 -5,6 Q-9,8 -10,4 Q-14,2 -11,-1Z" fill="${c.cc}" ${HO}/>` + hl('M-7,2 Q0,4 6,2', '#d6c19c', 1.6) + clasp;
+  if (c.collar === 'high') return `<path d="M-9,5 Q-17,-3 -14,-13 Q-7,-7 -3,-2 Q2,-1 8,-2 L9,4 Q0,8 -9,5Z" fill="${c.cc}" ${HO}/>` + hl('M-12,-9 Q-12,-2 -6,3', c.clasp, 1.6) + clasp;
+  if (c.collar === 'hood') return `<path d="M-6,-2 Q-20,-6 -20,8 Q-12,10 -6,6Z" fill="${c.cc}" ${HO}/><path d="M-10,-2 Q0,2 8,-2 L8,4 Q0,8 -10,4Z" fill="${c.cc}" ${HO}/>` + clasp;
+  return `<path d="M-10,-2 Q0,2 8,-2 L8,4 Q0,8 -10,4Z" fill="${c.cc}" ${HO}/>` + clasp;
 }
 // Motion effects: slash trail, thrust speed lines, kick impact, hit recoil.
 function fxSVG(fx, J, col) {
   const sh = J.shoulder;
   const P = (a, r) => pt(add(sh, a, r));
   if (fx === 'slash') {
-    const R = 84, a0 = 226, a1 = 72;
+    const R = 64, a0 = 214, a1 = 74;
     const cres = (r, k) => `M${P(a0, r)} A${r},${r} 0 0,1 ${P(a1, r * 0.98)} A${r1(r * k)},${r1(r * k)} 0 0,0 ${P(a0, r * 0.94)}Z`;
-    return `<path d="${cres(R, 1.3)}" fill="${col}" opacity=".55"/><path d="${cres(R * 0.96, 1.45)}" fill="#fff" opacity=".7"/>`;
+    return `<path d="${cres(R, 1.3)}" fill="${col}" opacity=".45"/><path d="${cres(R * 0.96, 1.45)}" fill="#fff" opacity=".55"/>`;
   }
   if (fx === 'thrust') {
     const y0 = J.chest[1], x0 = J.pelvis[0];
@@ -438,56 +625,29 @@ function panSVG(hand, a, t) {
     + `<ellipse cx="${r1(c[0])}" cy="${r1(c[1])}" rx="16" ry="5" fill="#2a2e38" stroke="${OL}" stroke-width="2.4"/>`
     + `<g transform="translate(${r1(c[0])},${r1(c[1] - 4 - up)}) rotate(${r1(flip * 360)})"><ellipse rx="7" ry="3" fill="#ffb36b" stroke="${OL}" stroke-width="1.6"/><path d="M6,0 l4,-3 v6z" fill="#ffb36b" stroke="${OL}" stroke-width="1.2"/></g>`;
 }
-// A cape hanging from the shoulders and trailing behind (wind follows the lean).
+// A cape hanging from the base of the neck and trailing behind (wind follows the lean).
 function capeSVG(J, B, P, t, o) {
-  const sh = J.shoulder, pel = J.pelvis, sway = Math.sin(t * 2.1);
+  const N = J.chest, A = J.chestA, pel = J.pelvis, sway = Math.sin(t * 2.1);
   const hemY = pel[1] + (o.len || 54) * B.h, back = -42 - sway * 6 - (P.t1 < 170 ? 14 : 0);
-  const a = [sh[0] + 4, sh[1] - 2], tip = [pel[0] + back, hemY], end = [pel[0] - 2, hemY - 4];
+  const top = add(N, A - 90, 4), nape = add(add(N, A + 90, 8), A, 2);
+  const blade = add(add(N, A, -14), A + 90, 24);          // the cloth bells out over the shoulder blade
+  const tip = [pel[0] + back, hemY], end = [pel[0] + 2, hemY - 4];
   let hem;
   if (o.jag) {   // torn hem: zig-zag between the trailing tip and the heel of the cape
     const pts = [];
     for (let i = 1; i <= 6; i++) { const k = i / 6, x = tip[0] + (end[0] - tip[0]) * k, y = tip[1] + (end[1] - tip[1]) * k + (i % 2 ? 9 : 0) + Math.sin(t * 3 + i) * 1.5; pts.push(`${r1(x)},${r1(y)}`); }
     hem = 'L' + pts.join('L');
   } else hem = `Q${r1(pel[0] + back / 2 + 4)},${r1(hemY + 6 + sway * 3)} ${pt(end)}`;
-  const d = `M${pt(a)} Q${r1(sh[0] - 30)},${r1(sh[1] + 30)} ${pt(tip)} ${hem} Q${r1(pel[0] + 2)},${r1(sh[1] + 30)} ${r1(sh[0] + 8)},${r1(sh[1])}Z`;
+  const mid = [(pel[0] + N[0]) / 2, (pel[1] + N[1]) / 2];
+  const d = `M${pt(top)} L${pt(nape)} Q${pt(blade)} ${pt(tip)} ${hem} Q${pt(mid)} ${pt(top)}Z`;
   let s = `<path d="${d}" fill="${o.fill}" stroke="${OL}" stroke-width="3" stroke-linejoin="round"/>`;
-  s += `<path d="M${r1(sh[0] - 2)},${r1(sh[1] + 6)} Q${r1(sh[0] - 14)},${r1(sh[1] + 34)} ${r1(pel[0] + back * 0.7)},${r1(hemY - 4)}" fill="none" stroke="${o.fold}" stroke-width="2.4"/>`;
+  const fold = (k) => `M${pt(add(nape, A - 90, 6 * k))} Q${pt(add(blade, A - 90, 12 + 6 * k))} ${r1(pel[0] + back * (0.75 - 0.3 * k))},${r1(hemY - 4)}`;
+  s += `<path d="${fold(0)}" fill="none" stroke="${o.fold}" stroke-width="2.6"/><path d="${fold(1)}" fill="none" stroke="${o.fold}" stroke-width="2" opacity=".7"/>`;
+  s += `<path d="M${pt(add(nape, A, -4))} Q${pt(add(blade, A - 90, 6))} ${pt(add(blade, A, -18))}" fill="none" stroke="#fff" stroke-width="2" opacity=".14"/>`;
   if (o.edge) s += `<path d="M${pt(tip)} ${hem}" fill="none" stroke="${o.edge}" stroke-width="2.2" stroke-linejoin="round"/>`;
-  if (o.stripes) s += [0.3, 0.55, 0.8].map((k) => `<path d="M${r1(sh[0] - 6 - 20 * k)},${r1(sh[1] + 20 + 50 * k)} q-6,4 -12,2" fill="none" stroke="#5a3a1c" stroke-width="3" stroke-linecap="round"/>`).join('');
-  if (o.stars) s += [[0.35, 0.4], [0.6, 0.65], [0.5, 0.85], [0.75, 0.5]].map(([kx, ky], i) => { const x = sh[0] + (tip[0] - sh[0]) * kx, y = sh[1] + (hemY - sh[1]) * ky; return `<circle cx="${r1(x)}" cy="${r1(y)}" r="${1.4 + (i % 2)}" fill="#ffd0ee" opacity="${r1(0.6 + Math.sin(t * 4 + i) * 0.4)}"/>`; }).join('');
+  if (o.stripes) s += [0.3, 0.55, 0.8].map((k) => { const x = N[0] + (tip[0] - N[0]) * k * 0.9, y = N[1] + (hemY - N[1]) * k; return `<path d="M${r1(x + 6)},${r1(y)} q-6,4 -13,2" fill="none" stroke="#5a3a1c" stroke-width="3" stroke-linecap="round"/>`; }).join('');
+  if (o.stars) s += [[0.35, 0.4], [0.6, 0.65], [0.5, 0.85], [0.75, 0.5]].map(([kx, ky], i) => { const x = N[0] + (tip[0] - N[0]) * kx, y = N[1] + (hemY - N[1]) * ky; return `<circle cx="${r1(x)}" cy="${r1(y)}" r="${1.4 + (i % 2)}" fill="#ffd0ee" opacity="${r1(0.6 + Math.sin(t * 4 + i) * 0.4)}"/>`; }).join('');
   return s;
-}
-function backSVG(id, J, t, B, P) {
-  const W = B.w, sh = J.shoulder, pel = J.pelvis, sway = Math.sin(t * 2.1);
-  switch (id) {
-    case 'coat': {
-      const fl = 36 + sway * 4;
-      const d = `M${pt([sh[0] - 9 * W, sh[1]])} L${pt([sh[0] + 9 * W, sh[1]])} L${r1(pel[0] + 10 * W)},${r1(pel[1] + 32)} L${r1(pel[0] - 4)},${r1(pel[1] + 24)} L${r1(pel[0] - fl)},${r1(pel[1] + 46)} Z`;
-      return `<path d="${d}" fill="#8e2433" stroke="${OL}" stroke-width="3" stroke-linejoin="round"/><path d="M${pt([sh[0] - 7 * W, sh[1] + 2])} L${r1(pel[0] - fl + 3)},${r1(pel[1] + 37)} M${r1(pel[0] + 8 * W)},${r1(pel[1] + 30)} L${r1(pel[0] - 2)},${r1(pel[1] + 23)}" stroke="#f4c66a" stroke-width="2.2"/>`;
-    }
-    case 'shroud': return capeSVG(J, B, P, t, { fill: '#2a2238', fold: '#1a1424', edge: '#9b6bff', jag: 1, len: 62 });
-    case 'pelt':   return capeSVG(J, B, P, t, { fill: '#c8873a', fold: '#a46a28', edge: '#e8c08a', stripes: 1, len: 50 });
-    case 'mantle': return capeSVG(J, B, P, t, { fill: '#1a0f2a', fold: '#2c1846', edge: '#ff3fb4', stars: 1, len: 60 });
-    case 'pack': return `<g transform="translate(${pt(J.waist)}) rotate(${r1(rotTo(J.chestA) + 90)})"><path d="M-14,-24 V-36" stroke="${OL}" stroke-width="3.4"/><path d="M-14,-24 V-36" stroke="#cfd6e4" stroke-width="1.6"/><circle cx="-14" cy="-37" r="3" fill="#ff8a2b" stroke="${OL}" stroke-width="1.4"/><rect x="-27" y="-24" width="22" height="30" rx="9" fill="#f2f2f2" stroke="${OL}" stroke-width="2.6"/><rect x="-27" y="-12" width="22" height="7" fill="#ff8a2b" stroke="${OL}" stroke-width="1.6"/><circle cx="-16" cy="-17" r="2.2" fill="#4cc3ff"/></g>`;
-    case 'quiver': return `<g transform="translate(${pt(J.waist)}) rotate(${r1(rotTo(J.chestA) + 70)})"><g stroke="${OL}" stroke-width="1.4"><path d="M-22,-30 l-3,-10 l5,3Z" fill="#e8443a"/><path d="M-16,-31 l-1,-11 l4,4Z" fill="#f2f2f2"/><path d="M-10,-30 l2,-10 l3,5Z" fill="#9be15d"/></g><path d="M-21,-32 v6 M-15,-33 v6 M-9,-32 v6" stroke="#5a3d26" stroke-width="2"/><rect x="-26" y="-28" width="20" height="38" rx="5" fill="#8a5a2b" stroke="${OL}" stroke-width="2.6"/><path d="M-26,-20 h20 M-26,2 h20" stroke="#5a3d26" stroke-width="2"/></g>`;
-    case 'sigil': {
-      const c = add(add(J.chest, J.chestA, -16), J.chestA - 90, 12), rot = r1(t * 30);
-      const ticks = [...Array(12)].map((_, i) => { const a = i * 30; return `M${pt(add([0, 0], a, 30))}L${pt(add([0, 0], a, 35))}`; }).join('');
-      const runes = [...Array(6)].map((_, i) => { const p = add([0, 0], i * 60 + 15, 24); return `<path d="M${r1(p[0] - 2.5)},${r1(p[1] - 3)} l5,3 -5,3" fill="none" stroke="#36d6a8" stroke-width="1.6"/>`; }).join('');
-      return `<g transform="translate(${pt(c)})"><circle r="38" fill="#36d6a8" opacity=".08"/><g transform="rotate(${rot})"><circle r="35" fill="none" stroke="#36d6a8" stroke-width="2.4"/><circle r="28" fill="none" stroke="#36d6a8" stroke-width="1.4" stroke-dasharray="4 3"/><path d="${ticks}" stroke="#36d6a8" stroke-width="2"/>${runes}</g><g transform="rotate(${-rot * 1.5})"><path d="M0,-18 L15.6,9 L-15.6,9Z M0,18 L15.6,-9 L-15.6,-9Z" fill="none" stroke="#7ff0d0" stroke-width="1.4"/></g></g>`;
-    }
-    case 'wings': {
-      const f = Math.sin(t * 3) * 10, base = add(J.chest, J.chestA, -10);
-      const wing = (s, op) => `<g transform="translate(${pt(base)}) rotate(${r1(-20 + f * s)})" opacity="${op}"><path d="M0,0 Q-36,-40 -62,-26 Q-46,-18 -54,-6 Q-38,-8 -40,4 Q-22,-2 0,6Z" fill="#f4f1ea" stroke="${OL}" stroke-width="2.6" stroke-linejoin="round"/><path d="M-6,0 Q-30,-24 -52,-22 M-6,3 Q-28,-8 -44,-4" fill="none" stroke="#d4a83a" stroke-width="1.8"/><path d="M0,0 Q-36,-40 -62,-26" fill="none" stroke="#d4a83a" stroke-width="2"/></g>`;
-      return wing(0.6, 0.7) + wing(1, 1);
-    }
-    case 'scarf': {
-      const n = J.neck, w = (k) => Math.sin(t * 4 + k) * 4;
-      const tail = (dy, k) => taper([[n[0] - 2, n[1] + 3], [n[0] - 18, n[1] + 5 + dy + w(k)], [n[0] - 36, n[1] + 3 + dy * 1.6 + w(k + 1)]], [5.4, 4.6, 3]);
-      return part(tail(2, 0), '#c4501a', 2.6) + part(tail(10, 1.2), '#ff8a2b', 2.6);
-    }
-    default: return '';
-  }
 }
 // Auras that glow are blended with "screen"; smoke stays a normal (dark) layer.
 const AURA_GLOW = { bubbles: 1, leaves: 1, wisps: 1, embers: 1, flies: 1, echo: 1, storm: 1 };
