@@ -346,9 +346,9 @@ const EXTRA_USES = [];
 })();
 
 /* ===================================================== WORLD 6: HUNTER'S WILDS */
-// Tracking reads trails (beast materials, wild seeds); Trapcraft builds traps and baits;
-// Beast Taming captures a companion in any world. The Hunter Licence brings contracts across
-// every world, and the Greed Island Cards collects cards from all of them.
+// Hunting (GDD): follow the trails of beast families (materials, wild seeds, game meat for Cooking) and hunt
+// the beasts of every world with a trap to make them companions (up to 3 active). Traps, baits and hunter
+// gear are made in Crafting. The Hunter Licence brings contracts; the Greed Island Cards collect every world.
 const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
 (() => {
   const t = (id, name, v) => defItem(id, name, '🐾', v);
@@ -358,8 +358,11 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
   defItem('beastlord_claw', 'Beastlord Claw', '🦴', 9000, relic('hunter'));
   defItem('chimera_heart', 'Chimera Heart', '❤️‍🔥', 30000, relic('hunter'));
   defItem('beast_essence', 'Beast Essence', '✨', 500);
-  EXTRA_USES.push(['beast_essence', 'Feed a tamed beast (Beast Taming)']);
-  // traps (Beast Taming) and baits (Fishing, Tracking)
+  EXTRA_USES.push(['beast_essence', 'Feed a companion (Hunting page)']);
+  defItem('game_meat', 'Game Meat', '🍖', 160);
+  defItem('hunters_stew', "Hunter's Stew", '🍲', 600, { type: 'food', heal: 2400 });
+  defItem('beast_feast', 'Beast Feast', '🍖', 1500, { type: 'meal', buff: { stat: 'dmg', val: 0.15, mins: 45 } });
+  // traps (beast hunts) and baits (Fishing, Hunting) — made in Crafting
   const trap = (id, name, tier) => defItem(id, name, '🪤', 100 * tier, { type: 'trap', tier });
   trap('snare', 'Snare', 1); trap('net_trap', 'Net Trap', 2); trap('cage_trap', 'Cage Trap', 3);
   trap('spirit_trap', 'Spirit Trap', 4); trap('wyrm_trap', 'Wyrm Trap', 5); trap('chimera_trap', 'Chimera Trap', 6);
@@ -373,13 +376,9 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
   defItem('schem_wildhide_coat', 'Schematic: Wildhide Coat', '📜', 40000, schem('wildhide_coat'));
   defItem('schem_star_badge', 'Schematic: Star Hunter Badge', '📜', 40000, schem('star_badge'));
 
-  SKILLS.tracking = { name: 'Tracking', realm: 'hunter', icon: '🐾', type: 'gather',
-    desc: 'Read trails to find beast materials and wild seeds. A good tracker also gets better contracts.' };
-  SKILLS.trapcraft = { name: 'Trapcraft', realm: 'hunter', icon: '🪤', type: 'craft',
-    desc: 'Build traps for Beast Taming and baits that make Fishing and Tracking luckier.' };
-  SKILLS.taming = { name: 'Beast Taming', realm: 'hunter', icon: '🦁', type: 'tame',
-    desc: 'Trap beasts from every world. One companion at a time fights or works beside you and grows with you.' };
-  const TR = (item, level, time, name, extra) => Object.assign(gather(item, level, time), { name, extra });
+  SKILLS.tracking = { name: 'Hunting', realm: 'hunter', icon: '🐾', type: 'gather',
+    desc: 'Follow the trails of beast families for their materials, wild seeds and game meat for Cooking, and hunt the beasts of every world with a trap to make them your companions.' };
+  const TR = (item, level, time, name, extra) => Object.assign(gather(item, level, time), { name, extra: extra.concat([['game_meat', 0.25, [1, 2]]]) });
   SKILLS.tracking.actions = [
     TR('wild_fur', 1, 3, 'Rabbit Trails', [['seed_vital_bean', 0.03, [1, 1]], ['seed_sun_wheat', 0.02, [1, 1]]]),
     TR('swift_feather', 10, 3.5, 'Bird Nests', [['seed_moon_rice', 0.02, [1, 1]]]),
@@ -389,7 +388,8 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
     TR('wyrm_scale', 65, 5.5, 'Wyrm Tracks', [['seed_star_fruit', 0.01, [1, 1]], ['beastlord_claw', 0.015, [1, 1]]]),
     TR('chimera_mane', 80, 6.5, 'Chimera Spoor', [['beastlord_claw', 0.025, [1, 1]], ['beast_essence', 0.05, [1, 1]]]),
   ];
-  SKILLS.trapcraft.actions = [
+  // Crafting: traps, baits and hunter gear
+  SKILLS.arts.actions.push(
     craft('fish_bait', 1, 2, { minnow: 2, wild_fur: 1 }, 5),
     craft('snare', 3, 4, { wild_fur: 6, cloud_fern: 4 }),
     craft('scent_lure', 10, 3, { swift_feather: 2, moonpetal: 3 }, 4),
@@ -401,8 +401,10 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
     craft('wyrm_trap', 60, 7, { lynx_pelt: 8, sunstone: 8, gravity_plate: 2 }),
     needs('schem_star_badge', craft('star_badge', 70, 10, { chimera_heart: 1, wyrm_scale: 12, void_diamond: 1, matriarch_eye: 1 })),
     craft('chimera_trap', 75, 8, { wyrm_scale: 8, chimera_mane: 4, beastlord_claw: 1 }),
-  ];
-  // Beasts: captured with a trap in Beast Taming. Each gives one bonus that grows with its level (max 20).
+  );
+  SKILLS.cooking.actions.push(craft('hunters_stew', 62, 3.5, { game_meat: 2, giant_octopus: 1 }), craft('beast_feast', 82, 4.5, { game_meat: 4, star_fruit: 1, chimera_mane: 1 }));
+  SKILLS.cooking.actions.sort((a, b) => a.level - b.level);
+  // Beasts: hunted with a trap (Hunting). Each gives one bonus that grows with its level (max 20).
   const B = (id, name, realm, level, trapId, kind, base, per, desc) => { BEASTS[id] = { name, realm, level, trap: trapId, kind, base, per, desc }; };
   B('reef_turtle', 'Reef Turtle', 'seas', 1, 'snare', 'speed:fishing', 0.10, 0.01, 'Fishing speed');
   B('storm_gull', 'Storm Gull', 'seas', 8, 'snare', 'speed:voyaging', 0.10, 0.01, 'Voyaging speed');
@@ -413,13 +415,14 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
   B('great_stag', 'Great Stag', 'hunter', 55, 'wyrm_trap', 'gather', 0.06, 0.005, 'gathering speed');
   B('sky_lynx', 'Sky Lynx', 'hunter', 70, 'chimera_trap', 'dodge', 0.04, 0.003, 'dodge chance');
   const xpOf = (lv, tm) => xpFor(lv, tm, true);
-  SKILLS.taming.actions = Object.entries(BEASTS).map(([id, b]) => ({ id: 'tame_' + id, name: `Hunt: ${b.name}`, level: b.level, time: 8 + b.level / 10, xp: xpOf(b.level, 8 + b.level / 10), in: { [b.trap]: 1 }, beast: id, icon: ['beast', id], kind: 'Beast hunt' }));
-  for (const s of ['tracking', 'trapcraft', 'taming']) RARE_FINDS[s] = [];
+  SKILLS.tracking.actions.push(...Object.entries(BEASTS).map(([id, b]) => ({ id: 'tame_' + id, name: `Hunt: ${b.name}`, level: b.level, time: 8 + b.level / 10, xp: xpOf(b.level, 8 + b.level / 10), in: { [b.trap]: 1 }, beast: id, icon: ['beast', id], kind: 'Beast hunt' })));
+  SKILLS.tracking.actions.sort((a, b) => a.level - b.level);
+  SKILLS.arts.actions.sort((a, b) => a.level - b.level);
+  RARE_FINDS.tracking = [];
   SHOP.push({ id: 'tools_hunter', cat: 'Tools', realm: 'hunter', name: 'Hunter Kit', icon: '🛠️', desc: "+10% speed for Green Island skills per tier.", costs: [120000, 500000, 2e6, 7e6, 2e7] });
   SYNERGIES.push(
     { from: 'tracking',  to: 'woodcutting', kind: 'rare', per: 0.004, name: 'Wild Seeds', desc: 'More rare finds (and seeds) in the undergrowth' },
-    { from: 'trapcraft', to: 'fishing',   kind: 'double', per: 0.002, name: 'Bait Craft', desc: 'Chance to catch two fish' },
-    { from: 'taming',    to: 'farming',   kind: 'double', per: 0.003, name: 'Beast Plough', desc: 'Chance for a double harvest' },
+    { from: 'tracking',  to: 'farming',   kind: 'double', per: 0.003, name: 'Beast Plough', desc: 'Chance for a double harvest' },
   );
   [1, 2, 3].forEach((tier) => {
     const id = `tool_tracking_${tier}`;
@@ -453,11 +456,7 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
       lore: "The Matriarch's eye still sees: a trail leading out of the cursed city into a green, roaring wild. Pay the hunters' toll to walk it.",
       offer: { matriarch_eye: 1, veil_shard: 4, hex_void: 20, bound_talisman: 3 } },
     unlocks: [
-      { id: 'skill:tracking', name: 'Tracking', need: () => !!S.gates.hunter || usedSkill('tracking') },
-      { id: 'skill:trapcraft', name: 'Trapcraft', need: () => skillLv('tracking') >= 5 || usedSkill('trapcraft'),
-        hint: () => 'Reach Tracking level 5', why: 'An old trapper trades you her tools for your furs.' },
-      { id: 'skill:taming', name: 'Beast Taming', need: () => (S.stats.made.snare || 0) >= 1 || usedSkill('taming'),
-        hint: () => 'Build your first Snare in Trapcraft', why: 'With a snare in hand, you can try to tame a beast of your own.' },
+      { id: 'skill:tracking', name: 'Hunting', need: () => !!S.gates.hunter || usedSkill('tracking') },
       { id: 'feature:contracts', name: 'Hunter Licence', need: () => (S.combat.kills.thicket || 0) >= 10 || (S.contracts && S.contracts.stars > 0),
         hint: () => 'Defeat 10 foes in the Exam Thicket', why: 'You passed the Hunter Exam. Contracts now come in from every world (menu: Contracts).' },
     ],
@@ -548,7 +547,7 @@ const ECHOES = [
   });
   SKILLS.arts.actions.sort((a, b) => a.level - b.level);
   BEASTS.stone_owl = { name: 'Stone Owl', realm: 'echo', level: 80, trap: 'chimera_trap', kind: 'echo', base: 0.10, per: 0.008, desc: 'Echo speed' };
-  SKILLS.taming.actions.push({ id: 'tame_stone_owl', name: 'Hunt: Stone Owl', level: 80, time: 16, xp: xpFor(80, 16, true), in: { chimera_trap: 1 }, beast: 'stone_owl', icon: ['beast', 'stone_owl'], kind: 'Beast hunt' });
+  SKILLS.tracking.actions.push({ id: 'tame_stone_owl', name: 'Hunt: Stone Owl', level: 80, time: 16, xp: xpFor(80, 16, true), in: { chimera_trap: 1 }, beast: 'stone_owl', icon: ['beast', 'stone_owl'], kind: 'Beast hunt' });
 
   const E = (name, hp, atk, def, spd, xp, gold, drops) => en(name, '', hp, atk, def, spd, xp, gold, drops);
   addWorld({

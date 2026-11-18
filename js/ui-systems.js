@@ -242,16 +242,16 @@ on('card', (d) => { if (d.done) burst('Card page complete', REALMS[CARDS[d.id].r
 
 /* ============================================================ HUNTER: BEASTS */
 UIX.realmTop.push((realm, skill) => {
-  if (skill !== 'taming') return '';
-  const ids = Object.keys(BEASTS);
-  return `${hdr('Companions', 'one active at a time · levels up while active, or with Beast Essence')}
+  if (skill !== 'tracking') return '';
+  const ids = Object.keys(BEASTS), n = compSlots();
+  return `${hdr('Companions', `${companions().length} / ${n} active${n < 3 ? ` · next slot at Hunting ${n === 1 ? 30 : 60}` : ''} · they level while active, or with Beast Essence`)}
     <div class="beasts">${ids.map((id) => {
-      const B = BEASTS[id], own = S.beasts[id], on = companion() === id, lv = beastLv(id);
-      if (!own) return `<div class="beast unknown">${ic('beast', id)}<span><b>${B.name}</b><small>${REALMS[B.realm].name} · hunt at Beast Taming ${B.level} with a ${ITEMS[B.trap].name}</small></span><em>+${pct(B.base)} ${B.desc}</em></div>`;
+      const B = BEASTS[id], own = S.beasts[id], on = isCompanion(id), lv = beastLv(id);
+      if (!own) return `<div class="beast unknown">${ic('beast', id)}<span><b>${B.name}</b><small>${REALMS[B.realm].name} · hunt at Hunting ${B.level} with a ${ITEMS[B.trap].name}</small></span><em>+${pct(B.base)} ${B.desc}</em></div>`;
       const nxt = lv < 20 ? 40 * lv * lv : 0, prog = lv < 20 ? (S.beasts[id].xp - 40 * (lv - 1) ** 2) / (nxt - 40 * (lv - 1) ** 2) : 1;
       return `<div class="beast ${on ? 'on' : ''}" style="--rc:${rc(B.realm)}">${ic('beast', id)}<span><b>${B.name} · Lv ${lv}</b><small>+${pct(beastVal(id))} ${B.desc}</small>
         <span class="pbar"><i style="width:${prog * 100}%"></i></span></span>
-        <span class="bt-cta">${on ? '<em class="ok">Active</em>' : gbtn('Make active', 'check', `data-companion="${id}"`, 'sm')}
+        <span class="bt-cta">${on ? gbtn('Active · rest', 'check', `data-companion="${id}"`, 'sm glow') : gbtn(companions().length >= n ? 'Swap in' : 'Make active', 'play', `data-companion="${id}"`, 'sm')}
         ${lv < 20 && count('beast_essence') ? gbtn(`Feed ×${Math.min(10, count('beast_essence'))}`, 'eat', `data-feed="${id}"`, 'dark sm') : ''}</span></div>`;
     }).join('')}</div>`;
 });
@@ -264,7 +264,7 @@ UIX.actLines.push((skill, a) => {
 });
 UIX.realmSide.push((realm, skill) => {
   const b = Object.keys(ITEMS).find((k) => ITEMS[k].type === 'bait' && ITEMS[k].baitFor === skill);
-  if (!b || !skillOpen('trapcraft')) return '';
+  if (!b || !count(b)) return '';
   return `<section class="win">${hdr('Bait', `${fmt(count(b))} ${ITEMS[b].name}`)}
     <label class="tog"><input type="checkbox" data-usebait ${S.useBait !== false ? 'checked' : ''}><span>Use bait: 1 per action, +50% rare finds, +10% double</span></label></section>`;
 });

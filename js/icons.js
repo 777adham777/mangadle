@@ -696,6 +696,8 @@ const ICON_MARK = {};
     else if (it.type === 'scroll' && it.pool) set(id, 'tied-scroll', ICONS.realm[it.pool]);
     else if (it.type === 'scroll') set(id, ICONS.technique[it.tech], 'tied-scroll');
     else if (it.ingot) set(id, 'metal-bar', null, ROMAN[Object.keys(ITEMS).filter((k) => ITEMS[k].ingot).indexOf(id) + 1]);
+    else if (id === 'game_meat' || id === 'beast_feast') set(id, 'meat', null);
+    else if (id === 'hunters_stew') set(id, 'bubbling-bowl', null);
     else if (it.type === 'tool') set(id, ICONS.skill[it.toolFor], 'cog', ROMAN[it.tier]);
     else if (it.type === 'seed') set(id, ICONS.item[id.slice(5)], 'leaf-swirl');
     else if (it.type === 'sigil') set(id, SIGIL[id.slice(6)], 'magic-swirl');

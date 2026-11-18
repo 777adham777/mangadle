@@ -580,8 +580,8 @@ const GOALS = [
   G('Defeat the Cursed Matriarch', 'battle', 1, kills('matriarch'), 50000),
   G("Open the Hunter's Trail", 'home', 1, gate('hunter'), 60000),
   // Green Island
-  G('Reach Tracking level 10', 'realm:hunter:tracking', 10, lvl('tracking'), 40000),
-  G('Tame your first beast', 'realm:hunter:taming', 1, () => [Object.keys(S.beasts || {}).length], 45000),
+  G('Reach Hunting level 10', 'realm:hunter:tracking', 10, lvl('tracking'), 40000),
+  G('Hunt down your first companion', 'realm:hunter:tracking', 1, () => [Object.keys(S.beasts || {}).length], 45000),
   G('Complete 3 contracts', 'contracts', 3, () => [S.stats.contracts || 0], 50000),
   G('Defeat the Chimera King', 'battle', 1, kills('chimera'), 90000),
   G('Open the Echo Door', 'home', 1, gate('echo'), 100000),

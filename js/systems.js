@@ -351,25 +351,36 @@ hook('rare', (skill) => (skill && baitOn(skill) ? 1.5 : 1));
 hook('double', (skill) => (baitOn(skill) ? 0.1 : 0));
 hook('action', (skill) => { const b = S.useBait !== false && baitFor(skill); if (b) removeItem(b, 1); });
 
-/* ================================================================ HUNTER: BEASTS */
-// Beast Taming actions use a trap: capture chance 30% + 2% per level above the beast (max 85%).
-// Already tamed: it leaves Beast Essence instead. One companion is active; it gains levels (max 20)
-// over time and from essence, and its bonus grows with them.
+/* ================================================================ HUNTER: COMPANIONS */
+// Beast hunts (Hunting) use a trap: capture chance 30% + 2% per Hunting level above the beast (max 85%).
+// Already caught: it leaves Beast Essence instead. Companions never fight: each active one gives its
+// passive bonus, which grows with its level (max 20, over time while active and from Beast Essence).
+// Active slots (GDD: a choice between combat, gathering and exploration): 1, 2 at Hunting 30, 3 at 60.
 const beastLv = (id) => { const b = S.beasts[id]; return b ? Math.min(20, 1 + Math.floor(Math.sqrt(b.xp / 40))) : 0; };
 const beastVal = (id) => { const B = BEASTS[id]; return B.base + B.per * (beastLv(id) - 1); };
-const companion = () => (S.companion && S.beasts[S.companion] ? S.companion : null);
-const captureChance = (act) => Math.min(0.85, 0.3 + 0.02 * Math.max(0, skillLv('taming') - act.level));
+const huntLv = () => (S.skills.tracking ? skillLv('tracking') : 0);
+const compSlots = () => 1 + (huntLv() >= 30 ? 1 : 0) + (huntLv() >= 60 ? 1 : 0);
+const companions = () => (S.companions || []).filter((id) => S.beasts[id]).slice(0, compSlots());
+const companion = () => companions()[0] || null;
+const isCompanion = (id) => companions().includes(id);
+const captureChance = (act) => Math.min(0.85, 0.3 + 0.02 * Math.max(0, huntLv() - act.level));
 hook('action', (skill, act) => {
   if (!act.beast) return;
   if (S.beasts[act.beast]) { const n = randInt(1, 2); addItem('beast_essence', n); return; }
   if (Math.random() < captureChance(act) * luckMult()) {
     S.beasts[act.beast] = { xp: 0 };
-    if (!companion()) S.companion = act.beast;
+    if (companions().length < compSlots()) S.companions = companions().concat(act.beast);
     emit('tamed', act.beast);
     dirty = true;
   }
 });
-function setCompanion(id) { if (S.beasts[id]) { S.companion = id; dirty = true; } }
+// Toggle a companion in or out of the active slots (a full set drops the oldest).
+function setCompanion(id) {
+  if (!S.beasts[id]) return;
+  const C = companions();
+  S.companions = C.includes(id) ? C.filter((x) => x !== id) : C.concat(id).slice(-compSlots());
+  dirty = true;
+}
 function feedBeast(id, n) {
   n = Math.min(n, count('beast_essence'));
   if (!S.beasts[id] || n <= 0 || beastLv(id) >= 20) return false;
@@ -378,19 +389,25 @@ function feedBeast(id, n) {
   dirty = true;
   return true;
 }
-hook('tick', (dt) => { const c = companion(); if (c && beastLv(c) < 20) S.beasts[c].xp += dt / 10; });
+hook('tick', (dt) => { for (const c of companions()) if (beastLv(c) < 20) S.beasts[c].xp += dt / 10; });
 function compFx(kind, skill) {
-  const c = companion();
-  if (!c) return 0;
-  const K = BEASTS[c].kind, v = beastVal(c) * (1 + discFx('pet'));
-  if (K === kind) return v;
-  if (kind === 'speed' && skill && (K === 'speed:' + skill || (K === 'gather' && SKILLS[skill].type === 'gather'))) return v;
-  return 0;
+  let t = 0;
+  for (const c of companions()) {
+    const K = BEASTS[c].kind, v = beastVal(c) * (1 + discFx('pet'));
+    if (K === kind) t += v;
+    else if (kind === 'speed' && skill && (K === 'speed:' + skill || (K === 'gather' && SKILLS[skill].type === 'gather'))) t += v;
+  }
+  return t;
 }
 hook('speed', (skill) => 1 + compFx('speed', skill));
 for (const k of ['dmg', 'hp', 'rare']) hook(k, () => 1 + compFx(k));
 hook('xp', () => 1 + compFx('xp'));
 hook('dodge', () => compFx('dodge'));
+{
+  // older saves had one companion
+  const base = sanitize;
+  sanitize = function () { base(); if (S.companion && !S.companions.length) S.companions = [S.companion]; delete S.companion; };
+}
 
 /* ================================================================ HUNTER: CONTRACTS */
 // Licence ranks from stars: Bronze 10, Silver 40, Gold 100. 3 contracts (4 at Silver, 5 at Gold),

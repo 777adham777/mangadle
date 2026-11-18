@@ -95,7 +95,7 @@ function maxSystems() {
   for (const k in CARDS) S.cards[k] = 1;
   for (const id in ARTIFACTS) S.museum[id] = 1;
   for (const id in BEASTS) S.beasts[id] = { xp: Math.max((S.beasts[id] || {}).xp || 0, 40 * 19 * 19) };
-  if (!companion()) S.companion = Object.keys(BEASTS)[0] || null;
+  if (!companion()) S.companions = Object.keys(BEASTS).slice(0, compSlots());
   S.contracts.stars = Math.max(S.contracts.stars || 0, RANKS[RANKS.length - 1][0]);
   const grades = Object.fromEntries(ESTATS.map(([k]) => [k, 4]));
   if (!echoOn()) S.echo = { id: ECHOES[0].id, grades, bond: 30 * 40 * 40, task: null, prog: 0 };

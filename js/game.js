@@ -67,7 +67,7 @@ function defaultState() {
     wishes: {},
     pacts: { active: [] },
     contracts: { list: [], next: 0, stars: 0 },
-    beasts: {}, companion: null,
+    beasts: {}, companions: [],          // active companions (systems.js), up to 3
     cards: {},
     echo: { id: null, grades: null, bond: 0, task: null, prog: 0 },
     museum: {},
