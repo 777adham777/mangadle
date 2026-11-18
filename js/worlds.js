@@ -112,7 +112,7 @@ const EXTRA_USES = [];
 
 /* ========================================================= WORLD 4: KI FRONTIER */
 // Gravity Training builds raw power and unlocks transformations; Farming grows crops on real-time
-// plots; Tinkering builds tools for every gathering skill and gadgets for a new gear slot.
+// plots; the Time Chamber stores time to accelerate activities. Ki tools and gear are made in Crafting.
 // Dragon Balls: one hides in each world — gather all 7 for a permanent wish.
 (() => {
   const k = (id, name, v) => defItem(id, name, '✨', v);
@@ -155,14 +155,7 @@ const EXTRA_USES = [];
     craft('star_feast', 90, 5, { star_fruit: 2, sea_king: 1, world_tree_leaf: 1 }),
   );
   SKILLS.cooking.actions.sort((a, b) => a.level - b.level);
-  // gadgets (new equipment slot) + iconic Ki gear
-  const gad = (id, name, v, stats) => defItem(id, name, '⚙️', v, eq('gadget', stats));
-  gad('power_scanner', 'Power Scanner', 1500, { rare: 0.15 });
-  gad('weighted_bands', 'Weighted Bands', 2500, { cxp: 0.12 });
-  gad('jet_boots', 'Jet Boots', 4000, { dodge: 0.08 });
-  gad('drone_buddy', 'Drone Buddy', 6000, { gold: 0.20 });
-  gad('barrier_belt', 'Barrier Belt', 9000, { hp: 400, def: 40 });
-  gad('hyper_capsule', 'Hyper Capsule', 15000, { speed: 0.08 });
+  // iconic Ki gear
   defItem('power_gauntlets', 'Power Gauntlets', '🥊', 20000, eq('weapon', { atk: 150 }));
   defItem('battle_armor', 'Battle Armor Mk-X', '🦾', 20000, eq('armor', { def: 165, hp: 950 }));
   defItem('gravity_bracer', 'Gravity Bracer', '⭕', 20000, eq('accessory', { atk: 80, def: 40, hp: 420 }));
@@ -174,18 +167,16 @@ const EXTRA_USES = [];
   for (const c of CROPS) EXTRA_SOURCES.push([c.id, 'skill', 'farming', `Farming · plant ${c.name} Seed (${c.mins} min)`, null]);
 
   SKILLS.gravity = { name: 'Gravity Training', realm: 'ki', icon: '💪', type: 'gather',
-    desc: 'Train under crushing gravity. Each level raises Inner Power by 2%, grows your stamina and unlocks transformations.' };
+    desc: 'Train under crushing gravity. Each level trains your energy disciplines 2% faster, grows your stamina, unlocks transformations and enlarges the Time Chamber.' };
   SKILLS.farming = { name: 'Farming', realm: 'ki', icon: '🌱', type: 'farm',
     desc: 'Plant seeds on plots that grow in real time, even while you do something else. Crops feed buff meals and Vital Beans.' };
-  SKILLS.tinkering = { name: 'Tinkering', realm: 'ki', icon: '⚙️', type: 'craft',
-    desc: 'Build tools that permanently speed up every gathering skill, and gadgets for a new gear slot.' };
   SKILLS.gravity.actions = [
     gather('ki_dust', 1, 3), gather('ki_spark', 10, 3.5), gather('ki_orb', 22, 4), gather('ki_core', 35, 4.5),
     gather('ki_flare', 50, 5), gather('ki_nova', 65, 5.5), gather('ki_star', 80, 6.5),
   ];
   ['1×', '10×', '50×', '100×', '200×', '400×', '800×'].forEach((g, i) => { SKILLS.gravity.actions[i].name = `${g} Gravity Session`; });
   SKILLS.farming.actions = [];
-  // Tools: one line per gathering skill, 3 tiers each, +15% speed per tier. Built from that skill's own materials + ki.
+  // Tools (Crafting, with ki): one line per gathering skill, 3 tiers each, +15% speed per tier. Tinkering is gone (GDD).
   const toolSkills = ['fishing', 'woodcutting', 'mining', 'gravity'];
   const toolNames = { fishing: 'Sonar Rod', woodcutting: 'Chakra Saw', mining: 'Ki Drill', harvest: 'Spirit Lantern', gravity: 'Gravity Rig' };
   const tinker = [];
@@ -200,18 +191,13 @@ const EXTRA_USES = [];
     });
   });
   tinker.push(
-    craft('power_scanner', 12, 6, { ki_spark: 10, sapphire: 1, chakra_orb: 10 }),
-    craft('weighted_bands', 25, 6, { ki_orb: 12, black_iron: 10, gravity_plate: 1 }),
-    craft('jet_boots', 40, 7, { ki_core: 12, starsteel: 10, warrior_sash: 1 }),
-    craft('drone_buddy', 55, 7, { ki_flare: 12, sunstone: 8, tide_pearl: 2 }),
-    craft('barrier_belt', 65, 8, { ki_nova: 10, gravity_plate: 3, husk_heart: 4 }),
-    craft('hyper_capsule', 85, 9, { ki_star: 10, tyrant_horn: 1, void_diamond: 1 }),
     needs('schem_power_gauntlets', craft('power_gauntlets', 45, 9, { gravity_plate: 4, ki_core: 20, starsteel: 15, beast_ember: 6 })),
     needs('schem_battle_armor', craft('battle_armor', 60, 10, { warrior_sash: 4, ki_flare: 20, sunstone: 12, phantom_silk: 6 })),
     needs('schem_gravity_bracer', craft('gravity_bracer', 75, 10, { tyrant_horn: 1, ki_nova: 15, ruby: 2, sage_chakra: 4 })),
   );
-  SKILLS.tinkering.actions = tinker.sort((a, b) => a.level - b.level);
-  for (const s of ['gravity', 'farming', 'tinkering']) { RARE_FINDS[s] = []; }
+  SKILLS.arts.actions.push(...tinker);
+  SKILLS.arts.actions.sort((a, b) => a.level - b.level);
+  for (const s of ['gravity', 'farming']) { RARE_FINDS[s] = []; }
   RARE_FINDS.woodcutting.push(['seed_vital_bean', 1 / 60], ['seed_sun_wheat', 1 / 120], ['seed_moon_rice', 1 / 250], ['seed_fire_pepper', 1 / 500]);
   RARE_FINDS.gravity.push(['seed_frost_melon', 1 / 400], ['seed_thunder_root', 1 / 700], ['seed_star_fruit', 1 / 1200]);
   SHOP.push(
@@ -222,7 +208,6 @@ const EXTRA_USES = [];
   SYNERGIES.push(
     { from: 'gravity',   to: 'combat',  kind: 'xp',   per: 0.004, name: 'Heavy Bones',   desc: 'Training under gravity speeds up combat XP' },
     { from: 'farming',   to: 'cooking', kind: 'buff', per: 0.006, name: 'Fresh Harvest', desc: 'Buff meals last longer' },
-    { from: 'tinkering', to: 'fishing', kind: 'rare', per: 0.004, name: 'Sonar',         desc: 'Rare catches are more likely' },
   );
 
   const E = (name, hp, atk, def, spd, xp, gold, drops) => en(name, '', hp, atk, def, spd, xp, gold, drops);
@@ -255,10 +240,10 @@ const EXTRA_USES = [];
         hint: () => 'Reach Gravity Training level 5', why: 'An old farmer on the plains hands you Vital Bean seeds and three plots.' },
       { id: 'feature:transform', name: 'Transformations', need: () => skillLv('gravity') >= 10,
         hint: () => 'Reach Gravity Training level 10', why: 'Your body can finally hold a surge of ki. Pick a form on the Battlefield.' },
-      { id: 'skill:tinkering', name: 'Tinkering', need: () => (S.combat.kills.plains || 0) >= 10 || usedSkill('tinkering'),
-        hint: () => 'Defeat 10 foes on the Rocky Plains', why: 'You salvage scrap from fallen soldiers. A capsule engineer shows you how to use it.' },
-      { id: 'feature:wishes', name: 'Dragon Balls', need: () => skillLv('tinkering') >= 10,
-        hint: () => 'Reach Tinkering level 10', why: 'Your new radar picks up seven strange signals, one in every world.' },
+      { id: 'feature:wishes', name: 'Dragon Balls', need: () => (S.combat.kills.plains || 0) >= 10,
+        hint: () => 'Defeat 10 foes on the Rocky Plains', why: 'A fallen soldier drops a radar. It picks up seven strange signals, one in every world.' },
+      { id: 'feature:chamber', name: 'Time Chamber', need: () => skillLv('gravity') >= 20 || (S.chamber && S.chamber.store > 0),
+        hint: () => 'Reach Gravity Training level 20', why: 'A sealed room in the gravity hall: time runs differently inside. Hours you spend away beyond the offline limit are stored there. It holds one hour already.' },
     ],
   });
 })();
@@ -335,13 +320,13 @@ const SIGILS = {};   // id -> { tag (world), kind, target, val, desc }
     { from: 'exorcism',   to: 'mining',  kind: 'speed',    per: 0.003, name: 'Spirit Sense',  desc: 'Reishi Mining goes faster' },
     { from: 'pacts',      to: 'gravity', kind: 'speed',    per: 0.003, name: 'Iron Vow',      desc: 'Gravity Training goes faster' },
   );
-  // Tinkering learns a tool for Exorcism too
+  // Crafting learns a tool for Exorcism too
   [1, 2, 3].forEach((t) => {
     const id = `tool_exorcism_${t}`;
     defItem(id, `Spirit Bell Mk ${'I'.repeat(t)}`, '🔧', 300 * t, { type: 'tool', toolFor: 'exorcism', tier: t });
-    SKILLS.tinkering.actions.push(craft(id, [20, 50, 80][t - 1], 5 + t, { [['ki_orb', 'ki_flare', 'ki_star'][t - 1]]: 8 * t, [['hex_ash', 'hex_core', 'hex_crown'][t - 1]]: 12 * t }));
+    SKILLS.arts.actions.push(craft(id, [20, 50, 80][t - 1], 5 + t, { [['ki_orb', 'ki_flare', 'ki_star'][t - 1]]: 8 * t, [['hex_ash', 'hex_core', 'hex_crown'][t - 1]]: 12 * t }));
   });
-  SKILLS.tinkering.actions.sort((a, b) => a.level - b.level);
+  SKILLS.arts.actions.sort((a, b) => a.level - b.level);
 
   const E = (name, hp, atk, def, spd, xp, gold, drops) => en(name, '', hp, atk, def, spd, xp, gold, drops);
   addWorld({
@@ -462,9 +447,9 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
   [1, 2, 3].forEach((tier) => {
     const id = `tool_tracking_${tier}`;
     defItem(id, `Hunter's Compass Mk ${'I'.repeat(tier)}`, '🔧', 300 * tier, { type: 'tool', toolFor: 'tracking', tier });
-    SKILLS.tinkering.actions.push(craft(id, [25, 55, 85][tier - 1], 5 + tier, { [['ki_core', 'ki_nova', 'ki_star'][tier - 1]]: 8 * tier, [['wild_fur', 'stag_antler', 'wyrm_scale'][tier - 1]]: 12 * tier }));
+    SKILLS.arts.actions.push(craft(id, [25, 55, 85][tier - 1], 5 + tier, { [['ki_core', 'ki_nova', 'ki_star'][tier - 1]]: 8 * tier, [['wild_fur', 'stag_antler', 'wyrm_scale'][tier - 1]]: 12 * tier }));
   });
-  SKILLS.tinkering.actions.sort((a, b) => a.level - b.level);
+  SKILLS.arts.actions.sort((a, b) => a.level - b.level);
 
   const E = (name, hp, atk, def, spd, xp, gold, drops) => en(name, '', hp, atk, def, spd, xp, gold, drops);
   addWorld({
@@ -586,9 +571,9 @@ const ECHOES = [
   [1, 2, 3].forEach((tier) => {
     const id = `tool_archaeology_${tier}`;
     defItem(id, `Brush & Pick Mk ${'I'.repeat(tier)}`, '🔧', 300 * tier, { type: 'tool', toolFor: 'archaeology', tier });
-    SKILLS.tinkering.actions.push(craft(id, [30, 60, 88][tier - 1], 5 + tier, { [['ki_core', 'ki_nova', 'ki_star'][tier - 1]]: 8 * tier, [['clay_fragment', 'obsidian_fragment', 'pillar_fragment'][tier - 1]]: 12 * tier }));
+    SKILLS.arts.actions.push(craft(id, [30, 60, 88][tier - 1], 5 + tier, { [['ki_core', 'ki_nova', 'ki_star'][tier - 1]]: 8 * tier, [['clay_fragment', 'obsidian_fragment', 'pillar_fragment'][tier - 1]]: 12 * tier }));
   });
-  SKILLS.tinkering.actions.sort((a, b) => a.level - b.level);
+  SKILLS.arts.actions.sort((a, b) => a.level - b.level);
   BEASTS.stone_owl = { name: 'Stone Owl', realm: 'echo', level: 80, trap: 'chimera_trap', kind: 'echo', base: 0.10, per: 0.008, desc: 'Echo speed' };
   SKILLS.taming.actions.push({ id: 'tame_stone_owl', name: 'Hunt: Stone Owl', level: 80, time: 16, xp: xpFor(80, 16, true), in: { chimera_trap: 1 }, beast: 'stone_owl', icon: ['beast', 'stone_owl'], kind: 'Beast hunt' });
 

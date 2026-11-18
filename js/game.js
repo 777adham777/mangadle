@@ -42,7 +42,7 @@ function defaultState() {
     action: null,                       // { skill, id, prog }
     combat: { zone: null, enemy: null, eHp: 0, pT: 0, eT: 0, respawn: 0, hp: 50,
               food: null, kills: {}, log: [] },   // food is equipped by the player
-    equip: { weapon: null, armor: null, accessory: null, gadget: null },   // your first weapon is carved in Crafting
+    equip: { weapon: null, armor: null, accessory: null },   // your first weapon is carved in Crafting
     fruit: null, fruitRank: 0,          // eating copies of your fruit raises its rank (max FRUIT_RANK_MAX)
     shop: {},
     energy: { capLv: 0, powLv: 0, alloc: {}, lvl: {}, prog: {}, step: '10' },
@@ -62,7 +62,8 @@ function defaultState() {
     ki: { form: null, stamina: 100 },
     farm: { plots: [], auto: false },
     buffs: {},                          // meal buffs: stat -> { v, t (seconds left) }
-    tools: {},                          // skill id -> Tinkering tool tier
+    tools: {},                          // skill id -> tool tier (tools are crafted)
+    chamber: { store: 0, on: false },   // Time Chamber (chamber.js), seconds stored
     wishes: {},
     domain: { cells: [null, null, null, null, null, null, null, null, null] },
     pacts: { active: [] },
@@ -91,6 +92,7 @@ function sanitize() {
   if (typeof restoreVariants === 'function') restoreVariants();   // shiny / perfect / seasoned items are created on demand
   for (const id in S.items) if (!ITEMS[id] || !(S.items[id] > 0)) delete S.items[id];
   for (const k in S.skills) if (!SKILLS[k]) delete S.skills[k];
+  delete S.equip.gadget;   // the gadget slot is gone (GDD: no Tinkering)
   for (const slot in S.equip) if (S.equip[slot] && !ITEMS[S.equip[slot]]) S.equip[slot] = null;
   if (S.fruit && !ITEMS[S.fruit]) S.fruit = null;
   if (S.action && (!SKILLS[S.action.skill] || !findAction(S.action.skill, S.action.id))) S.action = null;

@@ -83,3 +83,8 @@
 .awk-el[disabled] { opacity: .5; cursor: default; }
 .awk-have { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; }
 .awk-have .gi { font-size: 18px; color: var(--gold); flex: none; }
+
+/* Time Chamber */
+.chamber-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px 0; }
+.chamber-row .pbar { flex: 1; }
+.chamber p { padding: 0 10px 10px; margin: 6px 0 0; }

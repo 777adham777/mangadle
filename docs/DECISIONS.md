@@ -14,6 +14,8 @@ Choix validés avec le joueur le 2026-11-18, puis propositions à valider.
 | Techniques | Recharges seules, déclenchées dans l'ordre des slots (défensives sur condition). Plus de barre de chakra. |
 | Disciplines énergétiques | Inner Power garde son moteur d'allocation ; ses entraînements deviennent les disciplines (une de plus par monde). Rebirth / Karma retirés. |
 | Armes (Soul City) | Chaque arme est un exemplaire unique avec sa progression. Bladesmithing devient Smelting (minerai → lingots), ses recettes passent dans Crafting. L'éveil donne un élément puis le passif de la famille d'arme. |
+| Kaio Planet | Tinkering retiré : ses outils (vitesse permanente des skills de récolte) et l'équipement Ki passent dans Crafting ; le slot Gadget et les gadgets sont supprimés. Les Dragon Balls s'ouvrent après 10 victoires dans les Rocky Plains. |
+| Time Chamber | Les heures d'absence au-delà de la limite hors-ligne (12 h) remplissent une réserve ; activée, elle fait tourner l'activité en cours et les bateaux 2× plus vite (pas le combat). Capacité 4 h, +4 h tous les 25 niveaux de Gravity Training ; 1 h offerte au déblocage (Gravity 20). |
 | Expéditions | Passives, en parallèle de l'activité en cours et hors ligne, ≥ 10 min. 1 bateau au départ, un 2e plus tard. Un plat optionnel améliore le butin. Voyaging garde ses niveaux. |
 
 ## Proposé (à valider en jeu)

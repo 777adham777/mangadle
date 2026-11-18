@@ -600,7 +600,7 @@ VIEWS.hero = (tab) => {
   <div class="hero-layout">
     <section class="win equip-win">
       ${hdr('Equipment')}
-      <div class="eslots">${slot('weapon', 'Weapon', 'weapon')}${slot('armor', 'Armor', 'armor')}${slot('accessory', 'Accessory', 'accessory')}${skillOpen('tinkering') || S.equip.gadget ? slot('gadget', 'Gadget', 'gadget') : ''}${featureOpen('battle') ? foodSlot() : ''}
+      <div class="eslots">${slot('weapon', 'Weapon', 'weapon')}${slot('armor', 'Armor', 'armor')}${slot('accessory', 'Accessory', 'accessory')}${featureOpen('battle') ? foodSlot() : ''}
         ${S.fruit ? `<div class="eslot fruit">${tile(S.fruit, null)}<span class="es-t"><small>Devil Fruit · rank ${fruitRank()}</small><b>${ITEMS[S.fruit].name}</b></span></div>` : ''}</div>
       ${hdr('Attributes')}
       ${attrList([['atk', 'Max hit', fmt(pMaxHit())], ['def', 'Defense', fmt(pDef())], ['hp', 'Max HP', fmt(pMaxHp())], ['spd', 'Attack speed', pSpeed().toFixed(1) + 's'], ['gold', 'Gold bonus', '×' + goldMult().toFixed(2)], ['xp', 'XP bonus', '×' + xpMult().toFixed(2)]])}
@@ -1266,6 +1266,7 @@ function boot() {
   const away = (Date.now() - S.last) / 1000;
   if (away > 30) {
     const secs = offlineSeconds(away), before = snapshot();
+    fillChamber(away - secs);   // time beyond the offline limit goes to the Time Chamber
     SIM = true; advance(secs); SIM = false;
     showOffline(secs, before);
   }
@@ -1318,7 +1319,7 @@ let GAME_SPEED = 1;   // dev tools (dev.js) fast-forward: the extra time runs si
 function catchUp() {
   const now = Date.now(), dt = (now - lastTick) / 1000;
   lastTick = now;
-  if (dt > 5) { SIM = true; advance(offlineSeconds(dt)); SIM = false; dirty = true; }
+  if (dt > 5) { fillChamber(dt - offlineSeconds(dt)); SIM = true; advance(offlineSeconds(dt)); SIM = false; dirty = true; }
   else if (dt > 0) {
     step(dt);
     if (GAME_SPEED > 1) { SIM = true; advance(dt * (GAME_SPEED - 1)); SIM = false; }

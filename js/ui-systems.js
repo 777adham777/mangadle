@@ -83,8 +83,8 @@ on('harvest', (d) => { if (!SIM) feedItem(d.crop, d.n); });
 
 /* ============================================================ KI: TOOLS overview */
 UIX.realmSide.push((realm, skill) => {
-  if (skill !== 'tinkering') return '';
-  const toolSkills = [...new Set(SKILLS.tinkering.actions.map((a) => ITEMS[Object.keys(a.out)[0]]).filter((it) => it.type === 'tool').map((it) => it.toolFor))];
+  if (skill !== 'arts' || !isUnlocked('realm:ki')) return '';
+  const toolSkills = [...new Set(SKILLS.arts.actions.map((a) => ITEMS[Object.keys(a.out)[0]]).filter((it) => it.type === 'tool').map((it) => it.toolFor))];
   return `<section class="win">${hdr('Your tools', '+15% speed per tier')}<ul class="rn-list">${toolSkills.map((k) => `<li><span>${ic('skill', k)} ${SKILLS[k].name}</span><b>${toolTier(k) ? 'Mk ' + 'I'.repeat(toolTier(k)) : '—'}</b></li>`).join('')}</ul></section>`;
 });
 on('tool', (d) => burst('Tool built', `${ITEMS[d.id].name} · ${SKILLS[ITEMS[d.id].toolFor].name} +${toolTier(ITEMS[d.id].toolFor) * 15}% speed`, itemIc(d.id), rc('ki')));
@@ -102,6 +102,23 @@ const buffsHTML = () => {
   return `<div class="buffs">${ks.map((k) => `<span class="buff">${ui('meal')}+${pct(S.buffs[k].v)} ${BUFF_NAME[k]}<small data-buff="${k}">${mmss(S.buffs[k].t)}</small></span>`).join('')}</div>`;
 };
 UIX.homeTop.push(buffsHTML);
+
+/* ============================================================ KI: TIME CHAMBER */
+function chamberHTML() {
+  if (!chamberOn()) return '';
+  const C = S.chamber, cap = chamberCap();
+  return `<section class="win chamber">${hdr('Time Chamber', `<span data-chambertxt>${fmtTime(C.store)}</span> / ${fmtTime(cap)} stored`)}
+    <div class="chamber-row"><span class="pbar"><i data-chamberfill style="width:${(C.store / cap) * 100}%"></i></span>
+      ${gbtn(C.on ? 'Stop' : 'Accelerate ×2', C.on ? 'stop' : 'play', `data-chamber ${!C.on && !C.store ? 'disabled' : ''}`, `sm ${C.on ? 'glow' : ''}`)}</div>
+    <p class="muted small">While on, your current activity and your ships run twice as fast, using stored time${C.on && !chamberBusy() ? ' (nothing to accelerate right now)' : ''}. Battles are not accelerated. Hours away beyond the ${BASE_OFFLINE_HOURS}-hour offline limit fill it; Gravity Training grows it (+4 h every 25 levels).</p></section>`;
+}
+UIX.homeTop.push(chamberHTML);
+UIX.realmSide.push((realm, skill) => (skill === 'gravity' ? chamberHTML() : ''));
+UPD.push(() => {
+  const el = $('[data-chamberfill]');
+  if (el) { el.style.width = (S.chamber.store / chamberCap()) * 100 + '%'; setText($('[data-chambertxt]'), fmtTime(S.chamber.store)); }
+});
+document.addEventListener('click', (ev) => { const t = ev.target.closest('[data-chamber]'); if (t && !t.disabled) toggleChamber(); });
 UIX.realmTop.unshift(() => buffsHTML());
 UPD.push(() => { for (const el of $$('[data-buff]')) { const b = S.buffs[el.dataset.buff]; if (b) setText(el, mmss(b.t)); } });
 
@@ -128,7 +145,7 @@ on('transform', (f) => { if (f && inBattleView()) floatAt($('[data-portrait="pla
 UIX.realmSide.push((realm, skill) => {
   if (skill !== 'gravity') return '';
   const out = [`<section class="win">${hdr('What Gravity gives you')}<ul class="rn-list">
-    <li><span>Inner Power energy</span><b>+${fmt(2 * skillLv('gravity'))}%</b></li>
+    <li><span>Discipline training speed</span><b>+${fmt(2 * skillLv('gravity'))}%</b></li>
     <li><span>Stamina</span><b>${fmt(staminaMax())}</b></li>
     ${FORMS.map((f) => `<li><span>${f.name} (Lv ${f.grav})</span><b>${formOpen(f) ? '×' + f.dmg + ' dmg' : ui('lock')}</b></li>`).join('')}</ul></section>`];
   if (wishesOn()) {

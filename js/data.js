@@ -568,7 +568,8 @@ const GOALS = [
   // Kaio Planet
   G('Reach Gravity Training level 10', 'realm:ki:gravity', 10, lvl('gravity'), 8000),
   G('Harvest your first crop', 'realm:ki:farming', 1, () => [S.stats.harvests || 0], 8000),
-  G('Craft a tool in Tinkering', 'realm:ki:tinkering', 1, () => [Object.keys(S.tools || {}).length], 10000),
+  G('Craft a tool with ki', 'realm:shinobi:arts', 1, () => [Object.keys(S.tools || {}).length], 10000),
+  G('Spend an hour in the Time Chamber', 'home', 3600, () => [Math.floor(S.stats.chamberTime || 0)], 12000),
   G('Transform in battle', 'battle', 1, () => [S.stats.transforms || 0], 12000),
   G('Defeat the Crimson Tyrant', 'battle', 1, kills('tyrant'), 25000),
   G('Open the Hex Gate', 'home', 1, gate('hex'), 30000),

@@ -11,7 +11,7 @@
 // Chests: rare finds of the world's gathering skill + drops on its foes. 'GEM' = random gem, 'FRUIT' = random fruit.
 defItem('capsule_crate', 'Capsule Crate', '🧰', 3000, chest([2000, 6000], [
   ['ki_orb', 30, [3, 8]], ['ki_core', 22, [2, 5]], ['seed_fire_pepper', 12, [1, 3]], ['GEM', 10, [1, 1]], ['seed_frost_melon', 8, [1, 2]],
-  ['gravity_plate', 8, [1, 1]], ['warrior_sash', 4, [1, 1]], ['seed_star_fruit', 2, [1, 1]], ['power_scanner', 1, [1, 1]], ['FRUIT', 0.3, [1, 1]]]));
+  ['gravity_plate', 8, [1, 1]], ['warrior_sash', 4, [1, 1]], ['seed_star_fruit', 2, [1, 1]], ['FRUIT', 0.3, [1, 1]]]));
 defItem('cursed_box', 'Cursed Box', '🧰', 6000, chest([5000, 12000], [
   ['hex_residue', 30, [3, 8]], ['hex_shade', 20, [2, 5]], ['hex_core', 14, [1, 3]], ['GEM', 12, [1, 1]], ['bound_talisman', 8, [1, 1]],
   ['veil_shard', 5, [1, 1]], ['sigil_luck', 1, [1, 1]], ['FRUIT', 0.3, [1, 1]]]));
