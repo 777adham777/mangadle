@@ -179,27 +179,28 @@ const cosTotal = () => COS_SLOTS.reduce((a, [s]) => a + COSMETICS[s].length, 0);
 // aF / aB: front / back arm [upper (absolute), elbow bend] · lF / lB: legs [thigh (absolute), knee bend]
 // fF / fB: foot tilt · g: weapon angle relative to the forearm · dy: crouch · air: float above the ground
 // bf: the back arm crosses in front of the chest (drawn over the torso) · sh: weapon stays sheathed
+// tw: turn towards the foe (0 faces the viewer, 1 is a 3/4 view facing right; combat poses turn)
 // ht / st: hip and shoulder tilt (contrapposto: the hip over the weight-bearing leg rises, the shoulder above it drops)
 const POSES = {
   relaxed:  { sh: 1, t1: 179, t2: 2,  n: 0,  h: 3,   ht: -3, st: 2,  aF: [11, 6],    aB: [-11, -6],  lF: [9, -2],   lB: [-9, 2],   fF: 10, fB: -190, g: -150, dy: 0 },
-  guard:    { t1: 174, t2: 6,  n: -4, h: -4,  ht: 3,  st: -4, aF: [50, 84],   aB: [-6, 140],  lF: [26, -24], lB: [-24, 14], fF: 14, fB: -194, g: 34,   dy: 10, bf: 1 },
+  guard:    { tw: 1, t1: 174, t2: 6,  n: -4, h: -4,  ht: 3,  st: -4, aF: [50, 84],   aB: [-6, 140],  lF: [26, -24], lB: [-24, 14], fF: 14, fB: -16, g: 34,   dy: 10, bf: 1 },
   swagger:  { sh: 1, t1: 184, t2: -6, n: -2, h: -8,  ht: 6,  st: -4, aF: [44, -100], aB: [-44, 100], lF: [5, -2],   lB: [-17, 10], fF: 8,  fB: -196, g: -170, dy: 0 },
   heroic:   { t1: 180, t2: -3, n: -6, h: -8,  ht: -4, st: 7,  aF: [174, -10], aB: [-16, -10], lF: [16, -6],  lB: [-8, 3],   fF: 10, fB: -190, g: -6,   dy: 0 },
-  striking: { sh: 1, t1: 192, t2: -10, n: -8, h: -12, ht: 7, st: -7, aF: [146, 52], aB: [-62, -64], lF: [20, -30], lB: [-8, 2],   fF: 20, fB: -190, g: -150, dy: 0 },
+  striking: { tw: 0.5, sh: 1, t1: 192, t2: -10, n: -8, h: -12, ht: 7, st: -7, aF: [146, 52], aB: [-62, -64], lF: [20, -30], lB: [-8, 2],   fF: 20, fB: -190, g: -150, dy: 0 },
   meditate: { sh: 1, t1: 180, t2: 0,  n: 4,  h: 6,   aF: [26, 44],   aB: [-26, -44], lF: [74, -150], lB: [-74, 150], fF: 0, fB: -180, g: -150, dy: 0, air: 22 },
   // attacks: anticipation pose, then the hit pose (with its effect)
-  windup:   { t1: 190, t2: -8, n: 6,  h: -4,  ht: -4, st: 8,  aF: [206, -34], aB: [46, 74],   lF: [30, -36], lB: [-28, 8],  fF: 10, fB: -194, g: -40,  dy: 12, bf: 1 },
-  strike:   { t1: 166, t2: 6,  n: -10, h: -6, ht: 6,  st: -8, aF: [100, 4],   aB: [-50, 30],  lF: [40, -48], lB: [-38, 6],  fF: 0,  fB: -200, g: -4,   dy: 16, fx: 'slash' },
-  coil:     { t1: 185, t2: -5, n: 4,  h: -6,  ht: -3, st: 4,  aF: [28, 112],  aB: [-14, 140], lF: [30, -38], lB: [-28, 8],  fF: 10, fB: -194, g: -6,   dy: 12, bf: 1 },
-  thrust:   { t1: 160, t2: 5,  n: -12, h: -6, ht: 6,  st: -6, aF: [94, -2],   aB: [-60, 36],  lF: [48, -58], lB: [-46, 6],  fF: -4, fB: -204, g: 0,    dy: 20, fx: 'thrust' },
-  chamber:  { t1: 192, t2: -6, n: 6,  h: -4,  ht: 10, st: -4, aF: [44, 86],   aB: [-52, 60],  lF: [96, -122], lB: [-6, 2],  fF: 20, fB: -184, g: -90,  dy: 0 },
-  kick:     { t1: 204, t2: -10, n: 8, h: -6,  ht: 12, st: -6, aF: [58, 44],   aB: [-82, 30],  lF: [94, -4],  lB: [-10, 2],  fF: -10, fB: -184, g: -150, dy: 0, fx: 'kick' },
-  hurt:     { t1: 200, t2: -12, n: 16, h: 16, ht: -6, st: 10, aF: [-30, 40],  aB: [-60, 30],  lF: [16, -24], lB: [-22, 6],  fF: 10, fB: -184, g: -150, dy: 6, expr: 'hurt', fx: 'hit' },
-  victory:  { t1: 184, t2: -5, n: -10, h: -12, ht: 6, st: 10, aF: [180, -8],  aB: [-130, 36], lF: [30, -86], lB: [-8, -26], fF: 20, fB: -170, g: 0,    dy: 0, air: 24, expr: 'happy' },
+  windup:   { tw: 1, t1: 190, t2: -8, n: 6,  h: -4,  ht: -4, st: 8,  aF: [206, -34], aB: [46, 74],   lF: [30, -36], lB: [-28, 8],  fF: 10, fB: -14, g: -40,  dy: 12, bf: 1 },
+  strike:   { tw: 1, t1: 166, t2: 6,  n: -10, h: -6, ht: 6,  st: -8, aF: [100, 4],   aB: [-50, 30],  lF: [40, -48], lB: [-38, 6],  fF: 0,  fB: -20, g: -4,   dy: 16, fx: 'slash' },
+  coil:     { tw: 1, t1: 185, t2: -5, n: 4,  h: -6,  ht: -3, st: 4,  aF: [28, 112],  aB: [-14, 140], lF: [30, -38], lB: [-28, 8],  fF: 10, fB: -14, g: -6,   dy: 12, bf: 1 },
+  thrust:   { tw: 1, t1: 160, t2: 5,  n: -12, h: -6, ht: 6,  st: -6, aF: [94, -2],   aB: [-60, 36],  lF: [48, -58], lB: [-46, 6],  fF: -4, fB: -24, g: 0,    dy: 20, fx: 'thrust' },
+  chamber:  { tw: 1, t1: 192, t2: -6, n: 6,  h: -4,  ht: 10, st: -4, aF: [44, 86],   aB: [-52, 60],  lF: [96, -122], lB: [-6, 2],  fF: 20, fB: -10, g: -90,  dy: 0 },
+  kick:     { tw: 1, t1: 204, t2: -10, n: 8, h: -6,  ht: 12, st: -6, aF: [58, 44],   aB: [-82, 30],  lF: [94, -4],  lB: [-10, 2],  fF: -10, fB: -10, g: -150, dy: 0, fx: 'kick' },
+  hurt:     { tw: 1, t1: 200, t2: -12, n: 16, h: 16, ht: -6, st: 10, aF: [-30, 40],  aB: [-60, 30],  lF: [16, -24], lB: [-22, 6],  fF: 10, fB: -12, g: -150, dy: 6, expr: 'hurt', fx: 'hit' },
+  victory:  { tw: 0.6, t1: 184, t2: -5, n: -10, h: -12, ht: 6, st: 10, aF: [180, -8],  aB: [-130, 36], lF: [30, -86], lB: [-8, -26], fF: 20, fB: -40, g: 0,    dy: 0, air: 24, expr: 'happy' },
   fish:     { sh: 1, t1: 178, t2: 3,  n: 2,  h: 6,   ht: -3, st: 2,  aF: [54, 40],   aB: [20, 98],   lF: [10, -6],  lB: [-8, 2],   fF: 10, fB: -190, g: -36,  dy: 2, prop: 'rod', bf: 1 },
   cook:     { sh: 1, t1: 176, t2: 5,  n: 5,  h: 10,  ht: -3, st: 2,  aF: [40, 54],   aB: [8, 110],   lF: [10, -6],  lB: [-8, 2],   fF: 10, fB: -190, g: -90,  dy: 2, prop: 'pan', bf: 1 },
 };
-const POSE_KEYS = ['t1', 't2', 'n', 'h', 'ht', 'st', 'fF', 'fB', 'g', 'dy', 'air'];
+const POSE_KEYS = ['t1', 't2', 'n', 'h', 'ht', 'st', 'tw', 'fF', 'fB', 'g', 'dy', 'air'];
 function lerpPose(a, b, k) {
   const o = {};
   for (const key of POSE_KEYS) o[key] = (a[key] || 0) + ((b[key] || 0) - (a[key] || 0)) * k;
@@ -273,14 +274,15 @@ function solve(P, B) {
   const head = add(neck, neckA, headR * 0.85);
   const sl = add(neckBase, chestA, -7 * s);                 // the shoulder line
   const st = P.st || 0, ht = P.ht || 0;
-  const shF = add(sl, chestA - 90 + st, 12.5 * W), shB = add(sl, chestA + 90 + st, 12.5 * W);
-  const hipF = add(pelvis, P.t1 - 90 + ht, 7.5 * W), hipB = add(pelvis, P.t1 + 90 + ht, 7.5 * W);
+  const tw = P.tw || 0;
+  const shF = add(sl, chestA - 90 + st, 12.5 * W * (1 - 0.18 * tw)), shB = add(sl, chestA + 90 + st, 12.5 * W * (1 - 0.42 * tw));
+  const hipF = add(pelvis, P.t1 - 90 + ht, 7.5 * W * (1 - 0.2 * tw)), hipB = add(pelvis, P.t1 + 90 + ht, 7.5 * W * (1 - 0.4 * tw));
   const arm = (o, a) => { const e = add(o, a[0], len.ua); return [o, e, add(e, a[0] + a[1], len.fa)]; };
   const leg = (o, l, ft) => {
     const k = add(o, l[0], len.th), an = add(k, l[0] + l[1], len.sh);
     return [o, k, an, add(an, 90 + ft, len.ft)];
   };
-  const J = { pelvis, waist, neckBase, chest: neckBase, neck, head, headR, chestA, neckA, shF, shB, shoulder: shF, hipF, hipB, ht, st,
+  const J = { pelvis, waist, neckBase, chest: neckBase, neck, head, headR, chestA, neckA, shF, shB, shoulder: shF, hipF, hipB, ht, st, tw,
     aF: arm(shF, P.aF), aB: arm(shB, P.aB), lF: leg(hipF, P.lF, P.fF), lB: leg(hipB, P.lB, P.fB) };
   // ground the figure: the lowest sole rests on the floor (unless floating)
   const low = Math.max(J.lF[2][1] + 5, J.lF[3][1] + 4, J.lB[2][1] + 5, J.lB[3][1] + 4);
@@ -516,11 +518,13 @@ function hwAt(v) {
   return TORSO_W[TORSO_W.length - 1][1];
 }
 function torsoMap(J, W) {
+  const tw = J.tw || 0, k = 1 - 0.14 * tw;
   const a = J.pelvis, j = J.waist, b = J.neckBase, c = [2 * j[0] - (a[0] + b[0]) / 2, 2 * j[1] - (a[1] + b[1]) / 2];
   return (u, v, ex, corner) => {
     const w = 1 - v, p = [w * w * a[0] + 2 * w * v * c[0] + v * v * b[0], w * w * a[1] + 2 * w * v * c[1] + v * v * b[1]];
     const dx = 2 * w * (c[0] - a[0]) + 2 * v * (b[0] - c[0]), dy = 2 * w * (c[1] - a[1]) + 2 * v * (b[1] - c[1]), l = Math.hypot(dx, dy) || 1;
-    const hw = (hwAt(v) + (ex || 0)) * W, q = [p[0] - (dy / l) * u * hw, p[1] + (dx / l) * u * hw];
+    u += tw * 0.45 * Math.max(0, 1 - Math.abs(u));
+    const hw = (hwAt(v) + (ex || 0)) * W * k, q = [p[0] - (dy / l) * u * hw, p[1] + (dx / l) * u * hw];
     if (corner) q.push(1);
     return q;
   };
@@ -826,7 +830,7 @@ function drawAvatar(A, P, t, opt) {
     if (!T || T.collar !== 'high') return '';
     const h = T.ch || 6, c = T.cc || T.c, hw = 7.5 * W + ex;
     return frame(J, J.neckBase, cel(`M${r1(-hw)},5 L${r1(-hw + 0.8)},${-h} Q0,${-h - 2.5} ${r1(hw - 0.8)},${-h} L${r1(hw)},5 Q0,8 ${r1(-hw)},5Z`, c, shd(c), 0.8)
-      + lineP(`M0,${-h - 1.5} L0,5`, LINE, 1, 0.6)
+      + lineP(`M${r1(J.tw * 0.45 * hw)},${-h - 1.5} L${r1(J.tw * 0.45 * hw)},5`, LINE, 1, 0.6)
       + (T.chain ? inkLine(`M${r1(-hw + 2)},2 Q${r1(-hw * 0.3)},13 ${r1(hw * 0.2)},4`, T.chain, 1.6) : ''));
   };
 
@@ -854,7 +858,9 @@ function drawAvatar(A, P, t, opt) {
   // the head: a flat round disc, the face, the hair, the hat
   const hair = hairShape(A.hair, !!HAT_COVER[A.hat]);
   const hairS = hair ? cel(hair.d, hair.h.c, hair.h.sh, 0.9) + (hair.lines ? lineP(hair.lines, LINE, 1, 0.55) : '') + lineP('M-13,-15 Q-6,-20.5 3,-21', hair.h.hi, 2.2, 0.85) : '';
-  fig.push(onHead(ink(circ([0, 0], 19), St.body, 2.4) + `<g transform="translate(-3.7,1)">${faceSVG(A.face, P.expr, St.eye)}</g>` + hairS + (HATS[A.hat] || '')));
+  const tw = P.tw || 0;
+  fig.push(onHead(ink(circ([0, 0], 19), St.body, 2.4) + `<g transform="translate(${r1(-3.7 * (1 - tw))},1)">${faceSVG(A.face, P.expr, St.eye)}</g>`
+    + `<g transform="translate(${r1(2.2 * tw)},0) scale(${r1((1 + 0.07 * tw) * 100) / 100},1)">${hairS}</g>` + (HATS[A.hat] || '')));
   fig.push(collar());
   if (backX) fig.push(back.s + back.hand);
   if (frontX) fig.push(front.s);
