@@ -88,19 +88,32 @@ function tipEffect(id) {
   return { rows, text };
 }
 
-function tipHTML(id) {
+// A unique weapon (a copy from the weapon rack, weapons.js) shows its own level, refinement and awakening.
+function armTipRows(a) {
+  const rows = [['atk', 'Weapon attack', fmt(armAtk(a))], ['star', 'Level', `${armLv(a)} / ${ARM_MAX}`]];
+  if (a.ref) rows.push(['upgrade', 'Refinement', `+${a.ref} / ${REF_MAX}`]);
+  if (armEl(a)) rows.push(['awaken', 'Element', ELEMENTS[a.el].name]);
+  if (armFam(a)) rows.push(['star', 'Family', FAMILIES[armFamily(a.id)].name]);
+  return rows;
+}
+
+function tipHTML(id, arm, stackN) {
   const it = ITEMS[id];
   if (!it) return '';
   const r = rarity(id), k = itemKind(id), K = KINDS[k], type = typeLabel(id);
-  const { rows, text } = tipEffect(id);
+  let { rows, text } = tipEffect(id);
+  if (arm) {
+    rows = [...armTipRows(arm), ...rows.filter((r) => r[0] !== 'atk')];
+    text = armFresh(arm) ? (arm.u === S.equipU ? 'Wielded: it becomes a unique weapon as soon as it gains a level.' : '') : `Unique weapon${arm.u === S.equipU ? ' · wielded' : ''}: it keeps its own level, refinement and awakening.`;
+  }
   const src = sourcesOf(it.base || id).slice(0, 2);
-  const n = count(id);
+  const n = stackN != null ? stackN : count(id);
   return `<div class="it-card r${r}"><div class="it-head">${tile(id, null, { cls: 's' })}<div><b class="it-name">${esc(it.name)}</b>
       <small><span class="rar r${r}">${RARITY_NAME[r] || ''}</span> · <span class="kind-lab k-${k}">${ui('k-' + k)}${K.one}</span>${type !== K.one ? ' · ' + esc(type) : ''}</small></div></div>
     ${rows.length ? `<div class="it-rows">${rows.map(([icn, l, v]) => `<div><i>${ui(icn)}</i><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('')}</div>` : ''}
     ${text ? `<p class="it-text">${esc(text)}</p>` : ''}
     ${src.length ? `<div class="it-src"><small>Where to find</small>${src.map((x) => `<div><i>${ic(x.icon[0], x.icon[1])}</i><span>${esc(x.text)}</span>${x.rate != null ? `<b>${fmtRate(x.rate)}</b>` : ''}</div>`).join('')}</div>` : ''}
-    <div class="it-foot"><span>Owned <b>${fmt(n)}</b></span><span>${ui('gold')}<b>${fmt(it.value)}</b> g each</span></div></div>`;
+    <div class="it-foot">${arm ? `<span>${esc(armTag(arm))}</span><span>${ui('gold')}<b>${fmt(it.value * (1 + arm.ref))}</b> g</span>` : `<span>${stackN != null ? 'In this stack' : 'Owned'} <b>${fmt(n)}</b></span><span>${ui('gold')}<b>${fmt(it.value)}</b> g each</span>`}</div></div>`;
 }
 
 // Techniques: what they do at your level, their Lv 5 / Lv 10 tiers, progress and where to get them.
@@ -152,14 +165,17 @@ function techTipHTML(id) {
   };
   // data-tip = item id, data-ttip = technique id
   const show = (t) => {
-    const tech = t.dataset.ttip, id = tech ? 't:' + tech : t.dataset.tip;
+    const tech = t.dataset.ttip, armHost = !tech && t.closest('[data-arm]');
+    const arm = armHost && typeof armOf === 'function' ? armOf(armHost.dataset.arm) : null;   // null for a stack ("s:<id>")
+    const stackN = armHost && !arm && typeof freshArms === 'function' ? freshArms(t.dataset.tip || '').length : null;
+    const id = tech ? 't:' + tech : t.dataset.tip, key = arm ? 'a:' + arm.u : stackN != null ? 's:' + id + ':' + stackN : id;
     if (tech ? !TECHNIQUES[tech] : !ITEMS[id]) return;
     anchor = t;
-    if (id !== tipId || !el.classList.contains('show')) {
+    if (key !== tipId || !el.classList.contains('show')) {
       let html = '';
-      try { html = tech ? techTipHTML(tech) : tipHTML(id); } catch (e) { html = `<div class="it-card"><b class="it-name">${esc(tech ? TECHNIQUES[tech].name : ITEMS[id].name)}</b></div>`; }
+      try { html = tech ? techTipHTML(tech) : tipHTML(id, arm, stackN); } catch (e) { html = `<div class="it-card"><b class="it-name">${esc(tech ? TECHNIQUES[tech].name : ITEMS[id].name)}</b></div>`; }
       el.innerHTML = html;
-      tipId = id;
+      tipId = key;
     }
     el.classList.add('show');
     place();

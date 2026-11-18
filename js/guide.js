@@ -104,10 +104,10 @@ function guideStep() {
     if (S.ui.view !== 'hero') return nav;
     if (selItem && ITEMS[selItem] && ITEMS[selItem].type === 'equip' && count(selItem)) return { sels: ['[data-equip]'], text: 'Click <b>Equip</b>. You fight with it from now on.' };
     if (!['all', 'equip'].includes(S.ui.bank)) return { sels: ['[data-bankf="equip"]'], text: 'Open the <b>Gear</b> tab.' };
-    const sa = typeof selArm !== 'undefined' && selArm && armOf(selArm);
+    const sa = typeof selArmCopy === 'function' && selArmCopy();
     if (sa && sa.u !== S.equipU) return { sels: ['[data-armeq]'], text: 'Click <b>Equip</b>. You fight with it from now on.' };
     const a = S.arms.find((x) => x.u !== S.equipU);
-    return a ? { sels: [`.arm-rack [data-arm="${a.u}"]`], text: `Click your <b>${ITEMS[a.id].name}</b>. Every weapon you own keeps its own level.` } : null;
+    return a ? { sels: [`.arm-rack [data-arm="${armKey(a)}"]`], text: `Click your <b>${ITEMS[a.id].name}</b>. The weapon you wield levels up and becomes unique.` } : null;
   }
   if (G.exped) {
     if (S.exped.ships.length) return { sels: ['.harbour .ships', '#navquest'], info: true, text: `${G.run}<span class="cm-prog">${fmt(st.cur)} / ${fmt(st.g.n)}</span>` };

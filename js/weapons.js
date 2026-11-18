@@ -68,6 +68,11 @@ function newArm(id) {
 }
 const armWorth = (a) => a.awk * 1e9 + a.ref * 1e7 + a.xp;
 const spareArms = (id) => S.arms.filter((a) => a.id === id && a.u !== S.equipU);
+// New copies stack: a copy that never gained battle XP, a refinement or an awakening is interchangeable
+// with every other new copy of the same weapon (the bank shows them as one tile ×N). Once it levels up
+// or is refined it is a unique weapon of its own.
+const armFresh = (a) => !a.xp && !a.ref && !a.awk;
+const freshArms = (id) => spareArms(id).filter(armFresh);
 function equipArm(u) {
   const a = armOf(u);
   if (!a) return;

@@ -11,14 +11,46 @@ function armTile(a, o) {
   const star = a.awk ? `<span class="arm-awk">${'◆'.repeat(a.awk)}</span>` : '';
   return tile(a.id, armTag(a), Object.assign({ tag: 'button', attrs: `data-arm="${a.u}"`, corner: star, cls: `${selArm === a.u ? 'on' : ''} ${a.u === S.equipU ? 'eq' : ''}`, title: `${ITEMS[a.id].name} · ${armTag(a)}` }, o));
 }
-// The rack: every weapon copy you own, best first, above the bank grid.
+// New copies of a weapon share one stack tile (data-arm="s:<item id>"); the wielded copy and every
+// copy that gained a level, a refinement or an awakening get a tile of their own.
+const armKey = (a) => (armFresh(a) && a.u !== S.equipU ? 's:' + a.id : a.u);
+// The copy a rack selection stands for: a stack stands for any of its new copies.
+const selArmCopy = () => (!selArm ? null : selArm.startsWith('s:') ? freshArms(selArm.slice(2))[0] || null : armOf(selArm));
+const armStackTile = (id, n) => tile(id, `×${fmt(n)}`, { tag: 'button', attrs: `data-arm="s:${id}"`, cls: selArm === 's:' + id ? 'on' : '' });
+// The rack: the wielded weapon, then unique weapons (best first), then stacks of new copies.
 UIX.bagTop.push(() => {
   if (!['all', 'equip'].includes(S.ui.bank) || !S.arms.length) return '';
-  const arms = S.arms.slice().sort((x, y) => (y.u === S.equipU) - (x.u === S.equipU) || armWorth(y) - armWorth(x) || ITEMS[y.id].value - ITEMS[x.id].value);
-  return `<div class="arm-rack"><small>Weapons · ${arms.length} · each copy keeps its own level, refinement and awakening</small><div class="arm-grid">${arms.map((a) => armTile(a)).join('')}</div></div>`;
+  const uniq = S.arms.filter((a) => armKey(a) === a.u)
+    .sort((x, y) => (y.u === S.equipU) - (x.u === S.equipU) || armWorth(y) - armWorth(x) || ITEMS[y.id].value - ITEMS[x.id].value);
+  const stacks = {};
+  for (const a of S.arms) if (armKey(a) !== a.u) stacks[a.id] = (stacks[a.id] || 0) + 1;
+  const ids = Object.keys(stacks).sort((x, y) => rarity(y) - rarity(x) || ITEMS[y].value - ITEMS[x].value);
+  return `<div class="arm-rack"><small>Weapons · ${S.arms.length} · new copies stack; one that gains a level or a refinement becomes a unique weapon</small>
+    <div class="arm-grid">${uniq.map((a) => armTile(a)).join('')}${ids.map((id) => armStackTile(id, stacks[id])).join('')}</div></div>`;
 });
 
+// A stack of new copies: equip one, sell or salvage them.
+function armStackHTML(id) {
+  const fresh = freshArms(id), n = fresh.length, it = ITEMS[id];
+  if (!n) return '';
+  const out = [itemHead(id)];
+  out.push(`<div class="dt-stats">${stat('Owned', fmt(n))}${stat('Value', fmt(it.value) + ' g')}${stat('Stack value', fmt(it.value * n) + ' g')}</div>`);
+  out.push(attrList(statRows(it.stats)));
+  const acts = [gbtn('Equip', 'check', `data-armeq="${fresh[0].u}"`)];
+  acts.push(gbtn(`Sell 1 · ${fmt(it.value)}`, 'gold', `data-armsell="${fresh[0].u}"`, 'dark sm'));
+  if (n > 1) acts.push(gbtn(`Sell all ×${fmt(n)}`, 'gold', `data-armsellall="${id}"`, 'dark sm'));
+  if (it.salvage) {
+    acts.push(gbtn('Salvage 1', 'salvage', `data-armsalv="${fresh[0].u}"`, 'dark sm'));
+    if (n > 1) acts.push(gbtn(`Salvage all ×${fmt(n)}`, 'salvage', `data-armsalvall="${id}"`, 'dark sm'));
+  }
+  out.push(`<div class="dt-cta">${acts.join('')}</div>`);
+  out.push(`<p class="muted small">New copies of the same weapon stack. The one you wield earns battle XP: as soon as it gains a level, a refinement or an awakening, it leaves the stack and becomes a unique weapon.</p>`);
+  out.push(`${hdr('Where to find')}${sourcesHTML(id)}`);
+  return `<div class="arm-detail">${out.join('')}</div>`;
+}
+
 function armDetailHTML() {
+  if (selArm && selArm.startsWith('s:')) return armStackHTML(selArm.slice(2));
   const a = selArm && armOf(selArm);
   if (!a) return '';
   const it = ITEMS[a.id], L = armLv(a), eqd = a.u === S.equipU, fam = FAMILIES[armFamily(a.id)];
@@ -72,15 +104,32 @@ on('armlevel', (d) => { if (d.lv % 5 === 0) toast(`${ITEMS[d.a.id].name} reached
 on('refine', (d) => toast(`${ITEMS[d.a.id].name} refined to +${d.a.ref}.`, 'rare'));
 on('awakenarm', (d) => burst(AWK[d.a.awk].name, `${ITEMS[d.a.id].name} · ${d.a.awk === 1 ? ELEMENTS[d.a.el].name : FAMILIES[armFamily(d.a.id)].name}`, itemIc(d.a.id), rc('soul')));
 
+// After selling / salvaging: stay on the stack while copies are left.
+const keepStackSel = () => { if (!selArm || !selArm.startsWith('s:') || !freshArms(selArm.slice(2)).length) selArm = null; dirty = true; };
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('button');
   if (!t || t.disabled) return;
   const d = t.dataset;
   if (d.arm) { selArm = d.arm; selItem = null; dirty = true; }
   else if (d.sel) { selArm = null; }
-  else if (d.armeq) { equipArm(d.armeq); toast(`Equipped ${ITEMS[armOf(d.armeq).id].name}`, 'good'); }
-  else if (d.armsell) { if (confirm('Sell this weapon? Its level and refinement are lost.')) { sellArm(d.armsell); selArm = null; } }
-  else if (d.armsalv) { const got = salvageArm(d.armsalv); if (got) { toast(`Salvaged: ${Object.entries(got).map(([k, n]) => `${ITEMS[k].name} ×${n}`).join(', ')}`, 'good'); selArm = null; } }
+  else if (d.armeq) { equipArm(d.armeq); if (selArm && selArm.startsWith('s:')) selArm = d.armeq; toast(`Equipped ${ITEMS[armOf(d.armeq).id].name}`, 'good'); }
+  else if (d.armsell) {
+    const a = armOf(d.armsell);
+    if (a && (armFresh(a) || confirm('Sell this weapon? Its level and refinement are lost.'))) { sellArm(d.armsell); keepStackSel(); }
+  }
+  else if (d.armsellall) {
+    const all = freshArms(d.armsellall), it = ITEMS[d.armsellall];
+    for (const a of all) sellArm(a.u);
+    toast(`Sold ${it.name} ×${fmt(all.length)} for ${fmt(it.value * all.length)} gold.`, 'good');
+    keepStackSel();
+  }
+  else if (d.armsalv) { const got = salvageArm(d.armsalv); if (got) { toast(`Salvaged: ${Object.entries(got).map(([k, n]) => `${ITEMS[k].name} ×${n}`).join(', ')}`, 'good'); keepStackSel(); } }
+  else if (d.armsalvall) {
+    const tot = {};
+    for (const a of freshArms(d.armsalvall)) { const got = salvageArm(a.u); if (got) for (const k in got) tot[k] = (tot[k] || 0) + got[k]; }
+    if (Object.keys(tot).length) toast(`Salvaged: ${Object.entries(tot).map(([k, n]) => `${ITEMS[k].name} ×${fmt(n)}`).join(', ')}`, 'good');
+    keepStackSel();
+  }
   else if (d.refine) refine(d.refine);
   else if (d.awk) { const [u, el] = d.awk.split(':'); awakenArm(u, el); }
 });
