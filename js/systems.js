@@ -6,7 +6,7 @@
 
 const worldIndex = (r) => WORLD_ORDER.indexOf(r);
 // The newest world you have opened: its relics are what Ascended zones of older worlds drop.
-const frontier = () => WORLD_ORDER.filter(realmOpen).pop() || 'seas';
+const frontier = () => WORLD_ORDER.filter(realmOpen).pop() || WORLD_ORDER[0];
 const relicsOf = (r) => Object.keys(ITEMS).filter((k) => ITEMS[k].relic === r);
 const zoneOfFight = () => (S.combat.zone != null ? ZONES[S.combat.zone] : null);
 

@@ -875,6 +875,7 @@ function drawAvatar(A, P, t, opt) {
   if (weapon) fig.push(`<g transform="translate(${pt(grip)}) rotate(${rotTo(fa + P.g)})">${weaponSVG(weapon)}</g>`);
   if (prop === 'rod') fig.push(rodSVG(grip, fa + P.g, t));
   if (prop === 'pan') fig.push(panSVG(grip, fa + P.g, t));
+  if (prop === 'axe') fig.push(axeSVG(grip, fa + P.g, t));
   if (frontX || weapon || prop) fig.push(front.hand);
   fig.push(G.over);
   let figS = fig.join('');
@@ -1043,6 +1044,13 @@ function rodSVG(hand, a, t) {
     + part(taper([add(hand, a, -10), tip], [4.2, 1.8]), '#8a5a2b', 2.4)
     + `<circle cx="${r1(bob[0])}" cy="${r1(bob[1])}" r="3.4" fill="#ff4d5e" stroke="${OL}" stroke-width="1.6"/><path d="M${r1(bob[0] - 3.4)},${r1(bob[1])} h6.8" stroke="#fff" stroke-width="1.4"/>`;
 }
+// A woodcutter's axe: the blade sits on the leading side of the haft (towards the swing).
+function axeSVG(hand, a, t) {
+  const at = (d, side) => add(add(hand, a, d), a - 90, side);
+  return part(taper([add(hand, a, -12), add(hand, a, 54)], [3.6, 3]), '#8a5a2b', 2.2)
+    + `<path d="M${pt(at(38, 2))} L${pt(at(54, 2))} Q${pt(at(60, 12))} ${pt(at(60, 24))} Q${pt(at(46, 30))} ${pt(at(30, 24))} Q${pt(at(32, 12))} ${pt(at(38, 2))}Z" fill="#cfd6e4" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/>`
+    + `<path d="M${pt(at(32, 22))} Q${pt(at(46, 27))} ${pt(at(59, 22))}" fill="none" stroke="#fff" stroke-width="1.6" opacity=".7"/>`;
+}
 function panSVG(hand, a, t) {
   const end = add(hand, a, 16), c = add(end, a, 15), flip = (t * 1.3) % 1, up = Math.sin(flip * Math.PI) * 26;
   return part(taper([hand, end], [3.6, 3.6]), '#3b3f4a', 2.2)
@@ -1128,7 +1136,7 @@ function basePose(el) {
   if (ctx === 'preview') return el.dataset.pose || A.stance;
   if (ctx === 'battle') return S.combat.zone != null ? 'guard' : A.stance;
   if (ctx === 'enemy') return 'guard';
-  if (S.action) return S.action.skill === 'fishing' ? 'fish' : S.action.skill === 'cooking' ? 'cook' : A.stance;
+  if (S.action) return S.action.skill === 'fishing' ? 'fish' : S.action.skill === 'cooking' ? 'cook' : S.action.skill === 'woodcutting' && POSES.chopUp ? 'chopUp' : A.stance;
   return A.stance;
 }
 function avAnim(el) {

@@ -33,7 +33,7 @@ function defaultState() {
   const skills = {};
   for (const id in SKILLS) skills[id] = { xp: 0 };
   return {
-    v: 5,
+    v: SAVE_V,
     gold: 50,
     bounty: 0,
     items: {},
@@ -42,7 +42,7 @@ function defaultState() {
     action: null,                       // { skill, id, prog }
     combat: { zone: null, enemy: null, eHp: 0, pT: 0, eT: 0, respawn: 0, hp: 50,
               style: 'strength', food: null, kills: {}, log: [] },   // food is equipped by the player
-    equip: { weapon: 'rusty_cutlass', armor: null, accessory: null, gadget: null },
+    equip: { weapon: null, armor: null, accessory: null, gadget: null },   // your first weapon is carved in Shinobi Arts
     fruit: null, fruitRank: 0,          // eating copies of your fruit raises its rank (max FRUIT_RANK_MAX)
     shop: {},
     energy: { capLv: 0, powLv: 0, alloc: {}, lvl: {}, prog: {}, step: '10' },
@@ -731,56 +731,18 @@ function snapshot() {
 }
 function offlineSeconds(elapsed) { return Math.min(elapsed, (BASE_OFFLINE_HOURS + 2 * pl('dilation')) * 3600); }
 function serialize() { S.last = Date.now(); return JSON.stringify(S); }
+// v6 made the Shinobi Lands the first world (Woodcutting start) and the Endless Blue the second.
+// The whole early game changed, so saves from before it start over.
+const SAVE_V = 6;
 function loadFrom(json) {
   const d = JSON.parse(json);
   if (!isObj(d) || !d.skills) throw new Error('Not a valid save');
-  const legacy = !d.unlocked, oldV = d.v || 1;
+  if ((d.v || 1) < SAVE_V) throw new Error('This save comes from an older version of the game');
   S = mergeDefaults(d, defaultState());
   sanitize();
-  if (oldV < 2) migrateV2();
-  if (oldV < 3) migrateV3();
-  if (oldV < 4) migrateV4(oldV);
-  if (oldV < 5) migrateV5(oldV);
-  if (legacy || oldV < 3) checkUnlocks();   // open what older saves already reached, quietly
 }
-// v4: the Endless Blue overhaul added objectives at new positions 5, 6 and 10 (Perfect dish, seasoning,
-// Shiny fish). A v3 save keeps pointing at the same objective; only players before them meet the new ones.
-// (Saves older than v3 were re-pointed by migrateV3, which already reads the new list.)
-function migrateV4(oldV) {
-  if (oldV === 3) for (const at of [5, 6, 10]) if (S.goal >= at) S.goal++;
-  S.v = 4;
-}
-// v5: a slower start added 'Reach Fishing level 5' (position 1) and 'Reach Cooking level 5' (position 3).
-// Saves already past them keep pointing at the same objective.
-function migrateV5(oldV) {
-  if (oldV >= 3) for (const at of [1, 3]) if (S.goal >= at) S.goal++;
-  S.v = 5;
-}
-// v3: Endless Blue first, then Shinobi, Soul and the new worlds. Every world a save already used stays open.
-function migrateV3() {
-  for (const r of WORLD_ORDER.slice(1)) {
-    const used = Object.keys(SKILLS).some((k) => SKILLS[k].realm === r && S.skills[k].xp > 0);
-    if (used || S.unlocked['realm:' + r]) S.gates[r] = 1;
-  }
-  if (S.combat.food && !ITEMS[S.combat.food]) S.combat.food = 'grilled_minnow';
-  S.v = 3;
-  S.goal = 0;
-  skipDoneGoals();
-}
-// v2 moved the start to the Shinobi Lands and put worlds behind gates. Keep everything a player already had.
-function migrateV2() {
-  const used = (r) => Object.keys(SKILLS).some((k) => SKILLS[k].realm === r && S.skills[k].xp > 0) || S.unlocked['realm:' + r];
-  const kz = (z) => (S.combat.kills[z] || 0) > 0;
-  if (used('soul') || kz('districts')) S.gates.soul = 1;
-  if (used('seas') || kz('shoals')) S.gates.seas = 1;
-  if (kz('admiral')) S.gates.rift = 1;
-  for (const id in ITEMS) if (ITEMS[id].type === 'schematic' && (S.stats.made[ITEMS[id].teaches] || S.found[ITEMS[id].teaches])) S.known[id] = 1;
-  if (S.combat.food && !ITEMS[S.combat.food]) S.combat.food = 'soldier_pill';
-  S.v = 2;
-}
-// New objective list: skip the ones an older save has already done (no reward, they were paid before).
-function skipDoneGoals() { let st; while ((st = goalState()) && st.done) S.goal++; }
-
+// A brand-new game.
+function newGame() { S = defaultState(); checkUnlocks(); S.combat.hp = pMaxHp(); }
 
 /* --------------------------------------------------------------- goals */
 function goalState() {

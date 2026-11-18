@@ -525,14 +525,28 @@ const ICONS = {
 };
 // GOALS has no ids: mapped by index.
 ICONS.goal = [
-  'fishing-pole', 'level-end-flag', 'cooking-pot', 'fish-cooked', 'island', 'broadsword', 'bowl-of-rice', 'round-star', 'salt-shaker', 'sailboat', 'shop', 'coral', 'sparkles', 'pirate-captain', 'paper-lantern',
-  'herbs-bundle', 'medicine-pills', 'target-dummy', 'concentration-orb', 'scroll-unfurled', 'meditation', 'battery-100', 'tied-scroll', 'fox', 'portal',
+  'wood-log', 'level-end-flag', 'broad-dagger', 'broadsword', 'herbs-bundle', 'medicine-pills', 'island', 'target-dummy', 'concentration-orb',
+  'scroll-unfurled', 'shop', 'smoking-orb', 'meditation', 'battery-100', 'tied-scroll', 'fox', 'portal',
+  'fishing-pole', 'level-end-flag', 'cooking-pot', 'fish-cooked', 'salt-shaker', 'sailboat', 'broadsword', 'round-star', 'coral', 'sparkles', 'pirate-captain', 'paper-lantern',
   'war-pick', 'spooky-house', 'katana', 'shining-sword', 'recycle', 'trophy', 'drama-masks', 'stone-throne',
   'biceps', 'plant-roots', 'cog', 'aura', 'crown', 'portal',
   'smoking-orb', 'magic-swirl', 'yin-yang', 'oni', 'portal',
   'paw', 'wolf-howl', 'notebook', 'claw', 'portal',
   'stone-block', 'spark-spirit', 'all-seeing-eye', 'open-book', 'stone-tower', 'vortex',
   'falling-star', 'shiny-apple', 'third-eye', 'war-axe', 'bookshelf'];
+/* Woodcutting (Shinobi Lands): drawn for this game. */
+Object.assign(GI, {
+  'wood-log': 'M64 160H292V352H64Q20 256 64 160ZM128 160l-16-50h34l14 50ZM104 214v14h140v-14ZM132 286v14h132v-14ZM292 256A96 96 0 1 1 484 256A96 96 0 1 1 292 256ZM310 256A78 78 0 1 0 466 256A78 78 0 1 0 310 256ZM332 256A56 56 0 1 1 444 256A56 56 0 1 1 332 256ZM352 256A36 36 0 1 0 424 256A36 36 0 1 0 352 256ZM374 256A14 14 0 1 1 402 256A14 14 0 1 1 374 256Z',
+  'wood-axe': 'M98 470l-34-34 248-248 34 34ZM300 150l70-82c58 4 104 46 116 104l-84 66c-6-36-30-66-66-80ZM286 164l40 40 22-22-40-40Z',
+  'bamboo-stalks': 'M136 40h44v116h-44ZM136 168h44v128h-44ZM136 308h44v164h-44ZM234 70h44v96h-44ZM234 178h44v140h-44ZM234 330h44v142h-44ZM332 24h44v128h-44ZM332 164h44v120h-44ZM332 296h44v176h-44ZM180 120q60-60 128-52q-56 34-128 52ZM278 240q58-46 120-40q-50 30-120 40ZM332 110q-60-40-110-30q46 26 110 30Z',
+  'bird-nest': 'M64 270Q256 340 448 270Q440 430 256 444Q72 430 64 270ZM142 236A44 56 0 1 1 230 236A44 56 0 1 1 142 236ZM222 214A46 60 0 1 1 314 214A46 60 0 1 1 222 214ZM300 244A40 52 0 1 1 380 244A40 52 0 1 1 300 244ZM90 300q160 40 332 0v12q-170 44-332 0Z',
+});
+Object.assign(ICONS.item, {
+  pine_log: 'wood-log', cedar_log: 'wood-log', bamboo: 'bamboo-stalks', mistwood: 'wood-log', ironwood: 'wood-log',
+  blossomwood: 'wood-log', spirit_oak: 'wood-log', heartwood: 'wood-log', bird_nest: 'bird-nest', training_kunai: 'broad-dagger',
+});
+ICONS.skill.woodcutting = 'wood-axe';
+ICONS.pet.woodpecker = 'bird-nest';
 // World relics, new pills, iconic gear and their schematics.
 Object.assign(ICONS.item, {
   mist_steel: 'metal-bar', beast_fang: 'fangs', ashen_tail: 'fox-tail', husk_heart: 'mineral-heart', bone_ivory: 'horned-skull',
@@ -684,5 +698,6 @@ const ICON_MARK = {};
     else if (it.type === 'wish') set(id, 'crystal-ball', null, it.star + '★');
     else if (it.type === 'trap') set(id, TRAP[id], 'knapsack', ROMAN[it.tier]);
     else if (id.startsWith('ancient_')) set(id, ICONS.item[id.slice(8)], 'hourglass');
+    else if (ICONS.item[id] === 'wood-log') set(id, 'wood-log', null, ROMAN[SKILLS.woodcutting.actions.findIndex((a) => a.id === id) + 1] || 'VIII');
   }
 })();

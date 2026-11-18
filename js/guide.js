@@ -12,20 +12,36 @@
 // One entry per early objective (same index as GOALS).
 // act/zone: what the objective wants running. nav: how to get there. start: what to click. run: tip while it runs.
 const GUIDE = [
-  { skill: 'fishing', nav: 'Open <b>Fishing</b>. Fish are the start of everything here.', start: 'Click <b>Minnow</b> to start fishing.', run: 'Fishing repeats on its own, even while the game is closed. No need to watch it: come back later and the fish are waiting.' },
-  { skill: 'fishing', nav: 'Back to <b>Fishing</b>.', start: 'Keep fishing <b>Minnows</b>.', run: 'Every catch gives Fishing XP. Higher levels unlock new fish (Reef Bass at level 10), and each fish has its own <b>Mastery</b> that makes it faster. Reach level 5 and a ship cook will want to meet you.' },
-  { act: 'cooking:grilled_minnow', nav: '<b>Cooking</b> is now open. Open it.', start: 'Click <b>Grilled Minnow</b>. Each one uses 1 Minnow.', run: 'Raw fish is useless in a fight, cooked fish heals you. Every dish you cook is stored in your Bank.' },
-  { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook <b>Grilled Minnows</b>.', run: 'Fishing and Cooking feed each other: when the Minnows run out, go fish more, then come back. Reach Cooking level 5 and the harbour guards will let you fight.' },
-  { food: true, nav: 'Before you fight, pack your food: open your <b>Bank</b>.' },
-  { zone: 0, nav: 'Food packed. Open the <b>Battlefield</b>.', start: 'Pick <b>Rookie Shoals</b>. It is an Easy stage.', run: 'Combat is automatic. When your HP drops low you eat your equipped food on your own. Run out and you lose: fish and cook more.' },
-  { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook whatever you can.', run: 'At Cooking level 10, a captain will take you on voyages.' },
-  { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook any dish.', run: 'Now and then a dish comes out <b>Perfect</b>: it heals 50% more. Your first Perfect of each recipe goes in the Perfect Log.' },
-  { spice: true, nav: 'Open <b>Cooking</b>: the spice rack is on the stove.', pick: 'Pick a seasoning in the <b>spice rack</b>. Each dish you cook uses one.', start: 'Now cook any dish: it comes out seasoned.', run: 'Seasoned dishes give a small buff when you eat them in battle. Out of seasoning? Dishes simply come out plain.' },
-  { act: 'voyaging:coastal', nav: '<b>Voyaging</b> is open. Ships bring back gold, chests and relics.', start: 'Click <b>Coastal Run</b>. Each voyage uses 2 Grilled Minnows as supplies.', run: 'Voyages are slow but pay well.' },
+  // Shinobi Lands: wood → first weapon → herbs and pills → first fights
+  { skill: 'woodcutting', nav: 'Open <b>Woodcutting</b>. Everything in the village starts with wood.', start: 'Click <b>Pine Log</b> to start chopping.', run: 'Woodcutting repeats on its own, even while the game is closed. No need to watch it: come back later and the logs are waiting.' },
+  { skill: 'woodcutting', nav: 'Back to <b>Woodcutting</b>.', start: 'Keep chopping <b>Pine Logs</b>.', run: 'Every log gives Woodcutting XP. Higher levels unlock new trees (Cedar at level 10), and each tree has its own <b>Mastery</b> that makes it faster. Reach level 5 and the village carpenter will teach you to carve.' },
+  { act: 'arts:training_kunai', nav: '<b>Shinobi Arts</b> is now open. Open it.', start: 'Click <b>Training Kunai</b>. It uses 5 Pine Logs.', run: 'Your very first weapon is on the bench. Crafting skills turn what you gather into gear, pills and more.' },
+  { equip: true, nav: 'Your kunai is ready: open your <b>Bank</b>.' },
+  { skill: 'herbalism', nav: '<b>Herbalism</b> is open. A weapon will not keep you alive: open it.', start: 'Click <b>Healing Leaf</b> to start foraging.', run: 'Healing Leaves are brewed into Soldier Pills in Shinobi Arts. Pills heal you in battle.' },
+  { act: 'arts:soldier_pill', nav: 'Back to <b>Shinobi Arts</b>.', start: 'Click <b>Soldier Pill</b>. Each one uses 2 Healing Leaves.', run: 'Brew 5 pills and the instructors will let you fight. Out of leaves? Go back to Herbalism, then come back.' },
+  { food: true, nav: 'Before you fight, pack your pills: open your <b>Bank</b>.' },
+  { zone: 0, nav: 'Pills packed. Open the <b>Battlefield</b>.', start: 'Pick the <b>Training Grounds</b>. It is an Easy stage.', run: 'Combat is automatic. When your HP drops low you eat a pill on your own. Run out and you lose: forage and brew more.' },
+  { act: 'chakra:chakra_shard', nav: '<b>Chakra Focus</b> is open. Open it.', start: 'Click <b>Chakra Shard</b> to meditate.', run: 'Chakra goes into kunai, armor and every technique scroll. At level 5 you can learn techniques.' },
+  { skill: 'chakra', nav: 'Back to <b>Chakra Focus</b>.', start: 'Keep meditating.', run: 'At Chakra Focus level 5 your chakra is steady enough to shape techniques. Brew a scroll in Shinobi Arts, then equip it on the Battlefield.' },
   { market: true, nav: 'The <b>Market</b> is open. Spend your gold there.' },
-  { zone: 1, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in <b>Merfolk Reef</b>.', run: 'Every world ends with a guardian. Beat the Admiral to reach a new world.' },
+  { zone: 1, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in the <b>Misty Forest</b>.', run: 'Every world ends with a guardian. Beat the Ashen Fox to reach a new world.' },
+  { skill: 'chakra', nav: 'Open <b>Chakra Focus</b>.', start: 'Meditate on anything.', run: 'At level 15 you can train your Inner Power.' },
+  { power: true, nav: '<b>Inner Power</b> is open. Open it.' },
+  { zone: 2, nav: 'Open the <b>Battlefield</b>.', start: 'Fight in <b>Fang Ravine</b>.', run: 'Some foes drop a <b>schematic</b>: it teaches a recipe for an iconic weapon forever.' },
+  { zone: 3, nav: 'Time for the guardian: open the <b>Battlefield</b>.', start: 'Challenge the <b>Ashen Fox Beast</b>. Bring plenty of pills.', run: 'Its relic, the Ashen Fox Tail, is part of the gate offering.' },
+  { gate: true, nav: 'Open the <b>Overview</b>: the gate to the next world is there.' },
+  // Endless Blue
+  { skill: 'fishing', nav: 'Welcome to the Endless Blue. Open <b>Fishing</b>.', start: 'Click <b>Minnow</b> to cast your line.', run: 'A new world, a new food: fish. Catch 10 Minnows.' },
+  { skill: 'fishing', nav: 'Back to <b>Fishing</b>.', start: 'Keep fishing.', run: 'Reach Fishing level 5 and the ship cook will want to meet you.' },
+  { act: 'cooking:grilled_minnow', nav: '<b>Cooking</b> is now open. Open it.', start: 'Click <b>Grilled Minnow</b>. Each one uses 1 Minnow.', run: 'Cooked fish heals in battle, like your pills, and feeds the crew on voyages.' },
+  { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook whatever you can.', run: 'At Cooking level 10, a captain will take you on voyages. The spice rack opens at level 8.' },
+  { spice: true, nav: 'Open <b>Cooking</b>: the spice rack is on the stove.', pick: 'Pick a seasoning in the <b>spice rack</b>. Each dish you cook uses one.', start: 'Now cook any dish: it comes out seasoned.', run: 'Seasoned dishes give a small buff when you eat them in battle. Out of seasoning? Dishes simply come out plain.' },
+  { act: 'voyaging:coastal', nav: '<b>Voyaging</b> is open. Ships bring back gold, chests and relics.', start: 'Click <b>Coastal Run</b>. It needs 2 Grilled Minnows and 2 Pine Logs to patch the hull.', run: 'Voyages are slow but pay well. Your Woodcutting keeps the ships afloat.' },
+  { zone: 4, nav: 'Open the <b>Battlefield</b>.', start: 'Fight at <b>Rookie Shoals</b>.', run: 'The sea is much tougher than the forest. Bring your best food.' },
+  { skill: 'cooking', nav: 'Back to <b>Cooking</b>.', start: 'Cook any dish.', run: 'Now and then a dish comes out <b>Perfect</b>: it heals 50% more. Your first Perfect of each recipe goes in the Perfect Log.' },
+  { zone: 5, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in <b>Merfolk Reef</b>.', run: 'Beat the Admiral to reach the next world.' },
   { skill: 'fishing', nav: 'Open <b>Fishing</b>.', start: 'Fish anything. Every catch has a small chance to be <b>Shiny</b>.', run: 'Shiny fish glitter on the line. Mastery of a fish raises its odds, and a full Shiny Log gives big bonuses.' },
-  { zone: 3, nav: 'Time for the guardian: open the <b>Battlefield</b>.', start: 'Challenge the <b>Admiral\'s Flagship</b>. Bring plenty of food.', run: 'Its relic, the Heart of the Tide, is part of the gate offering.' },
+  { zone: 7, nav: 'Time for the guardian: open the <b>Battlefield</b>.', start: 'Challenge the <b>Admiral\'s Flagship</b>. Bring plenty of food.', run: 'Its relic, the Heart of the Tide, is part of the gate offering.' },
   { gate: true, nav: 'Open the <b>Overview</b>: the gate to the next world is there.' },
 ];
 
@@ -64,6 +80,8 @@ function guideStep() {
     const a = findAction(sk, id);
     if (actState(sk, a) === 'missing') {
       const need = Object.entries(a.in).filter(([k, n]) => stock(k) < n).map(([k, n]) => `${n} ${ITEMS[k].name}`).join(', ');
+      const src = Object.keys(a.in).filter((k) => stock(k) < a.in[k]).map((k) => Object.keys(SKILLS).find((sk2) => isUnlocked('skill:' + sk2) && SKILLS[sk2].actions.some((x) => x.out && x.out[k]))).find(Boolean);
+      if (src) return { sels: navSels(`realm:${SKILLS[src].realm}:${src}`), text: `You need <b>${need}</b> first. Open <b>${SKILLS[src].name}</b> and gather some, then come back.` };
       return { sels: [`[data-card="${G.act}"]`], text: `You need <b>${need}</b> first. Look at the item's sources in the Bank, or check the objective list.` };
     }
     return { sels: [`[data-card="${G.act}"]`], text: G.start };
@@ -74,6 +92,7 @@ function guideStep() {
     const best = SKILLS[G.skill].actions.filter((a) => actState(G.skill, a) === 'ready').pop();
     if (best) return { sels: [`[data-card="${G.skill}:${best.id}"]`], text: G.start };
     if (G.skill === 'cooking') return { sels: navSels('realm:seas:fishing'), text: 'Out of fish! Open <b>Fishing</b> and catch more Minnows, then come back to cook.' };
+    if (G.skill === 'arts') return { sels: navSels('realm:shinobi:herbalism'), text: 'Out of materials! Gather more, then come back.' };
     return null;
   }
   if (G.zone != null) {
@@ -83,7 +102,7 @@ function guideStep() {
   }
   if (G.equip) {
     if (S.ui.view !== 'hero') return nav;
-    if (selItem && ITEMS[selItem] && ITEMS[selItem].type === 'equip' && count(selItem)) return { sels: ['[data-equip]'], text: 'Click <b>Equip</b>. Your damage goes up right away.' };
+    if (selItem && ITEMS[selItem] && ITEMS[selItem].type === 'equip' && count(selItem)) return { sels: ['[data-equip]'], text: 'Click <b>Equip</b>. You fight with it from now on.' };
     if (!['all', 'equip'].includes(S.ui.bank)) return { sels: ['[data-bankf="equip"]'], text: 'Open the <b>Gear</b> tab.' };
     const id = Object.keys(S.items).find((k) => ITEMS[k].slot === 'weapon');
     return id ? { sels: [`.bag-grid [data-sel="${id}"]`], text: `Click your <b>${ITEMS[id].name}</b> to see what it does.` } : null;
@@ -95,7 +114,7 @@ function guideStep() {
   if (G.food) {
     if (S.ui.view !== 'hero') return nav;
     const id = Object.keys(S.items).find((k) => ITEMS[k].type === 'food');
-    if (!id) return { sels: ['.nav-row[data-nav="realm:seas:cooking"]'], text: 'You have no cooked food left. Cook some first.' };
+    if (!id) return { sels: navSels('realm:shinobi:arts'), text: 'You have no pills left. Brew some first.' };
     if (selItem === id) return { sels: ['[data-setfood]'], text: 'Click <b>Equip as battle food</b>. In battle you eat it on your own when your HP gets low.' };
     if (!['all', 'food'].includes(S.ui.bank)) return { sels: ['[data-bankf="food"]'], text: 'Open the <b>Food</b> tab.' };
     return { sels: [`.bag-grid [data-sel="${id}"]`], text: `Click your <b>${ITEMS[id].name}</b>.` };
@@ -186,43 +205,49 @@ function showWelcome() {
     <div class="wl-ic">${ui('hero')}</div>
     <small>Tri-Realm Idle</small>
     <h2>Welcome, Wanderer</h2>
-    <p>Seven worlds have collided. You wash ashore in the <b>Endless Blue</b> with a rusty cutlass and a fishing line. Each world is sealed by a guardian.</p>
+    <p>Seven worlds have collided. You wake up at the edge of a village hidden in the forest of the <b>Shinobi Lands</b>, with nothing but a hatchet. Each world is sealed by a guardian.</p>
     <div class="wl-goal"><small>Your goal</small><b>Grow strong enough to beat every guardian and cross all seven worlds.</b></div>
     <small class="wl-sub">How you get stronger</small>
     <ol class="wl-loop">
-      ${step(ic('skill', 'fishing'), 'Fish', 'Catch fish. It is how everything starts.')}
-      ${step(ic('skill', 'cooking'), 'Cook', 'Cooked fish becomes food that heals you.')}
-      ${step(ui('battle'), 'Fight', 'Equip your food and fight. Foes drop gear, gold and relics.')}
+      ${step(ic('skill', 'woodcutting'), 'Chop', 'Fell trees. Wood is how everything starts.')}
+      ${step(ic('skill', 'arts'), 'Craft', 'Carve your first weapon, then brew pills that heal you.')}
+      ${step(ui('battle'), 'Fight', 'Equip your weapon and pills and fight. Foes drop gear, gold and relics.')}
     </ol>
     <ul class="wl-points">
       <li><i>${ui('time')}</i><span><b>It plays itself.</b> An activity repeats on its own, even while the game is closed (up to 12 hours).</span></li>
       <li><i>${ui('quest')}</i><span><b>Follow the Objective</b> at the top of the menu. New skills and menus open one at a time.</span></li>
     </ul>
-    <div class="wl-cta">${gbtn('Cast your line', 'play', 'data-welcome="go"')}${gbtn('Look around first', '', 'data-welcome="skip"', 'dark')}</div>
+    <div class="wl-cta">${gbtn('Pick up the hatchet', 'play', 'data-welcome="go"')}${gbtn('Look around first', '', 'data-welcome="skip"', 'dark')}</div>
   </div>`, null, true);
 }
 function welcomeChoice(go) {
   S.ui.welcomed = 1;
   $('#modal').classList.remove('show', 'nofoot');
-  if (go) { setView('realm:seas:fishing'); startAction('fishing', 'minnow'); }
+  if (go) { setView('realm:shinobi:woodcutting'); startAction('woodcutting', 'pine_log'); }
   else setView('home');
 }
 
 /* ------------------------------------------------------------ first-time scenes */
 // The two early unlocks that teach the core loop get a short scene instead of a banner.
 const INTRO = {
+  'skill:arts': { icon: () => ic('skill', 'arts'), kicker: 'New skill', title: 'Shinobi Arts',
+    text: 'The village carpenter looks at your pile of logs. "Good wood. Let me show you how a shinobi makes their own tools."',
+    points: [[() => ic('item', 'pine_log'), '5 Pine Logs → 1 Training Kunai', 'Your very first weapon.'],
+             [() => ui('battle'), 'Gear and pills', 'Arts makes weapons, armor and the pills that heal you.'],
+             [() => ui('lock'), 'Carve a Training Kunai', 'Then an old medic will teach you Herbalism.']],
+    go: 'realm:shinobi:arts', btn: 'Start carving' },
   'skill:cooking': { icon: () => ic('skill', 'cooking'), kicker: 'New skill', title: 'Cooking',
     text: 'A ship cook eyes your bucket. "Raw fish will not keep you alive out there. Let me show you."',
     points: [[() => ic('item', 'minnow'), '1 Minnow → 1 Grilled Minnow', 'Each dish uses fish you caught.'],
-             [() => ui('hp'), 'Food heals', 'Cooked food restores HP in battle.'],
-             [() => ui('lock'), 'Reach Cooking level 5', 'Then the harbour guards will let you fight.']],
+             [() => ui('hp'), 'Food heals', 'Cooked food restores HP in battle, like your pills.'],
+             [() => ui('lock'), 'Reach Cooking level 10', 'Then a captain will take you on voyages.']],
     go: 'realm:seas:cooking', btn: 'Start cooking' },
   'feature:battle': { icon: () => ui('battle'), kicker: 'New menu', title: 'The Battlefield',
-    text: 'With food in your bag, the harbour guards wave you through to the shoals. Combat runs on its own: you only prepare.',
-    points: [[() => ui('food'), 'Equip your food', 'Bank → your Grilled Minnows → Equip as battle food.'],
-             [() => ui('hp'), 'Auto-eat', 'You eat when your HP drops low. No food left means a lost fight.'],
+    text: 'Armed and with pills in your pouch, the instructors let you train with real opponents. Combat runs on its own: you only prepare.',
+    points: [[() => ui('food'), 'Equip your pills', 'Bank → your Soldier Pills → Equip as battle food.'],
+             [() => ui('hp'), 'Auto-eat', 'You eat when your HP drops low. Nothing left means a lost fight.'],
              [() => ui('gold'), 'Loot', 'Foes drop gold, gear and the materials for new worlds.']],
-    go: 'hero', btn: 'Equip my food' },
+    go: 'hero', btn: 'Equip my pills' },
 };
 function showIntro(id) {
   const I = INTRO[id];

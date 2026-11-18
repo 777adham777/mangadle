@@ -330,12 +330,12 @@ function spotStats(skill) {
   const a = S.action && S.action.skill === skill ? findAction(skill, S.action.id) : null;
   if (!a) {
     if (S.action) return `<div class="spot-idle">${ui('info')}<span>Busy with <b>${esc(SKILLS[S.action.skill].name)} · ${esc(findAction(S.action.skill, S.action.id).name)}</b>. Pick a card below to switch.</span></div>`;
-    return `<div class="spot-idle">${ui('play')}<span>${{ fishing: 'Pick a fish below to cast your line.', cooking: 'Pick a recipe below to light the stove.', voyaging: 'Pick a voyage below to set sail.' }[skill]}</span></div>`;
+    return `<div class="spot-idle">${ui('play')}<span>${{ fishing: 'Pick a fish below to cast your line.', cooking: 'Pick a recipe below to light the stove.', voyaging: 'Pick a voyage below to set sail.', woodcutting: 'Pick a tree below to start chopping.' }[skill]}</span></div>`;
   }
   const f = farmRates(skill, a), outId = a.out ? Object.keys(a.out)[0] : null;
   return `<div class="spot-run"><span class="pbar"><i data-nowfill></i></span><span class="fm-time" data-nowtime></span></div>
     <div class="spot-stats">${outId ? stat('Per hour', fmt(f.itemsh)) : stat('Voyages / hour', fmt(f.per))}${stat('XP / hour', fmt(f.xph))}${stat('Next level', '—', 'data-nextlv')}
-      ${a.in ? stat('Can make', fmt(f.can), 'data-canmake') + stat('Runs out', fmtTime(f.runout), 'data-runout') : ''}${outId ? stat('Owned', fmt(familyCount(outId)), `data-fam="${outId}" title="Every version: plain, ${skill === 'fishing' ? 'shiny' : 'perfect and seasoned'}"`) : ''}
+      ${a.in ? stat('Can make', fmt(f.can), 'data-canmake') + stat('Runs out', fmtTime(f.runout), 'data-runout') : ''}${outId ? stat('Owned', fmt(familyCount(outId)), `data-fam="${outId}"${QUALITY[skill] ? ` title="Every version: plain, ${skill === 'fishing' ? 'shiny' : 'perfect and seasoned'}"` : ''}`) : ''}
       ${gbtn('Stop', 'stop', 'data-stop', 'dark sm')}</div>`;
 }
 function spotHTML(skill) {

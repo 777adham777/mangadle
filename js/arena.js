@@ -54,7 +54,7 @@ const meFighter = () => document.querySelector('.ar-floor .fighter.me');
 const foeFighter = () => document.querySelector('.ar-floor .fighter.enemy');
 function stageHTML() {
   const C = S.combat, e = curEnemy(), z = C.zone != null ? ZONES[C.zone] : null;
-  const realm = z ? z.realm : 'seas';
+  const realm = z ? z.realm : WORLD_ORDER[0];
   const meHud = `<div class="fhud me f-body"><div class="f-name"><b>You</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(pMaxHit())}</span><span title="Defense">${ui('def')}${fmt(pDef())}</span><span title="Attack speed">${ui('spd')}${pSpeed().toFixed(1)}s</span>${pDodge() ? `<span title="Dodge">${ui('dodge')}${pct(pDodge())}</span>` : ''}</span></div>
       <div class="hpbar"><i data-php></i><span data-phptext></span></div><div class="atkbar"><i data-patk></i></div>${uix('stageMe')}</div>`;
   let foeHud = '', foe = '';

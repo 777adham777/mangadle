@@ -1263,8 +1263,8 @@ function boot() {
   installSprite();
   let raw = null;
   try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { /* ignore */ }
-  if (raw) { try { loadFrom(raw); } catch (e) { S = defaultState(); } }
-  else { S = defaultState(); checkUnlocks(); S.combat.hp = pMaxHp(); }
+  if (raw) { try { loadFrom(raw); } catch (e) { newGame(); } }
+  else newGame();
   normalizeView();
   renderHud();
 
