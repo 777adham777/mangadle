@@ -405,8 +405,8 @@ VIEWS.home = () => {
     <section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${r === 'combat' ? ui('battle') : ic('realm', r)}${r === 'combat' ? 'Combat' : REALMS[r].name}</h3>
       ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
     ${gateHTML() ? '' : nextUnlockHTML('win ov-next')}</div>
-  <section class="win">${hdr('Adventurer')}
-    <div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Rebirths', fmt(S.rebirths))}</div>
+  <section class="win adv-win">${hdr('Adventurer')}
+    ${featureOpen('avatar') ? `<button class="adv-av" data-nav="hero:avatar" title="Customize your avatar">${avatarSVG()}</button>` : ''}<div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Rebirths', fmt(S.rebirths))}</div>
   </section>`;
 };
 
@@ -556,7 +556,7 @@ function zoneRow(z, i) {
 function stageHTML() {
   const C = S.combat, e = curEnemy();
   const me = `<div class="fighter me">
-    <div class="f-art" data-portrait="player">${ui('hero')}</div>
+    <div class="f-art av-art" data-portrait="player">${typeof avatarSVG === 'function' ? avatarSVG() : ui('hero')}</div>
     <div class="f-body"><div class="f-name"><b>You</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(pMaxHit())}</span><span title="Defense">${ui('def')}${fmt(pDef())}</span><span title="Attack speed">${ui('spd')}${pSpeed().toFixed(1)}s</span>${pDodge() ? `<span title="Dodge">${ui('dodge')}${pct(pDodge())}</span>` : ''}</span></div>
       <div class="hpbar"><i data-php></i><span data-phptext></span></div><div class="atkbar"><i data-patk></i></div>${uix('stageMe')}</div>
   </div>`;
@@ -578,11 +578,13 @@ function logHTML() { return S.combat.log.map((l) => `<div class="${l.c}">${esc(l
 
 /* ------------------------------------------------------------- bank & gear */
 const heroTabs = (tab) => `<nav class="seg big-seg">
-  <button class="${tab !== 'collection' ? 'on' : ''}" data-nav="hero">${ui('hero')}<span>Bank & Gear</span></button>
+  <button class="${!tab ? 'on' : ''}" data-nav="hero">${ui('hero')}<span>Bank & Gear</span></button>
+  ${featureOpen('avatar') ? `<button class="${tab === 'avatar' ? 'on' : ''}" data-nav="hero:avatar">${ui('avatar')}<span>Avatar</span></button>` : ''}
   ${featureOpen('collection') ? `<button class="${tab === 'collection' ? 'on' : ''}" data-nav="hero:collection">${ui('collection')}<span>Collection</span><em>${Math.floor(collectionPct() * 100)}%</em></button>` : `<button class="locked" data-locked="collection" title="${esc(lockedNote('collection'))}">${ui('lock')}<span>Collection</span></button>`}</nav>`;
 const BAG_TABS = [['all', 'equip', 'All'], ['res', 'gem', 'Materials'], ['gem', 'gem', 'Gems'], ['chest', 'chest', 'Treasure'], ['food', 'food', 'Food'], ['meal', 'meal', 'Meals'], ['seed', 'farm', 'Seeds'], ['equip', 'weapon', 'Gear'], ['fruit', 'fruit', 'Fruit']];
 VIEWS.hero = (tab) => {
   if (tab === 'collection') return collectionHTML();
+  if (tab === 'avatar') return avatarHTML();
   const ids = Object.keys(S.items).filter((k) => S.ui.bank === 'all' || ITEMS[k].type === S.ui.bank)
     .sort((a, b) => rarity(b) - rarity(a) || ITEMS[b].value - ITEMS[a].value);
   const worth = Object.keys(S.items).reduce((a, k) => a + ITEMS[k].value * S.items[k], 0);

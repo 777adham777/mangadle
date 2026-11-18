@@ -494,6 +494,7 @@ const ICONS = {
     home: 'house',
     battle: 'crossed-swords',
     hero: 'swordman',
+    avatar: 'swordman',
     power: 'rolling-energy',
     market: 'shop',
     collection: 'bookshelf',

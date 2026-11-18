@@ -27,7 +27,7 @@ const GUIDE = [
 /* ------------------------------------------------------------ feature gates */
 // Menus open through UNLOCKS (data.js), one at a time, with the objective that introduces them.
 const featureOpen = (f) => isUnlocked('feature:' + f);
-const VIEW_FEATURE = { 'hero:collection': 'collection', power: 'power', market: 'market', battle: 'battle' };
+const VIEW_FEATURE = { 'hero:collection': 'collection', 'hero:avatar': 'avatar', power: 'power', market: 'market', battle: 'battle' };
 const featureOfView = (key) => VIEW_FEATURE[key] || null;
 function lockedNote(id) {
   const u = UNLOCK_BY[id.includes(':') ? id : 'feature:' + id];

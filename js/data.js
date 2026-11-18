@@ -620,6 +620,8 @@ const UNLOCKS = [
     hint: () => 'Catch 10 Minnows', why: 'A ship cook trades you a pan for a good catch.' },
   { id: 'feature:battle',     name: 'Battlefield',     need: () => (S.stats.made.grilled_minnow || 0) >= 5 || S.stats.kills > 0,
     hint: () => 'Cook 5 Grilled Minnows', why: 'With food in your bag, the harbour guards let you fight at the shoals.' },
+  { id: 'feature:avatar',     name: 'Avatar',          need: () => (S.combat.kills.shoals || 0) >= 10 || S.stats.kills >= 10,
+    why: 'A harbour painter wants to sketch the new fighter. Dress your hero in Bank → Avatar; feats across the worlds unlock new looks.' },
   { id: 'skill:voyaging',     name: 'Voyaging',        need: () => skillLv('cooking') >= 10 || usedSkill('voyaging'),
     hint: () => 'Reach Cooking level 10', why: 'With proper provisions, a captain agrees to take you aboard.' },
   { id: 'feature:collection', name: 'Collection Log',  need: () => Object.keys(S.found).length >= 12,
