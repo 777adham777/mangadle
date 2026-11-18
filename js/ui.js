@@ -419,7 +419,6 @@ VIEWS.realm = (realm, skill) => {
   const active = S.action && S.action.skill === skill;
   return `<div class="sk-layout" style="--rc:${rc(realm)}"><div class="sk-col">
   <section class="sk-banner" style="--rc:${rc(realm)}">
-    <div class="sk-bg">${sceneHTML(realm, 'mini')}</div>
     <div class="sk-ic">${ic('skill', skill)}</div>
     <div class="sk-main"><small>${R.name}</small><h1>${s.name}</h1>
       <div class="sk-xp"><span class="pbar"><i data-xpbar="${skill}"></i></span><span class="sk-xpt" data-xptext="${skill}">${xpText(b)}</span></div>
@@ -762,7 +761,7 @@ VIEWS.settings = () => `
     <div class="btn-row">${gbtn('Save now', 'check', 'data-save', 'dark')}${gbtn('Export', 'log', 'data-export', 'dark')}${gbtn('Import', 'open', 'data-import', 'dark')}${gbtn('Hard reset', 'close', 'data-wipe', 'danger')}</div>
     <textarea id="savebox" rows="5" placeholder="Export puts your save here. To import, paste a save here and press Import."></textarea>
   </section>
-  <section class="win">${hdr('Credits')}<p class="muted small">Icons by Lorc, Delapouite, Skoll, Caro Asercion, sbed, Cathelineau, DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue and Zeromancer from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. World backdrops are public-domain landscape prints by Katsushika Hokusai and Utagawa Hiroshige (The Metropolitan Museum of Art and Cleveland Museum of Art open access, via Wikimedia Commons).</p></section>`;
+  <section class="win">${hdr('Credits')}<p class="muted small">Icons by Lorc, Delapouite, Skoll, Caro Asercion, sbed, Cathelineau, DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue and Zeromancer from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. World scenes are generated in-game.</p></section>`;
 
 /* =============================================================== activity bar + objective */
 function nowHTML() {
@@ -986,6 +985,13 @@ function showRealmOpen(r) {
 }
 
 /* =============================================================== render + update */
+// Full-screen world scene behind the whole UI; rebuilt only when the world changes.
+function setBackdrop(kind) {
+  const el = $('#backdrop');
+  if (!el || el.dataset.kind === kind || typeof sceneHTML !== 'function') return;
+  el.dataset.kind = kind;
+  el.innerHTML = `<div class="bd-scene">${sceneHTML(kind, 'full')}${particlesHTML(kind)}</div>`;
+}
 let lastUnlocked = 0, sideDirty = false, bankSig = '', lastLogVer = -1, lastFoodSig = '';
 function render() {
   dirty = false; sideDirty = false;
@@ -993,6 +999,7 @@ function render() {
   renderRail();
   document.body.style.setProperty('--rc', viewAccent());
   const [name, a1, a2] = S.ui.view.split(':');
+  setBackdrop(name === 'realm' ? a1 : name === 'battle' ? 'battle' : 'hub');
   const main = $('#main');
   const scroll = main.scrollTop;
   const box = $('#savebox'), boxVal = box ? box.value : null;

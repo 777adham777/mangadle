@@ -1486,11 +1486,46 @@ button.acard:hover { border-color: var(--line2); background: #202126; }
   .nb { border-radius: 2px; }
 }
 
-/* ---------- painted world backdrops (public-domain landscape prints) */
-.scene-art { width: 100%; height: 100%; background-size: cover; background-repeat: no-repeat; filter: saturate(0.95) brightness(0.8) contrast(1.05); }
-.sk-banner { min-height: 168px; }
-.sk-bg:has(.scene-art) { inset: -14px -18px -40px -18px; opacity: 0.85;
-  -webkit-mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%); mask-image: linear-gradient(180deg, #000 0%, #000 55%, transparent 100%); }
-.sk-bg:has(.scene-art)::after { content: ''; position: absolute; inset: 0;
-  background: linear-gradient(90deg, rgba(11, 11, 14, 0.92) 0%, rgba(11, 11, 14, 0.62) 38%, rgba(11, 11, 14, 0.15) 75%, rgba(11, 11, 14, 0.35) 100%); }
-@media (max-width: 860px) { .sk-banner { min-height: 0; } }
+/* ---------- world scene behind the whole UI
+   The current world's SVG scene fills the viewport (overview/menus use the hub
+   scene, the battlefield its own). A shade keeps text readable: lighter at the
+   top so the sky reads behind page titles, darker where the content sits.
+   Panels turn slightly see-through so the scene carries across the page. */
+#backdrop { position: fixed; inset: 0; z-index: 0; overflow: hidden; pointer-events: none; background: var(--bg); }
+.bd-scene { position: absolute; inset: 0; animation: bdIn 0.6s ease-out; }
+.bd-scene .scene-svg { position: absolute; inset: 0; width: 100%; height: 100%; display: block; }
+#backdrop::after {
+  content: ''; position: absolute; inset: 0;
+  background:
+    linear-gradient(180deg, rgba(10, 10, 13, 0.05) 0%, rgba(10, 10, 13, 0.25) 30%, rgba(10, 10, 13, 0.42) 65%, rgba(10, 10, 13, 0.35) 100%),
+    radial-gradient(ellipse 80% 60% at 50% 40%, transparent 40%, rgba(6, 6, 9, 0.35) 100%);
+}
+@keyframes bdIn { from { opacity: 0; } }
+body { background: var(--bg); }
+#rail, #main { z-index: 1; }
+#hud { z-index: 30; background: rgba(12, 12, 15, 0.8); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+#rail { background: rgba(12, 12, 15, 0.8); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+.win { background: linear-gradient(180deg, rgba(26, 27, 32, 0.86), rgba(18, 19, 23, 0.9)); }
+.acard { background: linear-gradient(180deg, rgba(27, 28, 33, 0.9), rgba(20, 21, 25, 0.92)); }
+.acard[data-state="locked"], .acard[data-state="schem"] { background: rgba(12, 12, 15, 0.55); }
+.farm-win, .ov-top > .win:first-child:has(.farm) { background: linear-gradient(90deg, rgba(60, 86, 40, 0.5), rgba(20, 21, 25, 0.88) 70%); }
+.detail { background: rgba(22, 23, 27, 0.92); }
+.sk-banner { min-height: 150px; }
+.sk-banner .pill { background: rgba(10, 10, 13, 0.6); }
+.sk-main h1, .pt-txt h1 { text-shadow: 0 2px 16px rgba(0, 0, 0, 0.7); }
+
+/* drifting motes over the scene */
+.particles { position: absolute; inset: 0; }
+.pt { position: absolute; border-radius: 50%; opacity: 0; will-change: transform, opacity; }
+.pt.mote-rise { animation: moteRise linear infinite; }
+.pt.mote-fall { animation: moteFall linear infinite; }
+.pt.mote-drift { animation: moteDrift ease-in-out infinite; }
+@keyframes moteRise { 0% { opacity: 0; transform: translateY(0); } 15% { opacity: 0.8; } 100% { opacity: 0; transform: translateY(-38vh); } }
+@keyframes moteFall { 0% { opacity: 0; transform: translate(0, 0) rotate(0); } 15% { opacity: 0.85; } 100% { opacity: 0; transform: translate(-12vw, 40vh) rotate(240deg); } }
+@keyframes moteDrift { 0%, 100% { opacity: 0; transform: translate(0, 0); } 30%, 70% { opacity: 0.7; } 50% { transform: translate(6vw, -3vh); } }
+@media (prefers-reduced-motion: reduce) { .particles { display: none; } }
+@media (max-width: 860px) {
+  #rail { background: rgba(12, 12, 15, 0.95); }
+  #tabbar { position: fixed; z-index: 40; background: rgba(12, 12, 15, 0.9); -webkit-backdrop-filter: blur(10px); backdrop-filter: blur(10px); }
+  .sk-banner { min-height: 0; }
+}

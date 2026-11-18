@@ -95,6 +95,36 @@ function sceneWaves(seed, y0, n, color) {
   return `<g>${g}</g>`;
 }
 
+// flat-topped butte, centred on x, base at y
+function sceneMesa(x, y, w, h, fill) {
+  return `<path d="M${x - w / 2} ${y} L${x - w * 0.38} ${y - h * 0.82} L${x - w * 0.33} ${y - h} L${x + w * 0.3} ${y - h} L${x + w * 0.36} ${y - h * 0.86} L${x + w / 2} ${y} Z" fill="${fill}"/>`;
+}
+// night skyline with a few lit windows
+function sceneCity(seed, y, n, fill, lit) {
+  const r = sceneRng(seed);
+  let g = '', win = '';
+  let x = -20;
+  for (let i = 0; i < n && x < 1620; i++) {
+    const w = 50 + r() * 90, h = 80 + r() * 230;
+    g += `<rect x="${x.toFixed(0)}" y="${(y - h).toFixed(0)}" width="${w.toFixed(0)}" height="${(h + 4).toFixed(0)}"/>`;
+    if (r() < 0.35) g += `<rect x="${(x + w * 0.42).toFixed(0)}" y="${(y - h - 36).toFixed(0)}" width="3" height="36"/>`;
+    for (let k = 0; k < 7; k++) if (r() < 0.45) win += `<rect x="${(x + 8 + r() * (w - 18)).toFixed(0)}" y="${(y - h + 14 + r() * (h - 30)).toFixed(0)}" width="6" height="9"/>`;
+    x += w + 4 + r() * 14;
+  }
+  return `<g fill="${fill}">${g}</g><g fill="${lit}" opacity=".55">${win}</g>`;
+}
+// stone column with base and capital; broken = jagged top
+function scenePillar(x, y, h, s, fill, broken) {
+  const w = 34 * s;
+  const top = broken
+    ? `<path d="M${x - w / 2} ${y - h} l${w * 0.3} ${-14 * s} l${w * 0.25} ${10 * s} l${w * 0.25} ${-18 * s} l${w * 0.2} ${22 * s} Z"/>`
+    : `<rect x="${x - w * 0.85}" y="${y - h - 16 * s}" width="${w * 1.7}" height="${16 * s}"/><rect x="${x - w * 0.7}" y="${y - h - 4 * s}" width="${w * 1.4}" height="${6 * s}"/>`;
+  return `<g fill="${fill}"><rect x="${x - w / 2}" y="${y - h}" width="${w}" height="${h}"/><rect x="${x - w * 0.8}" y="${y - 12 * s}" width="${w * 1.6}" height="${12 * s}"/>${top}</g>`;
+}
+function sceneBolt(x, y, s, color) {
+  return `<path d="M${x} ${y} l${-30 * s} ${90 * s} l${22 * s} ${-6 * s} l${-34 * s} ${110 * s} l${60 * s} ${-130 * s} l${-24 * s} ${8 * s} l${26 * s} ${-72 * s} Z" fill="${color}"/>`;
+}
+
 const SCENES = {
   shinobi: () => `
     <defs>
@@ -153,6 +183,84 @@ const SCENES = {
     ${sceneShip(1130, 600, 1, '#0c1c33')}
     ${sceneMotes(51, 18, 'mote-drift', '#e8f6ff', 100, 520)}`,
 
+  ki: () => `
+    <defs>
+      <linearGradient id="sk-ki" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#1a0f2a"/><stop offset=".38" stop-color="#5a2a3a"/><stop offset=".66" stop-color="#d0743a"/><stop offset=".8" stop-color="#ffc062"/></linearGradient>
+      <radialGradient id="sun-ki"><stop offset="0" stop-color="#fff3c8"/><stop offset=".3" stop-color="#ffcf6a" stop-opacity=".85"/><stop offset="1" stop-color="#ff8a3a" stop-opacity="0"/></radialGradient>
+      <linearGradient id="dust-ki" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffcf8a" stop-opacity="0"/><stop offset=".5" stop-color="#ffcf8a" stop-opacity=".28"/><stop offset="1" stop-color="#ffcf8a" stop-opacity="0"/></linearGradient>
+    </defs>
+    <rect width="1600" height="900" fill="url(#sk-ki)"/>
+    ${sceneStars(101, 50, 220)}
+    <circle cx="430" cy="640" r="360" fill="url(#sun-ki)" opacity=".75"/><circle cx="430" cy="640" r="88" fill="#fff0c4"/>
+    ${sceneBolt(1220, 90, 1, '#fff6c8')}${sceneBolt(1300, 150, 0.6, '#ffe48a')}
+    <path d="${sceneRidge(103, 640, 60, { f: 0.6 })}" fill="#a2523e" opacity=".75"/>
+    ${sceneMesa(980, 650, 360, 190, '#7c3a35')}${sceneMesa(1360, 660, 260, 140, '#6e3330')}${sceneMesa(180, 670, 220, 120, '#6e3330')}
+    ${sceneMist('dust-ki', 560, 180, 1)}
+    ${sceneMesa(700, 760, 420, 150, '#47201f')}${sceneMesa(1480, 770, 300, 200, '#3e1c1c')}
+    <path d="${sceneRidge(105, 790, 40, { f: 1.8, rough: 0.4 })}" fill="#2b1414"/>
+    <ellipse cx="1050" cy="845" rx="230" ry="26" fill="#1c0c0c"/>
+    <path d="${sceneRidge(107, 870, 24, { f: 2.6, rough: 0.5 })}" fill="#170909"/>
+    ${sceneMotes(109, 24, 'mote-drift', '#ffd08a', 300, 860)}`,
+
+  hex: () => `
+    <defs>
+      <linearGradient id="sk-hx" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#03080b"/><stop offset=".55" stop-color="#0b2328"/><stop offset=".85" stop-color="#17463f"/></linearGradient>
+      <radialGradient id="moon-hx"><stop offset="0" stop-color="#bff5dc" stop-opacity=".45"/><stop offset="1" stop-color="#3fe0a0" stop-opacity="0"/></radialGradient>
+      <linearGradient id="fog-hx" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#5cf0b0" stop-opacity="0"/><stop offset=".5" stop-color="#5cf0b0" stop-opacity=".2"/><stop offset="1" stop-color="#5cf0b0" stop-opacity="0"/></linearGradient>
+    </defs>
+    <rect width="1600" height="900" fill="url(#sk-hx)"/>
+    ${sceneStars(121, 120, 420)}
+    <circle cx="1240" cy="200" r="300" fill="url(#moon-hx)"/>
+    <path d="M1240 90 a110 110 0 1 0 0 220 a86 86 0 1 1 0 -220 Z" fill="#e4fff2"/>
+    ${sceneCity(123, 640, 26, '#0f2a2d', '#7ff0c0')}
+    ${sceneMist('fog-hx', 540, 180, 1)}
+    ${sceneCity(127, 760, 22, '#081a1c', '#ffd27a')}
+    ${sceneTorii(380, 800, 1.15, '#040d0e')}
+    ${sceneMist('fog-hx', 700, 160, 0.9)}
+    <path d="${sceneRidge(129, 850, 18, { f: 2.4 })}" fill="#030809"/>
+    ${sceneMotes(131, 28, 'mote-rise', '#7dffc4', 380, 900)}`,
+
+  hunter: () => `
+    <defs>
+      <linearGradient id="sk-hn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0b1a1a"/><stop offset=".45" stop-color="#28504a"/><stop offset=".7" stop-color="#9fa86a"/><stop offset=".82" stop-color="#f0c27a"/></linearGradient>
+      <radialGradient id="sun-hn"><stop offset="0" stop-color="#fff2c8"/><stop offset=".35" stop-color="#ffd38a" stop-opacity=".7"/><stop offset="1" stop-color="#ffb060" stop-opacity="0"/></radialGradient>
+      <linearGradient id="mist-hn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8f0c8" stop-opacity="0"/><stop offset=".5" stop-color="#e8f0c8" stop-opacity=".3"/><stop offset="1" stop-color="#e8f0c8" stop-opacity="0"/></linearGradient>
+      <linearGradient id="fall-hn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#eaffff" stop-opacity=".85"/><stop offset="1" stop-color="#bfe8ea" stop-opacity=".2"/></linearGradient>
+    </defs>
+    <rect width="1600" height="900" fill="url(#sk-hn)"/>
+    ${sceneStars(141, 40, 200)}
+    <circle cx="760" cy="620" r="320" fill="url(#sun-hn)" opacity=".7"/><circle cx="760" cy="620" r="70" fill="#fff1c8"/>
+    <path d="${sceneRidge(143, 600, 140, { f: 0.8, sharp: true })}" fill="#3f6a5a" opacity=".8"/>
+    ${sceneMist('mist-hn', 520, 170, 0.9)}
+    <path d="M1180 900 L1180 420 Q1230 330 1330 300 L1600 260 L1600 900 Z" fill="#1d3a33"/>
+    <path d="M1236 370 L1268 362 L1290 820 L1214 820 Z" fill="url(#fall-hn)"/>
+    <path d="${sceneRidge(145, 700, 80, { f: 1.2 })}" fill="#22423a"/>
+    ${scenePines(147, 720, 30, '#173129', 1)}
+    ${sceneMist('mist-hn', 680, 120, 0.5)}
+    <path d="${sceneRidge(149, 800, 50, { f: 1.8 })}" fill="#10231e"/>
+    ${scenePines(151, 830, 22, '#0b1a16', 1.4)}
+    <path d="${sceneRidge(153, 870, 22, { f: 2.6 })}" fill="#07120f"/>
+    ${sceneMotes(155, 22, 'mote-drift', '#f4ffb0', 300, 820)}`,
+
+  echo: () => `
+    <defs>
+      <linearGradient id="sk-ec" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#12061c"/><stop offset=".45" stop-color="#3a1450"/><stop offset=".72" stop-color="#a0408a"/><stop offset=".86" stop-color="#ffb07a"/></linearGradient>
+      <radialGradient id="sun-ec"><stop offset="0" stop-color="#ffe6f2"/><stop offset=".35" stop-color="#ff9ad0" stop-opacity=".75"/><stop offset="1" stop-color="#c05cff" stop-opacity="0"/></radialGradient>
+      <linearGradient id="mist-ec" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#ffc6ec" stop-opacity="0"/><stop offset=".5" stop-color="#ffc6ec" stop-opacity=".22"/><stop offset="1" stop-color="#ffc6ec" stop-opacity="0"/></linearGradient>
+    </defs>
+    <rect width="1600" height="900" fill="url(#sk-ec)"/>
+    ${sceneStars(161, 110, 380)}
+    <circle cx="1000" cy="560" r="340" fill="url(#sun-ec)" opacity=".75"/><circle cx="1000" cy="560" r="120" fill="none" stroke="#ffe0f0" stroke-width="3" opacity=".7"/><circle cx="1000" cy="560" r="76" fill="#ffe6f2"/>
+    <g fill="#2a0f3a" opacity=".85"><path d="M260 300 l90 -10 l40 30 l-60 40 l-60 -10 Z"/><path d="M1320 240 l70 -6 l30 24 l-50 30 l-44 -8 Z"/><path d="M640 200 l40 -4 l20 14 l-30 18 l-26 -6 Z"/></g>
+    <path d="${sceneRidge(163, 640, 90, { f: 0.7 })}" fill="#5a2366" opacity=".8"/>
+    ${scenePillar(760, 660, 200, 1, '#3e1850')}${scenePillar(880, 660, 230, 1, '#3e1850')}${scenePillar(1120, 660, 210, 1, '#3e1850')}${scenePillar(1240, 660, 120, 1, '#3e1850', true)}
+    <rect x="725" y="420" width="190" height="18" fill="#3e1850"/>
+    ${sceneMist('mist-ec', 560, 170, 1)}
+    <path d="${sceneRidge(165, 740, 60, { f: 1.3 })}" fill="#2a0f36"/>
+    ${scenePillar(240, 790, 300, 1.4, '#1b0824')}${scenePillar(420, 790, 160, 1.4, '#1b0824', true)}${scenePillar(1450, 800, 260, 1.3, '#1b0824', true)}
+    <path d="${sceneRidge(167, 840, 30, { f: 2.2 })}" fill="#10041a"/>
+    ${sceneMotes(169, 30, 'mote-rise', '#ffc0ec', 300, 900)}`,
+
   battle: () => `
     <defs>
       <linearGradient id="sk-ba" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0509"/><stop offset=".55" stop-color="#3a0e1d"/><stop offset=".82" stop-color="#8a2a33"/></linearGradient>
@@ -195,24 +303,9 @@ function sceneSVG(kind, cls) {
   sceneMotes.kind = SCENES[kind] ? kind : 'hub';
   return `<svg class="scene-svg ${cls || ''}" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${f()}</svg>`;
 }
-// Painted backdrops: public-domain Japanese landscape prints (credits in README / Settings).
-// pos = which part of the print stays in frame when it is cropped to a wide banner.
-const WORLD_ART = {
-  seas: { src: 'img/worlds/seas.jpg', pos: '50% 60%' },
-  shinobi: { src: 'img/worlds/shinobi.jpg', pos: '70% 45%' },
-  soul: { src: 'img/worlds/soul.jpg', pos: '50% 55%' },
-  ki: { src: 'img/worlds/ki.jpg', pos: '50% 40%' },
-  hex: { src: 'img/worlds/hex.jpg', pos: '50% 55%' },
-  hunter: { src: 'img/worlds/hunter.jpg', pos: '50% 30%' },
-  echo: { src: 'img/worlds/echo.jpg', pos: '50% 40%' },
-};
 // Cache: scenes are deterministic, build each once.
 const SCENE_CACHE = {};
 function sceneHTML(kind, cls) {
   const k = kind + '|' + (cls || '');
-  if (SCENE_CACHE[k]) return SCENE_CACHE[k];
-  const a = WORLD_ART[kind];
-  return (SCENE_CACHE[k] = a
-    ? `<div class="scene-art ${cls || ''}" style="background-image:url('${a.src}');background-position:${a.pos}" role="presentation"></div>`
-    : sceneSVG(kind, cls));
+  return SCENE_CACHE[k] || (SCENE_CACHE[k] = sceneSVG(kind, cls));
 }
