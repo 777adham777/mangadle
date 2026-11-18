@@ -1198,6 +1198,25 @@ document.addEventListener('click', (ev) => {
 document.addEventListener('change', (ev) => {
   if (ev.target.matches('[data-food]')) { S.combat.food = ev.target.value || null; ev.target.blur(); dirty = true; }
 });
+/* touch screens never show title tooltips: tapping a non-interactive titled element shows its label */
+if (matchMedia('(hover: none)').matches) {
+  let tipEl = null, tipTimer = 0;
+  const hideTip = () => { if (tipEl) { tipEl.remove(); tipEl = null; } };
+  document.addEventListener('click', (ev) => {
+    hideTip();
+    const t = ev.target.closest('[title]');
+    if (!t || !t.title || t.closest('button, a, label, input, select, textarea, [data-act]')) return;
+    tipEl = document.createElement('div');
+    tipEl.className = 'tap-tip';
+    tipEl.textContent = t.title;
+    document.body.appendChild(tipEl);
+    const r = t.getBoundingClientRect(), w = tipEl.offsetWidth, h = tipEl.offsetHeight;
+    tipEl.style.left = Math.max(8, Math.min(innerWidth - w - 8, r.left + r.width / 2 - w / 2)) + 'px';
+    tipEl.style.top = (r.top - h - 6 < 8 ? r.bottom + 6 : r.top - h - 6) + 'px';
+    clearTimeout(tipTimer); tipTimer = setTimeout(hideTip, 2200);
+  }, true);
+  document.addEventListener('scroll', hideTip, true);
+}
 document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { document.body.classList.remove('menu-open'); $('#modal').classList.remove('show'); } });
 
 /* =============================================================== toasts */
