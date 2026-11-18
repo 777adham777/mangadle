@@ -58,7 +58,7 @@ function defaultState() {
     asc: {},                            // world id -> chosen Ascension tier for its zones
     gear: {},                           // equipment id -> { xp, rel, gems: [], tier } (awakening, sockets, reforge)
     tech: { slots: [null, null, null], rank: {} },
-    avatar: { color: 'chalk', hat: 'none', face: 'dots', back: 'none', aura: 'none', got: {} },   // see avatar.js
+    avatar: { style: 'flat', color: 'chalk', hat: 'none', face: 'blank', back: 'none', aura: 'none', got: {} },   // see avatar.js
     ki: { form: null, stamina: 100 },
     farm: { plots: [], auto: false },
     buffs: {},                          // meal buffs: stat -> { v, t (seconds left) }

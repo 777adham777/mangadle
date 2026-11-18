@@ -31,6 +31,14 @@ const COSMETICS = {
     { id: 'stout',    name: 'Stout',    r: 1, need: FREE, b: { w: 1.4, h: 0.93, head: 1.06 } },
     { id: 'tall',     name: 'Tall',     r: 1, need: FREE, b: { w: 0.92, h: 1.12, head: 0.94 } },
   ],
+  // How the figure is inked. Flat: bright body, darker rim. Ink: black body, white rim.
+  // Neon: black body with a glowing rim. Sketch: pencil lines on paper.
+  style: [
+    { id: 'flat',   name: 'Flat',   r: 1, need: FREE },
+    { id: 'ink',    name: 'Ink',    r: 2, need: () => (S.stats.bossKills || 0) >= 3, hint: 'Defeat 3 bosses' },
+    { id: 'sketch', name: 'Sketch', r: 3, need: () => collectionPct() >= 0.25, hint: 'Fill 25% of the Collection Log' },
+    { id: 'neon',   name: 'Neon',   r: 4, need: () => totalLevel() >= 250, hint: 'Reach total level 250' },
+  ],
   stance: [
     { id: 'relaxed',  name: 'Relaxed',  r: 1, need: FREE },
     { id: 'guard',    name: 'On Guard', r: 2, need: () => S.stats.kills >= 50, hint: 'Defeat 50 foes' },
@@ -59,6 +67,7 @@ const COSMETICS = {
     { id: 'crown',    name: 'Rift Crown',       r: 5, need: () => kzOf('convergence') >= 1, hint: 'Defeat the Rift Emperor' },
   ],
   face: [
+    { id: 'blank',  name: 'Faceless',    r: 1, need: FREE },
     { id: 'dots',   name: 'Calm',        r: 1, need: FREE },
     { id: 'smile',  name: 'Cheerful',    r: 1, need: FREE },
     { id: 'fierce', name: 'Fierce',      r: 2, need: () => S.stats.kills >= 100, hint: 'Defeat 100 foes' },
@@ -82,7 +91,7 @@ const COSMETICS = {
     { id: 'storm',   name: 'Rift Storm',    r: 5, need: () => !!S.gates.rift, hint: 'Tear open the Convergence' },
   ],
 };
-const COS_SLOTS = [['build', 'Build'], ['stance', 'Stance'], ['color', 'Colour'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
+const COS_SLOTS = [['build', 'Build'], ['style', 'Style'], ['stance', 'Stance'], ['color', 'Colour'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
 const COS_RARITY = ['', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
 const cosOf = (slot, id) => COSMETICS[slot].find((c) => c.id === id) || COSMETICS[slot][0];
 const avatarOn = () => isUnlocked('feature:avatar');
@@ -111,15 +120,20 @@ const cosTotal = () => COS_SLOTS.reduce((a, [s]) => a + COSMETICS[s].length, 0);
 // aF / aB: front / back arm [upper (absolute), elbow bend] · lF / lB: legs [thigh (absolute), knee bend]
 // fF / fB: foot tilt · g: weapon angle relative to the forearm · dy: crouch · air: float above the ground
 const POSES = {
-  relaxed:  { sh: 1, t1: 177, t2: -5, n: 8,  h: 5,   aF: [12, 24],   aB: [-14, 16],  lF: [16, -26], lB: [-6, -4],  fF: 6,  fB: 0,  g: -150, dy: 0 },
-  guard:    { t1: 166, t2: 8,  n: -6, h: -8,  aF: [58, 72],   aB: [26, 96],   lF: [34, -46], lB: [-30, -12], fF: 0,  fB: -8, g: -70,  dy: 10 },
-  swagger:  { sh: 1, t1: 186, t2: -8, n: -4, h: -12, aF: [36, -118], aB: [-44, 116], lF: [10, -8],  lB: [-14, -2], fF: 10, fB: 0,  g: -170, dy: 0 },
-  heroic:   { t1: 180, t2: -6, n: -8, h: -10, aF: [176, -12], aB: [-38, 112], lF: [22, -6],  lB: [-20, -4], fF: 4,  fB: 0,  g: -6,   dy: 0 },
+  relaxed:  { sh: 1, t1: 176, t2: -6, n: 8,  h: 6,   aF: [14, 20],   aB: [-16, 14],  lF: [18, -24], lB: [-8, -2],  fF: 6,  fB: 0,  g: -150, dy: 0 },
+  guard:    { t1: 158, t2: 12, n: -10, h: -10, aF: [64, 70],  aB: [34, 100],  lF: [44, -64], lB: [-40, -8],  fF: 0,  fB: -8, g: -70,  dy: 18 },
+  swagger:  { sh: 1, t1: 188, t2: -10, n: -4, h: -14, aF: [36, -118], aB: [-46, 118], lF: [12, -8], lB: [-16, -2], fF: 10, fB: 0,  g: -170, dy: 0 },
+  heroic:   { t1: 182, t2: -8, n: -10, h: -12, aF: [178, -12], aB: [-42, 114], lF: [28, -8],  lB: [-26, -4], fF: 4,  fB: 0,  g: -6,   dy: 0 },
   meditate: { sh: 1, t1: 180, t2: 0,  n: 6,  h: 8,   aF: [24, 66],   aB: [-6, 78],   lF: [84, -152], lB: [76, -146], fF: 60, fB: 60, g: -150, dy: 0, air: 18 },
-  windup:   { t1: 192, t2: -12, n: 8, h: -4,  aF: [196, -46], aB: [62, 70],   lF: [30, -40], lB: [-34, -14], fF: 0,  fB: -8, g: -40,  dy: 12 },
-  strike:   { t1: 150, t2: 12, n: -12, h: -10, aF: [98, 6],   aB: [-48, 36],  lF: [54, -66], lB: [-46, -2], fF: -6, fB: -20, g: -4,  dy: 18 },
-  hurt:     { t1: 198, t2: -14, n: 16, h: 16, aF: [-26, 44],  aB: [-8, 54],   lF: [12, -24], lB: [-22, -8], fF: 10, fB: 0,  g: -150, dy: 6, expr: 'hurt' },
-  victory:  { t1: 182, t2: -6, n: -12, h: -14, aF: [186, -8], aB: [-150, -40], lF: [20, -6], lB: [-22, -4], fF: 4,  fB: 0,  g: 0,    dy: 0, expr: 'happy' },
+  // attacks: anticipation pose, then the hit pose (with its effect)
+  windup:   { t1: 198, t2: -14, n: 10, h: -4,  aF: [210, -50], aB: [70, 60],   lF: [36, -52], lB: [-40, -10], fF: 0,  fB: -8, g: -40,  dy: 16 },
+  strike:   { t1: 140, t2: 14, n: -14, h: -10, aF: [104, 4],   aB: [-60, 30],  lF: [62, -78], lB: [-54, 0],   fF: -6, fB: -20, g: -4,  dy: 26, fx: 'slash' },
+  coil:     { t1: 188, t2: -8, n: 4,  h: -6,   aF: [10, 96],   aB: [80, 40],   lF: [40, -60], lB: [-36, -8],  fF: 0,  fB: -8, g: -6,   dy: 20 },
+  thrust:   { t1: 132, t2: 10, n: -16, h: -8,  aF: [94, -2],   aB: [-70, 20],  lF: [70, -84], lB: [-60, 4],   fF: -10, fB: -24, g: 0,  dy: 34, fx: 'thrust' },
+  chamber:  { t1: 196, t2: -10, n: 6, h: -4,   aF: [40, 80],   aB: [-40, 60],  lF: [100, -120], lB: [-6, -4], fF: 20, fB: 0,  g: -90,  dy: 0 },
+  kick:     { t1: 214, t2: -16, n: 12, h: -6,  aF: [-40, 40],  aB: [60, 50],   lF: [100, -4], lB: [-10, -2],  fF: -10, fB: 0, g: -150, dy: 0, fx: 'kick' },
+  hurt:     { t1: 204, t2: -18, n: 20, h: 20,  aF: [-40, 50],  aB: [-20, 60],  lF: [16, -30], lB: [-28, -10], fF: 10, fB: 0,  g: -150, dy: 8, expr: 'hurt', fx: 'hit' },
+  victory:  { t1: 184, t2: -8, n: -14, h: -16, aF: [190, -6],  aB: [-140, -30], lF: [40, -100], lB: [-10, -60], fF: 20, fB: 30, g: 0,   dy: 0, air: 26, expr: 'happy' },
   fish:     { sh: 1, t1: 172, t2: 4,  n: 2,  h: 6,   aF: [52, 44],   aB: [34, 70],   lF: [18, -20], lB: [-12, -6], fF: 4,  fB: 0,  g: -36,  dy: 2, prop: 'rod' },
   cook:     { sh: 1, t1: 170, t2: 6,  n: 6,  h: 12,  aF: [44, 50],   aB: [20, 92],   lF: [14, -14], lB: [-12, -6], fF: 2,  fB: 0,  g: -90,  dy: 2, prop: 'pan' },
 };
@@ -131,6 +145,7 @@ function lerpPose(a, b, k) {
   o.expr = k < 0.5 ? a.expr : b.expr;
   o.prop = k < 0.5 ? a.prop : b.prop;
   o.sh = k < 0.5 ? a.sh : b.sh;
+  o.fx = k > 0.3 ? b.fx : a.fx;
   return o;
 }
 const ease = {
@@ -221,8 +236,9 @@ const HATS = {
   horns: `<g stroke="${OL}" stroke-width="2.2" stroke-linejoin="round"><path d="M-9,-16 Q-24,-24 -21,-43 Q-14,-28 -1,-19Z" fill="#d8d0bd"/><path d="M8,-18 Q15,-34 6,-47 Q21,-38 17,-14Z" fill="#ece5d4"/></g><path d="M-15,-28 l4,2 M-17,-34 l4,1 M11,-30 l4,1 M11,-37 l4,0" stroke="#9c9586" stroke-width="1.4"/>`,
   crown: `<path d="M-14,-15 L-17,-34 L-8,-25 L0,-39 L8,-25 L17,-34 L14,-15Z" fill="#f4c66a" stroke="${OL}" stroke-width="2.4" stroke-linejoin="round"/><path d="M-14,-19 H14" stroke="#a87b22" stroke-width="2"/><circle cx="0" cy="-23" r="3" fill="#a98bff" stroke="${OL}" stroke-width="1.4"/><circle cx="-17" cy="-34" r="2" fill="#fff"/><circle cx="17" cy="-34" r="2" fill="#fff"/><circle cx="0" cy="-39" r="2.2" fill="#fff"/>`,
 };
-function faceSVG(face, expr) {
-  const e = `fill="${OL}"`, st = `stroke="${OL}" stroke-width="2.2" stroke-linecap="round" fill="none"`;
+function faceSVG(face, expr, eye) {
+  if (face === 'blank') return '';
+  const E = eye || OL, e = `fill="${E}"`, st = `stroke="${E}" stroke-width="2.2" stroke-linecap="round" fill="none"`;
   const scar = face === 'scar' ? `<path d="M13,-12 L18,1" stroke="#ff4d5e" stroke-width="2.2" stroke-linecap="round"/>` : '';
   const plain = ['dots', 'smile', 'fierce', 'scar'].includes(face);
   if (expr === 'hurt' && plain) return `<path d="M1,-5 l5,3 -5,3 M16,-5 l-5,3 5,3" ${st}/><path d="M5,9 Q9,6 13,9" ${st}/>` + scar;
@@ -269,47 +285,98 @@ function weaponSVG(id) {
 // rotate() so that local +x points along angle a (our angle convention)
 const rotTo = (a) => r1(90 - a);
 
+const STYLES = {
+  flat:   (ink) => ({ body: ink, far: shade(ink, -0.3), rim: shade(ink, -0.58), rw: 1.7, eye: OL }),
+  ink:    (ink) => ({ body: '#0d0f14', far: '#1c2029', rim: '#f2f4f8', rw: 1.3, eye: ink }),
+  neon:   (ink) => ({ body: '#06070b', far: '#06070b', rim: ink, rw: 1.9, eye: ink, filter: 'avNeon' }),
+  sketch: () => ({ body: '#ebe6da', far: '#c4bdae', rim: '#1d1d1f', rw: 1.4, eye: '#1d1d1f', filter: 'avSketch' }),
+};
+// A thick limb bending smoothly through its middle joint (a "noodle" limb), with a rim.
+function curvy(a, j, b) { const c = [2 * j[0] - (a[0] + b[0]) / 2, 2 * j[1] - (a[1] + b[1]) / 2]; return `M${pt(a)}Q${pt(c)} ${pt(b)}`; }
+const stroke = (d, w, col, rim, rw) => `<path d="${d}" fill="none" stroke="${rim}" stroke-width="${r1(w + rw * 2)}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${r1(w)}" stroke-linecap="round" stroke-linejoin="round"/>`;
+
 function drawAvatar(A, P, t, opt) {
   const B = cosOf('build', A.build).b, ink = cosOf('color', A.color).ink;
-  const inkB = shade(ink, -0.4), inkS = shade(ink, -0.16);
-  const J = solve(P, B), W = B.w * 1.32, out = [];
-  const feetX = (J.lF[3][0] + J.lB[3][0] + J.lF[2][0] + J.lB[2][0]) / 4;
+  const St = STYLES[A.style] ? STYLES[A.style](ink) : STYLES.flat(ink);
+  const J = solve(P, B), W = B.w, out = [];
+  const LW = 10.5 * W, TW = 12 * W;   // limb and torso thickness (about a quarter of the head)
   const cx = (J.pelvis[0] + J.chest[0]) / 2, cy = (J.pelvis[1] + J.chest[1]) / 2;
-  const air = P.air || 0;
-  // ground shadow (smaller when floating)
-  out.push(`<ellipse cx="${r1(feetX)}" cy="${GROUND + 1}" rx="${r1(34 - air * 0.5)}" ry="5" fill="#000" opacity="${r1(0.42 - air * 0.01)}"/>`);
+  const feetX = (J.lF[2][0] + J.lB[2][0]) / 2, air = P.air || 0;
+  out.push(`<ellipse cx="${r1(feetX)}" cy="${GROUND + 1}" rx="${r1(32 - air * 0.5)}" ry="5" fill="#000" opacity="${r1(0.42 - air * 0.01)}"/>`);
   out.push(`<g style="mix-blend-mode:screen">${auraSVG(A.aura, cx, cy, t)}</g>`);
-  out.push(backSVG(A.back, J, t, B, P));
+  const body = [];
+  body.push(backSVG(A.back, J, t, B, P));
   const worn = opt.weapon !== false && S.equip && S.equip.weapon;
-  if (worn && P.sh && !['fist', 'claw'].includes(weaponKind(worn))) out.push(`<g transform="translate(${pt(add(add(J.shoulder, J.chestA, 6), J.chestA - 90, 7))}) rotate(${rotTo(J.chestA - 205)})">${weaponSVG(worn)}</g>`);
-  const armW = [7.2 * W, 6 * W, 4.6 * W], legW = [9 * W, 7.2 * W, 5.4 * W];
-  const limb = (pts, ws, fill) => part(taper(pts, ws), fill);
-  const foot = (L, fill) => part(taper([L[2], L[3]], [5.4 * W, 4.4 * W]), fill);
-  // far side (darker): back leg, back arm
-  out.push(limb(J.lB.slice(0, 3), legW, inkB) + foot(J.lB, inkB));
-  out.push(limb(J.aB, armW, inkB) + part(circ(J.aB[2], 4.6 * W), inkB, 2.6));
-  // torso: curved spine through the waist (the line of action), tapered hip → chest
-  const spine = curveThrough(J.pelvis, J.waist, J.chest, 6);
-  out.push(part(taper(spine, spine.map((_, i) => (9.5 + (i / 6) * 4) * W)), ink));
-  // near leg
-  out.push(limb(J.lF.slice(0, 3), legW, inkS) + foot(J.lF, inkS));
-  // neck + head (rigid, tilts with the neck)
-  out.push(part(taper([J.chest, J.neck], [6 * W, 5 * W]), ink));
+  const kind = worn && weaponKind(worn);
+  if (worn && P.sh && !['fist', 'claw'].includes(kind)) body.push(`<g transform="translate(${pt(add(add(J.shoulder, J.chestA, 6), J.chestA - 90, 7))}) rotate(${rotTo(J.chestA - 205)})">${weaponSVG(worn)}</g>`);
+  // motion effect sits behind the body
+  if (P.fx) body.push(fxSVG(P.fx, J, worn ? RCOL[Math.min(6, typeof rarity === 'function' ? rarity(worn) : 1)] : ink));
+  const leg = (L, col) => stroke(curvy(L[0], L[1], L[2]), LW, col, St.rim, St.rw);
+  const arm = (L, col) => stroke(curvy(L[0], L[1], L[2]), LW * 0.92, col, St.rim, St.rw);
+  // far side first, a shade darker
+  body.push(leg(J.lB, St.far), arm(J.aB, St.far));
+  // torso: one thick curved stroke from the hips to the neck (the line of action)
+  body.push(stroke(curvy(J.pelvis, J.waist, J.neck), TW, St.body, St.rim, St.rw));
+  body.push(leg(J.lF, St.body));
+  // head: a solid disc, rigid, tilting with the neck
   const ha = (P.h || 0) + (180 - J.neckA) * 0.6;
-  out.push(`<g transform="translate(${pt(J.head)}) rotate(${r1(ha)}) scale(${r1(J.headR / 19 * 100) / 100})">
-    <circle r="19" fill="${ink}" stroke="${OL}" stroke-width="3.2"/>
-    <path d="M-12,-11 A15,15 0 0,1 4,-16 A17,17 0 0,0 -13,-4Z" fill="#fff" opacity=".35"/>
-    <path d="M-17,6 A18,18 0 0,0 10,16 A20,20 0 0,1 -14,-2Z" fill="#000" opacity=".16"/>
-    ${faceSVG(A.face, P.expr)}${HATS[A.hat] || ''}</g>`);
-  // weapon / tool in the near hand, then the near arm over its grip
+  const gloss = A.style === 'flat' || !A.style ? `<path d="M-11,-10 A13,13 0 0,1 2,-14" fill="none" stroke="#fff" stroke-width="3" stroke-linecap="round" opacity=".35"/>` : '';
+  body.push(`<g transform="translate(${pt(J.head)}) rotate(${r1(ha)}) scale(${r1(J.headR / 19 * 100) / 100})">
+    <circle r="19" fill="${St.body}" stroke="${St.rim}" stroke-width="${r1(St.rw * 2)}" paint-order="stroke"/>${gloss}
+    ${faceSVG(A.face, P.expr, St.eye)}${HATS[A.hat] || ''}</g>`);
+  // effect behind the near arm, weapon or tool in the near hand, then the near arm
   const hand = J.aF[2], fa = J.foreA.aF, prop = P.prop;
-  const weapon = !prop && worn && (!P.sh || ['fist', 'claw'].includes(weaponKind(worn))) ? worn : null;
-  if (weapon) out.push(`<g transform="translate(${pt(hand)}) rotate(${rotTo(fa + P.g)})">${weaponSVG(weapon)}</g>`);
-  if (prop === 'rod') out.push(rodSVG(hand, fa + P.g, t));
-  if (prop === 'pan') out.push(panSVG(hand, fa + P.g, t));
-  out.push(limb(J.aF, armW, ink) + part(circ(hand, 4.8 * W), ink, 2.6));
-  if (A.back === 'scarf') out.push(part(taper([add(J.chest, J.chestA, -2), J.neck], [10 * W, 9 * W]), '#4cc3ff', 2.6));
+  const weapon = !prop && worn && (!P.sh || ['fist', 'claw'].includes(kind)) ? worn : null;
+  if (weapon) body.push(`<g transform="translate(${pt(hand)}) rotate(${rotTo(fa + P.g)})">${weaponSVG(weapon)}</g>`);
+  if (prop === 'rod') body.push(rodSVG(hand, fa + P.g, t));
+  if (prop === 'pan') body.push(panSVG(hand, fa + P.g, t));
+  body.push(arm(J.aF, St.body));
+  if (A.back === 'scarf') body.push(part(taper([add(J.chest, J.chestA, -2), J.neck], [12 * W, 11 * W]), '#4cc3ff', 2.4));
+  out.push(St.filter ? `<g filter="url(#${St.filter})">${body.join('')}</g>` : body.join(''));
   return out.join('');
+}
+// Motion effects: slash trail, thrust speed lines, kick impact, hit recoil.
+function fxSVG(fx, J, col) {
+  const sh = J.shoulder;
+  const P = (a, r) => pt(add(sh, a, r));
+  if (fx === 'slash') {
+    const R = 84, a0 = 226, a1 = 72;
+    const cres = (r, k) => `M${P(a0, r)} A${r},${r} 0 0,1 ${P(a1, r * 0.98)} A${r1(r * k)},${r1(r * k)} 0 0,0 ${P(a0, r * 0.94)}Z`;
+    return `<path d="${cres(R, 1.3)}" fill="${col}" opacity=".55"/><path d="${cres(R * 0.96, 1.45)}" fill="#fff" opacity=".7"/>`;
+  }
+  if (fx === 'thrust') {
+    const y0 = J.chest[1], x0 = J.pelvis[0];
+    return [0, 1, 2, 3].map((i) => { const y = y0 - 8 + i * 14, x = x0 - 34 - (i % 2) * 16; return `<path d="M${r1(x - 40)},${r1(y)} H${r1(x)}" stroke="${i % 2 ? col : '#fff'}" stroke-width="${3 - (i % 2)}" stroke-linecap="round" opacity=".7"/>`; }).join('')
+      + burst(add(J.aF[2], J.foreA.aF, 46), 13, col);
+  }
+  if (fx === 'kick') return `<path d="M${pt(add(J.lF[1], -90, 6))} Q${pt(add(J.pelvis, 0, 26))} ${pt(add(J.lF[2], 0, 4))}" fill="none" stroke="#fff" stroke-width="3" opacity=".5" stroke-linecap="round"/>` + burst(add(J.lF[2], 90, 8), 18, col);
+  if (fx === 'hit') {
+    const c = add(J.chest, 90, 26);
+    return burst(c, 10, '#ff4d5e') + [0, 1, 2].map((i) => `<path d="M${r1(J.chest[0] - 30)},${r1(J.chest[1] - 6 + i * 14)} h-22" stroke="#fff" stroke-width="2" opacity=".5" stroke-linecap="round"/>`).join('');
+  }
+  return '';
+}
+// A comic impact star.
+function burst(c, r, col) {
+  const pts = [];
+  for (let i = 0; i < 16; i++) pts.push(pt(add(c, i * 22.5, i % 2 ? r * 0.45 : r)));
+  return `<path d="M${pts.join('L')}Z" fill="#fff" stroke="${col}" stroke-width="2.4" stroke-linejoin="round"/>`;
+}
+// Shared SVG filters for the Neon and Sketch styles (one copy per page).
+const AV_DEFS = `<defs>
+    <filter id="avNeon" x="-40%" y="-40%" width="180%" height="180%"><feGaussianBlur in="SourceGraphic" stdDeviation="3.2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <filter id="avSketch" x="-10%" y="-10%" width="120%" height="120%"><feTurbulence type="fractalNoise" baseFrequency="0.85" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="SourceGraphic" in2="n" scale="3" xChannelSelector="R" yChannelSelector="G"/></filter>
+  </defs>`;
+function avDefs() {
+  if (typeof document === 'undefined' || !document.body || !document.createElementNS || document.getElementById('av-defs')) return;
+  const d = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  d.id = 'av-defs';
+  d.setAttribute('style', 'position:absolute;width:0;height:0;overflow:hidden');
+  d.innerHTML = AV_DEFS;
+  document.body.appendChild(d);
+}
+if (typeof document !== 'undefined' && document.addEventListener) {
+  if (document.body) avDefs(); else document.addEventListener('DOMContentLoaded', avDefs);
 }
 
 function rodSVG(hand, a, t) {
@@ -439,13 +506,19 @@ function avatarSVG(over, opts) {
   const anim = opts.still ? '' : `data-av="${opts.ctx || 'auto'}"${opts.pose ? ` data-pose="${opts.pose}"` : ''}`;
   return `<svg class="avatar ${opts.cls || ''}" viewBox="22 18 156 218" aria-hidden="true" ${anim}>${drawAvatar(A, pose, 0.6, {})}</svg>`;
 }
-const STRIKE = [['windup', 110, 'out'], ['strike', 90, 'back'], ['strike', 110], ['guard', 260]];
+const ATTACKS = [
+  [['windup', 110, 'out'], ['strike', 90, 'back'], ['strike', 120], ['guard', 260]],
+  [['coil', 110, 'out'], ['thrust', 80, 'back'], ['thrust', 130], ['guard', 260]],
+  [['chamber', 120, 'out'], ['kick', 90, 'back'], ['kick', 130], ['guard', 300]],
+];
+let atkN = 0;
+const nextAttack = () => ATTACKS[[0, 1, 0, 2][atkN++ % 4]];
 const playerAv = () => document.querySelector('[data-portrait="player"] svg.avatar');
 on('hit', (d) => {
-  if (d.target === 'enemy') avPlay(playerAv(), STRIKE);
+  if (d.target === 'enemy') avPlay(playerAv(), nextAttack());
   else if (!d.dodge) avPlay(playerAv(), [['hurt', 90, 'out'], ['hurt', 160], ['guard', 320]]);
 });
-on('kill', () => avPlay(playerAv(), [['victory', 220, 'back'], ['victory', 500], ['guard', 400]]));
+on('kill', () => avPlay(playerAv(), [['victory', 240, 'back'], ['victory', 420], ['guard', 380, 'out']]));
 
 /* ================================================================ view */
 let avSlot = 'build', avPreview = '';
@@ -456,7 +529,7 @@ function avatarHTML() {
   ${ptitle('Hero', 'Avatar', heroTabs('avatar'))}
   <div class="av-layout">
     <section class="win av-stage">
-      <div class="av-floor">${avatarSVG(null, { ctx: 'preview', pose: avPreview || undefined, cls: 'big' })}</div>
+      <div class="av-floor" style="--ink:${cosOf('color', A.color).ink}">${avatarSVG(null, { ctx: 'preview', pose: avPreview || undefined, cls: 'big' })}</div>
       <nav class="av-poses">${PREVIEWS.map(([k, l]) => `<button class="${avPreview === k ? 'on' : ''}" data-avpose="${k}">${l}</button>`).join('')}</nav>
       <div class="av-worn">${COS_SLOTS.map(([s, l]) => `<button class="${s === avSlot ? 'on' : ''}" data-avslot="${s}"><small>${l}</small><b class="r${cosOf(s, A[s]).r}">${esc(cosOf(s, A[s]).name)}</b></button>`).join('')}</div>
       <div class="av-foot"><span class="muted small">${cosCount()} / ${cosTotal()} found · only for looks, each earned from a feat</span>${gbtn('Random look', 'star', 'data-avrandom', 'dark')}</div>
@@ -466,7 +539,8 @@ function avatarHTML() {
       <div class="av-grid">${COSMETICS[avSlot].map((c) => {
         const own = cosOwned(avSlot, c), on = A[avSlot] === c.id;
         const pose = avSlot === 'stance' ? c.id : undefined;
-        return `<button class="av-card r${c.r} ${on ? 'on' : ''} ${own ? '' : 'locked'}" ${own ? `data-cos="${avSlot}:${c.id}"` : ''} title="${esc(own ? c.name : c.hint || '')}">
+        const tint = cosOf('color', avSlot === 'color' ? c.id : A.color).ink;
+        return `<button class="av-card r${c.r} ${on ? 'on' : ''} ${own ? '' : 'locked'}" style="--ink:${tint}" ${own ? `data-cos="${avSlot}:${c.id}"` : ''} title="${esc(own ? c.name : c.hint || '')}">
           <span class="av-mini">${avatarSVG({ [avSlot]: c.id }, { still: true, pose, cls: own ? '' : 'dim' })}</span>
           <span class="av-rar">${COS_RARITY[c.r]}</span>
           <b>${esc(c.name)}</b><small>${on ? `${ui('check')} Worn` : own ? 'Click to wear' : `${ui('lock')} ${esc(c.hint)}`}</small></button>`;
@@ -484,7 +558,7 @@ document.addEventListener('click', (ev) => {
   else if (t.dataset.cos) { const [s, id] = t.dataset.cos.split(':'); A[s] = id; }
   else if ('avpose' in t.dataset) {
     avPreview = t.dataset.avpose;
-    if (avPreview === 'strike') { avPreview = 'guard'; setTimeout(() => avPlay(document.querySelector('.av-floor svg.avatar'), STRIKE.concat(STRIKE)), 80); }
+    if (avPreview === 'strike') { avPreview = 'guard'; setTimeout(() => avPlay(document.querySelector('.av-floor svg.avatar'), ATTACKS[0].concat(ATTACKS[1], ATTACKS[2])), 80); }
   } else if ('avrandom' in t.dataset) {
     for (const [s] of COS_SLOTS) {
       if (s === 'build') continue;
