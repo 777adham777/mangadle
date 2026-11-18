@@ -328,8 +328,8 @@ function shipSVG(sail) {
 function spotStats(skill) {
   const a = S.action && S.action.skill === skill ? findAction(skill, S.action.id) : null;
   if (!a) {
-    if (S.action) return `<div class="spot-idle">${ui('info')}<span>Busy with <b>${esc(SKILLS[S.action.skill].name)} · ${esc(findAction(S.action.skill, S.action.id).name)}</b>. Pick a card below to switch.</span></div>`;
-    return `<div class="spot-idle">${ui('play')}<span>${{ fishing: 'Pick a fish below to cast your line.', cooking: 'Pick a recipe below to light the stove.', voyaging: 'Pick a voyage below to set sail.', woodcutting: 'Pick a tree below to start chopping.' }[skill]}</span></div>`;
+    if (S.action) return `<div class="spot-idle">${ui('info')}<span>Busy with <b>${esc(SKILLS[S.action.skill].name)} · ${esc(findAction(S.action.skill, S.action.id).name)}</b>. Pick another one to switch.</span></div>`;
+    return `<div class="spot-idle">${ui('play')}<span>${{ fishing: 'Pick a fishing spot to cast your line.', cooking: 'Pick a dish to light the stove.', voyaging: 'Pick a voyage below to set sail.', woodcutting: 'Pick a tree to start chopping.' }[skill]}</span></div>`;
   }
   const f = farmRates(skill, a), outId = a.out ? Object.keys(a.out)[0] : null;
   return `<div class="spot-run"><span class="pbar"><i data-nowfill></i></span><span class="fm-time" data-nowtime></span></div>
@@ -372,7 +372,6 @@ function spotHTML(skill) {
       <div class="spot-hud"><span class="sh-name"><small>${esc(name)}</small><b>${esc(sub)}</b></span>${last ? `<span class="sh-last">${last}</span>` : '<span class="sh-last" hidden></span>'}</div>
     </div>
     <div class="spot-bar">${spotStats(skill)}</div>
-    ${skill === 'cooking' ? spiceRackHTML() : ''}
   </section>`;
 }
 UIX.realmScene.push((realm, skill) => (['fishing', 'cooking', 'voyaging'].includes(skill) ? spotHTML(skill) : ''));

@@ -34,7 +34,7 @@ const wsLocked = (st) => st === 'locked' || st === 'schem';
 const wsRank = (s, a) => { const st = actState(s, a); return st === 'active' ? 3 : st === 'ready' ? 2 : wsLocked(st) ? 0 : 1; };
 // Narrow workshops (phones, small windows) open the selected recipe inline under its row instead of beside the list.
 function wsNarrow() {
-  const m = $('#main'), w = (m ? m.clientWidth : innerWidth) - 48 - (innerWidth > 1250 ? 346 : 0);
+  const m = $('#main'), w = (m ? m.clientWidth : innerWidth) - 48;
   return w < 680;
 }
 
@@ -167,7 +167,9 @@ function wsDetail(skill, a) {
   </section>`;
 }
 
-function workshopHTML(skill) {
+// o.detail === false: the selected recipe is shown elsewhere (beside a skill's scene, see skillpage-ui.js).
+function workshopHTML(skill, o) {
+  o = o || {};
   const s = SKILLS[skill], acts = s.actions, W = wsState(skill), sel = wsSelected(skill);
   const open = acts.filter((x) => !wsLocked(actState(skill, x))).length;
   return `${hdr('Recipes', `${open} / ${acts.length} unlocked`)}
@@ -178,8 +180,8 @@ function workshopHTML(skill) {
       <label class="ws-sort" title="Sort">${ui('sort')}<select data-wssort="${skill}">${Object.entries(WS_SORTS).map(([k, [l]]) => `<option value="${k}" ${W.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
     </div>
     ${wsCatsHTML(skill)}
-    <div class="ws-body ${wsNarrow() ? 'narrow' : ''}">
-      ${sel && !wsNarrow() ? wsDetail(skill, sel) : ''}
+    <div class="ws-body ${wsNarrow() ? 'narrow' : o.detail === false ? 'solo' : ''}">
+      ${sel && !wsNarrow() && o.detail !== false ? wsDetail(skill, sel) : ''}
       <div class="ws-list" id="ws-list" data-wslist="${skill}">${wsListHTML(skill)}</div>
     </div>
   </section>`;
