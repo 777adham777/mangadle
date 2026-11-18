@@ -340,7 +340,7 @@ function curvy(a, j, b) { const c = [2 * j[0] - (a[0] + b[0]) / 2, 2 * j[1] - (a
 const stroke = (d, w, col, rim, rw) => `<path d="${d}" fill="none" stroke="${rim}" stroke-width="${r1(w + rw * 2)}" stroke-linecap="round" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="${col}" stroke-width="${r1(w)}" stroke-linecap="round" stroke-linejoin="round"/>`;
 
 function drawAvatar(A, P, t, opt) {
-  const B = cosOf('build', A.build).b, ink = cosOf('color', A.color).ink;
+  const B = cosOf('build', A.build).b, ink = A.ink || cosOf('color', A.color).ink;
   const St = STYLES[A.style] ? STYLES[A.style](ink) : STYLES.flat(ink);
   const J = solve(P, B), W = B.w, out = [];
   const LW = 10.5 * W, TW = 12 * W;   // limb and torso thickness (about a quarter of the head)
@@ -351,7 +351,8 @@ function drawAvatar(A, P, t, opt) {
   if (aura) out.push(AURA_GLOW[A.aura] ? `<g style="mix-blend-mode:screen">${aura}</g>` : aura);
   const fig = [];
   fig.push(backSVG(A.back, J, t, B, P));
-  const worn = opt.weapon !== false && S.equip && S.equip.weapon;
+  // opt.weapon: an item id, '' for bare hands, or undefined for your equipped weapon
+  const worn = opt.weapon !== undefined ? opt.weapon || null : S.equip && S.equip.weapon;
   const kind = worn && weaponKind(worn);
   if (worn && P.sh && !['fist', 'claw'].includes(kind)) fig.push(`<g transform="translate(${pt(add(add(J.shoulder, J.chestA, 10), J.chestA - 90, 14))}) rotate(${rotTo(J.chestA - 232)})">${weaponSVG(worn)}</g>`);
   if (P.fx) fig.push(fxSVG(P.fx, J, worn ? RCOL[Math.min(6, typeof rarity === 'function' ? rarity(worn) : 1)] : ink));
@@ -541,6 +542,7 @@ function basePose(el) {
   const A = avState(), ctx = el.dataset.av;
   if (ctx === 'preview') return el.dataset.pose || A.stance;
   if (ctx === 'battle') return S.combat.zone != null ? 'guard' : A.stance;
+  if (ctx === 'enemy') return 'guard';
   if (S.action) return S.action.skill === 'fishing' ? 'fish' : S.action.skill === 'cooking' ? 'cook' : A.stance;
   return A.stance;
 }
@@ -582,18 +584,27 @@ function avFrame(now) {
     const br = calm ? 0 : Math.sin(t * 2.2);
     const Pd = Object.assign({}, P, { t2: P.t2 + br * 1.6, n: P.n - br * 1.2, aF: [P.aF[0] + br * 1.4, P.aF[1]], aB: [P.aB[0] - br * 1.4, P.aB[1]] });
     if (P.air) Pd.air = P.air + Math.sin(t * 1.6) * 4;
-    el.innerHTML = drawAvatar(A, Pd, t, {});
+    if (st.look === undefined) st.look = el.dataset.over ? JSON.parse(el.dataset.over) : null;
+    const look = st.look ? Object.assign({}, A, st.look) : A;
+    const weapon = el.dataset.weapon !== undefined ? el.dataset.weapon : undefined;
+    el.innerHTML = avWrap(drawAvatar(look, Pd, t, { weapon }), el.dataset.flip);
   }
 }
 requestAnimationFrame(avFrame);
 
 // Public: an avatar <svg>. opts: { ctx: 'battle'|'auto'|'preview', pose, still, cls }. over: { slot: id } for previews.
+// Mirror a drawing so the figure faces left (around the centre of the 200-wide rig).
+const avWrap = (svg, flip) => (flip ? `<g transform="translate(200,0) scale(-1,1)">${svg}</g>` : svg);
 function avatarSVG(over, opts) {
   opts = opts || {};
   const A = Object.assign({}, avState(), over || {});
-  const pose = POSES[opts.pose || A.stance] || POSES.relaxed;
-  const anim = opts.still ? '' : `data-av="${opts.ctx || 'auto'}"${opts.pose ? ` data-pose="${opts.pose}"` : ''}`;
-  return `<svg class="avatar ${opts.cls || ''}" viewBox="22 18 156 218" aria-hidden="true" ${anim}>${drawAvatar(A, pose, 0.6, {})}</svg>`;
+  const fighting = opts.ctx === 'enemy' || (opts.ctx === 'battle' && S.combat.zone != null);
+  const pose = POSES[opts.pose || (fighting ? 'guard' : A.stance)] || POSES.relaxed;
+  // other figures (foes) carry their own look, weapon and facing on the element
+  const own = over && opts.ctx === 'enemy' ? ` data-over="${esc(JSON.stringify(over))}"` : '';
+  const extra = `${own}${opts.flip ? ' data-flip="1"' : ''}${opts.weapon !== undefined ? ` data-weapon="${opts.weapon}"` : ''}`;
+  const anim = opts.still ? '' : `data-av="${opts.ctx || 'auto'}"${opts.pose ? ` data-pose="${opts.pose}"` : ''}${extra}`;
+  return `<svg class="avatar ${opts.cls || ''}" viewBox="22 18 156 218" aria-hidden="true" ${anim}>${avWrap(drawAvatar(A, pose, 0.6, { weapon: opts.weapon }), opts.flip)}</svg>`;
 }
 const ATTACKS = [
   [['windup', 110, 'out'], ['strike', 90, 'back'], ['strike', 120], ['guard', 260]],

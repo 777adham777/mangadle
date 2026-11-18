@@ -554,27 +554,7 @@ function zoneRow(z, i) {
     <span class="z-main"><b>${ascTier(z.realm) ? `<em class="asc-tag t${ascTier(z.realm)}">${ASC[ascTier(z.realm)].name}</em>` : ''}${z.name}</b><small>${z.boss ? 'Boss · ' : ''}Rec. Lv ${z.rec} · ${z.enemies.map((e) => e.name).join(' · ')}</small></span>
     <span class="z-tail"><span class="danger ${dc}">${dl}</span><span class="z-k">${ui('skull')}<b data-kills="${z.id}">${fmt(C.kills[z.id] || 0)}</b></span></span></button>`;
 }
-function stageHTML() {
-  const C = S.combat, e = curEnemy();
-  const me = `<div class="fighter me">
-    <div class="f-art av-art" data-portrait="player">${typeof avatarSVG === 'function' ? avatarSVG(null, { ctx: 'battle' }) : ui('hero')}</div>
-    <div class="f-body"><div class="f-name"><b>You</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(pMaxHit())}</span><span title="Defense">${ui('def')}${fmt(pDef())}</span><span title="Attack speed">${ui('spd')}${pSpeed().toFixed(1)}s</span>${pDodge() ? `<span title="Dodge">${ui('dodge')}${pct(pDodge())}</span>` : ''}</span></div>
-      <div class="hpbar"><i data-php></i><span data-phptext></span></div><div class="atkbar"><i data-patk></i></div>${uix('stageMe')}</div>
-  </div>`;
-  let right;
-  if (C.zone == null) right = `<div class="f-empty">${ui('map')}<b>Choose a stage</b><small>Start with an <em>Easy</em> one in the list.</small></div>`;
-  else if (!e) right = `<div class="f-empty searching">${ui('battle')}<b>Searching for a foe…</b></div>`;
-  else {
-    const boss = ZONES[C.zone].boss;
-    right = `<div class="fighter enemy enter ${boss ? 'boss' : ''}">
-      <div class="f-art" data-portrait="enemy">${ic('enemy', e.base || e.name)}</div>
-      <div class="f-body"><div class="f-name"><b>${boss ? '<span class="boss-tag">Boss</span>' : ''}${e.name}</b><span class="f-stats"><span title="Max hit">${ui('atk')}${e.atk}</span><span title="Defense">${ui('def')}${e.def}</span><span title="Attack speed">${ui('spd')}${e.spd}s</span></span></div>
-        <div class="hpbar enemy"><i data-ehp></i><span data-ehptext></span></div><div class="atkbar"><i data-eatk></i></div>
-        <div class="drops">${e.drops.map(([id, ch]) => tile(id, fmtRate(ch < 0.2 ? ch * luckMult() : ch), { cls: 'xs ' + (id !== 'FRUIT' && !S.found[id] ? 'dim' : '') })).join('')}${tile(null, fmt(e.gold[0]) + '+', { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}</div></div>
-    </div>`;
-  }
-  return `${me}<div class="vs"><span>VS</span></div>${right}`;
-}
+// stageHTML(): the battle arena lives in arena.js
 function logHTML() { return S.combat.log.map((l) => `<div class="${l.c}">${esc(l.m)}</div>`).join('') || '<div class="sys">Nothing yet.</div>'; }
 
 /* ------------------------------------------------------------- bank & gear */

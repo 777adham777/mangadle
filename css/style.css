@@ -1600,3 +1600,67 @@ body { background: var(--bg); }
 
 /* rarity word in item detail headers (loot.js) */
 .dt-name .rar { color: var(--rgc); font-weight: 700; letter-spacing: .04em; text-transform: uppercase; }
+
+/* ================================================================ battle arena (js/arena.js) */
+/* A side-on stage: HUD with both health bars on top, a floor where the fighters face off. */
+.arena.arena { display: block; padding: 0; overflow: hidden; border: 1px solid var(--line); border-radius: 2px;
+  background: linear-gradient(180deg, rgba(8, 10, 16, 0.55), rgba(8, 10, 16, 0.2) 40%, transparent); }
+.ar-hud { position: relative; z-index: 2; display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: start; gap: 10px; padding: 12px 12px 0; }
+.ar-hud .fhud { max-width: none; }
+.ar-hud .vs { align-self: center; }
+.fhud.enemy .f-name { flex-direction: row-reverse; text-align: right; }
+.fhud.enemy .drops { justify-content: flex-end; }
+.fhud.enemy.boss { box-shadow: inset 0 0 0 1px rgba(244, 198, 106, 0.5); }
+/* the foe's bars drain toward the centre, like a fighting game */
+.hpbar.enemy i { margin-left: auto; }
+.atkbar.enemy i { margin-left: auto; }
+.fhud-empty { min-height: 1px; }
+
+.ar-floor { --rc: #ff5d73; position: relative; height: 270px; container-type: inline-size;
+  background:
+    radial-gradient(ellipse 55% 26% at 50% 100%, color-mix(in srgb, var(--rc) 30%, transparent), transparent 70%),
+    linear-gradient(180deg, transparent 0 82%, color-mix(in srgb, var(--rc) 10%, rgba(0, 0, 0, 0.55)) 82% 100%); }
+.ar-floor::before { content: ''; position: absolute; left: 0; right: 0; bottom: 18%; height: 2px; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--rc) 70%, #fff), transparent); opacity: 0.55; }
+.ar-floor .fighter { position: absolute; bottom: 4%; width: 200px; height: 248px; display: block; gap: 0; }
+.ar-floor .fighter.me { left: 12%; }
+.ar-floor .fighter.enemy { right: 12%; }
+.ar-floor .f-art, .ar-floor .f-art.av-art { width: 100%; height: 100%; margin: 0; padding: 0; display: block; font-size: 0; }
+.ar-floor .f-art::before { display: none; }
+.ar-floor .f-art .avatar { width: 100%; height: 100%; }
+/* beasts and monsters: a large creature standing on the floor */
+.ar-floor .fighter.foe-beast .f-art { display: grid; place-items: end center; padding-bottom: 14px; }
+.ar-floor .creature { position: relative; display: grid; place-items: center; width: 168px; height: 168px; font-size: 150px; color: color-mix(in srgb, var(--rc) 55%, #fff);
+  filter: drop-shadow(0 0 0 #0a0c11) drop-shadow(0 0 18px color-mix(in srgb, var(--rc) 45%, transparent)); animation: creatureIdle 2.4s ease-in-out infinite; }
+.ar-floor .creature .gi { width: 1em; height: 1em; transform: scaleX(-1); stroke: #0a0c11; stroke-width: 22px; paint-order: stroke; }
+.ar-floor .fighter.foe-beast .f-art::after { content: ''; position: absolute; left: 50%; bottom: 10px; width: 140px; height: 12px; transform: translateX(-50%); border-radius: 50%; background: rgba(0, 0, 0, 0.45); }
+.ar-floor .fighter.boss .creature { font-size: 170px; filter: drop-shadow(0 0 22px rgba(244, 198, 106, 0.55)); }
+@keyframes creatureIdle { 50% { transform: translateY(-6px) scale(1.02, 0.98); } }
+/* empty side of the floor */
+.ar-floor .f-empty { position: absolute; right: 8%; bottom: 22%; width: min(280px, 40%); }
+
+/* attacks: the attacker dashes across the floor and back */
+.ar-floor .fighter.me.lunge { animation: lungeR 0.42s cubic-bezier(.2, .9, .3, 1); }
+.ar-floor .fighter.enemy.lunge { animation: lungeL 0.42s cubic-bezier(.2, .9, .3, 1); }
+@keyframes lungeR { 35% { transform: translateX(26cqw); } 100% { transform: none; } }
+@keyframes lungeL { 35% { transform: translateX(-26cqw); } 100% { transform: none; } }
+.ar-floor .fighter.shake .f-art { animation: hitFlash 0.28s; }
+@keyframes hitFlash { 0% { filter: brightness(2.2); transform: translateX(0); } 30% { transform: translateX(-7px); } 60% { transform: translateX(5px); } 100% { filter: none; transform: none; } }
+.ar-floor .fighter.enemy.shake .f-art { animation-name: hitFlashL; }
+@keyframes hitFlashL { 0% { filter: brightness(2.2); } 30% { transform: translateX(7px); } 60% { transform: translateX(-5px); } 100% { filter: none; transform: none; } }
+/* defeated foe falls back and fades */
+.ar-floor .fighter.enemy.down .f-art { animation: foeDown 0.7s ease-in forwards; transform-origin: 50% 92%; }
+@keyframes foeDown { 30% { transform: translateX(12px) rotate(8deg); } 100% { transform: translateX(26px) rotate(78deg) translateY(10px); opacity: 0; } }
+.ar-floor .fighter.enemy.enter { animation: foeIn 0.4s ease-out; }
+@keyframes foeIn { from { opacity: 0; transform: translateX(40px); } }
+.ar-floor .ko { top: 8%; }
+
+@media (max-width: 700px) {
+  .ar-hud { grid-template-columns: 1fr; padding: 10px 10px 0; }
+  .ar-hud .vs { display: none; }
+  .ar-floor { height: 210px; }
+  .ar-floor .fighter { width: 150px; height: 190px; }
+  .ar-floor .fighter.me { left: 4%; }
+  .ar-floor .fighter.enemy { right: 4%; }
+  .ar-floor .creature { width: 128px; height: 128px; font-size: 112px; }
+}
+@media (prefers-reduced-motion: reduce) { .ar-floor .fighter.lunge, .ar-floor .creature { animation: none; } }
