@@ -5,7 +5,11 @@
    technique icon data-ttip="<technique id>" (ui.js ic). Hovering one shows a card; on touch,
    a tap on a plain icon or a long press on a button does. Items: name, rarity, family, what it
    does, where it comes from, owned and worth. Techniques: effect at your level, tiers, progress, source.
+   The card is short by default (name, rarity, what it does); holding Shift reveals the blocks marked
+   .more (description, sources, worth, tiers, progress). Touch always gets the full card.
    ========================================================================== */
+
+const TIP_HINT = '<div class="it-hint"><kbd>Shift</kbd> details</div>';
 
 // What the item does, as attribute rows [icon, label, value] plus an optional line of text.
 function tipEffect(id) {
@@ -111,9 +115,9 @@ function tipHTML(id, arm, stackN) {
   return `<div class="it-card r${r}"><div class="it-head">${tile(id, null, { cls: 's' })}<div><b class="it-name">${esc(it.name)}</b>
       <small><span class="rar r${r}">${RARITY_NAME[r] || ''}</span> · <span class="kind-lab k-${k}">${ui('k-' + k)}${K.one}</span>${type !== K.one ? ' · ' + esc(type) : ''}</small></div></div>
     ${rows.length ? `<div class="it-rows">${rows.map(([icn, l, v]) => `<div><i>${ui(icn)}</i><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('')}</div>` : ''}
-    ${text ? `<p class="it-text">${esc(text)}</p>` : ''}
-    ${src.length ? `<div class="it-src"><small>Where to find</small>${src.map((x) => `<div><i>${ic(x.icon[0], x.icon[1])}</i><span>${esc(x.text)}</span>${x.rate != null ? `<b>${fmtRate(x.rate)}</b>` : ''}</div>`).join('')}</div>` : ''}
-    <div class="it-foot">${arm ? `<span>${esc(armTag(arm))}</span><span>${ui('gold')}<b>${fmt(it.value * (1 + arm.ref))}</b> g</span>` : `<span>${stackN != null ? 'In this stack' : 'Owned'} <b>${fmt(n)}</b></span><span>${ui('gold')}<b>${fmt(it.value)}</b> g each</span>`}</div></div>`;
+    ${text ? `<p class="it-text${rows.length ? ' more' : ''}">${esc(text)}</p>` : ''}
+    ${src.length ? `<div class="it-src more"><small>Where to find</small>${src.map((x) => `<div><i>${ic(x.icon[0], x.icon[1])}</i><span>${esc(x.text)}</span>${x.rate != null ? `<b>${fmtRate(x.rate)}</b>` : ''}</div>`).join('')}</div>` : ''}
+    <div class="it-foot more">${arm ? `<span>${esc(armTag(arm))}</span><span>${ui('gold')}<b>${fmt(it.value * (1 + arm.ref))}</b> g</span>` : `<span>${stackN != null ? 'In this stack' : 'Owned'} <b>${fmt(n)}</b></span><span>${ui('gold')}<b>${fmt(it.value)}</b> g each</span>`}</div>${TIP_HINT}</div>`;
 }
 
 // Techniques: what they do at your level, their Lv 5 / Lv 10 tiers, progress and where to get them.
@@ -134,12 +138,12 @@ function techTipHTML(id) {
   return `<div class="it-card tt" style="--rgc:${rc(T.realm)}"><div class="it-head">${tile(null, null, { r: L ? Math.min(5, 1 + Math.floor(L / 3)) : 0, icon: ic('technique', id), unknown: !L, cls: 's' })}
       <div><b class="it-name">${L ? esc(T.name) : 'Unknown technique'}</b><small>${esc(cat.name)} · ${esc(world ? world.name : '')}${L ? ' · ' + cd : ''}</small></div></div>
     ${L ? `<p class="it-text">${T.desc(L)}</p>
-      <ul class="it-tiers">${TECH_TIERS.map((t) => `<li class="${L >= t ? 'got' : ''}"><em>Lv ${t}</em>${esc(T.tiers[t])}</li>`).join('')}</ul>
-      <div class="it-rows">${rows.map(([icn, l, v]) => `<div><i>${ui(icn)}</i><span>${l}</span><b>${esc(v)}</b></div>`).join('')}</div>
-      ${T.tags && T.tags.length ? `<div class="it-tags">${T.tags.map((t) => `<i>${esc(t)}</i>`).join('')}</div>` : ''}`
-    : `<p class="it-text">Not learned yet. A scroll of ${esc(world ? world.name : 'its world')} teaches a random technique; unknown ones come up 3× as often.</p>`}
-    <div class="it-src"><small>Where to get it</small>${src.map(([i, t, v]) => `<div><i>${i}</i><span>${esc(t)}</span>${v ? `<b>${v}</b>` : ''}</div>`).join('')}</div>
-    ${L && L < TECH_MAX ? `<div class="it-foot"><span>Each copy found gives <b>${FRAG_PER_DUP}</b> fragments</span></div>` : ''}</div>`;
+      <ul class="it-tiers more">${TECH_TIERS.map((t) => `<li class="${L >= t ? 'got' : ''}"><em>Lv ${t}</em>${esc(T.tiers[t])}</li>`).join('')}</ul>
+      <div class="it-rows more">${rows.map(([icn, l, v]) => `<div><i>${ui(icn)}</i><span>${l}</span><b>${esc(v)}</b></div>`).join('')}</div>
+      ${T.tags && T.tags.length ? `<div class="it-tags more">${T.tags.map((t) => `<i>${esc(t)}</i>`).join('')}</div>` : ''}`
+    : `<p class="it-text">Not learned yet.<span class="more"> A scroll of ${esc(world ? world.name : 'its world')} teaches a random technique; unknown ones come up 3× as often.</span></p>`}
+    <div class="it-src more"><small>Where to get it</small>${src.map(([i, t, v]) => `<div><i>${i}</i><span>${esc(t)}</span>${v ? `<b>${v}</b>` : ''}</div>`).join('')}</div>
+    ${L && L < TECH_MAX ? `<div class="it-foot more"><span>Each copy found gives <b>${FRAG_PER_DUP}</b> fragments</span></div>` : ''}${TIP_HINT}</div>`;
 }
 
 (() => {
@@ -147,7 +151,13 @@ function techTipHTML(id) {
   el.id = 'itip';
   el.setAttribute('role', 'tooltip');
   document.body.appendChild(el);
-  let anchor = null, tipId = null, lastX = 0, lastY = 0, press = null, pressed = false, touchy = false;
+  let anchor = null, tipId = null, lastX = 0, lastY = 0, press = null, pressed = false, touchy = false, shift = false;
+  // Full card while Shift is held (mouse), always on touch. The hint only shows when something is hidden.
+  const mode = () => {
+    el.classList.toggle('full', shift || touchy);
+    el.classList.toggle('has-more', !!el.querySelector('.more'));
+    if (anchor) place();
+  };
 
   const place = () => {
     const a = anchor.getBoundingClientRect(), w = el.offsetWidth, h = el.offsetHeight, vw = innerWidth, vh = innerHeight, m = 8;
@@ -178,14 +188,14 @@ function techTipHTML(id) {
       tipId = key;
     }
     el.classList.add('show');
-    place();
+    mode();
   };
   const hide = () => { el.classList.remove('show'); anchor = null; tipId = null; };
   const target = (node) => (node && node.closest ? node.closest('[data-tip], [data-ttip]') : null);
 
   document.addEventListener('pointerover', (e) => {
     if (e.pointerType !== 'mouse') return;
-    lastX = e.clientX; lastY = e.clientY;
+    lastX = e.clientX; lastY = e.clientY; touchy = false; shift = e.shiftKey;
     const t = target(e.target);
     if (t) { if (t !== anchor) show(t); } else if (anchor) hide();
   });
@@ -212,7 +222,10 @@ function techTipHTML(id) {
   }, true);
   document.addEventListener('contextmenu', (e) => { if (target(e.target) && e.pointerType !== 'mouse' && pressed) e.preventDefault(); });
   addEventListener('scroll', () => { if (anchor) hide(); }, true);
-  addEventListener('blur', hide);
+  addEventListener('blur', () => { shift = false; hide(); });
+  const onKey = (e) => { if (e.key !== 'Shift' || e.repeat) return; const on = e.type === 'keydown'; if (on !== shift) { shift = on; mode(); } };
+  addEventListener('keydown', onKey);
+  addEventListener('keyup', onKey);
   // Re-renders replace the hovered tile: follow the new one under the mouse, or hide.
   UPD.push(() => {
     if (!anchor || anchor.isConnected) return;
