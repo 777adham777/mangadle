@@ -15,7 +15,7 @@
 const SPICES = {
   salt:    { item: 'sea_salt',     name: 'Sea Salt',       adj: 'Salted',       col: '#eef4f8', icon: 'salt-shaker',   fx: { heal: 0.25 },                         secs: 0 },
   pepper:  { item: 'peppercorns',  name: 'Peppercorns',    adj: 'Peppered',     col: '#5b4638', icon: 'pepper-grains', fx: { dmg: 0.12 },                          secs: 30 },
-  lemon:   { item: 'coral_lemon',  name: 'Coral Lemon',    adj: 'Zesty',        col: '#ffe14d', icon: 'lemon',         fx: { guard: 0.2 },                         secs: 20 },
+  lemon:   { item: 'coral_lemon',  name: 'Coral Lemon',    adj: 'Zesty',        col: '#ffe14d', icon: 'cut-lemon',     fx: { guard: 0.2 },                         secs: 20 },
   kelp:    { item: 'sea_kelp',     name: 'Sea Kelp',       adj: 'Kelp-Wrapped', col: '#3fbf7a', icon: 'kelp',          fx: { regen: 0.025 },                       secs: 8 },
   chili:   { item: 'fire_chili',   name: 'Fire Chili',     adj: 'Spicy',        col: '#ff4a2a', icon: 'chili-pepper',  fx: { haste: 0.15 },                        secs: 20 },
   saffron: { item: 'gold_saffron', name: 'Golden Saffron', adj: 'Royal',        col: '#ffbf2e', icon: 'saffron',       fx: { heal: 0.4, dmg: 0.1, guard: 0.1 },    secs: 30 },

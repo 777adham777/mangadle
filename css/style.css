@@ -1473,6 +1473,10 @@ button.acard:hover { border-color: var(--line2); background: #202126; }
 .dt-hero { background: var(--rg); border-bottom: 1px solid color-mix(in srgb, var(--rgc) 50%, var(--line)); }
 .dt-hero::before { background: radial-gradient(circle at 82% 50%, color-mix(in srgb, var(--rgc) 30%, transparent), transparent 55%); }
 .dt-art .gi { fill: url(#gi-g3); stroke: rgba(0, 0, 0, 0.6); stroke-width: 14px; paint-order: stroke fill; filter: drop-shadow(0 0 12px color-mix(in srgb, var(--rgc) 80%, transparent)); }
+/* Item art: the glyph wears the item's own colour (--ic); the frame (background, edge, glow) keeps the rarity.
+   Schematics are a blueprint of the gear they teach. Shiny / perfect variants keep their gold (seas.css). */
+.tile .tile-art > .gi.ic, .dt-art .gi.ic, .spop .tile-art > .gi.ic { fill: var(--ic); }
+.tile .tile-art > .gi.ic.bp, .dt-art .gi.ic.bp { fill: #143a5c; stroke: #8fdcff; stroke-width: 30px; }
 .attrs .attr:nth-child(odd), .srcs li:nth-child(odd) { background: rgba(255, 255, 255, 0.025); }
 .equip-win { border-right: 0; padding-right: 14px; }
 .syn-ic, .tr-ic, .ts-ic, .ct-ic, .gt-ic, .ec-ic, .q-ic, .wl-ic, .lc-badge, .nx-ic { border-radius: 2px; }

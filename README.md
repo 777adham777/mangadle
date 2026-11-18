@@ -79,5 +79,5 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 ## Credits
 
 Icons from [game-icons.net](https://game-icons.net) by Lorc, Delapouite, Skoll, Caro Asercion, sbed, Cathelineau,
-DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue and Zeromancer,
+DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue, Willdabeast and Zeromancer,
 licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).

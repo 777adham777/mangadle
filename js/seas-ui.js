@@ -16,7 +16,7 @@ GI['pepper-grains'] = 'M110 330a70 70 0 1 1 140 0a70 70 0 1 1-140 0zM254 310a76 
 GI['chili-pepper'] = 'M168 154C112 262 170 392 300 444c60 24 120 26 146 6-62-14-112-54-146-96-48-60-50-130-36-196zM136 176c10-54 132-64 152-14-38 26-108 32-152 14zM204 140c-6-46 22-84 80-100l14 34c-42 10-56 34-52 70z';
 GI['kelp'] = 'M180 480c-30-80 40-130 10-210-30-80 30-130 6-210 44 70 0 130 32 208 34 84-32 132-8 212zM282 480c-18-70 50-120 20-200-24-70 30-120 16-184 36 64-4 116 22 184 28 80-34 130-20 200zM98 480c-8-50 40-80 26-140-10-50 24-80 20-130 26 50 4 86 16 134 14 60-30 88-24 136z';
 GI['saffron'] = GI['spiral-bloom'] || GI['flower-twirl'];
-Object.assign(ICONS.item, { sea_salt: 'salt-shaker', peppercorns: 'pepper-grains', coral_lemon: 'lemon', sea_kelp: 'kelp', fire_chili: 'chili-pepper', gold_saffron: 'saffron' });
+Object.assign(ICONS.item, { sea_salt: 'salt-shaker', peppercorns: 'pepper-grains', coral_lemon: 'cut-lemon', sea_kelp: 'kelp', fire_chili: 'chili-pepper', gold_saffron: 'saffron' });
 Object.assign(ICONS.ui, { spices: 'salt-shaker', shiny: 'sparkles', perfect: 'round-star', record: 'trophy', cargo: 'cargo-ship' });
 ICONS.shop.buy_pepper = 'pepper-grains';
 Object.assign(TYPE_LABEL, { spice: 'Seasoning' });

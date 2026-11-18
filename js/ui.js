@@ -32,7 +32,16 @@ function icName(kind, id) {
 }
 const ic = (kind, id, cls) => gi(icName(kind, id), cls);
 const ui = (k, cls) => ic('ui', k, cls);
-const itemIc = (id, cls) => (id === 'FRUIT' ? ui('fruit', cls) : id === 'GEM' ? ui('gem', cls) : ic('item', id, cls));
+// Item art: the item's own glyph in its own colour (ICON_COLOR, icons.js); schematics are drawn as blueprints.
+function itemIc(id, cls) {
+  if (id === 'FRUIT') return ui('fruit', cls);
+  if (id === 'GEM') return ui('gem', cls);
+  const n = icName('item', id);
+  if (!n) return '';
+  const bp = ITEMS[id] && ITEMS[id].type === 'schematic';
+  const c = typeof itemColor === 'function' ? itemColor(id) : null;
+  return `<svg class="gi ic${bp ? ' bp' : ''}${cls ? ' ' + cls : ''}"${c ? ` style="--ic:${c}"` : ''} aria-hidden="true"><use href="#gi-${n}"/></svg>`;
+}
 // Actions without an item output (beast hunts, echo rituals...) carry their own icon: a.icon = [kind, id].
 const actIc = (skill, a, cls) => (a.loot ? ic('voyage', a.id, cls) : a.icon ? ic(a.icon[0], a.icon[1], cls) : a.out ? itemIc(Object.keys(a.out)[0], cls) : ic('skill', skill, cls));
 // Family badge + tier tag drawn over an item tile (see ICON_MARK in icons.js).
