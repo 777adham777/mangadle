@@ -232,6 +232,11 @@ Chaque étape est livrée et jouable avant de passer à la suivante.
 - 2026-11-19 : première version du moteur de coiffure v2 (`js/hair2.js` : couches, mèches irrégulières, contours colorés, ombres dessinées, ombre de frange, anneau de lumière) et du **créateur simple** dans l'onglet Hair du Studio.
   - Le créateur propose 12 styles, 8 franges, 6 côtés, 9 arrières et 5 extras, avec 3 curseurs, un bouton Variante, 15 couleurs et des pointes colorées.
   - Les anciennes coupes restent copiables (« Old system »).
+- 2026-11-19 (suite) : la coupe forme une seule masse, imparfaite et asymétrique de façon contrôlée.
+  - Les détails sont peints mèche par mèche, de l'arrière vers l'avant, donc aucun trait ne croise une mèche.
+  - Les reflets sont des croissants effilés du côté de la lumière.
+  - Les franges s'arrêtent au-dessus des yeux, et les racines restent dans le crâne.
+  - **Dessin libre** : partir d'un style ou de « Blank », puis tracer ses mèches sur la tête (devant, derrière la tête ou derrière le corps ; fine, moyenne ou épaisse ; pointue, ronde ou coupée ; miroir). Elles se fondent dans la coupe.
 - Reste à faire : la tête qui tourne (racines 3D), la physique en chaîne, les teintures à débloquer, et les tenues.
 
 ## 6. Décisions (validées le 2026-11-19)

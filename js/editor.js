@@ -67,7 +67,7 @@ const ST = {
   mode: 'anim', sel: {}, pack: null, live: false,
   u: 0, playing: false, loop: true, speed: 1, onion: true, clip: null,
   lock: 0, layer: 0, point: -1, emitter: 0,
-  tool: '', snap: true, hairEdit: 'locks', sym: false, brush: { w: 8, tp: 0.8, back: false, hang: false, k: false }, animate: true, bg: 'dark', handles: true, guide: true,
+  tool: '', snap: true, h2d: { l: 'main', w: 7, tip: 'point' }, hairEdit: 'locks', sym: false, brush: { w: 8, tp: 0.8, back: false, hang: false, k: false }, animate: true, bg: 'dark', handles: true, guide: true,
   previewPose: 'relaxed', view: { x: -10, y: 4, w: 220, h: 240 },
   man: { build: 'athletic', style: 'flat', color: 'chalk', hair: 'tuft', top: 'tee', bottom: 'tee', hat: 'none', face: 'dots', back: 'none', aura: 'none', weapon: '' },
   open: {},
@@ -499,7 +499,14 @@ function handlesSVG(P, B, A) {
   }
   if (ST.mode === 'hair' && !isVec()) {
     const it = cur();
-    if (!it || it.v2) return '';
+    if (it && it.v2) {
+      // your own locks: the stroke being drawn, and (with a tool on) the spines of the ones already drawn
+      const hx = headXf(J, P, true, false), line = (Q, cls, w) => `<path class="bone ${cls}" d="M${Q.map((q) => hx.toW(q)).map((p) => `${rd2(p[0])},${rd2(p[1])}`).join('L')}" stroke-width="${rd2(w / zoomK())}"/>`;
+      if (ST.tool === 'h2draw' || ST.tool === 'h2erase') for (const st of it.v2.strokes || []) out.push(line(st.pts, ST.tool === 'h2erase' ? 'b' : 'o', 1.4));
+      if (drag && drag.h2 && drag.h2.length > 1) out.push(line(drag.h2, 'f', 3));
+      return `<g class="handles">${out.join('')}</g>`;
+    }
+    if (!it) return '';
     const hx = headXf(J, P, true, false);
     if (drag && drag.brush && drag.brush.length > 1) out.push(`<path class="bone f" d="M${drag.brush.map((q) => hx.toW(q)).map((p) => `${rd2(p[0])},${rd2(p[1])}`).join('L')}" stroke-width="${rd2(3 / zoomK())}"/>`);
     if (ST.guide) out.push(guideHead(headXf(J, P, false, false)));
@@ -597,6 +604,8 @@ stage.addEventListener('pointerdown', (ev) => {
   stage.setPointerCapture(ev.pointerId);
   if (ev.button === 1 || ev.button === 2 || spaceDown) { drag = { pan: 1, from: [ev.clientX, ev.clientY], v: Object.assign({}, ST.view) }; ev.preventDefault(); return; }
   if (ST.mode === 'hair' && !isVec() && ST.tool === 'brush' && cur()) { drag = { brush: [frameNow().toL(w)] }; return; }
+  if (ST.mode === 'hair' && cur() && cur().v2 && ST.tool === 'h2draw') { drag = { h2: [frameNow().toL(w)] }; return; }
+  if (ST.mode === 'hair' && cur() && cur().v2 && ST.tool === 'h2erase') { h2Erase(frameNow().toL(w)); return; }
   if (h) {
     const id = h.dataset.h;
     const dbl = performance.now() - lastPD.t < 350 && lastPD.id === id;
@@ -643,6 +652,11 @@ stage.addEventListener('pointermove', (ev) => {
     stage.style.cursor = h ? 'grab' : (ST.tool && TYPES[ST.mode] ? 'crosshair' : 'default');
     return;
   }
+  if (drag.h2) {
+    const q = frameNow().toL(stagePt(ev)), l = drag.h2[drag.h2.length - 1];
+    if (Math.hypot(q[0] - l[0], q[1] - l[1]) > 0.5) drag.h2.push(q);
+    return;
+  }
   if (drag.brush) {
     const q = frameNow().toL(stagePt(ev)), l = drag.brush[drag.brush.length - 1];
     if (Math.hypot(q[0] - l[0], q[1] - l[1]) > 0.6) drag.brush.push(q);
@@ -664,6 +678,7 @@ function endDrag() {
   drag = null;
   if (was.pan) { if (was.click && isVec()) { ST.point = -1; } return; }
   if (was.brush) { brushLock(was.brush); return; }
+  if (was.h2) { h2AddStroke(was.h2); return; }
   if (was.add && ST.mode === 'hair') { const L = curLock(); if (L && L.len < 3) L.len = 10; if (L && ST.sym) cur().locks.push(mirrorLock(L)); }
   commit();
   renderRight();
@@ -681,6 +696,38 @@ stage.addEventListener('wheel', (ev) => {
 function frameNow() {
   const A = wearing(), B = cosOf('build', A.build).b, P = stagePose(B), J = solve(P, B);
   return ST.mode === 'hair' ? headXf(J, P, true, false) : vecFrame(J, P, B);
+}
+// A stroke drawn on a v2 haircut becomes one of its locks: from the end nearer the head's centre
+// (where the hair grows) to the other (its tip), resampled, mirrored if asked.
+let h2Group = 0;
+function h2AddStroke(S0) {
+  const it = cur();
+  if (!it || !it.v2 || S0.length < 3) return;
+  let len = 0;
+  for (let i = 1; i < S0.length; i++) len += Math.hypot(S0[i][0] - S0[i - 1][0], S0[i][1] - S0[i - 1][1]);
+  if (len < 2) return;
+  const c = [0, -4], d0 = Math.hypot(S0[0][0] - c[0], S0[0][1] - c[1]), d1 = Math.hypot(S0[S0.length - 1][0] - c[0], S0[S0.length - 1][1] - c[1]);
+  const Q = d1 < d0 ? S0.slice().reverse() : S0, pts = h2Resample(Q, clamp(Math.round(len / 2.2), 4, 14)).map((q) => [rd(q[0]), rd(q[1])]);
+  const g = ++h2Group + Date.now() % 100000, b = ST.h2d, st = { l: b.l, w: b.w, tip: b.tip, pts, g };
+  it.v2.strokes = it.v2.strokes || [];
+  it.v2.strokes.push(st);
+  if (ST.sym) it.v2.strokes.push(Object.assign({}, st, { pts: pts.map(([x, y]) => [rd(-x), y]) }));
+  commit(); renderRight(); renderLeft();
+}
+function h2Erase(q) {
+  const it = cur(), L = (it && it.v2 && it.v2.strokes) || [];
+  let best = -1, bd = Infinity;
+  L.forEach((st, i) => {
+    for (let k = 1; k < st.pts.length; k++) {
+      const a = st.pts[k - 1], b = st.pts[k], dx = b[0] - a[0], dy = b[1] - a[1], f = clamp(((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / (dx * dx + dy * dy || 1), 0, 1);
+      const dd = Math.hypot(a[0] + dx * f - q[0], a[1] + dy * f - q[1]) - (st.w || 7) / 2;
+      if (dd < bd) { bd = dd; best = i; }
+    }
+  });
+  if (best < 0 || bd > 2.5) return;
+  const g = L[best].g;
+  it.v2.strokes = L.filter((st, i) => i !== best && !(g && st.g === g));
+  commit(); renderRight(); renderLeft();
 }
 // A freehand stroke on the head becomes a lock: root at the start, the stroke resampled as its spine.
 function brushLock(S0) {
@@ -917,6 +964,7 @@ function renderStagebar() {
   const el = $('#stagebar');
   if (ST.mode === 'pack') { el.innerHTML = ''; return; }
   const tools = [];
+  if (ST.mode === 'hair' && cur() && cur().v2) tools.push(`<button class="b ${ST.tool === 'h2draw' ? 'on' : ''}" data-act="tool" data-arg="h2draw" title="Drag on the head, from the root to the tip (D)">${IC.plus} Draw a lock</button>`, `<button class="b ${ST.tool === 'h2erase' ? 'on' : ''}" data-act="tool" data-arg="h2erase" title="Click a lock you drew to remove it (E)">Erase</button>`, `<label class="chk"><input type="checkbox" data-bind="st:sym" data-t="b" ${ST.sym ? 'checked' : ''}><span>Mirror</span></label>`);
   if (ST.mode === 'hair' && !isVec() && !(cur() && cur().v2)) tools.push(`<button class="b ${ST.tool === 'brush' ? 'on' : ''}" data-act="tool" data-arg="brush" title="Paint a lock on the head: it follows your stroke (B)">${IC.plus} Brush</button>`,
     `<button class="b ${ST.tool === 'addlock' ? 'on' : ''}" data-act="tool" data-arg="addlock" title="Click on the head and drag from root to tip (L)">${IC.plus} Arc lock</button>`,
     `<label class="chk"><input type="checkbox" data-bind="st:sym" data-t="b" ${ST.sym ? 'checked' : ''}><span>Symmetry</span></label>`);
@@ -1185,12 +1233,20 @@ function hair2Inspector(h) {
   const isStyle = (st) => ['fringe', 'side', 'back', 'extra'].every((p) => d[p] === st[p]);
   let s = sec('h2name', 'Haircut', fTxt('Name', 'item:name') + note('Pick a style, swap any part, set the shape and the colour. That\'s it.'));
   s += sec('h2style', '1 · Style', `<div class="h2g">${Object.entries(H2_STYLES).map(([k, st]) => h2Tile('style', k, st.name, Object.assign({}, d, h2Pick(st)), isStyle(st))).join('')}</div>`);
-  for (const [part, label, lib] of [['fringe', '2 · Fringe', H2_FRINGES], ['side', '3 · Sides', H2_SIDES], ['back', '4 · Back', H2_BACKS], ['extra', '5 · Extra', H2_EXTRAS]]) {
+  const segs = (key, opts) => `<nav class="seg">${opts.map(([v, l]) => `<button class="${String(ST.h2d[key]) === String(v) ? 'on' : ''}" data-act="h2set" data-arg="${key}:${v}">${l}</button>`).join('')}</nav>`;
+  const n = (d.strokes || []).length;
+  s += sec('h2draw', '2 · Draw your own locks', note('Start from a style, or from <b>Blank</b> to make a cut from zero. Then drag on the head from where the hair grows to its tip: each stroke becomes a lock that blends into the rest.')
+    + row(btn(`${IC.plus} Draw`, 'tool', 'h2draw', ST.tool === 'h2draw' ? 'on' : 'primary'), btn('Erase', 'tool', 'h2erase', ST.tool === 'h2erase' ? 'on' : 'ghost'), fChk('Mirror', 'st:sym'))
+    + segs('l', [['main', 'In front'], ['nape', 'Behind the head'], ['back', 'Behind the body']])
+    + segs('w', [[4, 'Fine'], [7, 'Medium'], [10.5, 'Thick']])
+    + segs('tip', [['point', 'Pointed'], ['round', 'Round'], ['blunt', 'Cut']])
+    + (n ? row(btn('Undo last lock', 'h2undo', null, 'ghost'), btn(`Remove all (${n})`, 'h2clear', null, 'ghost danger')) : ''), n ? `${n}` : '');
+  for (const [part, label, lib] of [['fringe', '3 · Fringe', H2_FRINGES], ['side', '4 · Sides', H2_SIDES], ['back', '5 · Back', H2_BACKS], ['extra', '6 · Extra', H2_EXTRAS]]) {
     s += sec('h2' + part, label, `<div class="h2g">${Object.entries(lib).map(([k, v]) => h2Tile(part, k, v.name, Object.assign({}, d, { [part]: k }), d[part] === k)).join('')}</div>`);
   }
-  s += sec('h2tune', '6 · Shape', fNum('Volume', 'item:v2.vol', 0, 1, 0.05, 1) + fNum('Length', 'item:v2.len', 0, 1, 0.05, 1) + fNum('Spiky', 'item:v2.spike', 0, 1, 0.05, 1)
+  s += sec('h2tune', '7 · Shape', fNum('Volume', 'item:v2.vol', 0, 1, 0.05, 1) + fNum('Length', 'item:v2.len', 0, 1, 0.05, 1) + fNum('Spiky', 'item:v2.spike', 0, 1, 0.05, 1)
     + row(btn('Another variation', 'h2var', 1, 'primary', 'Same choices, a different irregularity'), btn('Back', 'h2var', -1, 'ghost')));
-  s += sec('h2col', '7 · Colour', `<div class="dyes">${H2_DYES.map(([c, n]) => `<button class="dye ${d.c === c ? 'on' : ''}" style="background:${c}" data-act="h2col" data-arg="${c}" title="${n}"></button>`).join('')}</div>`
+  s += sec('h2col', '8 · Colour', `<div class="dyes">${H2_DYES.map(([c, n]) => `<button class="dye ${d.c === c ? 'on' : ''}" style="background:${c}" data-act="h2col" data-arg="${c}" title="${n}"></button>`).join('')}</div>`
     + fCol('Own colour', 'item:v2.c') + fOptCol('Coloured tips', 'item:v2.tip', '#ff6a3d'));
   s += sec('meta', 'In the game', metaSec('hair', h, 1));
   return s;
@@ -1479,7 +1535,7 @@ const ACT = {
   help() { showHelp(true); }, 'help-close'() { showHelp(false); },
   fold(id) { ST.open[id] = ST.open[id] === false; renderRight(); saveDraft(); },
   view(v) { if (v === 'head') fitHead(); else if (v === 'torso') fitTorso(); else fitBody(); },
-  tool(t) { ST.tool = ST.tool === t ? '' : t; renderStagebar(); },
+  tool(t) { ST.tool = ST.tool === t ? '' : t; renderStagebar(); if (t.startsWith('h2')) renderRight(); },
   goto(v) { const [t, i] = v.split(':'); ST.mode = t; ST.sel[t] = +i; renderAll(); autoFit(); },
   // animation
   play() { const a = cur(); if (!a) return; if (!ST.playing && ST.u >= 1 && !ST.loop) ST.u = 0; ST.playing = !ST.playing; renderTimeline(); renderRight(); },
@@ -1547,6 +1603,9 @@ const ACT = {
     if (kind === 'style') Object.assign(it.v2, h2Pick(H2_STYLES[key])); else it.v2[kind] = key;
     commit(); renderRight(); renderLeft();
   },
+  h2set(v) { const [k, x] = v.split(':'); ST.h2d[k] = k === 'w' ? +x : x; renderRight(); },
+  h2undo() { const it = cur(), L = it && it.v2 && it.v2.strokes; if (!L || !L.length) return; const g = L[L.length - 1].g; it.v2.strokes = L.filter((st, i) => i < L.length - 1 && !(g && st.g === g)); commit(); renderRight(); renderLeft(); },
+  h2clear() { const it = cur(); if (!it || !it.v2 || !confirm('Remove all the locks you drew?')) return; it.v2.strokes = []; commit(); renderRight(); renderLeft(); },
   h2var(k) { const it = cur(); if (!it || !it.v2) return; it.v2.seed = Math.max(1, (it.v2.seed || 1) + (+k || 1)); commit(); renderRight(); renderLeft(); },
   h2col(c) { const it = cur(); if (!it || !it.v2) return; it.v2.c = c; commit(); renderRight(); renderLeft(); },
   'comb-add'() { const it = cur(); (it.combs = it.combs || []).push([-60, -170, 14]); commit(); renderRight(); },
@@ -1664,6 +1723,11 @@ document.addEventListener('keydown', (ev) => {
     else if (k === 'End') { ST.u = 1; ST.playing = false; snapToKey(); renderTimeline(); }
     else if (k === 'm' || k === 'M') ACT.swaplimbs();
     else if (k === 'o' || k === 'O') { ST.onion = !ST.onion; renderTimeline(); }
+    return;
+  }
+  if (ST.mode === 'hair' && cur() && cur().v2) {
+    if (k === 'd' || k === 'D') ACT.tool('h2draw');
+    else if (k === 'e' || k === 'E') ACT.tool('h2erase');
     return;
   }
   if (ST.mode === 'hair' && !isVec()) {
