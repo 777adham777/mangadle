@@ -43,6 +43,18 @@ Add `?dev` to the URL (or tap the TRI·REALM logo 7 times) to get a **Dev** entr
 max levels and systems, give items and gold, speed time up (×10 to ×1000) or skip hours, god mode and one-hit kills, skip objectives.
 The first cheat backs up the save so it can be restored from the same page. `?dev=0` (or the button on the page) turns it off.
 
+## Studio (content editor)
+
+Open `editor.html` (or **Dev → Open the Studio**) to make avatar content with the game's own renderer:
+animations (keyframes on the rig with a dope sheet, onion skin, auto-key and IK handles; they become stances,
+skill animations or attacks), haircuts (locks on a cap), tops and bottoms, hats and faces (vector layers),
+back pieces (cape, hood, mantle, free art), auras (flames and particle emitters) and colours.
+Each piece gets a name, world, rarity and the feat that earns it.
+
+Work is kept as a draft in the browser. **Preview in game** makes the game on the same computer load the draft
+(it turns dev mode on; reload the game tab). **Save to project** writes `js/custom-pack.js`, which `js/custom.js`
+turns into game content; commit and deploy it like any other change.
+
 ## Deploying an update
 
 Bump `VERSION` in `sw.js` so returning players get the new files, then push.
@@ -77,6 +89,8 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `js/game.js` | Core engine (no DOM) with hooks for the world systems |
 | `js/ui.js` | Interface: sidebar with every skill, activity bar, skill pages, bank, battle; rendering, input, save/load |
 | `js/dev.js` | Hidden dev tools for testing (`?dev`): unlock everything, levels, items, time speed, god mode, save backup |
+| `js/custom.js` | Turns the Studio's pack (`js/custom-pack.js`) into avatar content and cosmetics |
+| `editor.html`, `js/editor.js`, `css/editor.css` | The Studio, the content editor |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable app + offline support |
 
 ## Credits

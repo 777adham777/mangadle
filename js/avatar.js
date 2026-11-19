@@ -30,6 +30,9 @@ const BOSS = (z, who) => ({ need: () => kzOf(z) >= 1, hint: `Defeat ${who}` });
 const KILLS = (z, n) => ({ need: () => kzOf(z) >= n, hint: `Defeat ${n} foes in ${(ZONES.find((x) => x.id === z) || {}).name || z}` });
 // Every cosmetic belongs to one world (w) and is earned there. Free basics have no world.
 // r = rarity 1–5 (frame colour). The first entry of each slot is the default.
+// Content made in the Studio (editor.html) plugs in here; see js/custom.js.
+// face/back/aura: drawers by id · skill: skill id → animation id · attacks: extra attack sequences.
+const AV_EXT = { face: {}, back: {}, aura: {}, skill: {}, attacks: [] };
 const C = (id, name, w, r, req, extra) => Object.assign({ id, name, w, r }, req, extra || {});
 const COSMETICS = {
   build: [
@@ -560,7 +563,7 @@ POSE_DRIVE.wood = (u, t, B, calm) => {
 // enough to show a whole cycle, otherwise a steady loop.
 const DRIVE_SKILL = { fish: ['fishing', 4.5], cook: ['cooking', 3], wood: ['woodcutting', 3] };
 function driveU(name, t) {
-  const [sk, per] = DRIVE_SKILL[name];
+  const [sk, per] = DRIVE_SKILL[name] || ['', 2];
   if (S && S.action && S.action.skill === sk) {
     const a = findAction(sk, S.action.id), T = a && actionTime(sk, a);
     if (T >= 1.2) return Math.max(0, Math.min(0.9999, S.action.prog / T));
@@ -658,12 +661,15 @@ function faceSVG(face, expr, eye) {
   if (face === 'blank') return '';
   const E = eye || OL, e = `fill="${E}"`, st = `stroke="${E}" stroke-width="2.2" stroke-linecap="round" fill="none"`;
   const O2 = `stroke="${OL}" stroke-width="2" stroke-linejoin="round"`;
-  const plain = ['dots', 'smile', 'fierce', 'scar', 'stitch'].includes(face);
+  const xf = AV_EXT.face[face];
+  const plain = (xf && xf.eyes) || ['dots', 'smile', 'fierce', 'scar', 'stitch'].includes(face);
   const scar = face === 'scar' ? `<path d="M7,-6 L12,9" stroke="#ff4d5e" stroke-width="2.2" stroke-linecap="round"/>` : '';
-  if (expr === 'hurt' && plain) return `<path d="M-5,-1 l5,3 -5,3 M12.5,-1 l-5,3 5,3" ${st}/><path d="M1,12 Q4.5,9 8,12" ${st}/>` + scar;
-  if (expr === 'happy' && plain) return `<path d="M-5,3 Q-2,-2 1,3 M7,3 Q9.5,-2 12,3" ${st}/><path d="M0,8 Q4.5,14 9.5,8" ${st}/>` + scar;
+  const xs = xf ? xf.svg : '';
+  if (expr === 'hurt' && plain) return `<path d="M-5,-1 l5,3 -5,3 M12.5,-1 l-5,3 5,3" ${st}/><path d="M1,12 Q4.5,9 8,12" ${st}/>` + scar + xs;
+  if (expr === 'happy' && plain) return `<path d="M-5,3 Q-2,-2 1,3 M7,3 Q9.5,-2 12,3" ${st}/><path d="M0,8 Q4.5,14 9.5,8" ${st}/>` + scar + xs;
   const eyes = `<ellipse cx="-2" cy="1" rx="2.1" ry="3.1" ${e}/><ellipse cx="9.5" cy="1" rx="1.8" ry="2.9" ${e}/>`
     + `<circle cx="-1.3" cy="-0.4" r=".8" fill="#fff" opacity=".8"/><circle cx="10.1" cy="-0.4" r=".7" fill="#fff" opacity=".8"/>`;
+  if (xf) return (xf.eyes ? eyes : '') + xs;
   switch (face) {
     case 'dots': return eyes;
     case 'smile': return eyes + `<path d="M0.5,8.5 Q4.5,12.5 9,8.5" ${st}/>`;
@@ -1371,6 +1377,7 @@ function gearSVG(A, J, P, t, B, M, o) {
       back.push(frame(J, M(-0.35, 0.82, 0), wing(1.05, false)), frame(J, M(0.4, 0.82, 0), wing(0.85, true)));
       break;
     }
+    default: if (AV_EXT.back[A.back]) AV_EXT.back[A.back]({ back, under, over, fx }, { J, P, t, B, M, mantle, hood, strap });
   }
   // a weapon that is put away hangs at the waist or across the back
   if (o.sheathed) {
@@ -1560,7 +1567,7 @@ function auraSVG(id, cx, cy, t) {
       return flameAura(cx, t, ['#8b2bd6', '#ff3fb4', '#ffe0f4'], { h: 212, w: 58 })
         + (on ? `<path d="M${X(-50)},${Y(-40)} l12,14 -7,4 13,16 M${X(52)},${Y(-20)} l-10,12 7,3 -12,16" fill="none" stroke="#ffd0ee" stroke-width="2.4" stroke-linejoin="round"/>` : '');
     }
-    default: return '';
+    default: return AV_EXT.aura[id] ? AV_EXT.aura[id](cx, cy, t) : '';
   }
 }
 
@@ -1573,6 +1580,7 @@ function basePose(el) {
   if (ctx === 'preview') return el.dataset.pose || A.stance;
   if (ctx === 'battle') return S.combat.zone != null ? 'guard' : A.stance;
   if (ctx === 'enemy') return 'guard';
+  if (S.action && AV_EXT.skill[S.action.skill] && POSE_DRIVE[AV_EXT.skill[S.action.skill]]) return AV_EXT.skill[S.action.skill];
   if (S.action) return S.action.skill === 'fishing' ? 'fish' : S.action.skill === 'cooking' ? 'cook' : S.action.skill === 'woodcutting' ? 'wood' : A.stance;
   return A.stance;
 }
@@ -1653,7 +1661,10 @@ const ATTACKS = [
   [['chamber', 120, 'out'], ['kick', 90, 'back'], ['kick', 130], ['guard', 300]],
 ];
 let atkN = 0;
-const nextAttack = () => ATTACKS[[0, 1, 0, 2][atkN++ % 4]];
+const nextAttack = () => {
+  const n = atkN++, x = AV_EXT.attacks;
+  return x.length && n % 3 === 2 ? x[Math.floor(n / 3) % x.length] : ATTACKS[[0, 1, 0, 2][n % 4]];
+};
 const playerAv = () => document.querySelector('[data-portrait="player"] svg.avatar');
 on('hit', (d) => {
   if (d.target === 'enemy') avPlay(playerAv(), nextAttack());

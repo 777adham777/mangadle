@@ -226,6 +226,8 @@ VIEWS.dev = () => {
     </section>
     <section class="win">${hdr('Systems')}
       <div class="btn-row">${btn('systems', 'Max every system', 'crown')}${btn('pets', 'All pets', 'pet')}${btn('looks', 'All avatar looks', 'avatar')}${btn('renown', 'Renown 100', 'trophy')}</div>
+      <div class="btn-row"><a class="gbtn dark sm" href="editor.html" target="_blank" rel="noopener"><i class="gbtn-ic">${ui('avatar')}</i><span>Open the Studio</span></a></div>
+      <p class="muted small">The Studio makes animations, haircuts, clothes, hats, faces, back pieces, auras and colours for the avatar.</p>
       <p class="muted small">Max every system: pets, avatar looks, Renown 100, techniques at level 10, every tool, full Greed Island Cards and museum, every beast at level 20, an Echo graded A, Gold Hunter licence, a set of Dragon Balls.</p>
     </section>
   </div>

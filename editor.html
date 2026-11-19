@@ -1,0 +1,48 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Tri-Realm Studio</title>
+  <meta name="robots" content="noindex">
+  <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700&family=Saira:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/editor.css">
+</head>
+<body>
+  <div id="app">
+    <header id="top"></header>
+    <aside id="left"></aside>
+    <main id="center">
+      <div id="stagebar"></div>
+      <div id="stagewrap">
+        <svg id="stage" preserveAspectRatio="xMidYMid meet" aria-label="Stage"></svg>
+        <div id="overview"></div>
+      </div>
+      <div id="timeline"></div>
+    </main>
+    <aside id="right"></aside>
+  </div>
+  <div id="help" class="help"></div>
+  <div id="toasts"></div>
+  <input type="file" id="importfile" accept=".js,.json" hidden>
+
+  <!-- the game's data and renderer, so what you edit is drawn exactly as in the game -->
+  <script src="js/data.js"></script>
+  <script src="js/worlds.js"></script>
+  <script src="js/lore.js"></script>
+  <script src="js/loot.js"></script>
+  <script src="js/game.js"></script>
+  <script>
+    // the few UI helpers avatar.js expects from ui.js
+    const UPD = [];
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  </script>
+  <script src="js/avatar.js"></script>
+  <script src="js/custom-pack.js"></script>
+  <script src="js/custom.js"></script>
+  <script src="js/editor.js"></script>
+</body>
+</html>
