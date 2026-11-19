@@ -6,8 +6,8 @@
    - Every skill that opts in (QUALITY) keeps a log: the first shiny / perfect
      of each of its actions. Filling the log pays set bonuses at 25 / 50 / 75 /
      100 % (Q_TIERS). Skills opt in world by world.
-   - Shiny logs are filled by hand (claim): one shiny of each is spent to log
-     it, the others are trophies to sell. Perfect logs fill on their own.
+   - Logs are filled by hand (claim): one shiny / perfect of each is spent to
+     log it (a seasoned perfect dish counts), the others can be sold or used.
    - Shiny, perfect and seasoned items are "variants" of their base item
      (id `base~s`, `base~p`, `base~n~spice`, `base~p~spice`), created on demand
      so the item list does not explode. They have their own logs and do not
@@ -20,7 +20,7 @@
 // Perfect: per dish, + mastery and levels above the recipe (1% → ~9%).
 const QUALITY = {
   fishing: { kind: 'shiny',   base: 1 / 500, claim: true },
-  cooking: { kind: 'perfect', base: 0.01 },
+  cooking: { kind: 'perfect', base: 0.01, claim: true },
 };
 const Q_WORD = { s: 'Shiny', p: 'Perfect' };
 const Q_CODE = { shiny: 's', perfect: 'p' };
@@ -107,14 +107,20 @@ const qChance = (skill, act) => (qKind(skill) === 'shiny' ? shinyChance(skill, a
 
 /* ------------------------------------------------------------- logs */
 // One entry per action that makes an item: { act, base, vid, n (how many made so far), got (in the log),
-// ready (owned but not logged yet: a claim log can take it) }.
+// ready (owned but not logged yet: a claim log can take it), pay (the version handed in) }.
 function qEntries(skill) {
   const code = Q_CODE[qKind(skill)], claim = QUALITY[skill].claim, C = S.quality.claim;
   return SKILLS[skill].actions.filter((a) => a.out).map((a) => {
     const base = Object.keys(a.out)[0], vid = variantId(base, code), n = S.quality.log[vid] || 0;
-    const got = claim ? !!C[vid] : n > 0;
-    return { act: a, base, vid, n, got, ready: !!claim && !got && count(vid) > 0 };
+    const got = claim ? !!C[vid] : n > 0, pay = claim && !got ? qPay(base, vid) : null;
+    return { act: a, base, vid, n, got, ready: !!pay, pay };
   });
+}
+// The copy a claim spends: the plain shiny / perfect first, else the cheapest seasoned perfect one.
+function qPay(base, vid) {
+  if (count(vid) > 0) return vid;
+  const q = ITEMS[vid] ? ITEMS[vid].q : vid.split('~')[1];
+  return (VARIANTS[base] || []).filter((k) => ITEMS[k].q === q && count(k) > 0).sort((a, b) => ITEMS[a].value - ITEMS[b].value)[0] || null;
 }
 const qCount = (skill) => qEntries(skill).filter((e) => e.got).length;
 const qReady = (skill) => (QUALITY[skill] && QUALITY[skill].claim ? qEntries(skill).filter((e) => e.ready) : []);
@@ -157,11 +163,13 @@ function qTierCheck(skill, before) {
   if (after > before) emit('qtier', { skill, tier: T[after - 1], i: after - 1 });
 }
 // Claim logs: spend one shiny of each to log it (the rest can be sold).
-function qClaim(skill, base) {
+function qClaim(skill, base, pay) {
   const e = qEntries(skill).find((x) => x.base === base);
   if (!e || !e.ready) return false;
+  if (pay && count(pay) > 0 && ITEMS[pay].base === base && ITEMS[pay].q === Q_CODE[qKind(skill)]) e.pay = pay;
   const before = qTiers(skill).filter((t) => t.on).length;
-  removeItem(e.vid, 1);
+  removeItem(e.pay, 1);
+  if (S.combat.food === e.pay && !count(e.pay)) dirty = true;   // the battle food falls back to another version (tick hook)
   S.quality.claim[e.vid] = 1;
   Q_VER++; dirty = true;
   emit('qclaim', { skill, base, item: e.vid, have: qCount(skill), total: qEntries(skill).length });

@@ -534,18 +534,27 @@ UIX.actLines.push((skill, a) => {
 
 /* ================================================================ logs */
 const Q_TITLE = { shiny: 'Shiny Log', perfect: 'Perfect Log' };
+const qNoun = (kind, n) => (kind === 'shiny' ? `${n} shiny fish` : `${n} perfect ${n > 1 ? 'dishes' : 'dish'}`);
+// The log entry an item can fill (shiny / perfect, seasoned or not): { skill, e }.
+function qEntryOf(id) {
+  const it = ITEMS[id];
+  if (!it || !it.q) return null;
+  const vid = variantId(it.base, it.q);
+  for (const sk in QUALITY) { const e = qEntries(sk).find((x) => x.vid === vid); if (e) return { skill: sk, e }; }
+  return null;
+}
 function qTile(e, skill) {
   if (e.got) { ensureVariant(e.vid); return tile(e.vid, null, { cls: 'xs' }); }
-  if (e.ready) { ensureVariant(e.vid); return tile(e.vid, null, { tag: 'button', cls: 'xs ql-ready', attrs: `data-qclaim="${skill}:${e.base}" aria-label="Hand in ${esc(ITEMS[e.vid].name)}"` }); }
+  if (e.ready) return tile(e.pay, null, { tag: 'button', cls: 'xs ql-ready', attrs: `data-qclaim="${skill}:${e.base}" aria-label="Hand in ${esc(ITEMS[e.pay].name)}"` });
   const seen = skillLv(skill) >= e.act.level || S.found[e.base];
   return tile(e.base, null, { cls: 'xs ql-miss', unknown: !seen, title: seen ? `${qKind(skill) === 'shiny' ? 'Shiny' : 'Perfect'} ${ITEMS[e.base].name}: not yet` : `Unlocks at ${SKILLS[skill].name} ${e.act.level}` });
 }
 function qLogHTML(skill, compact) {
   const E = qEntries(skill), kind = qKind(skill), have = E.filter((e) => e.got).length, T = qTiers(skill), ready = E.filter((e) => e.ready).length;
-  const odds = kind === 'shiny' ? 'Each catch can be shiny. Mastery of a fish raises its odds. Hand one of each in to the log; sell the rest.' : 'Any dish can come out perfect. Mastery and your level raise the odds.';
+  const odds = kind === 'shiny' ? 'Each catch can be shiny. Mastery of a fish raises its odds. Hand one of each in to the log; sell the rest.' : 'Any dish can come out perfect. Mastery and your level raise the odds. Hand one of each in to the log (seasoned ones count); eat or sell the rest.';
   return `<section class="win qlog ${kind}" style="--rc:${rc(SKILLS[skill].realm)}">${hdr(compact ? `${Q_TITLE[kind]} · ${SKILLS[skill].name}` : Q_TITLE[kind], `${have} / ${E.length}`)}
     <div class="ql-grid">${E.map((e) => qTile(e, skill)).join('')}</div>
-    ${ready ? `<div class="ql-claim">${gbtn(`Hand in ${ready} shiny fish`, 'shiny', `data-qclaim="${skill}:*"`, 'glow sm')}<small>1 of each goes into the log</small></div>` : ''}
+    ${ready ? `<div class="ql-claim">${gbtn(`Hand in ${qNoun(kind, ready)}`, kind, `data-qclaim="${skill}:*"`, 'glow sm')}<small>1 of each goes into the log</small></div>` : ''}
     <span class="pbar gold"><i style="width:${(have / E.length) * 100}%"></i></span>
     <ul class="ql-tiers">${T.map((t) => `<li class="${t.on ? 'on' : ''}"><b>${t.need}</b><span>${esc(t.text)}</span>${t.on ? ui('check') : ''}</li>`).join('')}</ul>
     ${compact ? '' : `<p class="muted small">${odds}</p>`}</section>`;
@@ -566,15 +575,15 @@ UIX.inspectorAny.push((id) => {
   }
   if (!it.variant) return '';
   const rows = [];
-  if (it.q === 's') {
-    const sk = Object.keys(QUALITY).find((k) => qKind(k) === 'shiny' && qEntries(k).some((e) => e.vid === id));
-    const e = sk && qEntries(sk).find((x) => x.vid === id);
-    rows.push(['shiny', 'Shiny', e && e.got ? `In the Shiny Log. Extra ones are trophies: ${fmt(it.value)} gold each.` : `Hand one in to the Shiny Log for its bonus; extra ones sell for ${fmt(it.value)} gold.`]);
-    if (e && e.ready) return attrList(rows) + `<div class="dt-cta">${gbtn('Hand in to the Shiny Log', 'shiny', `data-qclaim="${sk}:${e.base}"`, 'glow')}</div>`;
+  const L = qEntryOf(id), title = L && Q_TITLE[qKind(L.skill)];
+  if (it.q === 's') rows.push(['shiny', 'Shiny', L && L.e.got ? `In the Shiny Log. Extra ones are trophies: ${fmt(it.value)} gold each.` : `Hand one in to the Shiny Log for its bonus; extra ones sell for ${fmt(it.value)} gold.`]);
+  if (it.q === 'p') {
+    rows.push(['perfect', 'Perfect', it.type === 'food' ? 'Heals 50% more; its seasoning is 50% stronger' : 'Its buff is 50% stronger']);
+    rows.push(['perfect', 'Perfect Log', L && L.e.got ? 'Logged' : 'Hand one in for its bonus']);
   }
-  if (it.q === 'p') rows.push(['perfect', 'Perfect', it.type === 'food' ? 'Heals 50% more; its seasoning is 50% stronger' : 'Its buff is 50% stronger']);
   if (it.spice) rows.push(['spices', SPICES[it.spice].adj, spiceText(it.spice, spicePower(it.q === 'p'))]);
-  return attrList(rows) + (it.type === 'food' ? '<p class="muted small">Battle food that runs out is replaced by another version of the same dish.</p>' : '');
+  const cta = L && !L.e.got && count(id) > 0 ? `<div class="dt-cta">${gbtn(`Hand in to the ${title}`, qKind(L.skill), `data-qclaim="${L.skill}:${L.e.base}:${id}"`, 'glow')}</div>` : '';
+  return attrList(rows) + cta + (it.type === 'food' ? '<p class="muted small">Battle food that runs out is replaced by another version of the same dish.</p>' : '');
 });
 
 /* ================================================================ battle */
@@ -599,23 +608,24 @@ on('quality', (d) => {
     const inLog = S.quality.claim[d.item];
     burst('Shiny catch!', inLog ? `${it.name} · a trophy to sell` : `${it.name} · hand it in to the Shiny Log`, itemIc(d.item), '#ffd75e');
     if (!inLog && count(d.item) === 1) toast(`Shiny ${ITEMS[d.base].name}! Hand it in to the Shiny Log for its bonus.`, 'rare');
-  } else if (d.first) {
-    burst('Perfect dish!', `${logged.name} · Perfect Log ${d.have} / ${d.total}`, itemIc(d.item), '#ffd75e');
+  } else if (!S.quality.claim[logged.id] && d.first) {
+    burst('Perfect dish!', `${it.name} · hand it in to the Perfect Log`, itemIc(d.item), '#ffd75e');
+    toast(`Perfect ${ITEMS[d.base].name}! Hand it in to the Perfect Log for its bonus.`, 'rare');
   }
   sideDirty = true;
 });
 on('qclaim', (d) => {
-  toast(`Shiny Log: ${ITEMS[d.item].name} (${d.have} / ${d.total}).`, 'rare');
+  toast(`${Q_TITLE[qKind(d.skill)]}: ${ITEMS[d.item].name} (${d.have} / ${d.total}).`, 'rare');
   sideDirty = true;
 });
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-qclaim]');
   if (!t || t.disabled) return;
-  const [skill, base] = t.dataset.qclaim.split(':');
+  const [skill, base, pay] = t.dataset.qclaim.split(':'), kind = qKind(skill);
   const list = base === '*' ? qReady(skill).map((e) => e.base) : [base];
   let n = 0;
-  for (const b of list) if (qClaim(skill, b)) n++;
-  if (n) burst('Shiny Log', `${n > 1 ? n + ' shiny fish' : ITEMS[variantId(list[0], 's')].name} logged · ${qCount(skill)} / ${qEntries(skill).length}`, ui('shiny'), '#ffd75e');
+  for (const b of list) if (qClaim(skill, b, pay)) n++;
+  if (n) burst(Q_TITLE[kind], `${n > 1 ? qNoun(kind, n) : ITEMS[variantId(list[0], Q_CODE[kind])].name} logged · ${qCount(skill)} / ${qEntries(skill).length}`, ui(kind), '#ffd75e');
   sideDirty = true; dirty = true;
 });
 on('qtier', (d) => {

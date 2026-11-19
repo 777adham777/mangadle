@@ -71,7 +71,7 @@ function defaultState() {
     cards: {},
     echo: { id: null, grades: null, bond: 0, task: null, prog: 0 },
     museum: {},
-    quality: { log: {}, claim: {}, rec: {} },   // Shiny & Perfect catches (variant id -> how many), shinies handed in to the log, fish weight records (quality.js)
+    quality: { log: {}, claim: {}, cv: 2, rec: {} },   // Shiny & Perfect catches (variant id -> how many), entries handed in to the logs, claim rules version, fish weight records (quality.js)
     kitchen: { spice: null },
     tasks: { day: '', daily: [], week: '', weekly: [] },   // daily / weekly objectives (tasks.js)
     exped: { ships: [], dur: 600, food: true, repeat: true, last: null },   // expeditions.js           // seasoning picked in the Cooking spice rack (seas.js)
@@ -772,8 +772,13 @@ function loadFrom(json) {
   }
   // The three combat skills became one character level: keep the best of them.
   if (d.skills.strength && !d.skills.character) d.skills.character = { xp: Math.max(...['strength', 'defense', 'vitality'].map((k) => (d.skills[k] ? d.skills[k].xp : 0))) };
-  // Shiny Logs used to fill on catch: shinies already caught count as handed in.
-  if (d.quality && d.quality.log && !d.quality.claim) d.quality.claim = Object.fromEntries(Object.keys(d.quality.log).filter((k) => /~s$/.test(k) && d.quality.log[k] > 0).map((k) => [k, 1]));
+  // Shiny & Perfect Logs used to fill on their own: entries already logged count as handed in
+  // (shiny ones since claim v1, perfect ones since v2).
+  if (d.quality && d.quality.log && (d.quality.cv || 0) < 2) {
+    const re = d.quality.claim ? /~p$/ : /~[sp]$/, C = d.quality.claim = d.quality.claim || {};
+    for (const k in d.quality.log) if (re.test(k) && d.quality.log[k] > 0) C[k] = 1;
+    d.quality.cv = 2;
+  }
   S = mergeDefaults(d, defaultState());
   sanitize();
 }
