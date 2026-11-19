@@ -114,6 +114,70 @@ function customBack(d) {
   };
 }
 
+/* ---------------------------------------------------------------- garment pieces */
+// A piece is drawn in the space of a body part, so it bends and turns with it:
+// torso: [u, v] (u -1 back edge → 1 front edge, v 0 pelvis → 1 neck; below 0 hangs past the hips)
+// arm / leg: [t, s] (t 0 shoulder or hip → 0.5 elbow or knee → 1 wrist or ankle; s -1 → 1 across).
+const GARMENT_PARTS = { torso: ['torso'], arms: ['armF', 'armB'], armF: ['armF'], armB: ['armB'], legs: ['legF', 'legB'], legF: ['legF'], legB: ['legB'] };
+const LIMB_UNIT = { a: 6.6, l: 9.2 };
+function garmentMap(where, X) {
+  if (where === 'torso' || where === 'torsoTop') { const ex = (X.ex || 2) + 0.6; return (p) => X.M(p[0], p[1], ex); }
+  const L = X.L, unit = LIMB_UNIT[where[0]] * X.W;
+  return (p) => {
+    const t = Math.max(-0.3, Math.min(1.2, p[0])), q = bez(L, t, t, 1)[0], [nx, ny] = nrm(bez(L, t - 0.02, t + 0.02, 2), 1);
+    return [q[0] - nx * p[1] * unit, q[1] - ny * p[1] * unit];
+  };
+}
+// Points along a shape drawn like spline() (corners kept), in the part's own space.
+function sampleShape(P, closed, smooth, per) {
+  const n = P.length, out = [P[0]], at = (i) => (closed ? P[(i + n) % n] : P[Math.max(0, Math.min(n - 1, i))]);
+  for (let i = 0; i < (closed ? n : n - 1); i++) {
+    const p0 = at(i - 1), p1 = at(i), p2 = at(i + 1), p3 = at(i + 2);
+    let c1 = [p1[0] + (p2[0] - p1[0]) / 3, p1[1] + (p2[1] - p1[1]) / 3], c2 = [p2[0] - (p2[0] - p1[0]) / 3, p2[1] - (p2[1] - p1[1]) / 3];
+    if (smooth && !p1[2]) c1 = [p1[0] + (p2[0] - p0[0]) / 6, p1[1] + (p2[1] - p0[1]) / 6];
+    if (smooth && !p2[2]) c2 = [p2[0] - (p3[0] - p1[0]) / 6, p2[1] - (p3[1] - p1[1]) / 6];
+    for (let k = 1; k <= per; k++) {
+      const x = k / per, y = 1 - x;
+      out.push([0, 1].map((j) => y * y * y * p1[j] + 3 * y * y * x * c1[j] + 3 * y * x * x * c2[j] + x * x * x * p2[j]));
+    }
+  }
+  return out;
+}
+// A print (stripes, dots, checks) laid out in the part's space, clipped to the piece.
+function garmentPattern(pc, P, map, d, X, far) {
+  const torso = !X.L, la = torso ? 1 : 0, ca = 1 - la, k = Math.max(0.3, +pc.ps || 1);
+  const lo = (i) => Math.min(...P.map((p) => p[i])), hi = (i) => Math.max(...P.map((p) => p[i]));
+  const step = (torso ? 0.14 : 0.09) * k, cstep = (torso ? 0.22 : 0.45) * k, c = X.col(pc.pc || '#ffffff', far), w = r1(1.4 * k);
+  const line = (a, v, b0, b1) => { const pts = [...Array(9)].map((_, i) => { const q = []; q[a] = v; q[1 - a] = b0 + ((b1 - b0) * i) / 8; return map(q); }); return 'M' + pts.map(pt).join('L'); };
+  let inner = '';
+  if (pc.pat === 'stripes' || pc.pat === 'checks') { let g = ''; for (let v = lo(la) - step; v <= hi(la) + step; v += step * 2) g += line(la, v, lo(ca) - 1, hi(ca) + 1); inner += `<path d="${g}" stroke="${c}" stroke-width="${w * 2}" fill="none"/>`; }
+  if (pc.pat === 'checks') { let g = ''; for (let v = lo(ca) - cstep; v <= hi(ca) + cstep; v += cstep * 2) g += line(ca, v, lo(la) - 1, hi(la) + 1); inner += `<path d="${g}" stroke="${c}" stroke-width="${w * 2}" fill="none" opacity=".7"/>`; }
+  if (pc.pat === 'dots') for (let v = lo(la); v <= hi(la); v += step * 1.6) for (let u = lo(ca); u <= hi(ca); u += cstep * 0.8) { const q = []; q[la] = v; q[ca] = u; const p = map(q); inner += `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="${w}" fill="${c}"/>`; }
+  if (pc.pat === 'edge') inner += `<path d="${d}" fill="none" stroke="${c}" stroke-width="${w * 3}"/>`;
+  const id = X.clipId();
+  return `<clipPath id="${id}"><path d="${d}"/></clipPath><g clip-path="url(#${id})">${inner}</g>`;
+}
+function garmentPieceSVG(pc, where, X, main) {
+  const P = (pc.pts || []).filter((p) => p && isFinite(p[0]) && isFinite(p[1]));
+  if (P.length < 2) return '';
+  const map = garmentMap(where, X), far = where === 'armB' || where === 'legB', closed = !!pc.closed;
+  const d = 'M' + sampleShape(P, closed, pc.smooth !== false && P.length > 2, 6).map(map).map(pt).join('L') + (closed ? 'Z' : '');
+  const fc = !pc.fill || pc.fill === 'main' ? main : pc.fill;
+  let s;
+  if (!closed) { const w = +pc.sw || 1.6; s = lineP(d, LINE, w + 2, null) + lineP(d, X.col(pc.stroke && pc.stroke !== 'main' ? pc.stroke : fc, far), w); }
+  else {
+    s = pc.shade !== false ? X.cel(d, X.col(fc, far), X.shd(fc, far), 0.7) : ink(d, X.col(fc, far));
+    if (pc.pat && pc.pat !== 'none') s += garmentPattern(pc, P, map, d, X, far);
+  }
+  return pc.op != null && pc.op < 1 ? `<g opacity="${pc.op}">${s}</g>` : s;
+}
+// The drawer of a top's or bottom's pieces, called once per body part.
+function garmentDrawer(pieces, main) {
+  const list = (pieces || []).filter((pc) => pc && !pc.hidden && GARMENT_PARTS[pc.part]);
+  return (where, X) => list.filter((pc) => (where === 'torso' ? pc.part === 'torso' && pc.z !== 'top' : where === 'torsoTop' ? pc.part === 'torso' && pc.z === 'top' : GARMENT_PARTS[pc.part].includes(where)))
+    .map((pc) => garmentPieceSVG(pc, where, X, main)).join('');
+}
+
 /* ---------------------------------------------------------------- animations */
 // A key pose with every field the rig needs (anything left out stands relaxed).
 const CUSTOM_POSE0 = { t1: 180, t2: 0, n: 0, h: 0, ht: 0, st: 0, tw: 0, dx: 0, dy: 0, air: 0, fF: 10, fB: -190, g: -150, aF: [11, 6], aB: [-11, -6], lF: [9, -2], lB: [-9, 2] };
@@ -181,23 +245,27 @@ function registerCustomPack(pack) {
   }
   for (const h of list('hair')) {
     if (taken('hair', h.id, HAIR)) continue;
-    const locks = (h.locks || []).filter((L) => L && ['x', 'y', 'a', 'len', 'w'].every((k) => isFinite(L[k])));
+    const locks = (h.locks || []).filter((L) => L && ['x', 'y', 'w'].every((k) => isFinite(L[k])) && (L.path ? L.path.length > 1 : isFinite(L.a) && isFinite(L.len)))
+      .map((L) => (L.path ? Object.assign({}, L, { a: 0, bend: 0, len: L.path.reduce((a, p, i) => a + Math.hypot(p[0] - (i ? L.path[i - 1][0] : 0), p[1] - (i ? L.path[i - 1][1] : 0)), 0) }) : L));
     put(HAIR, h.id, {
       c: h.c || '#23242c', sh: h.sh || shade(h.c || '#23242c', -0.4), hi: h.hi || shade(h.c || '#23242c', 0.4),
       cap: (h.cap || [20.4, -8, 5]).map(Number), back: +h.back || 0, smooth: h.smooth ? 1 : 0, part: +h.part || 0,
       buzz: h.buzz ? 1 : 0, stubble: h.stubble ? 1 : 0, tie: h.tie || undefined, bun: h.bun || undefined, combs: h.combs || [],
       locks: () => locks.map((L) => Object.assign({}, L, { k: L.k || undefined })),
+      masses: (h.masses || []).filter((m) => m && !m.hidden && Array.isArray(m.pts) && m.pts.length > 2).map((m) => ({ back: !!m.back, pts: m.smooth === false ? m.pts.map((p) => [p[0], p[1], 1]) : m.pts })),
     });
     cos('hair', h);
   }
   for (const it of list('top')) {
     if (taken('top', it.id, TOPS)) continue;
-    put(TOPS, it.id, { top: customClean(it.top), sash: it.sash && it.sash[0] ? [it.sash[0], +it.sash[1] || 0] : undefined, wrist: it.wrist || undefined });
+    put(TOPS, it.id, { top: it.base === false ? undefined : customClean(it.top), sash: it.sash && it.sash[0] ? [it.sash[0], +it.sash[1] || 0] : undefined, wrist: it.wrist || undefined, glove: it.glove || undefined });
+    if (it.pieces && it.pieces.length) put(AV_EXT.wear, 'top:' + it.id, garmentDrawer(it.pieces, (it.top && it.top.c) || '#5a6880'));
     cos('top', it);
   }
   for (const it of list('bottom')) {
     if (taken('bottom', it.id, BOTTOMS)) continue;
-    put(BOTTOMS, it.id, { bot: customClean(it.bot), belt: it.belt || undefined, shoe: it.shoe && it.shoe[0] && it.shoe[0] !== 'bare' ? [it.shoe[0], it.shoe[1] || '#3a2c24'] : undefined });
+    if (it.pieces && it.pieces.length) put(AV_EXT.wear, 'bottom:' + it.id, garmentDrawer(it.pieces, (it.bot && it.bot.c) || '#30364a'));
+    put(BOTTOMS, it.id, { bot: it.base === false ? undefined : customClean(it.bot), belt: it.belt || undefined, shoe: it.shoe && it.shoe[0] && it.shoe[0] !== 'bare' ? [it.shoe[0], it.shoe[1] || '#3a2c24'] : undefined });
     cos('bottom', it);
   }
   for (const it of list('hat')) {

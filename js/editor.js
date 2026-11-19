@@ -39,6 +39,9 @@ const TYPES = {
 };
 const HEAD_MODES = { hair: 1, hat: 1, face: 1 };
 const VEC_MODES = { hat: 1, face: 1, back: 1 };
+const GAR_MODES = { top: 1, bottom: 1 };
+// Modes where the stage edits points of shapes: hats, faces, back art, garment pieces, hair masses.
+const isVec = () => !!(VEC_MODES[ST.mode] || GAR_MODES[ST.mode] || (ST.mode === 'hair' && ST.hairEdit === 'mass'));
 
 // What the game already has (ids a custom item may not take).
 registerCustomPack(null);
@@ -55,6 +58,8 @@ const RESERVED = {
 const cosName = (slot, id) => (COSMETICS[slot].find((c) => c.id === id) || {}).name || id;
 const B0 = COSMETICS.build[0].b;
 const FRONT_POSE = Object.assign({}, CUSTOM_POSE0, { t1: 180, aF: [14, 4], aB: [-14, -4], lF: [8, -1], lB: [-8, 1] });
+// Arms and legs apart, to draw clothes on each part.
+const TPOSE = Object.assign({}, CUSTOM_POSE0, { t1: 180, aF: [64, 4], aB: [-64, -4], lF: [15, -1], lB: [-15, 1] });
 
 /* ================================================================ state */
 const UI_KEY = 'trirealm_studio_ui';
@@ -62,7 +67,7 @@ const ST = {
   mode: 'anim', sel: {}, pack: null, live: false,
   u: 0, playing: false, loop: true, speed: 1, onion: true, clip: null,
   lock: 0, layer: 0, point: -1, emitter: 0,
-  tool: '', snap: true, animate: true, bg: 'dark', handles: true, guide: true,
+  tool: '', snap: true, hairEdit: 'locks', sym: false, brush: { w: 8, tp: 0.8, back: false, hang: false, k: false }, animate: true, bg: 'dark', handles: true, guide: true,
   previewPose: 'relaxed', view: { x: -10, y: 4, w: 220, h: 240 },
   man: { build: 'athletic', style: 'flat', color: 'chalk', hair: 'tuft', top: 'tee', bottom: 'tee', hat: 'none', face: 'dots', back: 'none', aura: 'none', weapon: '' },
   open: {},
@@ -230,13 +235,13 @@ function makeItem(type, tpl) {
       break;
     case 'top': {
       const src = tpl ? TOPS[tpl] : null;
-      it = Object.assign(META(tpl ? cosName('top', tpl) + ' (copy)' : 'New top'), { top: Object.assign(clone(TOP_DEF), src ? clone(src.top) : {}), sash: src && src.sash ? src.sash.slice() : null, wrist: (src && src.wrist) || '' });
+      it = Object.assign(META(tpl ? cosName('top', tpl) + ' (copy)' : 'New top'), { top: Object.assign(clone(TOP_DEF), src ? clone(src.top) : {}), sash: src && src.sash ? src.sash.slice() : null, wrist: (src && src.wrist) || '', glove: (src && src.glove) || '', base: true, pieces: [] });
       if (it.top.collar !== 'high') it.top.collar = '';
       break;
     }
     case 'bottom': {
       const src = tpl ? BOTTOMS[tpl] : null;
-      it = Object.assign(META(tpl ? cosName('bottom', tpl) + ' (copy)' : 'New bottom'), { bot: Object.assign(clone(BOT_DEF), src ? clone(src.bot) : {}), belt: src ? src.belt || '' : '#3a2a22', shoe: src && src.shoe ? src.shoe.slice() : (src ? ['bare', '#3a2c24'] : ['shoe', '#3a2c24']) });
+      it = Object.assign(META(tpl ? cosName('bottom', tpl) + ' (copy)' : 'New bottom'), { bot: Object.assign(clone(BOT_DEF), src ? clone(src.bot) : {}), belt: src ? src.belt || '' : '#3a2a22', shoe: src && src.shoe ? src.shoe.slice() : (src ? ['bare', '#3a2c24'] : ['shoe', '#3a2c24']), base: true, pieces: [] });
       break;
     }
     case 'hat':
@@ -340,6 +345,7 @@ function breathe(P, t) {
 }
 function previewPose(name, t, B) {
   if (name === 'front') return FRONT_POSE;
+  if (name === 'tpose') return TPOSE;
   if (POSE_DRIVE[name]) { const per = (DRIVE_SKILL[name] || ['', 2])[1]; return POSE_DRIVE[name](((t / per) % 1 + 1) % 1, t, B, false); }
   const P = POSES[name] || POSES.relaxed;
   return ST.animate ? breathe(P, t) : P;
@@ -369,7 +375,48 @@ function torsoXf(J, B, art, t) {
   const M = torsoMap(J, B.w), p = M(+art.u || 0, +art.v || 0, 0), r = (180 - J.chestA + (+art.sway || 0) * Math.sin(t * 2.1)) * D2R, c = Math.cos(r), s = Math.sin(r);
   return { k: 1, toW: ([x, y]) => [p[0] + x * c - y * s, p[1] + x * s + y * c], toL: (q) => { const x = q[0] - p[0], y = q[1] - p[1]; return [x * c + y * s, -x * s + y * c]; }, origin: p };
 }
+const PART_WHERE = { torso: 'torso', arms: 'armF', armF: 'armF', armB: 'armB', legs: 'legF', legF: 'legF', legB: 'legB' };
+function garX(where, J, B) {
+  const tp = TOPS[wearing().top];
+  return { J, W: B.w, M: torsoMap(J, B.w), ex: (tp && tp.top && tp.top.fit) || 2, L: { armF: J.aF, armB: J.aB, legF: J.lF, legB: J.lB }[where] };
+}
+// Body part space <-> stage: the same mapping the game uses, inverted numerically.
+function limbInv(map) {
+  const ts = [...Array(71)].map((_, i) => -0.3 + (1.5 * i) / 70), C = ts.map((t) => map([t, 0]));
+  return (w) => {
+    let best = 0, bd = Infinity, bk = 0;
+    for (let i = 0; i < C.length - 1; i++) {
+      const a = C[i], b = C[i + 1], dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy || 1;
+      const k = clamp(((w[0] - a[0]) * dx + (w[1] - a[1]) * dy) / l2, 0, 1), x = a[0] + dx * k - w[0], y = a[1] + dy * k - w[1], d = x * x + y * y;
+      if (d < bd) { bd = d; best = i; bk = k; }
+    }
+    const t = ts[best] + (ts[best + 1] - ts[best]) * bk, c = map([t, 0]), e = map([t, 1]), ax = e[0] - c[0], ay = e[1] - c[1];
+    return [t, ((w[0] - c[0]) * ax + (w[1] - c[1]) * ay) / (ax * ax + ay * ay || 1)];
+  };
+}
+function torsoInv(map) {
+  return (w) => {
+    let best = [0, 0.5], bd = Infinity;
+    for (let u = -1.8; u <= 1.8; u += 0.15) for (let v = -1.6; v <= 1.5; v += 0.1) { const q = map([u, v]), d = (q[0] - w[0]) ** 2 + (q[1] - w[1]) ** 2; if (d < bd) { bd = d; best = [u, v]; } }
+    let [u, v] = best;
+    for (let i = 0; i < 8; i++) {
+      const q = map([u, v]), e = 1e-3, qu = map([u + e, v]), qv = map([u, v + e]);
+      const a = (qu[0] - q[0]) / e, b = (qv[0] - q[0]) / e, c = (qu[1] - q[1]) / e, d = (qv[1] - q[1]) / e, det = a * d - b * c;
+      if (Math.abs(det) < 1e-9) break;
+      const rx = w[0] - q[0], ry = w[1] - q[1];
+      u += (d * rx - b * ry) / det; v += (-c * rx + a * ry) / det;
+    }
+    return [u, v];
+  };
+}
+function garFrame(pc, J, B) {
+  if (!pc) return null;
+  const where = PART_WHERE[pc.part] || 'torso', map = garmentMap(where, garX(where, J, B));
+  return { k: 1, where, toW: map, toL: where === 'torso' ? torsoInv(map) : limbInv(map) };
+}
 function vecFrame(J, P, B) {
+  if (ST.mode === 'hair') return headXf(J, P, true, false);
+  if (GAR_MODES[ST.mode]) return garFrame(curLayer(), J, B);
   if (ST.mode === 'hat') return headXf(J, P, false, false);
   if (ST.mode === 'face') return headXf(J, P, false, true);
   if (ST.mode === 'back') { const it = cur(); return it ? torsoXf(J, B, it.art, T) : null; }
@@ -378,7 +425,10 @@ function vecFrame(J, P, B) {
 function vecLayers() {
   const it = cur();
   if (!it) return [];
-  return ST.mode === 'back' ? it.art.layers : it.layers;
+  if (ST.mode === 'back') return it.art.layers;
+  if (GAR_MODES[ST.mode]) return it.pieces || (it.pieces = []);
+  if (ST.mode === 'hair') return it.masses || (it.masses = []);
+  return it.layers;
 }
 const curLayer = () => { const L = vecLayers(); ST.layer = clamp(ST.layer, 0, Math.max(0, L.length - 1)); return L[ST.layer] || null; };
 const curLock = () => { const it = ST.mode === 'hair' && cur(); if (!it) return null; ST.lock = clamp(ST.lock, -1, it.locks.length - 1); return it.locks[ST.lock] || null; };
@@ -445,10 +495,11 @@ function handlesSVG(P, B, A) {
     if (shown) { const w = add(wpnHand, J.foreA.aF + (P.g || 0), 34); out.push(seg(wpnHand, w, 'w'), hdl('wpn', w, 'w', 'di')); }
     return `<g class="handles">${out.join('')}</g>`;
   }
-  if (ST.mode === 'hair') {
+  if (ST.mode === 'hair' && !isVec()) {
     const it = cur();
     if (!it) return '';
     const hx = headXf(J, P, true, false);
+    if (drag && drag.brush && drag.brush.length > 1) out.push(`<path class="bone f" d="M${drag.brush.map((q) => hx.toW(q)).map((p) => `${rd2(p[0])},${rd2(p[1])}`).join('L')}" stroke-width="${rd2(3 / zoomK())}"/>`);
     if (ST.guide) out.push(guideHead(headXf(J, P, false, false)));
     it.locks.forEach((L, i) => {
       if (i === ST.lock) return;
@@ -458,15 +509,18 @@ function handlesSVG(P, B, A) {
     if (L) {
       const { sp } = lockPts(L, hx.haD, T), W = sp.map(hx.toW);
       out.push(`<path class="bone o" d="M${W.map((p) => `${rd2(p[0])},${rd2(p[1])}`).join('L')}" stroke-width="${rd2(1.6 / zoomK())}"/>`);
-      out.push(hdl('lr:' + ST.lock, W[0], 'f', 'sq'), hdl('lb:' + ST.lock, W[3], 'w', 'di'), hdl('lt:' + ST.lock, W[W.length - 1], 'f'));
+      if (L.path) { out.push(hdl('lr:' + ST.lock, W[0], 'f', 'sq')); W.slice(1).forEach((p, j) => out.push(hdl(`lp:${ST.lock}:${j}`, p, 'f', 'sm'))); }
+      else out.push(hdl('lr:' + ST.lock, W[0], 'f', 'sq'), hdl('lb:' + ST.lock, W[3], 'w', 'di'), hdl('lt:' + ST.lock, W[W.length - 1], 'f'));
     }
     return `<g class="handles">${out.join('')}</g>`;
   }
-  if (VEC_MODES[ST.mode]) {
+  if (isVec()) {
     const fr = vecFrame(J, P, B), L = curLayer();
     if (!fr) return '';
     if (ST.guide) {
-      if (ST.mode === 'back') out.push(`<g class="guide">${seg(add(fr.origin, 90, -8 / zoomK()), add(fr.origin, 90, 8 / zoomK()))}${seg(add(fr.origin, 0, -8 / zoomK()), add(fr.origin, 0, 8 / zoomK()))}</g>`);
+      if (GAR_MODES[ST.mode]) out.push(guidePart(fr));
+      else if (ST.mode === 'hair') out.push(guideHead(headXf(J, P, false, false)));
+      else if (ST.mode === 'back') out.push(`<g class="guide">${seg(add(fr.origin, 90, -8 / zoomK()), add(fr.origin, 90, 8 / zoomK()))}${seg(add(fr.origin, 0, -8 / zoomK()), add(fr.origin, 0, 8 / zoomK()))}</g>`);
       else out.push(guideHead(headXf(J, P, false, false)));
     }
     if (!L) return `<g class="handles">${out.join('')}</g>`;
@@ -485,6 +539,13 @@ function handlesSVG(P, B, A) {
     return `<g class="handles">${out.join('')}</g>`;
   }
   return '';
+}
+// The outline of the body part a piece is drawn on (torso: u -1..1, v 0..1; limbs: t 0..1, s -1..1).
+function guidePart(fr) {
+  const torso = fr.where === 'torso', box = torso ? [[-1, 0], [1, 0], [1, 1], [-1, 1]] : [[0, -1], [1, -1], [1, 1], [0, 1]], pts = [];
+  for (let i = 0; i < 4; i++) { const a = box[i], b = box[(i + 1) % 4]; for (let k = 0; k < 8; k++) pts.push(fr.toW([a[0] + ((b[0] - a[0]) * k) / 8, a[1] + ((b[1] - a[1]) * k) / 8])); }
+  const mid = torso ? [[0, -0.2], [0, 1.1]] : [[0.5, -1.3], [0.5, 1.3]];
+  return `<g class="guide"><path d="M${pts.map((p) => `${rd2(p[0])},${rd2(p[1])}`).join('L')}Z" stroke-width="${rd2(1 / zoomK())}" stroke-dasharray="${rd2(3 / zoomK())}"/>${seg(fr.toW(mid[0]), fr.toW(mid[1]))}</g>`;
 }
 function guideHead(hx) {
   const c = hx.toW([0, 0]), r = 19 * hx.k;
@@ -533,17 +594,18 @@ stage.addEventListener('pointerdown', (ev) => {
   const w = stagePt(ev), h = ev.target.closest('[data-h]');
   stage.setPointerCapture(ev.pointerId);
   if (ev.button === 1 || ev.button === 2 || spaceDown) { drag = { pan: 1, from: [ev.clientX, ev.clientY], v: Object.assign({}, ST.view) }; ev.preventDefault(); return; }
+  if (ST.mode === 'hair' && !isVec() && ST.tool === 'brush' && cur()) { drag = { brush: [frameNow().toL(w)] }; return; }
   if (h) {
     const id = h.dataset.h;
     const dbl = performance.now() - lastPD.t < 350 && lastPD.id === id;
     lastPD = { t: performance.now(), id };
-    if (VEC_MODES[ST.mode] && id.startsWith('p:')) {
+    if (isVec() && id.startsWith('p:')) {
       const L = curLayer(), i = +id.slice(2);
       if (ev.altKey || dbl) { L.pts.splice(i, 1); ST.point = Math.min(i, L.pts.length - 1); commit(); renderRight(); return; }
       if (ev.shiftKey) { if (L.pts[i][2]) L.pts[i].length = 2; else L.pts[i][2] = 1; commit(); return; }
       ST.point = i;
     }
-    if (VEC_MODES[ST.mode] && id.startsWith('m:')) {
+    if (isVec() && id.startsWith('m:')) {
       const L = curLayer(), i = +id.slice(2), fr = frameNow();
       L.pts.splice(i + 1, 0, snapP(fr.toL(w)));
       ST.point = i + 1;
@@ -555,7 +617,7 @@ stage.addEventListener('pointerdown', (ev) => {
     return;
   }
   // empty stage: the active tool, else pan
-  if (ST.mode === 'hair' && ST.tool === 'addlock' && cur()) {
+  if (ST.mode === 'hair' && !isVec() && ST.tool === 'addlock' && cur()) {
     const fr = frameNow(), q = fr.toL(w), it = cur();
     it.locks.push(roundLock({ x: q[0], y: q[1], a: Math.atan2(q[1], q[0]) / D2R, len: 2, w: 8, bend: 0, tp: 0.8 }));
     ST.lock = it.locks.length - 1;
@@ -563,7 +625,7 @@ stage.addEventListener('pointerdown', (ev) => {
     renderRight();
     return;
   }
-  if (VEC_MODES[ST.mode] && ST.tool === 'draw' && curLayer() && curLayer().kind === 'shape') {
+  if (isVec() && ST.tool === 'draw' && curLayer() && curLayer().kind === 'shape') {
     const L = curLayer(), q = snapP(frameNow().toL(w)), at = ST.point >= 0 && ST.point < L.pts.length - 1 ? ST.point + 1 : L.pts.length;
     L.pts.splice(at, 0, q);
     ST.point = at;
@@ -577,6 +639,11 @@ stage.addEventListener('pointermove', (ev) => {
     const h = ev.target.closest && ev.target.closest('[data-h]');
     hoverH = h ? h.dataset.h : '';
     stage.style.cursor = h ? 'grab' : (ST.tool && TYPES[ST.mode] ? 'crosshair' : 'default');
+    return;
+  }
+  if (drag.brush) {
+    const q = frameNow().toL(stagePt(ev)), l = drag.brush[drag.brush.length - 1];
+    if (Math.hypot(q[0] - l[0], q[1] - l[1]) > 0.6) drag.brush.push(q);
     return;
   }
   if (drag.pan) {
@@ -593,8 +660,9 @@ function endDrag() {
   if (!drag) return;
   const was = drag;
   drag = null;
-  if (was.pan) { if (was.click && VEC_MODES[ST.mode]) { ST.point = -1; } return; }
-  if (was.add && ST.mode === 'hair') { const L = curLock(); if (L && L.len < 3) L.len = 10; }
+  if (was.pan) { if (was.click && isVec()) { ST.point = -1; } return; }
+  if (was.brush) { brushLock(was.brush); return; }
+  if (was.add && ST.mode === 'hair') { const L = curLock(); if (L && L.len < 3) L.len = 10; if (L && ST.sym) cur().locks.push(mirrorLock(L)); }
   commit();
   renderRight();
   if (ST.mode === 'anim') renderTimeline();
@@ -612,7 +680,39 @@ function frameNow() {
   const A = wearing(), B = cosOf('build', A.build).b, P = stagePose(B), J = solve(P, B);
   return ST.mode === 'hair' ? headXf(J, P, true, false) : vecFrame(J, P, B);
 }
-const snapP = (q) => (ST.snap ? [Math.round(q[0] * 2) / 2, Math.round(q[1] * 2) / 2] : [rd2(q[0]), rd2(q[1])]);
+// A freehand stroke on the head becomes a lock: root at the start, the stroke resampled as its spine.
+function brushLock(S0) {
+  const it = cur();
+  if (!it || S0.length < 3) return;
+  let len = 0;
+  const acc = [0];
+  for (let i = 1; i < S0.length; i++) { len += Math.hypot(S0[i][0] - S0[i - 1][0], S0[i][1] - S0[i - 1][1]); acc.push(len); }
+  if (len < 2) return;
+  const n = clamp(Math.round(len / 3), 3, 12), r = S0[0], path = [];
+  for (let k = 1; k <= n; k++) {
+    const d = (len * k) / n;
+    let i = 1;
+    while (i < acc.length - 1 && acc[i] < d) i++;
+    const f = (d - acc[i - 1]) / (acc[i] - acc[i - 1] || 1), q = [S0[i - 1][0] + (S0[i][0] - S0[i - 1][0]) * f, S0[i - 1][1] + (S0[i][1] - S0[i - 1][1]) * f];
+    path.push([rd(q[0] - r[0]), rd(q[1] - r[1])]);
+  }
+  const b = ST.brush, L = { x: rd(r[0]), y: rd(r[1]), w: b.w, tp: b.tp, path };
+  if (b.back) L.back = 1;
+  if (b.hang) L.hang = 1;
+  if (b.k) L.k = 'crown';
+  it.locks.push(L);
+  if (ST.sym) it.locks.push(mirrorLock(L));
+  ST.lock = it.locks.length - (ST.sym ? 2 : 1);
+  commit(); renderRight();
+}
+function mirrorLock(L) {
+  const c = clone(L);
+  c.x = -c.x;
+  if (c.path) c.path = c.path.map(([x, y]) => [-x, y]);
+  else { c.a = rd(180 - c.a); c.bend = -c.bend; }
+  return c;
+}
+const snapP = (q) => (GAR_MODES[ST.mode] ? [rd2(q[0]), rd2(q[1])] : ST.snap ? [Math.round(q[0] * 2) / 2, Math.round(q[1] * 2) / 2] : [rd2(q[0]), rd2(q[1])]);
 
 function applyDrag(id, w, ev) {
   const A = wearing(), B = cosOf('build', A.build).b;
@@ -650,11 +750,17 @@ function applyDrag(id, w, ev) {
   }
   const fr = frameNow();
   if (!fr) return;
-  if (ST.mode === 'hair') {
-    const it = cur(), i = +id.slice(3), L = it && it.locks[i];
+  if (ST.mode === 'hair' && !isVec()) {
+    const it = cur(), i = +id.split(':')[1], L = it && it.locks[i];
     if (!L) return;
     const q = fr.toL(w);
     if (id.startsWith('lr:')) { L.x = rd(q[0]); L.y = rd(q[1]); return; }
+    if (id.startsWith('lp:')) {
+      const j = +id.split(':')[2], sw = L.sw ? Math.sin(T * 2.1 + (L.ph || 0)) * L.sw : 0, r = ((L.hang ? -fr.haD : 0) + sw) * D2R, c = Math.cos(r), sn = Math.sin(r);
+      const x = q[0] - L.x, y = q[1] - L.y;
+      L.path[j] = [rd(x * c + y * sn), rd(-x * sn + y * c)];
+      return;
+    }
     const sway = L.sw ? Math.sin(T * 2.1 + (L.ph || 0)) * L.sw : 0;
     if (id.startsWith('lt:')) {
       const d = Math.hypot(q[0] - L.x, q[1] - L.y), phi = Math.atan2(q[1] - L.y, q[0] - L.x) / D2R, b = (L.bend || 0) * D2R;
@@ -671,7 +777,7 @@ function applyDrag(id, w, ev) {
     }
     return;
   }
-  if (VEC_MODES[ST.mode]) {
+  if (isVec()) {
     const L = curLayer(), q = fr.toL(w);
     if (!L) return;
     if (id.startsWith('p:')) { const i = +id.slice(2), c = L.pts[i] && L.pts[i][2]; L.pts[i] = snapP(q); if (c) L.pts[i][2] = 1; }
@@ -775,7 +881,7 @@ function renderTop() {
 /* ================================================================ left: item list */
 let thumbN = 0;
 // Register pending edits now, so thumbnails and lists show them.
-function ensureReg() { if (!needReg) return; needReg = false; try { registerCustomPack(ST.pack); } catch (e) { console.error(e); } }
+function ensureReg() { if (!needReg) return; needReg = false; try { registerCustomPack(ST.pack); } catch (e) { console.error(e); } stripSoon(); }
 function thumbSVG(type, it) {
   ensureReg();
   const A = wearing(), B = cosOf('build', A.build).b;
@@ -809,16 +915,18 @@ function renderStagebar() {
   const el = $('#stagebar');
   if (ST.mode === 'pack') { el.innerHTML = ''; return; }
   const tools = [];
-  if (ST.mode === 'hair') tools.push(`<button class="b ${ST.tool === 'addlock' ? 'on' : ''}" data-act="tool" data-arg="addlock" title="Click on the head and drag to draw a lock (L)">${IC.plus} Draw lock</button>`);
-  if (VEC_MODES[ST.mode]) tools.push(`<button class="b ${ST.tool === 'draw' ? 'on' : ''}" data-act="tool" data-arg="draw" title="Click to add points to the selected shape (D)">${IC.plus} Add points</button>`, `<label class="chk"><input type="checkbox" data-bind="st:snap" data-t="b" ${ST.snap ? 'checked' : ''}><span>Snap ½</span></label>`);
-  const poses = [['Poses', [['front', 'Front (for editing)'], ...BUILTIN_POSES.map((k) => [k, POSES_NAMES[k] || k])]], ['Custom animations', ST.pack.anim.filter((a) => POSE_DRIVE[a.id]).map((a) => [a.id, a.name])]];
+  if (ST.mode === 'hair' && !isVec()) tools.push(`<button class="b ${ST.tool === 'brush' ? 'on' : ''}" data-act="tool" data-arg="brush" title="Paint a lock on the head: it follows your stroke (B)">${IC.plus} Brush</button>`,
+    `<button class="b ${ST.tool === 'addlock' ? 'on' : ''}" data-act="tool" data-arg="addlock" title="Click on the head and drag from root to tip (L)">${IC.plus} Arc lock</button>`,
+    `<label class="chk"><input type="checkbox" data-bind="st:sym" data-t="b" ${ST.sym ? 'checked' : ''}><span>Symmetry</span></label>`);
+  if (isVec()) tools.push(`<button class="b ${ST.tool === 'draw' ? 'on' : ''}" data-act="tool" data-arg="draw" title="Click to add points to the selected shape (D)">${IC.plus} Add points</button>`, GAR_MODES[ST.mode] ? '' : `<label class="chk"><input type="checkbox" data-bind="st:snap" data-t="b" ${ST.snap ? 'checked' : ''}><span>Snap ½</span></label>`);
+  const poses = [['Poses', [['front', 'Front (for editing)'], ['tpose', 'T-pose (for clothes)'], ...BUILTIN_POSES.map((k) => [k, POSES_NAMES[k] || k])]], ['Custom animations', ST.pack.anim.filter((a) => POSE_DRIVE[a.id]).map((a) => [a.id, a.name])]];
   el.innerHTML = `
     <div class="row">${tools.join('')}
       ${ST.mode !== 'anim' ? `<label class="mini">Pose <select data-bind="st:previewPose" data-t="s">${poses.map(([g, o]) => `<optgroup label="${g}">${o.map(([k, l]) => `<option value="${esc(k)}" ${ST.previewPose === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</optgroup>`).join('')}</select></label>` : ''}
     </div>
     <div class="row">
       <label class="chk"><input type="checkbox" data-bind="st:handles" data-t="b" ${ST.handles ? 'checked' : ''}><span>Handles</span></label>
-      ${HEAD_MODES[ST.mode] || VEC_MODES[ST.mode] ? `<label class="chk"><input type="checkbox" data-bind="st:guide" data-t="b" ${ST.guide ? 'checked' : ''}><span>Guide</span></label>` : ''}
+      ${HEAD_MODES[ST.mode] || isVec() ? `<label class="chk"><input type="checkbox" data-bind="st:guide" data-t="b" ${ST.guide ? 'checked' : ''}><span>Guide</span></label>` : ''}
       <label class="chk"><input type="checkbox" data-bind="st:animate" data-t="b" ${ST.animate ? 'checked' : ''}><span>Animate</span></label>
       <label class="mini">Background <select data-bind="st:bg" data-t="s">${Object.entries(BGS).map(([k, v]) => `<option value="${k}" ${ST.bg === k ? 'selected' : ''}>${v[0]}</option>`).join('')}</select></label>
       ${btn('Body', 'view', 'body', 'ghost', 'Fit the body (F)')}${btn('Head', 'view', 'head', 'ghost', 'Zoom on the head (H)')}${btn('Torso', 'view', 'torso', 'ghost')}
@@ -829,7 +937,7 @@ function renderStagebar() {
 const TL_ROWS = [['Body', ['t1', 't2', 'ht', 'st', 'tw', 'dx', 'air']], ['Head', ['n', 'h', 'expr']], ['Front arm', ['aF', 'ff']], ['Back arm', ['aB', 'bf']], ['Front leg', ['lF', 'fF']], ['Back leg', ['lB', 'fB']], ['Weapon / prop', ['g', 'prop', 'tool', 'sh', 'fx', 'rb']]];
 function renderTimeline() {
   const el = $('#timeline');
-  if (ST.mode !== 'anim') { el.innerHTML = ''; el.hidden = true; return; }
+  if (ST.mode !== 'anim') { renderStrip(); return; }
   el.hidden = false;
   const a = cur();
   if (!a) { el.innerHTML = `<div class="tl-empty">Make or pick an animation to edit its keys.</div>`; return; }
@@ -869,6 +977,23 @@ function renderTimeline() {
     </div>`;
   updatePlayhead();
 }
+// Under the stage, outside animations: the piece on several poses at once, to check it moves well.
+const STRIP = [['tpose', 'T-pose'], ['relaxed', 'Relaxed'], ['guard', 'Guard'], ['strike', 'Attack'], ['kick', 'Kick'], ['wood', 'Chopping'], ['fish', 'Fishing'], ['victory', 'Victory']];
+let stripT = 0, stripAt = 0;
+function renderStrip() {
+  const el = $('#timeline');
+  if (ST.mode === 'anim' || ST.mode === 'pack' || !cur()) { el.innerHTML = ''; el.hidden = true; return; }
+  el.hidden = false;
+  stripAt = performance.now();
+  const A = wearing(), B = cosOf('build', A.build).b;
+  el.innerHTML = `<div class="strip">${STRIP.map(([k, l], i) => {
+    let svg = '';
+    try { svg = drawAvatar(A, previewPoseStill(k, B), 0.6, { weapon: ST.man.weapon, uid: 'sp' + i }); } catch (e) { /* skip */ }
+    return `<button class="pv ${ST.previewPose === k ? 'on' : ''}" data-act="pvpose" data-arg="${k}" title="Show on the stage"><svg viewBox="4 6 192 232">${svg}</svg><span>${l}</span></button>`;
+  }).join('')}</div>`;
+}
+function previewPoseStill(k, B) { if (k === 'tpose') return TPOSE; if (POSE_DRIVE[k] && !POSES[k]) return POSE_DRIVE[k](0.3, 0, B, true); return POSES[k] || POSES.relaxed; }
+function stripSoon() { if (ST.mode === 'anim') return; clearTimeout(stripT); stripT = setTimeout(renderStrip, Math.max(60, 350 - (performance.now() - stripAt))); }
 function updatePlayhead() {
   const h = $('#tlhead'), tm = $('#tltime'), a = ST.mode === 'anim' && cur();
   if (!a) return;
@@ -992,15 +1117,32 @@ INSPECT.hair = (h) => {
     + fOptGroup('Bun', 'item:bun', [-118, 22, 8.5]) + (h.bun ? fNum('Bun angle', 'item:bun.0', -180, 0, 1) + fNum('Bun distance', 'item:bun.1', 10, 30, 0.5) + fNum('Bun size', 'item:bun.2', 3, 14, 0.5) : '')
     + `<div class="subh">Comb lines ${btn(IC.plus, 'comb-add', null, 'ib', 'Add a comb line')}</div>`
     + (h.combs || []).map((c, i) => row(fNum('From', `item:combs.${i}.0`, -200, 0, 1), fNum('To', `item:combs.${i}.1`, -200, 0, 1), fNum('Radius', `item:combs.${i}.2`, 4, 20, 0.5), btn(IC.del, 'comb-del', i, 'ib'))).join(''));
+  const seg2 = `<nav class="seg">${[['locks', 'Locks'], ['mass', 'Masses']].map(([k, l]) => `<button class="${ST.hairEdit === k ? 'on' : ''}" data-act="hairedit" data-arg="${k}">${l}</button>`).join('')}</nav>`;
+  if (ST.hairEdit === 'mass') {
+    s += sec('draw', 'Draw', seg2 + note('Masses are free shapes of hair (bangs, a curtain of long hair, volume) merged into the same silhouette, with the same colours and shading. Pick one, then <b>Add points</b> on the stage.'));
+    return s + massesSec(h);
+  }
+  s += sec('draw', 'Draw', seg2
+    + note('<b>Brush</b>: paint a lock on the head, it follows your stroke. <b>Arc lock</b>: click-drag from root to tip.')
+    + fNum('Brush width', 'st:brush.w', 2, 18, 0.5) + fNum('Brush taper', 'st:brush.tp', 0.2, 2, 0.05)
+    + row(fChk('Behind the body', 'st:brush.back'), fChk('Hangs', 'st:brush.hang'), fChk('Crown', 'st:brush.k'))
+    + fChk('Symmetry: mirror every new lock', 'st:sym'));
   const L = curLock();
-  s += sec('locks', 'Locks', `<div class="chips">${h.locks.map((x, i) => `<button class="chip ${i === ST.lock ? 'on' : ''} ${x.back ? 'bk' : ''} ${x.k ? 'cr' : ''}" data-act="lock" data-arg="${i}">${i + 1}</button>`).join('')}</div>`
+  s += sec('locks', 'Locks', `<div class="chips">${h.locks.map((x, i) => `<button class="chip ${i === ST.lock ? 'on' : ''} ${x.back ? 'bk' : ''} ${x.k ? 'cr' : ''} ${x.path ? 'pa' : ''}" data-act="lock" data-arg="${i}">${i + 1}</button>`).join('')}</div>`
     + row(btn(IC.plus + ' Lock', 'lock-add', null, 'ghost'), btn(IC.copy, 'lock-dup', null, 'ib', 'Duplicate'), btn(IC.mirror, 'lock-mirror', null, 'ib', 'Mirrored copy'), btn(IC.del, 'lock-del', null, 'ib danger', 'Delete'))
-    + note('On the stage: square = root, circle = tip, diamond = bend. <b>Draw lock</b> then click-drag on the head draws a new one.'), `${h.locks.length}`);
-  if (L) {
+    + note('Stage: square = root (moves the lock), circle = tip, diamond = curl; brushed locks show every point of their spine.'), `${h.locks.length}`);
+  if (L && L.path) {
+    s += sec('lock', `Lock ${ST.lock + 1} (brushed)`, fNum('Root x', 'lock:x', -24, 24, 0.1) + fNum('Root y', 'lock:y', -26, 20, 0.1)
+      + fNum('Width', 'lock:w', 1, 20, 0.1) + fNum('Taper', 'lock:tp', 0.2, 2, 0.05)
+      + row(fChk('Crown (flattened by hats)', 'lock:k'), fChk('Behind the body', 'lock:back'), fChk('Hangs with gravity', 'lock:hang'))
+      + fNum('Sway', 'lock:sw', 0, 20, 0.5) + fNum('Sway phase', 'lock:ph', 0, 6.3, 0.1)
+      + row(btn('Smooth', 'lock-smooth', null, 'ghost', 'Even out the spine'), btn('Longer', 'lock-scale', 1.15, 'ghost'), btn('Shorter', 'lock-scale', 0.87, 'ghost')));
+  } else if (L) {
     s += sec('lock', `Lock ${ST.lock + 1}`, fNum('Root x', 'lock:x', -24, 24, 0.1) + fNum('Root y', 'lock:y', -26, 20, 0.1) + fNum('Direction', 'lock:a', -270, 270, 1) + fNum('Length', 'lock:len', 1, 70, 0.1)
       + fNum('Width', 'lock:w', 1, 20, 0.1) + fNum('Curl', 'lock:bend', -200, 200, 1) + fNum('Taper', 'lock:tp', 0.2, 2, 0.05)
       + row(fChk('Crown (flattened by hats)', 'lock:k'), fChk('Behind the body', 'lock:back'), fChk('Hangs with gravity', 'lock:hang'))
-      + fNum('Sway', 'lock:sw', 0, 20, 0.5) + fNum('Sway phase', 'lock:ph', 0, 6.3, 0.1));
+      + fNum('Sway', 'lock:sw', 0, 20, 0.5) + fNum('Sway phase', 'lock:ph', 0, 6.3, 0.1)
+      + btn('Convert to brushed lock', 'lock-topath', null, 'ghost', 'Edit every point of its spine'));
   }
   s += sec('ring', 'Crown ring generator', note('Adds a fan of locks around the skull, like the built-in cuts.')
     + fNum('From angle', 'st:ring.a0', -220, 40, 1) + fNum('To angle', 'st:ring.a1', -220, 40, 1) + fNum('Count', 'st:ring.n', 2, 20, 1) + fNum('Length', 'st:ring.len', 3, 40, 0.5) + fNum('Peak extra', 'st:ring.peak', 0, 30, 0.5)
@@ -1008,26 +1150,117 @@ INSPECT.hair = (h) => {
     + btn(IC.plus + ' Add ring', 'ring-add', null, 'primary'));
   return s;
 };
+// Hair masses (head space, same frame as the locks).
+const MASS_PRESETS = {
+  bangs: ['Bangs', { pts: [[-17.5, -6], [-12, -15], [0, -18.5], [12, -16], [18.5, -7], [16, -1, 1], [12.5, -5], [9.5, 1, 1], [6, -5], [2.5, 2, 1], [-1, -5], [-4.5, 1, 1], [-8, -5], [-12, 0, 1], [-14.5, -4]] }],
+  curtain: ['Side lock framing the face', { pts: [[13, -12], [19, -4], [21, 12], [18, 27, 1], [14, 14], [12, 0]] }],
+  longback: ['Long hair down the back', { back: true, pts: [[-19, -10], [-23, 8], [-25, 36], [-18, 50, 1], [-6, 44], [6, 48, 1], [12, 30], [14, 6], [10, -12]] }],
+  volume: ['Volume on top', { pts: [[-20, -6], [-18, -20], [-4, -29], [12, -26], [21, -12], [2, -15]] }],
+  spike: ['One big spike', { pts: [[-7, -16], [-3, -38, 1], [7, -17]] }],
+  pony: ['Ponytail (behind)', { back: true, pts: [[-16, -16], [-26, -10], [-34, 8], [-30, 30, 1], [-24, 12], [-18, -4]] }],
+  blank: ['Blank (draw it)', { pts: [] }],
+};
+function massesSec(h) {
+  const L = h.masses || (h.masses = []), m = curLayer();
+  let b = `<div class="layers">${L.map((x, i) => `<div class="ly ${i === ST.layer ? 'on' : ''}" data-act="layer" data-arg="${i}"><button class="ib sm ${x.hidden ? 'off' : ''}" data-act="ly-vis" data-arg="${i}" title="Show / hide">${IC.eye}</button><span class="sw" style="background:${h.c}"></span><b>${esc(x.name || 'Mass')}</b><small>${x.back ? 'behind' : 'front'} · ${x.pts.length} pts</small></div>`).join('') || note('No mass yet.')}</div>`
+    + row(`<select class="tpl" data-act="mass-add"><option value="">+ Mass…</option>${Object.entries(MASS_PRESETS).map(([k, v]) => `<option value="${k}">${v[0]}</option>`).join('')}</select>`)
+    + (L.length ? row(btn(IC.copy, 'ly-dup', null, 'ib', 'Duplicate'), btn(IC.mirror, 'ly-mirror', null, 'ib', 'Mirror left / right'), btn(IC.del, 'ly-del', null, 'ib danger', 'Delete')) : '');
+  let out = sec('masses', 'Hair masses', b, `${L.length}`);
+  if (m) out += sec('mass', 'Mass', fTxt('Name', 'layer:name') + row(fChk('Behind the body', 'layer:back'), fChk('Smooth curve', 'layer:smooth'))
+    + note('Add points: click after the selected point. Drag the small dots to insert. Shift-click: sharp tip. Alt-click or double-click: delete.')
+    + (ST.point >= 0 && m.pts[ST.point] ? row(fNum('x', `layer:pts.${ST.point}.0`, -40, 40, 0.5), fNum('y', `layer:pts.${ST.point}.1`, -45, 60, 0.5)) : ''));
+  return out;
+}
 ST.ring = { a0: -184, a1: -14, n: 10, len: 9, peak: 4, w: 10, fan: 0.3, lean: 0, bend: 14, jit: 14 };
 
 // ---- clothes
+const PARTS = [['torso', 'Torso and hips'], ['arms', 'Both arms'], ['armF', 'Front arm'], ['armB', 'Back arm'], ['legs', 'Both legs'], ['legF', 'Front leg'], ['legB', 'Back leg']];
+const ell = (c0, c1, r0, r1) => [...Array(10)].map((_, i) => [rd2(c0 + Math.cos((i / 10) * Math.PI * 2) * r0), rd2(c1 + Math.sin((i / 10) * Math.PI * 2) * r1)]);
+// Ready-made pieces, in the space of their body part (torso: u across, v up; limbs: t along, s across).
+const PIECE_PRESETS = {
+  torso: [
+    ['chest', 'Chest plate', { fill: '#9aa3b5', pts: [[-0.75, 0.98], [0.8, 0.98], [0.9, 0.6], [0.5, 0.36, 1], [-0.45, 0.36, 1], [-0.85, 0.6]] }],
+    ['tabard', 'Tabard (over the belt)', { fill: '#c0392b', z: 'top', pts: [[-0.42, 0.95, 1], [0.52, 0.95, 1], [0.48, -0.75, 1], [-0.38, -0.75, 1]] }],
+    ['skirt', 'Skirt', { pts: [[-1.06, 0.14, 1], [1.06, 0.14, 1], [1.5, -1.0], [0.5, -1.1], [-0.5, -1.1], [-1.5, -1.0]] }],
+    ['coat', 'Long coat flaps', { pts: [[-1.05, 0.2, 1], [1.05, 0.2, 1], [1.25, -1.7, 1], [0.1, -1.6, 1], [0.02, -0.2, 1], [-0.1, -1.6, 1], [-1.3, -1.7, 1]] }],
+    ['panel', 'Front panel', { fill: '#e9e4d2', pts: [[0.15, 1.02, 1], [1.05, 0.95, 1], [1.05, -0.05, 1], [0.15, -0.05, 1]] }],
+    ['band', 'Chest band', { fill: '#22252e', pts: [[-1.05, 0.62, 1], [1.05, 0.62, 1], [1.05, 0.5, 1], [-1.05, 0.5, 1]] }],
+    ['strap', 'Diagonal strap', { fill: '#5a3d26', z: 'top', pts: [[-0.95, 0.95, 1], [-0.72, 1.0, 1], [1.02, 0.14, 1], [0.8, 0.06, 1]] }],
+    ['collar', 'Fur collar', { fill: '#f1ead8', pts: [[-1.1, 0.92], [-0.5, 1.1], [0.5, 1.1], [1.1, 0.92], [0.8, 0.8], [0, 0.88], [-0.8, 0.8]] }],
+    ['emblem', 'Emblem', { fill: '#f4c66a', pts: ell(0.5, 0.72, 0.2, 0.09) }],
+    ['seam', 'Seam line', { closed: false, stroke: '#0a0c11', sw: 1, shade: false, pts: [[0.05, 1.0], [0.08, 0.5], [0.05, 0.0]] }],
+  ],
+  arms: [
+    ['pauldron', 'Pauldrons', { fill: '#9aa3b5', pts: [[-0.14, -1.45], [-0.12, 1.45], [0.16, 1.55], [0.26, 0], [0.16, -1.55]] }],
+    ['bracer', 'Bracers', { fill: '#5a3d26', pts: [[0.66, -1.15, 1], [0.66, 1.15, 1], [0.93, 1.1, 1], [0.93, -1.1, 1]] }],
+    ['stripe', 'Sleeve stripe', { fill: '#ffffff', pts: [[0.08, -1.08, 1], [0.08, 1.08, 1], [0.15, 1.08, 1], [0.15, -1.08, 1]] }],
+    ['armband', 'Arm band', { fill: '#e8443a', pts: [[0.3, -1.05, 1], [0.3, 1.05, 1], [0.37, 1.05, 1], [0.37, -1.05, 1]] }],
+    ['elbow', 'Elbow pads', { fill: '#9aa3b5', pts: ell(0.5, 0, 0.08, 1.1) }],
+    ['puff', 'Puffed sleeves', { pts: [[-0.12, -1.35], [-0.12, 1.35], [0.22, 1.6], [0.36, 0], [0.22, -1.6]] }],
+  ],
+  legs: [
+    ['knee', 'Knee guards', { fill: '#9aa3b5', pts: ell(0.5, 0, 0.09, 1.05) }],
+    ['shin', 'Shin guards', { fill: '#9aa3b5', pts: [[0.56, -0.2, 1], [0.56, 1.1], [0.75, 1.15], [0.95, 1.0, 1], [0.95, -0.2, 1]] }],
+    ['wraps', 'Leg wraps', { fill: '#ecebe6', pat: 'stripes', pc: '#b9b6ad', pts: [[0.72, -1.02, 1], [0.72, 1.02, 1], [0.95, 1.0, 1], [0.95, -1.0, 1]] }],
+    ['side', 'Side stripe', { fill: '#ffffff', pts: [[0, 0.72, 1], [0, 0.95, 1], [0.97, 0.95, 1], [0.97, 0.72, 1]] }],
+    ['pouch', 'Thigh pouch', { fill: '#5a3d26', pts: [[0.15, 0.5, 1], [0.15, 1.3, 1], [0.32, 1.3, 1], [0.32, 0.5, 1]] }],
+    ['cuffs', 'Wide cuffs', { pts: [[0.82, -1.3, 1], [0.82, 1.3, 1], [1.0, 1.6, 1], [1.0, -1.6, 1]] }],
+  ],
+};
+const DEF_PIECE = (part) => ({ kind: 'shape', name: 'Piece', part, z: 'base', pts: [], closed: true, smooth: true, fill: 'main', stroke: 'main', sw: 1.6, shade: true, pat: 'none', pc: '#ffffff', ps: 1, op: 1 });
+function pieceFrom(v) {
+  const [g, k] = v.split(':');
+  if (k === 'blank') return Object.assign(DEF_PIECE(g), { name: 'New piece' });
+  const pr = PIECE_PRESETS[g].find((x) => x[0] === k);
+  return Object.assign(DEF_PIECE(g), { name: pr[1] }, clone(pr[2]));
+}
+const fChkOn = (label, b, rr) => `<label class="chk"><input type="checkbox" data-bind="${b}" data-t="b" ${getB(b) !== false ? 'checked' : ''}${rr ? ' data-rr="1"' : ''}><span>${label}</span></label>`;
+function piecesSec(it) {
+  const L = it.pieces || (it.pieces = []), pc = curLayer();
+  const presets = `<select class="tpl" data-act="pc-add"><option value="">+ Piece…</option>${Object.entries(PIECE_PRESETS).map(([g, list]) => `<optgroup label="${{ torso: 'Torso and hips', arms: 'Arms', legs: 'Legs' }[g]}">${list.map(([k, l]) => `<option value="${g}:${k}">${l}</option>`).join('')}<option value="${g}:blank">Blank shape (draw it)</option></optgroup>`).join('')}</select>`;
+  let b = `<div class="layers">${L.map((x, i) => `<div class="ly ${i === ST.layer ? 'on' : ''}" data-act="layer" data-arg="${i}"><button class="ib sm ${x.hidden ? 'off' : ''}" data-act="ly-vis" data-arg="${i}" title="Show / hide">${IC.eye}</button><span class="sw" style="background:${!x.fill || x.fill === 'main' ? (it.top || it.bot || {}).c : x.fill === 'skin' ? '#eef1f6' : x.fill}"></span><b>${esc(x.name || 'Piece')}</b><small>${esc((PARTS.find((q) => q[0] === x.part) || ['', ''])[1])}</small></div>`).join('') || note('No piece yet: add one from the list, or a blank shape to draw.')}</div>`
+    + row(presets) + (L.length ? row(btn(IC.up, 'ly-move', 1, 'ib', 'Bring forward'), btn(IC.down, 'ly-move', -1, 'ib', 'Send backward'), btn(IC.copy, 'ly-dup', null, 'ib', 'Duplicate'), btn(IC.mirror, 'ly-mirror', null, 'ib', 'Mirror across the part'), btn(IC.del, 'ly-del', null, 'ib danger', 'Delete')) : '');
+  let out = sec('pieces', 'Drawn pieces', note('Shapes drawn straight on the body. Each one sits on a body part and bends, turns and swings with it in every animation. The dashed outline shows its part.') + b, `${L.length}`);
+  if (!pc) return out;
+  const fillMode = !pc.fill || pc.fill === 'main' ? 'main' : pc.fill === 'skin' ? 'skin' : 'custom';
+  let q = fTxt('Name', 'layer:name') + fSel('Body part', 'layer:part', PARTS, 1)
+    + (pc.part === 'torso' ? fSel('Layer', 'layer:z', [['base', 'On the top, under the belt'], ['top', 'Over the belt and sash']]) : '')
+    + row(fChk('Closed', 'layer:closed', 1), fChkOn('Smooth curve', 'layer:smooth'), pc.closed ? fChkOn('Cel shading', 'layer:shade') : '');
+  q += F(pc.closed ? 'Fill' : 'Colour', `<select data-act="pfill"><option value="main" ${fillMode === 'main' ? 'selected' : ''}>Garment colour</option><option value="skin" ${fillMode === 'skin' ? 'selected' : ''}>Skin</option><option value="custom" ${fillMode === 'custom' ? 'selected' : ''}>Own colour</option></select>`);
+  if (fillMode === 'custom') q += fCol('Own colour', 'layer:fill');
+  if (!pc.closed) q += fNum('Line width', 'layer:sw', 0.4, 8, 0.1);
+  if (pc.closed) {
+    q += fSel('Print', 'layer:pat', [['none', 'None'], ['stripes', 'Stripes'], ['checks', 'Checks'], ['dots', 'Dots'], ['edge', 'Edge trim']], 1);
+    if (pc.pat && pc.pat !== 'none') q += fCol('Print colour', 'layer:pc') + fNum('Print scale', 'layer:ps', 0.3, 3, 0.05);
+  }
+  q += fNum('Opacity', 'layer:op', 0, 1, 0.05);
+  q += note('Stage: <b>Add points</b> then click on the part. Drag the small dots to insert a point. Shift-click: sharp corner. Alt-click or double-click: delete.');
+  if (ST.point >= 0 && pc.pts[ST.point]) q += row(fNum(pc.part === 'torso' ? 'u' : 't', `layer:pts.${ST.point}.0`, -2, 2, 0.01), fNum(pc.part === 'torso' ? 'v' : 's', `layer:pts.${ST.point}.1`, -2, 2, 0.01));
+  return out + sec('piece', 'Piece', q);
+}
 INSPECT.top = (it) => {
   const T0 = it.top;
   let s = sec('meta', 'Top', metaSec('top', it));
-  s += sec('body', 'Body', fCol('Colour', 'item:top.c') + fNum('Fit (looser)', 'item:top.fit', 0, 6, 0.1) + fNum('Hem', 'item:top.hem', -0.4, 0.4, 0.01) + fNum('Coat tails', 'item:top.tails', 0, 120, 1)
-    + fSel('Open front', 'item:top.open', [['', 'Closed'], ['skin', 'Open on the chest']]) + fOptCol('Inner V', 'item:top.v', '#f2f0ea') + fChk('Crossed lapels (kimono)', 'item:top.kimono')
-    + fOptCol('Zip', 'item:top.zip', '#e9e9ee') + fOptCol('Buttons', 'item:top.buttons', '#f4c66a') + fOptCol('Trim', 'item:top.trim', '#f4c66a') + fOptCol('Emblem', 'item:top.emblem', '#f6f2e8'));
-  s += sec('sleeve', 'Sleeves', fNum('Length (0 none)', 'item:top.sl', 0, 0.95, 0.01) + fOptCol('Own colour', 'item:top.slc', '#2b4fb8') + fNum('Flare', 'item:top.wide', 0, 12, 0.5) + fOptCol('Cuffs', 'item:top.cuff', '#22252e') + fOptCol('Wrist bands', 'item:wrist', '#2b4fb8'));
-  s += sec('collar', 'Collar and shoulders', fSel('Collar', 'item:top.collar', [['', 'None'], ['high', 'High collar']], 1)
-    + (T0.collar === 'high' ? fOptCol('Collar colour', 'item:top.cc', T0.c) + fNum('Collar height', 'item:top.ch', 1, 9, 0.5) + fOptCol('Chain', 'item:top.chain', '#f4c66a') : '')
-    + fOptGroup('Shoulder band', 'item:top.band', [0.64, '#22252e']) + (T0.band ? fNum('Band start', 'item:top.band.0', 0.2, 0.95, 0.01) + fCol('Band colour', 'item:top.band.1') : ''));
-  s += sec('sash', 'Sash', fOptGroup('Sash at the waist', 'item:sash', ['#f4c430', -0.55]) + (it.sash ? fCol('Colour', 'item:sash.0') + fNum('Knot position', 'item:sash.1', -1, 1, 0.01) : ''));
+  s += piecesSec(it);
+  s += sec('base', 'Base garment', fChkOn('Base shirt or jacket (switch off to dress only with drawn pieces)', 'item:base', 1));
+  if (it.base !== false) {
+    s += sec('body', 'Body', fCol('Colour', 'item:top.c') + fNum('Fit (looser)', 'item:top.fit', 0, 6, 0.1) + fNum('Hem', 'item:top.hem', -0.4, 0.4, 0.01) + fNum('Coat tails', 'item:top.tails', 0, 120, 1)
+      + fSel('Open front', 'item:top.open', [['', 'Closed'], ['skin', 'Open on the chest']]) + fOptCol('Inner V', 'item:top.v', '#f2f0ea') + fChk('Crossed lapels (kimono)', 'item:top.kimono')
+      + fOptCol('Zip', 'item:top.zip', '#e9e9ee') + fOptCol('Buttons', 'item:top.buttons', '#f4c66a') + fOptCol('Trim', 'item:top.trim', '#f4c66a') + fOptCol('Emblem', 'item:top.emblem', '#f6f2e8'));
+    s += sec('sleeve', 'Sleeves', fNum('Length (0 none)', 'item:top.sl', 0, 0.95, 0.01) + fOptCol('Own colour', 'item:top.slc', '#2b4fb8') + fNum('Flare', 'item:top.wide', 0, 12, 0.5) + fOptCol('Cuffs', 'item:top.cuff', '#22252e'));
+    s += sec('collar', 'Collar and shoulders', fSel('Collar', 'item:top.collar', [['', 'None'], ['high', 'High collar']], 1)
+      + (T0.collar === 'high' ? fOptCol('Collar colour', 'item:top.cc', T0.c) + fNum('Collar height', 'item:top.ch', 1, 9, 0.5) + fOptCol('Chain', 'item:top.chain', '#f4c66a') : '')
+      + fOptGroup('Shoulder band', 'item:top.band', [0.64, '#22252e']) + (T0.band ? fNum('Band start', 'item:top.band.0', 0.2, 0.95, 0.01) + fCol('Band colour', 'item:top.band.1') : ''));
+  } else s += sec('body', 'Colour', fCol('Garment colour (pieces)', 'item:top.c'));
+  s += sec('hands', 'Hands and waist', fOptCol('Gloves', 'item:glove', '#2b2f3a') + fOptCol('Wrist bands', 'item:wrist', '#2b4fb8')
+    + fOptGroup('Sash at the waist', 'item:sash', ['#f4c430', -0.55]) + (it.sash ? fCol('Sash colour', 'item:sash.0') + fNum('Knot position', 'item:sash.1', -1, 1, 0.01) : ''));
   return s;
 };
-INSPECT.bottom = (it) => sec('meta', 'Bottom', metaSec('bottom', it))
-  + sec('legs', 'Trousers', fCol('Colour', 'item:bot.c') + fNum('Length', 'item:bot.len', 0.3, 1, 0.01) + fNum('Flare', 'item:bot.flare', 0, 8, 0.1)
-    + fOptCol('Fur cuffs', 'item:bot.fur', '#f1ead8') + fOptCol('Thigh wrap', 'item:bot.wrap', '#ecebe6') + fOptCol('Belt', 'item:belt', '#3a2a22'))
-  + sec('shoes', 'Shoes', fSel('Kind', 'item:shoe.0', [['bare', 'Barefoot'], ['shoe', 'Shoes'], ['boot', 'Boots'], ['sandal', 'Sandals'], ['tabi', 'Tabi']]) + fCol('Colour', 'item:shoe.1'));
+INSPECT.bottom = (it) => sec('meta', 'Bottom', metaSec('bottom', it)) + piecesSec(it)
+  + sec('base', 'Base garment', fChkOn('Base trousers (switch off to dress only with drawn pieces)', 'item:base', 1))
+  + (it.base !== false ? sec('legs', 'Trousers', fCol('Colour', 'item:bot.c') + fNum('Length', 'item:bot.len', 0.3, 1, 0.01) + fNum('Flare', 'item:bot.flare', 0, 8, 0.1)
+    + fOptCol('Fur cuffs', 'item:bot.fur', '#f1ead8') + fOptCol('Thigh wrap', 'item:bot.wrap', '#ecebe6')) : sec('legs', 'Colour', fCol('Garment colour (pieces)', 'item:bot.c')))
+  + sec('shoes', 'Belt and shoes', fOptCol('Belt', 'item:belt', '#3a2a22') + fSel('Shoes', 'item:shoe.0', [['bare', 'Barefoot'], ['shoe', 'Shoes'], ['boot', 'Boots'], ['sandal', 'Sandals'], ['tabi', 'Tabi']]) + fCol('Shoe colour', 'item:shoe.1'));
 
 // ---- vector layers (hats, faces, back art)
 function layersSec(L, title) {
@@ -1189,7 +1422,8 @@ function showHelp(on) {
       <li>Drag a joint between keys: a key is added there (auto-key)</li>
       <li>Squares (hands, feet) use IK: hold Alt to bend the other way</li>
       <li>Drag keys on the timeline to retime them; click the ruler to scrub</li></ul></div>
-      <div><h3>Hair</h3><ul><li><b>L</b> draw lock: click-drag on the head</li><li>Square: root · circle: tip · diamond: curl</li><li>The crown ring generator adds a fan of locks</li></ul>
+      <div><h3>Hair</h3><ul><li><b>B</b> brush: paint a lock, it follows your stroke · <b>L</b> arc lock: drag root to tip</li><li>Symmetry mirrors each new lock</li><li><b>Masses</b>: free hair shapes (bangs, long hair) merged into the silhouette</li><li>Square: root · circle: tip · diamond: curl</li><li>The crown ring generator adds a fan of locks</li></ul>
+      <h3>Clothes</h3><ul><li>Drawn pieces sit on a body part (torso, arms, legs) and follow it in every pose</li><li>Draw in T-pose; the strip under the stage shows the piece on 8 poses</li><li>Prints: stripes, checks, dots, trim; gloves; the base garment can be switched off</li></ul>
       <h3>Hats, faces, back art</h3><ul><li><b>D</b> add points: click to place after the selected point</li><li>Drag the small dots between points to insert one</li><li>Shift-click: sharp corner · Alt-click or double-click: delete</li><li>An "SVG" layer takes raw markup (import of built-ins)</li></ul>
       <h3>In the game</h3><ul><li>Stances show in Avatar → Stance; skill animations play while the skill runs; attacks join the battle rotation</li><li><b>Preview in game</b>: with dev mode on, the game on this computer loads the draft (reload its tab)</li></ul></div></div>
     <p class="muted">Ideas from open-source tools: Spine-like keyframing and DragonBones' dope sheet, OpenToonz onion skin, Inkscape nodes, pixi-particle-emitter / Effekseer emitters, the LPC character generator's layered parts.</p>
@@ -1198,7 +1432,7 @@ function showHelp(on) {
 
 /* ================================================================ actions */
 const ACT = {
-  mode(t) { ST.mode = t; ST.tool = ''; ST.playing = false; ST.point = -1; if (t === 'anim') ST.u = 0; renderAll(); autoFit(); saveDraft(); },
+  mode(t) { if (GAR_MODES[t] && ST.previewPose === 'relaxed') ST.previewPose = 'tpose'; ST.mode = t; ST.tool = ''; ST.playing = false; ST.point = -1; if (t === 'anim') ST.u = 0; renderAll(); autoFit(); saveDraft(); },
   pick(i) { ST.sel[ST.mode] = +i; ST.lock = 0; ST.layer = 0; ST.point = -1; ST.emitter = 0; ST.u = 0; ST.playing = false; renderAll(); saveDraft(); },
   new() { items().push(makeItem(ST.mode)); ST.sel[ST.mode] = items().length - 1; ST.lock = 0; ST.layer = 0; ST.u = 0; commit(); renderAll(); },
   tpl(v, el) { if (!v) return; items().push(makeItem(ST.mode, v)); ST.sel[ST.mode] = items().length - 1; ST.lock = 0; ST.layer = 0; ST.u = 0; el.value = ''; commit(); renderAll(); },
@@ -1236,7 +1470,42 @@ const ACT = {
   lock(i) { ST.lock = +i; renderRight(); },
   'lock-add'() { const it = cur(); it.locks.push(roundLock({ x: 4, y: -15, a: 92, len: 11, w: 8, bend: 10, tp: 0.8 })); ST.lock = it.locks.length - 1; commit(); renderRight(); },
   'lock-dup'() { const it = cur(), L = curLock(); if (!L) return; const c = clone(L); c.x += 2; it.locks.splice(ST.lock + 1, 0, c); ST.lock++; commit(); renderRight(); },
-  'lock-mirror'() { const it = cur(), L = curLock(); if (!L) return; const c = clone(L); c.x = -c.x; c.a = rd(180 - c.a); c.bend = -c.bend; it.locks.splice(ST.lock + 1, 0, c); ST.lock++; commit(); renderRight(); },
+  'lock-mirror'() { const it = cur(), L = curLock(); if (!L) return; it.locks.splice(ST.lock + 1, 0, mirrorLock(L)); ST.lock++; commit(); renderRight(); },
+  'lock-topath'() {
+    const L = curLock();
+    if (!L || L.path) return;
+    const { sp } = lockPts(Object.assign({}, L, { hang: 0, sw: 0 }), 0, 0);
+    L.path = sp.slice(1).map((q) => [rd(q[0] - L.x), rd(q[1] - L.y)]);
+    for (const k of ['a', 'len', 'bend']) delete L[k];
+    commit(); renderRight();
+  },
+  'lock-smooth'() {
+    const L = curLock();
+    if (!L || !L.path) return;
+    const P = [[0, 0], ...L.path];
+    L.path = L.path.map((q, i) => (i === L.path.length - 1 ? q : [rd((P[i][0] + q[0] * 2 + P[i + 2][0]) / 4), rd((P[i][1] + q[1] * 2 + P[i + 2][1]) / 4)]));
+    commit(); renderRight();
+  },
+  'lock-scale'(k) { const L = curLock(); if (!L || !L.path) return; L.path = L.path.map(([x, y]) => [rd(x * k), rd(y * k)]); commit(); renderRight(); },
+  hairedit(v) { ST.hairEdit = v; ST.tool = ''; ST.point = -1; ST.layer = 0; renderRight(); renderStagebar(); },
+  'mass-add'(v, el) {
+    if (!v) return;
+    const it = cur(), p = MASS_PRESETS[v];
+    (it.masses = it.masses || []).push(Object.assign({ kind: 'shape', name: p[0], closed: true, smooth: true, back: false }, clone(p[1])));
+    ST.layer = it.masses.length - 1; ST.point = -1; el.value = '';
+    if (v === 'blank') { ST.tool = 'draw'; renderStagebar(); }
+    commit(); renderRight();
+  },
+  'pc-add'(v, el) {
+    if (!v) return;
+    const it = cur(), pc = pieceFrom(v);
+    (it.pieces = it.pieces || []).push(pc);
+    ST.layer = it.pieces.length - 1; ST.point = -1; el.value = '';
+    if (!pc.pts.length) { ST.tool = 'draw'; renderStagebar(); }
+    commit(); renderRight();
+  },
+  pfill(v) { const pc = curLayer(); if (!pc) return; pc.fill = v === 'custom' ? (pc.fill && pc.fill[0] === '#' ? pc.fill : '#c9a66b') : v; if (!pc.closed) pc.stroke = pc.fill; commit(); renderRight(); },
+  pvpose(k) { ST.previewPose = k; renderStagebar(); renderStrip(); },
   'lock-del'() { const it = cur(); if (!curLock()) return; it.locks.splice(ST.lock, 1); ST.lock = Math.min(ST.lock, it.locks.length - 1); commit(); renderRight(); },
   'ring-add'() {
     const it = cur(), R = ST.ring, n = Math.max(2, R.n | 0);
@@ -1257,7 +1526,8 @@ const ACT = {
   'ly-mirror'() {
     const x = curLayer();
     if (!x) return;
-    if (x.kind === 'shape') x.pts = x.pts.map((p) => [-p[0], p[1]].concat(p[2] ? [1] : [])).reverse();
+    const ax = GAR_MODES[ST.mode] && x.part !== 'torso' ? 1 : 0;
+    if (x.kind === 'shape') x.pts = x.pts.map((p) => { const q = [p[0], p[1]]; q[ax] = -q[ax]; return p[2] ? q.concat([1]) : q; }).reverse();
     else if (x.kind === 'circle') x.cx = -x.cx;
     else x.svg = `<g transform="scale(-1,1)">${x.svg}</g>`;
     commit(); renderRight();
@@ -1362,12 +1632,13 @@ document.addEventListener('keydown', (ev) => {
     else if (k === 'o' || k === 'O') { ST.onion = !ST.onion; renderTimeline(); }
     return;
   }
-  if (ST.mode === 'hair') {
+  if (ST.mode === 'hair' && !isVec()) {
     if (k === 'l' || k === 'L') ACT.tool('addlock');
+    else if (k === 'b' || k === 'B') ACT.tool('brush');
     else if (k === 'Delete' || k === 'Backspace') ACT['lock-del']();
     return;
   }
-  if (VEC_MODES[ST.mode]) {
+  if (isVec()) {
     if (k === 'd' || k === 'D') ACT.tool('draw');
     else if ((k === 'Delete' || k === 'Backspace') && ST.point >= 0 && curLayer() && curLayer().pts) { curLayer().pts.splice(ST.point, 1); ST.point = Math.min(ST.point, curLayer().pts.length - 1); commit(); renderRight(); }
   }

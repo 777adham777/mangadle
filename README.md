@@ -47,7 +47,9 @@ The first cheat backs up the save so it can be restored from the same page. `?de
 
 Open `editor.html` (or **Dev → Open the Studio**) to make avatar content with the game's own renderer:
 animations (keyframes on the rig with a dope sheet, onion skin, auto-key and IK handles; they become stances,
-skill animations or attacks), haircuts (locks on a cap), tops and bottoms, hats and faces (vector layers),
+skill animations or attacks), haircuts (locks painted with a brush, arc locks and free hair masses, with symmetry),
+tops and bottoms (pieces drawn on the torso, arms and legs that follow every pose, with prints, gloves, or the
+parametric base garment), hats and faces (vector layers),
 back pieces (cape, hood, mantle, free art), auras (flames and particle emitters) and colours.
 Each piece gets a name, world, rarity and the feat that earns it.
 

@@ -31,8 +31,9 @@ const KILLS = (z, n) => ({ need: () => kzOf(z) >= n, hint: `Defeat ${n} foes in 
 // Every cosmetic belongs to one world (w) and is earned there. Free basics have no world.
 // r = rarity 1–5 (frame colour). The first entry of each slot is the default.
 // Content made in the Studio (editor.html) plugs in here; see js/custom.js.
-// face/back/aura: drawers by id · skill: skill id → animation id · attacks: extra attack sequences.
-const AV_EXT = { face: {}, back: {}, aura: {}, skill: {}, attacks: [] };
+// face/back/aura: drawers by id · skill: skill id → animation id · attacks: extra attack sequences
+// wear: drawn garment pieces by 'top:id' / 'bottom:id', called for each body part (see drawAvatar).
+const AV_EXT = { face: {}, back: {}, aura: {}, skill: {}, attacks: [], wear: {} };
 const C = (id, name, w, r, req, extra) => Object.assign({ id, name, w, r }, req, extra || {});
 const COSMETICS = {
   build: [
@@ -851,14 +852,23 @@ const HP = (a, r) => [Math.cos(a * D2R) * r, Math.sin(a * D2R) * r];
 // k: 'crown' (flattened under a covering hat) · hang: the direction is in world space (hair falls with gravity)
 // sw: how much it sways (secondary motion)
 const hj = (i, s) => { const v = Math.sin(i * 12.9898 + (s || 0) * 78.233) * 43758.5453; return v - Math.floor(v); };
+// A lock drawn freehand (Studio brush) has a path: its spine relative to the root, turned as a whole
+// by gravity (hang) and sway.
 function lockPts(L, ha, t) {
-  const n = 6, sp = [], step = L.len / n;
-  const a0 = (L.hang ? L.a - ha : L.a) + (L.sw ? Math.sin(t * 2.1 + (L.ph || 0)) * L.sw : 0);
-  let p = [L.x, L.y];
-  for (let i = 0; i <= n; i++) {
-    sp.push(p);
-    const a = (a0 - L.bend / 2 + (L.bend * (i + 0.5)) / n) * D2R;
-    p = [p[0] + Math.cos(a) * step, p[1] + Math.sin(a) * step];
+  const sw = L.sw ? Math.sin(t * 2.1 + (L.ph || 0)) * L.sw : 0;
+  let sp = [], n = 6;
+  if (L.path && L.path.length > 1) {
+    const r = ((L.hang ? -ha : 0) + sw) * D2R, c = Math.cos(r), s = Math.sin(r);
+    sp = [[L.x, L.y], ...L.path.map(([x, y]) => [L.x + x * c - y * s, L.y + x * s + y * c])];
+    n = sp.length - 1;
+  } else {
+    const step = L.len / n, a0 = (L.hang ? L.a - ha : L.a) + sw;
+    let p = [L.x, L.y];
+    for (let i = 0; i <= n; i++) {
+      sp.push(p);
+      const a = (a0 - L.bend / 2 + (L.bend * (i + 0.5)) / n) * D2R;
+      p = [p[0] + Math.cos(a) * step, p[1] + Math.sin(a) * step];
+    }
   }
   const hw = sp.map((_, i) => (L.w / 2) * Math.pow(1 - i / n, L.tp || 0.8) + (i === n ? 0 : 0.15));
   const Lf = offsetVar(sp, hw), Rt = offsetVar(sp, hw.map((h) => -h));
@@ -967,7 +977,7 @@ function hairShape(id, covered, ha, t) {
   const front = [h.stubble ? strip() : cap], back = [];
   let lines = '', hi = '';
   locks.forEach((L, i) => {
-    if (covered && L.k === 'crown') { if (L.len < 9) return; L = Object.assign({}, L, { len: L.len * 0.3 }); }
+    if (covered && L.k === 'crown') { if (L.len < 9) return; L = Object.assign({}, L, { len: L.len * 0.3, path: L.path && L.path.map(([x, y]) => [x * 0.3, y * 0.3]) }); }
     const { pts, sp } = lockPts(L, ha || 0, t || 0);
     (L.back ? back : front).push(pts);
     // a strand line down the middle of bigger locks, a highlight on their lit (upper left) side
@@ -992,6 +1002,8 @@ function hairShape(id, covered, ha, t) {
     const q = HP(a, r - s * 0.85);
     extra += `<path d="M${r1(q[0] - 5)},${r1(q[1] + 1)} Q${r1(q[0])},${r1(q[1] - 2.5)} ${r1(q[0] + 5)},${r1(q[1] + 1)}" fill="none" stroke="${LINE}" stroke-width="4.4" stroke-linecap="round"/><path d="M${r1(q[0] - 5)},${r1(q[1] + 1)} Q${r1(q[0])},${r1(q[1] - 2.5)} ${r1(q[0] + 5)},${r1(q[1] + 1)}" fill="none" stroke="#c0392b" stroke-width="2.4" stroke-linecap="round"/>`;
   }
+  // free hair masses drawn in the Studio merge into the same silhouette
+  for (const m of h.masses || []) if (m.pts && m.pts.length > 2) (m.back ? back : front).push(m.pts);
   return { h, front: union(...front), back: back.length ? union(...back) : '', stub: h.stubble ? spline(cap, true) : '', lines, hi, extra };
 }
 
@@ -1029,7 +1041,7 @@ const BOTTOMS = {
 function outfitOf(A) {
   const tp = TOPS[A.top != null ? A.top : A.outfit], bo = BOTTOMS[A.bottom != null ? A.bottom : A.outfit];
   if (!tp && !bo) return null;
-  return { top: tp && tp.top, sash: tp && tp.sash, wrist: tp && tp.wrist, bot: bo && bo.bot, belt: bo && bo.belt, shoe: bo && bo.shoe };
+  return { top: tp && tp.top, sash: tp && tp.sash, wrist: tp && tp.wrist, glove: tp && tp.glove, bot: bo && bo.bot, belt: bo && bo.belt, shoe: bo && bo.shoe };
 }
 
 /* ---------------------------------------------------------------- flame auras */
@@ -1095,6 +1107,9 @@ function drawAvatar(A, P, t, opt) {
       + `<g clip-path="url(#${id})"><path d="${d}" fill="${sh}"/><path d="${d}" fill="${fill}" transform="translate(${dx},${dy})"/></g>`;
   };
   const piece = (P2, c, far, k) => cel(spline(P2, true), col(c, far), shd(c, far), k);
+  // garment pieces drawn in the Studio, mapped onto a body part (where) and following it as it moves
+  const XW = [AV_EXT.wear['bottom:' + A.bottom], AV_EXT.wear['top:' + A.top]].filter(Boolean);
+  const xw = (where, o) => (XW.length ? XW.map((f) => f(where, Object.assign({ J, P, B, W, t, M, cel, col, shd, ex: (T && T.fit) || 2, clipId: () => uid + nClip++ }, o))).join('') : '');
   const cx = J.pelvis[0], cy = (J.pelvis[1] + J.neckBase[1]) / 2;
   const feetX = (J.lF[2][0] + J.lB[2][0]) / 2;
   out.push(`<ellipse cx="${r1(feetX)}" cy="${GROUND + 1}" rx="${r1(30 - air * 0.4)}" ry="5" fill="#000" opacity="${r1(0.45 - air * 0.01)}"/>`);
@@ -1132,9 +1147,10 @@ function drawAvatar(A, P, t, opt) {
       if (T.sl > 0.55) s += crease(Cs, Math.round(n * 0.55), hw[4]);
       if (T.cuff) s += piece(tube(bez(Ar, T.sl - 0.08, T.sl, 2), [w1 + 0.2, w1 + 0.35, w1 + 0.5], { flatStart: 1, flatEnd: 1 }), T.cuff, far, 0.6);
     }
+    s += xw(far ? 'armB' : 'armF', { L: Ar, far });
     if (O && O.wrist) s += piece(tube(bez(Ar, 0.78, 0.93, 2), [5.4 * W, 5.3 * W, 5.2 * W], { flatStart: 1, flatEnd: 1 }), O.wrist, far, 0.6);
     const hp = add(Ar[2], fa, 4.2 * W), r = rotTo(fa);
-    const hand = `<g transform="translate(${pt(hp)}) rotate(${r})">${cel('M-6.6,-0.4C-6.6,-5.4 -3.4,-7 0.6,-7C5,-7 7.6,-4 7.6,0C7.6,4.2 4.8,7 0.4,7C-3.6,7 -6.6,4.6 -6.6,-0.4Z', sk, shd('skin', far), 0.8)}</g>`;
+    const hand = `<g transform="translate(${pt(hp)}) rotate(${r})">${cel('M-6.6,-0.4C-6.6,-5.4 -3.4,-7 0.6,-7C5,-7 7.6,-4 7.6,0C7.6,4.2 4.8,7 0.4,7C-3.6,7 -6.6,4.6 -6.6,-0.4Z', O && O.glove ? col(O.glove, far) : sk, O && O.glove ? shd(O.glove, far) : shd('skin', far), 0.8)}</g>`;
     return { s, hand, hp };
   };
   // the foot: a rounded stub (or shoe) pointing the way the foot points, never upside down
@@ -1244,13 +1260,15 @@ function drawAvatar(A, P, t, opt) {
     const pc = [bez(J.lB, -0.06, Bt.len, 8), bez(J.lF, -0.06, Bt.len, 8)], pw = pantW(8);
     fig.push(cel(union(torsoOutline(M, -0.32, 0.22, 1.6), tube(pc[0], pw, { flatEnd: 1 }), tube(pc[1], pw, { flatEnd: 1 })), Bt.c, shd(Bt.c)) + legEdge(pc[1], pw));
   }
-  fig.push(legDetails(J.lB, true), legDetails(J.lF, false));
+  fig.push(legDetails(J.lB, true) + xw('legB', { L: J.lB, far: true }), legDetails(J.lF, false) + xw('legF', { L: J.lF, far: false }));
   fig.push(tails());
   // the neck, the torso (bare or dressed)
   fig.push(cel(spline(tube([add(J.neckBase, J.neckA, -6), J.neck, add(J.neck, J.neckA, 9)], [4.4 * W, 4.1 * W, 4.1 * W]), true), St.far, shd('skin', true), 0.6));
   if (!T) fig.push(lineP(spline([M(-0.4, 0.64, 0), M(0, 0.6, 0), M(0.4, 0.64, 0)], false), St.sh, 1.2, 0.8) + lineP(spline([M(0, 0.52, 0), M(0, 0.32, 0)], false), St.sh, 1, 0.7));
   else fig.push(top());
+  fig.push(xw('torso'));
   if (O) fig.push(sash());
+  fig.push(xw('torsoTop'));
   // hands hanging at the sides come over the clothes
   if (!backX) fig.push(back.hand);
   if (!frontX && !(worn && !sheathed && !P.prop) && !P.prop) fig.push(front.hand);
