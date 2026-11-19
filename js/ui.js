@@ -453,7 +453,7 @@ function skBannerHTML(realm, skill) {
     <div class="sk-ic">${ic('skill', skill)}</div>
     <div class="sk-main"><small>${R.name}</small><h1>${s.name}</h1>
       <div class="sk-xp"><span class="pbar"><i data-xpbar="${skill}"></i></span><span class="sk-xpt" data-xptext="${skill}">${xpText(b)}</span></div>
-      <div class="pills">${mods.join('')}</div></div>
+      <div class="pills">${mods.join('')}</div>${typeof skInfoBtns === 'function' && s.realm !== 'combat' ? skInfoBtns(skill) : ''}</div>
     <div class="sk-ring" data-xpring="${skill}" style="--p:${b.p}" title="Progress to the next level"><span><b data-lv="${skill}">${b.L}</b><small>Level</small></span></div>
   </section>`;
 }

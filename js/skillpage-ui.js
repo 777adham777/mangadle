@@ -1,8 +1,8 @@
 /* Skill page layout (VIEWS.realm in ui.js). No right column any more: the page uses the full width.
    - Skills with an animated scene get a "stage": the scene beside a one-click picker of every unlocked
      action (trees, fishing spots, recipes) — or, for Voyaging, its harbour.
-   - Milestones, rare finds, synergies and each skill's extra panels live in a tabbed sub-menu at the
-     bottom of the page instead of a tall sidebar. */
+   - Milestones, rare finds and synergies open in a window from buttons in the skill banner at the top.
+   - Each skill's extra panels live in a tabbed sub-menu at the bottom of the page. */
 
 const PICK_TITLE = { woodcutting: 'Trees', mining: 'Ore veins', archaeology: 'Dig sites' };
 
@@ -33,14 +33,37 @@ function skStageHTML(skill, scene, top) {
   return `<div class="sk-stage ${side.trim() ? '' : 'solo'}"><div class="stg-scene">${scene}</div>${side.trim() ? `<div class="stg-side">${side}</div>` : ''}</div>`;
 }
 
-// Bottom sub-menu: one tab per panel, labelled by the panel's own header.
+// Banner buttons (top of the page): each opens its panel in a window.
+const SK_INFO = {
+  milestones: { label: 'Milestones', icon: 'milestone', html(realm, skill) {
+    const L = xpInfo(skill).L;
+    return `<section class="win">${hdr('Milestones', `${MILESTONES.filter((m) => L >= m.lv).length} / ${MILESTONES.length} reached`)}<div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b><i>${m.lv}</i></b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div></section>`;
+  } },
+  rare: { label: 'Rare finds', icon: 'rare', html: (realm, skill) => `<section class="win">${hdr('Rare finds', `per action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}<div class="tiles rare-row">${rareTiles(skill).join('')}</div></section>` },
+  synergies: { label: 'Synergies', icon: 'star', html: (realm, skill) => `<section class="win syn-win" style="--rc:${rc(realm)}">${synergyHTML(synergiesInto(skill), synergiesFrom(skill))}</section>` },
+};
+function skInfoBtns(skill) {
+  const L = xpInfo(skill).L, n = MILESTONES.filter((m) => L >= m.lv).length;
+  const sub = { milestones: `${n}/${MILESTONES.length}` };
+  return `<div class="sk-info-btns">${Object.entries(SK_INFO).map(([k, d]) => `<button class="sk-info-btn" data-skinfo="${skill}:${k}">${ui(d.icon)}<span>${d.label}</span>${sub[k] ? `<em>${sub[k]}</em>` : ''}</button>`).join('')}</div>`;
+}
+function openSkInfo(skill, key) {
+  const realm = SKILLS[skill].realm, d = SK_INFO[key];
+  openModal(`<div class="sk-info" style="--rc:${rc(realm)}"><div class="ob-head"><small>${esc(SKILLS[skill].name)}</small><h2>${d.label}</h2></div>${d.html(realm, skill)}</div>`, 'Close');
+}
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest('[data-skinfo]');
+  if (!t) return;
+  const [skill, key] = t.dataset.skinfo.split(':');
+  openSkInfo(skill, key);
+});
+
+// Bottom sub-menu: one tab per extra panel, labelled by the panel's own header.
 function skMoreHTML(realm, skill) {
-  const b = xpInfo(skill), parts = [];
+  const parts = [];
   for (const f of UIX.realmSide) { const h = f(realm, skill); if (h) parts.push(h); }
   if (renownOn()) parts.push(renownHTML(realm));
-  parts.push(`<section class="win">${hdr('Milestones', `${MILESTONES.filter((m) => b.L >= m.lv).length} / ${MILESTONES.length} reached`)}<div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${b.L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b><i>${m.lv}</i></b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div></section>`);
-  parts.push(`<section class="win">${hdr('Rare finds', `per action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}<div class="tiles rare-row">${rareTiles(skill).join('')}</div></section>`);
-  parts.push(`<section class="win syn-win" style="--rc:${rc(realm)}">${synergyHTML(synergiesInto(skill), synergiesFrom(skill))}</section>`);
+  if (!parts.length) return '';
   const tabs = parts.map((h) => {
     const m = h.match(/<h3 class="hdr"><span>(.*?)<\/span>/), label = m ? m[1].replace(/<[^>]+>/g, '').trim() : 'Info';
     return { key: label.toLowerCase().replace(/[^a-z0-9]+/g, '-'), label, h };

@@ -1,4 +1,4 @@
-/* Skill page layout (js/skillpage-ui.js): full width, scene + picker stage, tabbed sub-menu at the bottom. */
+/* Skill page layout (js/skillpage-ui.js): full width, scene + picker stage, info buttons in the banner, tabbed sub-menu at the bottom. */
 .sk-page { width: 100%; }
 
 /* ---------- stage: scene beside what you act on */
@@ -23,7 +23,7 @@
 .pk-next { cursor: default; margin-top: 3px; }
 .pk-next:hover { border-color: var(--line2); color: var(--mute); }
 
-/* ---------- sub-menu: milestones, rare finds, synergies... one tab at a time */
+/* ---------- sub-menu: each skill's extra panels, one tab at a time */
 .sk-more { display: flex; flex-direction: column; gap: 0; margin-top: 4px; }
 .sk-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; border-bottom: 1px solid var(--line2); }
 .sk-tabs::-webkit-scrollbar { display: none; }
@@ -39,3 +39,20 @@
 .sk-pane .rare-row .tile { --ts: 58px; }
 .sk-pane .syn-grid { grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
 .stg-side .pk-list { max-height: 460px; overflow-y: auto; scrollbar-width: thin; }
+
+/* ---------- banner buttons: milestones, rare finds, synergies open in a window */
+.sk-info-btns { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 2px; }
+.sk-info-btn { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 2px; cursor: pointer;
+  background: rgba(10, 13, 22, 0.55); border: 1px solid var(--line2); color: var(--text); font: 600 12px var(--display); letter-spacing: 0.08em; text-transform: uppercase;
+  transition: background 0.15s, border-color 0.15s; }
+.sk-info-btn .gi { color: var(--rc); font-size: 14px; }
+.sk-info-btn em { font-style: normal; color: var(--dim); letter-spacing: 0.02em; }
+.sk-info-btn:hover { background: var(--panel3); border-color: var(--rc); }
+.sk-info { width: 100%; display: flex; flex-direction: column; gap: 14px; }
+.sk-info .ob-head { text-align: center; }
+.sk-info > .win { width: 100%; }
+.sk-info > .win > .hdr:first-child > span { display: none; }   /* the window title already names it */
+.sk-info .ms-row { grid-template-columns: repeat(auto-fill, minmax(min(200px, 100%), 1fr)); gap: 6px; }
+.sk-info .msc small { white-space: normal; }
+.sk-info .rare-row .tile { --ts: 58px; }
+.sk-info .syn-grid { grid-template-columns: repeat(auto-fit, minmax(min(280px, 100%), 1fr)); }
