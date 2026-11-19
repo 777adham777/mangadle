@@ -92,22 +92,31 @@ const projectPack = () => normPack(typeof CUSTOM_PACK !== 'undefined' ? CUSTOM_P
 // added to the draft once per set; it reaches players only when the draft is saved to the project.
 const INBOX_KEY = 'trirealm_studio_inbox';
 let inboxNote = '';
+// The inbox can hold several sets (an array): each is merged once, by id, so a later fix to one
+// item can be sent as its own small set without overwriting the others in the draft.
+const inboxSets = () => (typeof STUDIO_INBOX === 'undefined' || !STUDIO_INBOX ? [] : [].concat(STUDIO_INBOX)).filter((x) => x && x.pack);
 function takeInbox(force) {
-  if (typeof STUDIO_INBOX === 'undefined' || !STUDIO_INBOX || !STUDIO_INBOX.pack) return 0;
   let seen = {};
   try { seen = JSON.parse(localStorage.getItem(INBOX_KEY) || '{}') || {}; } catch (e) { /* no storage */ }
-  if (seen[STUDIO_INBOX.id] && !force) return 0;
   let n = 0, first = null;
-  for (const t of TYPE_ORDER) for (const it of STUDIO_INBOX.pack[t] || []) {
-    const L = ST.pack[t], i = L.findIndex((x) => x.id === it.id);
-    if (i >= 0) L[i] = clone(it); else L.push(clone(it));
-    if (!first) first = [t, it.id];
-    n++;
+  const notes = [];
+  for (const set of inboxSets()) {
+    if (seen[set.id] && !force) continue;
+    let k = 0;
+    for (const t of TYPE_ORDER) for (const it of set.pack[t] || []) {
+      const L = ST.pack[t], i = L.findIndex((x) => x.id === it.id);
+      if (i >= 0) L[i] = clone(it); else L.push(clone(it));
+      if (!first) first = [t, it.id];
+      k++;
+    }
+    seen[set.id] = Date.now();
+    n += k;
+    notes.push(`${set.label} (${k})`);
   }
-  seen[STUDIO_INBOX.id] = Date.now();
+  if (!n) return 0;
   try { localStorage.setItem(INBOX_KEY, JSON.stringify(seen)); } catch (e) { /* no storage */ }
   if (first) { ST.mode = first[0]; ST.sel[first[0]] = ST.pack[first[0]].findIndex((x) => x.id === first[1]); }
-  inboxNote = `${STUDIO_INBOX.label}: ${n} added to your draft for review. Players get them only when you press Save to project.`;
+  inboxNote = `${notes.join(' · ')}: added to your draft for review. Players get them only when you press Save to project.`;
   return n;
 }
 takeInbox();
@@ -1437,7 +1446,7 @@ function packRight() {
   return sec('save', 'Save', row(btn(IC.save + ' Save to project', 'save', null, 'primary'), btn('Download file', 'download', null, 'ghost'))
       + row(btn('Import…', 'import', null, 'ghost'), btn('Copy JSON', 'copyjson', null, 'ghost'))
       + row(btn('Revert to project file', 'revert', null, 'ghost danger'))
-      + (typeof STUDIO_INBOX !== 'undefined' ? row(btn(`Add the review set again (${esc(STUDIO_INBOX.label)})`, 'inbox', null, 'ghost')) : '')
+      + (inboxSets().length ? row(btn(`Add the review set again (${esc(inboxSets()[0].label)})`, 'inbox', null, 'ghost')) : '')
       + note(differs() ? 'The draft has changes not saved to the project yet.' : 'The draft matches the project file.', differs() ? 'warn' : ''))
     + sec('check', 'Checks', probs.length ? probs.map((p) => note(p, 'bad')).join('') : note('No problem found.'));
 }

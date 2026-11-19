@@ -1128,7 +1128,7 @@ function drawAvatar(A, P, t, opt) {
   // hair: long locks hang behind the body, the rest sits on the head (shifted as the head turns)
   // hair v2 (js/hair2.js): layered clumps, drawn by its own renderer
   const h2def = HAIR[A.hair] && HAIR[A.hair].v2;
-  const h2 = h2def && typeof hair2SVG === 'function' ? hair2SVG(h2def, { t, ha, uid: uid + 'h2', covered: !!HAT_COVER[A.hat] }) : null;
+  const h2 = h2def && typeof hair2SVG === 'function' ? hair2SVG(h2def, { t, ha, uid: uid + 'h2', covered: !!HAT_COVER[A.hat], face: [(-2.2 * (P.tw || 0)) / (1 + 0.07 * (P.tw || 0)), 19 / (1 + 0.07 * (P.tw || 0))] }) : null;
   const hair = h2 ? null : hairShape(A.hair, !!HAT_COVER[A.hat], ha, t), tw = P.tw || 0;
   const hairT = (s) => `<g transform="translate(${r1(2.2 * tw)},0) scale(${r1((1 + 0.07 * tw) * 100) / 100},1)">${s}</g>`;
   const fig = [G.back];

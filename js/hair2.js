@@ -7,11 +7,13 @@
    - clumps, not lines: each one a curved ribbon (wide at the root, a belly,
      a tip that is pointed, rounded, cut straight or forked), irregular on purpose
      (2-3 dominant clumps, varied widths and lengths) so crowns never look like saws;
-   - one silhouette outline per layer in a dark tint of the hair colour, thin inner
-     lines only towards the tips, where clumps overlap;
-   - designed shadows: a wedge on the shaded side of each clump, the main layer's
-     shadow cast on the nape, the fringe's shadow cast on the forehead;
-   - the "angel ring": one highlight band that follows the skull, broken per clump;
+   - ink as a last, separate pass: ONE line of constant width around the whole
+     silhouette (each clump stroked, everything inside the mass masked out), so
+     no clip ever cuts a line and inner edges never show; inside, only a tapered
+     brush line on the lit edge of each clump, towards its tip;
+   - designed shadows: a wedge on the shaded side of every clump (painted back to
+     front, so a clump in front hides them), the fringe's shadow on the forehead;
+   - highlights: a few tapered crescents following the skull on the lit side;
    - colours derived from one base colour (shadows hue-shifted towards violet).
    A haircut is a recipe: { fringe, side, back, extra, vol, len, spike, seed, c, tip }.
    Head-local space: head centre 0,0, radius 19, eyes at y ≈ 2 (x ≈ ±5.7).
@@ -41,7 +43,7 @@ function hair2Palette(c) {
   return {
     base: c,
     nape: h2Hsl(toV(0.06), s, dark ? l * 0.8 : l - 0.06),
-    sh: h2Hsl(toV(0.16), Math.min(1, s * 1.05 + 0.04), dark ? l * 0.62 : l - 0.17),
+    sh: h2Hsl(toV(dark ? 0.16 : 0.09), Math.min(1, s * 0.95 + 0.04), dark ? l * 0.62 : l - 0.13),
     deep: h2Hsl(toV(0.24), Math.min(1, s * 1.05 + 0.04), dark ? l * 0.45 : l - 0.3),
     hi: h2Hsl(h, s * (dark ? 0.35 : 0.8), dark ? l + 0.3 : l + (1 - l) * 0.45),
     ring: h2Hsl(toV(dark ? 0.12 : 0), s * (dark ? 0.3 : 0.6), dark ? l + 0.5 : l + (1 - l) * 0.75),
@@ -241,6 +243,7 @@ const H2_EXTRAS = {
   antenna: { name: 'Two cowlicks', gen: () => [h2C({ x: -3, y: -19, a: -105, len: 11, w: 3.2, bend: -110, tip: 'point', sw: 4, z: 6 }), h2C({ x: 4, y: -19, a: -72, len: 10, w: 3.2, bend: 110, tip: 'point', sw: 4, ph: 1, z: 6 })] },
   strands: { name: 'Stray strands', gen: () => [h2C({ x: -14, y: -11, a: 112, len: 15, w: 2.4, bend: 46, tip: 'point', sw: 3, z: 6 }), h2C({ x: 13, y: -12, a: 68, len: 13, w: 2.2, bend: -46, tip: 'point', sw: 3, ph: 1, z: 6 })] },
   bun: { name: 'Bun', gen: () => [h2C({ x: -8, y: -27, a: 0, len: 0, w: 0, bun: [-6, -26, 8], layer: 'nape' })] },
+  curls: { name: 'Forehead curls', gen: () => [[-8.5, -9.5, 3.9, 6.1], [0.3, -10.6, 4.2, 6.2], [9, -9.2, 3.8, 6]].map(([x, y, r, z]) => h2C({ x, y, a: 0, len: 0, w: 0, bun: [x, y, r], curl: 1, z })) },
 };
 // Ready-made combinations.
 const H2_STYLES = {
@@ -287,7 +290,6 @@ function hair2Build(def, covered) {
   }
   // imperfection, the way an artist does it: one lean for the whole cut, small differences between
   // clumps, never two alike; a missing spike or a forked tip only on spiky cuts
-  const lib = H2_FRINGES[d.fringe] || {};
   clumps.forEach((c, i) => {
     if (c.bun || !c.len) return;
     const r = (n) => R(i + 40, n + 20), sd = c.x < -1 ? -1 : c.x > 1 ? 1 : 0, neat = c.tip === 'blunt' ? 0 : 1;
@@ -297,27 +299,20 @@ function hair2Build(def, covered) {
     c.bend += (r(4) - 0.5) * 10 * neat;
     if (P.sp > 0.45 && c.tip === 'point' && r(5) < 0.08 && c.len > 9) c.tip = 'fork';
     if (P.sp > 0.6 && c.part === 'back' && c.layer === 'nape' && !c.dom && r(6) < 0.08) c.drop = 1;
-    c.detail = r(7) < 0.35;
-    c.fold = r(8) < 0.4 && c.len > 9;
+    c.fold = c.len > 8;
     // fringe tips stop above the eyes (except the one meant to hide an eye)
     if (c.part === 'fringe' && d.fringe !== 'eye' && c.tip !== 'blunt') {
       const dy = Math.sin(((c.a + c.bend * 0.3) * Math.PI) / 180);
       if (dy > 0.3) c.len = Math.min(c.len, (0.5 - c.y) / dy);
     }
   });
-  void lib;
-  clumps = clumps.filter((c) => !c.drop && c.len > 1);
-  // one fine curled stray hair on lively cuts
-  if (!covered && P.sp > 0.35) {
-    const ang = -150 + 110 * R(78, 1), [x, y] = HP(ang, 17.5 + off);
-    clumps.push(h2C({ x, y, a: ang + (R(78, 2) - 0.5) * 40, len: 5 + 3 * R(78, 3), w: 1.4, bend: (R(78, 5) > 0.5 ? 1 : -1) * 110, tip: 'point', z: 7, sw: 3, part: 'fly' }));
-  }
+  clumps = clumps.filter((c) => c.bun || (!c.drop && c.len > 1));
   // strokes drawn by hand in the Studio: kept exactly as drawn
   (d.strokes || []).forEach((st, i) => {
     if (!st || !Array.isArray(st.pts) || st.pts.length < 2) return;
     const len = h2PathLen(st.pts);
     if (len < 1.5) return;
-    clumps.push(h2C({ x: st.pts[0][0], y: st.pts[0][1], path: st.pts, len, w: +st.w || 7, tip: st.tip || 'point', layer: st.l || 'main', z: 5 + i * 0.01, part: 'draw', sw: st.l === 'back' ? 2.5 : 1, ph: i, detail: i % 3 === 1, fold: i % 2 === 0 && len > 9 }));
+    clumps.push(h2C({ x: st.pts[0][0], y: st.pts[0][1], path: st.pts, len, w: +st.w || 7, tip: st.tip || 'point', layer: st.l || 'main', z: 5 + i * 0.01, part: 'draw', sw: st.l === 'back' ? 2.5 : 1, ph: i, fold: len > 8 }));
   });
   if (covered) clumps = clumps.filter((c) => !c.crown);
   for (const c of clumps) if (c.layer !== 'main' || c.part === 'side') c.w *= 0.88 + vol * 0.28;
@@ -327,45 +322,67 @@ function hair2Build(def, covered) {
 function h2Shapes(list, o, cap) {
   const out = cap ? [{ P: cap, cap: 1 }] : [];
   for (const c of list.slice().sort((a, b) => a.z - b.z)) {
-    if (c.bun) { const [x, y, r] = c.bun; out.push({ P: [...Array(12)].map((_, i) => [x + Math.cos((i / 12) * Math.PI * 2) * r * (1 + 0.06 * Math.sin(i * 2.3)), y + Math.sin((i / 12) * Math.PI * 2) * r * 0.9]), bun: c }); continue; }
+    if (c.bun) { const [x, y, r] = c.bun, q = c.curl ? 1 : 0.9; out.push({ P: [...Array(12)].map((_, i) => [x + Math.cos((i / 12) * Math.PI * 2) * r * (1 + 0.06 * Math.sin(i * 2.3)), y + Math.sin((i / 12) * Math.PI * 2) * r * q]), bun: c }); continue; }
     const S = h2Spine(c, o.t, o.ha), E = h2Sides(c, S);
     out.push({ c, S, E, P: h2Outline(c, S, E) });
   }
   return out;
 }
 const h2Union = (shapes) => shapes.map((s) => spline(wind(s.P), true)).join('');
-// The inside of a mass, without its outline. Clumps are painted back to front, each with its own
-// fold shadow and strand line, so a clump in front always hides the details of the ones behind
-// (no line ever crosses another clump). Then the cel shadow of the WHOLE mass (all) along its lower
-// edges, kept by a mask: the mass minus the mass shifted towards the light.
-function h2Body(shapes, B, o, all) {
-  const pal = B.pal, U = h2Union(shapes), id = o.uid;
-  if (!U) return '';
+// The inside of a mass, without any outline. Clumps are painted back to front: fill, the shadow on
+// the clump's shaded side, then a fine line along both edges towards the tip (how manga separates
+// locks). A clump in front covers the shading and lines of the ones behind, so nothing ever crosses.
+function h2Body(shapes, B, o) {
+  const pal = B.pal, fill = o.fill || pal.base;
   let g = '', gi = 0;
   for (const s of shapes) {
     const d = spline(s.P, true);
-    g += `<path d="${d}" fill="${pal.base}"/>`;
+    g += `<path d="${d}" fill="${fill}"/>`;
     if (s.cap) continue;
-    if (s.bun) { g += `<path d="${spline(s.P.slice(5, 12), false)}" fill="none" stroke="${pal.sh}" stroke-width="2" stroke-linecap="round"/>`; continue; }
-    if (s.c.fold) g += `<path d="${spline(h2Wedge(s.c, s.S, s.E), true)}" fill="${pal.sh}" opacity="${o.soft ? 0.45 : 0.75}"/>`;
-    if (s.c.detail && s.c.len > 7) {
-      const { N, W, n } = s.E, m = Math.floor(n / 2), sd = N[m][0] * H2_LIGHT[0] + N[m][1] * H2_LIGHT[1] > 0 ? -1 : 1, i0 = Math.round(n * 0.5);
-      const L = s.S.slice(i0, n).map((p, q) => [p[0] + sd * N[i0 + q][0] * W[i0 + q] * 0.3, p[1] + sd * N[i0 + q][1] * W[i0 + q] * 0.3]);
-      g += `<path d="${h2Line(L)}" fill="none" stroke="${pal.line}" stroke-width=".65" stroke-linecap="round" opacity=".38"/>`;
+    if (s.bun && s.bun.curl) {
+      // a curl: shaded underside, then a spiral drawn into it
+      const [x, y, r] = s.bun.bun, sp = [...Array(15)].map((_, i) => { const a = (-60 + i * 30) * D2R, rr = r * (0.12 + 0.62 * (i / 14)); return [x + Math.cos(a) * rr, y + Math.sin(a) * rr]; });
+      g += `<path d="M${pt([x - r * 0.95, y + r * 0.2])}A${r1(r)} ${r1(r)} 0 0 0 ${pt([x + r * 0.95, y + r * 0.2])}A${r1(r * 1.05)} ${r1(r * 0.7)} 0 0 1 ${pt([x - r * 0.95, y + r * 0.2])}Z" fill="${pal.sh}"/>`
+        + `<path d="${spline(sp, false)}" fill="none" stroke="${pal.line}" stroke-width=".9" stroke-linecap="round"/>`;
+      continue;
     }
+    if (s.bun) { g += `<path d="${spline(s.P.slice(5, 12), false)}" fill="none" stroke="${pal.line}" stroke-width=".8" stroke-linecap="round" opacity=".7"/>`; continue; }
     if (o.tip && s.c.len > 8) {
-      const gid = `${id}g${gi++}`, a = s.S[Math.round(s.S.length * 0.45)], b = s.S[s.S.length - 1];
+      const gid = `${o.uid}g${gi++}`, a = s.S[Math.round(s.S.length * 0.45)], b = s.S[s.S.length - 1];
       g += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${r1(a[0])}" y1="${r1(a[1])}" x2="${r1(b[0])}" y2="${r1(b[1])}"><stop offset="0" stop-color="${o.tip}" stop-opacity="0"/><stop offset="1" stop-color="${o.tip}"/></linearGradient><path d="${d}" fill="url(#${gid})"/>`;
     }
+    if (s.c.fold) g += `<path d="${spline(h2Wedge(s.c, s.S, s.E), true)}" fill="${o.shade || pal.sh}" opacity="${o.soft ? 0.6 : 0.9}"/>`;
+    if (s.c.len > 6 && s.c.w > 3) g += `<path d="${h2EdgeLine(s)}" fill="${pal.line}" opacity=".85"/>`;
   }
-  g += `<mask id="${id}k" maskUnits="userSpaceOnUse" x="-90" y="-100" width="180" height="230"><path d="${all}" fill="#fff"/><path d="${all}" fill="#000" transform="translate(-1.1,-1.5)"/></mask><path d="${U}" fill="${pal.sh}" mask="url(#${id}k)"/>`;
   for (const s of shapes) if (s.c && s.c.tie) { const [x, y] = s.c.tie; g += `<circle cx="${r1(x)}" cy="${r1(y)}" r="3.4" fill="#e8443a" stroke="${pal.line}" stroke-width="1.4"/>`; }
   return g;
 }
-const h2Outline2 = (U, pal) => `<path d="${U}" fill="${pal.base}" stroke="${pal.line}" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"/>`;
+// Both edges of a clump from a little past its middle to the tip (around the tip, or along a cut end).
+// A tapered sliver (a brush stroke, never a stub): starts at nothing, thickest near the tip.
+function h2EdgeLine(s) {
+  const { L, R, N, n } = s.E, i0 = Math.round(n * 0.4), m = Math.floor(n / 2);
+  const lit = N[m][0] * H2_LIGHT[0] + N[m][1] * H2_LIGHT[1] > 0, side = lit ? L : R, k = lit ? -1 : 1;
+  const out = [], inn = [];
+  for (let i = i0; i < n; i++) {
+    const f = (i - i0) / (n - i0), w = 0.95 * Math.sin(Math.PI * Math.min(1, f * 0.8 + 0.05));
+    out.push(side[i]); inn.push([side[i][0] + k * N[i][0] * w, side[i][1] + k * N[i][1] * w]);
+  }
+  const end = s.c.tip === 'blunt' ? side[n] : s.S[n];
+  return spline([[...out[0], 1], ...out.slice(1), [...end, 1], ...inn.slice(1).reverse()], true);
+}
+// The ink: one line of constant width around the silhouette, nothing inside it. Every clump of
+// the group is stroked twice as wide as the line, then a mask hides everything inside the mass
+// (and, for hair behind the head, the face), so only the outer half of the outer edge remains.
+// No clip ever cuts a line, and inner edges simply never show.
+function h2Ink(shapes, mass, pal, id, w) {
+  const d = shapes.map((s) => spline(s.P, true)).join('');
+  if (!d) return '';
+  return `<mask id="${id}" maskUnits="userSpaceOnUse" x="-160" y="-180" width="320" height="420"><rect x="-160" y="-180" width="320" height="420" fill="#fff"/>${mass}</mask>`
+    + `<path d="${d}" fill="none" stroke="${pal.line}" stroke-width="${w * 2}" stroke-linejoin="round" mask="url(#${id})"/>`;
+}
 // The highlight: like a manga artist's, two or three tapered crescents following the curve of the skull
 // on the side facing the light (upper left), one long, the others shorter, never evenly spaced.
-function h2Halo(B, uid, union) {
+function h2Halo(B, uid, shapes) {
   const pal = B.pal, dark = h2HexToHsl(B.d.c)[2] < 0.25, col = dark ? pal.hi : pal.ring, R = (j) => hj(j * 5.3 + 2, (B.d.seed || 1) * 2.11);
   const rr = 15.8 + B.d.vol * 1.8;
   const marks = [[-146 + R(1) * 6, 34, 1.25, 0], [-104 + R(2) * 6, 20, 0.9, -0.8], [-74 + R(3) * 8, 10, 0.65, 0.4]];
@@ -377,28 +394,35 @@ function h2Halo(B, uid, union) {
     d += 'M' + P.map(pt).join('L') + 'Z';
   }
   const id = uid + 'hc';
-  return `<clipPath id="${id}"><path d="${union}"/></clipPath><g clip-path="url(#${id})"><path d="${d}" fill="${col}" opacity="${dark ? 0.7 : 0.85}"/></g>`;
+  return `<clipPath id="${id}">${shapes.map((x) => `<path d="${spline(x.P, true)}"/>`).join('')}</clipPath><g clip-path="url(#${id})"><path d="${d}" fill="${col}" opacity="${dark ? 0.7 : 0.85}"/></g>`;
 }
-// Everything drawAvatar needs, in head-local space. The nape (behind the head) and the main layer
-// (over it) are ONE mass: a single outline around both is drawn behind the head, and the main layer
-// only draws its outline over the face, so no line ever separates them.
-// o: { t (time, null = still), ha (head rotation, for gravity), uid, covered }
+// Everything drawAvatar needs, in head-local space. Three masses: long hair behind the body (back),
+// hair behind the head (nape, a shade darker so the front reads in front), the main layer over the
+// face. Fills and shading come first; the ink comes last, on top of everything:
+// - the outer edge of nape + main as ONE silhouette (no line where they meet),
+//   except behind the face, where the head hides the nape;
+// - the edge where the back hair comes out from under the nape.
+// o: { t (time, null = still), ha (head rotation, for gravity), uid, covered, face: [cx, rx] }
 function hair2SVG(def, o) {
   o = o || {};
-  const B = hair2Build(def, !!o.covered), uid = (o.uid || 'h2') + '_';
+  const B = hair2Build(def, !!o.covered), uid = (o.uid || 'h2') + '_', pal = B.pal;
   const by = (l) => B.clumps.filter((c) => c.layer === l);
   const base = { t: o.t, ha: o.ha || 0, tip: B.d.tip || '' };
   const mainS = h2Shapes(by('main'), base, B.cap), napeS = h2Shapes(by('nape'), base), backS = h2Shapes(by('back'), base);
-  const mainU = h2Union(mainS), all = mainU + h2Union(napeS), backU = h2Union(backS);
-  const fid = uid + 'f';
+  const mainU = h2Union(mainS), napeU = h2Union(napeS), all = mainU + napeU, backU = h2Union(backS);
+  // the face, in hair space (the hair shifts a little as the head turns)
+  const [fx, frx] = o.face || [0, 19], face = (c) => `<ellipse cx="${r1(fx)}" rx="${r1(frx - 0.3)}" ry="18.7" fill="${c}"/>`;
+  // masses drawn shape by shape (one path per clump): a lock that crosses itself never makes a hole
+  const blk = (S) => S.map((x) => `<path d="${spline(x.P, true)}" fill="#000"/>`).join('');
+  const W = 1.35;
   return {
-    back: backU ? h2Outline2(backU, B.pal) + h2Body(backS, B, Object.assign({ uid: uid + 'b', soft: 1 }, base), backU) : '',
-    nape: h2Outline2(all, B.pal) + h2Body(napeS, B, Object.assign({ uid: uid + 'n' }, base), all),
-    // over the face only: the outer edge of the main layer (its fill then hides every inner edge)
-    main: `<clipPath id="${fid}"><circle r="19.4"/></clipPath><path d="${mainU}" fill="${B.pal.base}" stroke="${B.pal.line}" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" clip-path="url(#${fid})"/>`
-      + h2Body(mainS, B, Object.assign({ uid: uid + 'm' }, base), all) + h2Halo(B, uid, mainU),
+    back: backU ? h2Body(backS, B, Object.assign({ uid: uid + 'b', soft: 1 }, base)) + h2Ink(backS, blk(backS), pal, uid + 'kb', W) : '',
+    // its ink goes under the head: the head and its outline cover it, no line ever crosses the face
+    nape: h2Body(napeS, B, Object.assign({ uid: uid + 'n' }, base)) + h2Ink(napeS, blk(napeS) + blk(mainS), pal, uid + 'kn', W),
+    main: h2Body(mainS, B, Object.assign({ uid: uid + 'm' }, base)) + h2Halo(B, uid, mainS)
+      + h2Ink(mainS, blk(napeS) + face('#fff') + blk(mainS), pal, uid + 'km', W),
     shadow: mainU,   // cast on the forehead by drawAvatar (clipped to the face)
-    pal: B.pal,
+    pal,
   };
 }
 // A head portrait for the Studio's tiles (no body: shoulders, head, face, hair).
