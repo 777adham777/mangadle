@@ -1166,7 +1166,7 @@ function massesSec(h) {
     + row(`<select class="tpl" data-act="mass-add"><option value="">+ Mass…</option>${Object.entries(MASS_PRESETS).map(([k, v]) => `<option value="${k}">${v[0]}</option>`).join('')}</select>`)
     + (L.length ? row(btn(IC.copy, 'ly-dup', null, 'ib', 'Duplicate'), btn(IC.mirror, 'ly-mirror', null, 'ib', 'Mirror left / right'), btn(IC.del, 'ly-del', null, 'ib danger', 'Delete')) : '');
   let out = sec('masses', 'Hair masses', b, `${L.length}`);
-  if (m) out += sec('mass', 'Mass', fTxt('Name', 'layer:name') + row(fChk('Behind the body', 'layer:back'), fChk('Smooth curve', 'layer:smooth'))
+  if (m) out += sec('mass', 'Mass', fTxt('Name', 'layer:name') + row(fChk('Behind the body', 'layer:back'), fChk('Smooth curve', 'layer:smooth'), fChk('Hidden under covering hats', 'layer:crown'))
     + note('Add points: click after the selected point. Drag the small dots to insert. Shift-click: sharp tip. Alt-click or double-click: delete.')
     + (ST.point >= 0 && m.pts[ST.point] ? row(fNum('x', `layer:pts.${ST.point}.0`, -40, 40, 0.5), fNum('y', `layer:pts.${ST.point}.1`, -45, 60, 0.5)) : ''));
   return out;

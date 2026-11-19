@@ -252,7 +252,7 @@ function registerCustomPack(pack) {
       cap: (h.cap || [20.4, -8, 5]).map(Number), back: +h.back || 0, smooth: h.smooth ? 1 : 0, part: +h.part || 0,
       buzz: h.buzz ? 1 : 0, stubble: h.stubble ? 1 : 0, tie: h.tie || undefined, bun: h.bun || undefined, combs: h.combs || [],
       locks: () => locks.map((L) => Object.assign({}, L, { k: L.k || undefined })),
-      masses: (h.masses || []).filter((m) => m && !m.hidden && Array.isArray(m.pts) && m.pts.length > 2).map((m) => ({ back: !!m.back, pts: m.smooth === false ? m.pts.map((p) => [p[0], p[1], 1]) : m.pts })),
+      masses: (h.masses || []).filter((m) => m && !m.hidden && Array.isArray(m.pts) && m.pts.length > 2).map((m) => ({ back: !!m.back, crown: !!m.crown, pts: m.smooth === false ? m.pts.map((p) => [p[0], p[1], 1]) : m.pts })),
     });
     cos('hair', h);
   }

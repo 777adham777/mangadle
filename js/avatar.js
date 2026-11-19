@@ -1003,7 +1003,7 @@ function hairShape(id, covered, ha, t) {
     extra += `<path d="M${r1(q[0] - 5)},${r1(q[1] + 1)} Q${r1(q[0])},${r1(q[1] - 2.5)} ${r1(q[0] + 5)},${r1(q[1] + 1)}" fill="none" stroke="${LINE}" stroke-width="4.4" stroke-linecap="round"/><path d="M${r1(q[0] - 5)},${r1(q[1] + 1)} Q${r1(q[0])},${r1(q[1] - 2.5)} ${r1(q[0] + 5)},${r1(q[1] + 1)}" fill="none" stroke="#c0392b" stroke-width="2.4" stroke-linecap="round"/>`;
   }
   // free hair masses drawn in the Studio merge into the same silhouette
-  for (const m of h.masses || []) if (m.pts && m.pts.length > 2) (m.back ? back : front).push(m.pts);
+  for (const m of h.masses || []) if (m.pts && m.pts.length > 2 && !(covered && m.crown)) (m.back ? back : front).push(m.pts);
   return { h, front: union(...front), back: back.length ? union(...back) : '', stub: h.stubble ? spline(cap, true) : '', lines, hi, extra };
 }
 
