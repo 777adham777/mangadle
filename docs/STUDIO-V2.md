@@ -193,12 +193,14 @@ Chaque étape est livrée et jouable avant de passer à la suivante.
 | 4. Éditeur de tenues | Réglages ci-dessus, kits par monde, vue pose extrême | Tu crées tes tenues |
 | 5. Contenu | Je refais une première série de coupes et de tenues avec les nouveaux outils, et tu juges | |
 
-## 6. Décisions à prendre
+## 6. Décisions (validées le 2026-11-19)
 
-1. **Les 10 coupes actuelles** (en ligne) : les retirer tout de suite, ou les laisser jusqu'à la v2 ?
-2. **Coupes modulaires** : garder des coupes entières comme cosmétiques, ou permettre au joueur de combiner frange, côtés et arrière débloqués séparément (Picrew, VRoid, MapleStory) ?
-3. **Coupes et tenues intégrées** : les refaire toutes en v2, ou garder l'ancien rendu à côté ?
-4. **Teintures** : un système de couleurs à débloquer (cohérent avec « tout se gagne par des exploits »), ou couleurs fixes par cosmétique ?
+| Sujet | Décision |
+| --- | --- |
+| Les 10 coupes générées | Retirées du jeu tout de suite (le pack est vide). Elles reviendront refaites en v2. |
+| Coupes modulaires | Non : un cosmétique = une coupe entière, dessinée pour être cohérente. Les couches restent un outil de création, pas un choix du joueur. |
+| Contenu intégré | On garde l'ancien rendu à côté : les coupes et tenues existantes ne bougent pas, la v2 sert au nouveau contenu. Le moteur doit donc faire cohabiter les deux. |
+| Teintures | Oui, à débloquer par des exploits comme les autres cosmétiques. Chaque coupe ou tenue v2 a des emplacements de couleur (cheveux : base ; tenue : principal / bordure / accent / métal) avec ombres, reflets et contours dérivés. Les teintures s'appliquent aux cosmétiques v2. |
 
 ## Sources principales
 
