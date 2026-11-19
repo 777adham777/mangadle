@@ -443,24 +443,29 @@ VIEWS.home = () => {
 };
 
 /* ------------------------------------------------------------- skill page */
-VIEWS.realm = (realm, skill) => {
+// The skill's title banner: icon, name, XP bar, speed / XP / luck modifiers, level ring.
+function skBannerHTML(realm, skill) {
   const R = REALMS[realm], s = SKILLS[skill], b = xpInfo(skill);
   const mods = [`<span class="pill" title="Action speed">${ui('spd')} Speed ×${skillSpeed(skill).toFixed(2)}</span>`, `<span class="pill" title="XP multiplier">${ui('xp')} XP ×${skillXpMult(skill).toFixed(2)}</span>`];
   if (rareMult(skill) > 1) mods.push(`<span class="pill" title="Rare find multiplier">${ui('rare')} Luck ×${rareMult(skill).toFixed(2)}</span>`);
   if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Devil Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
+  return `<section class="sk-banner" style="--rc:${rc(realm)}">
+    <div class="sk-ic">${ic('skill', skill)}</div>
+    <div class="sk-main"><small>${R.name}</small><h1>${s.name}</h1>
+      <div class="sk-xp"><span class="pbar"><i data-xpbar="${skill}"></i></span><span class="sk-xpt" data-xptext="${skill}">${xpText(b)}</span></div>
+      <div class="pills">${mods.join('')}</div></div>
+    <div class="sk-ring" data-xpring="${skill}" style="--p:${b.p}" title="Progress to the next level"><span><b data-lv="${skill}">${b.L}</b><small>Level</small></span></div>
+  </section>`;
+}
+VIEWS.realm = (realm, skill) => {
+  const s = SKILLS[skill], b = xpInfo(skill);
   const open = s.actions.filter((x) => !['locked', 'schem'].includes(actState(skill, x))).length;
   const active = S.action && S.action.skill === skill;
   const scene = uix('realmScene', realm, skill);
   const top = uix('realmTop', realm, skill);
   // Full-width page: scene + picker on a stage, actions, then the tabbed sub-menu (skillpage-ui.js).
   return `<div class="sk-page sk-col" style="--rc:${rc(realm)}">
-  <section class="sk-banner" style="--rc:${rc(realm)}">
-    <div class="sk-ic">${ic('skill', skill)}</div>
-    <div class="sk-main"><small>${R.name}</small><h1>${s.name}</h1>
-      <div class="sk-xp"><span class="pbar"><i data-xpbar="${skill}"></i></span><span class="sk-xpt" data-xptext="${skill}">${xpText(b)}</span></div>
-      <div class="pills">${mods.join('')}</div></div>
-    <div class="sk-ring" data-xpring="${skill}" style="--p:${b.p}" title="Progress to the next level"><span><b data-lv="${skill}">${b.L}</b><small>Level</small></span></div>
-  </section>
+  ${skBannerHTML(realm, skill)}
   ${scene ? skStageHTML(skill, scene, top) : `${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}${top}`}
   ${s.type === 'craft' ? workshopHTML(skill) : `${s.actions.length ? hdr({ voyage: 'Destinations', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>

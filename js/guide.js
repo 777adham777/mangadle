@@ -134,7 +134,7 @@ function guideStep() {
   if (G.spice) {
     if (S.action && S.action.skill === 'cooking' && S.kitchen.spice) return run(G.run);
     if (!onGoalView(go)) return nav;
-    if (!S.kitchen.spice) return { sels: ['.spice-rack [data-spice]:not(.locked)'], text: G.pick };
+    if (!S.kitchen.spice) return { sels: ['.fcs-slots [data-spice]:not(.locked)'], text: G.pick };
     const best = SKILLS.cooking.actions.filter((a) => actState('cooking', a) === 'ready').pop();
     return best ? { sels: [`[data-card="cooking:${best.id}"]`], text: G.start } : null;
   }

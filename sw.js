@@ -1,6 +1,6 @@
 /* Service worker: makes the game installable and playable offline.
    Bump VERSION on every deploy so players get the new files. */
-const VERSION = 'tri-realm-v71';
+const VERSION = 'tri-realm-v72';
 const SHELL = [
   './',
   './index.html',
@@ -9,6 +9,7 @@ const SHELL = [
   './css/gdd.css',
   './css/workshop.css',
   './css/skillpage.css',
+  './css/spot.css',
   './css/foes.css',
   './js/data.js',
   './js/worlds.js',
@@ -39,6 +40,7 @@ const SHELL = [
   './js/techniques-ui.js',
   './js/workshop-ui.js',
   './js/skillpage-ui.js',
+  './js/spot-ui.js',
   './js/ui-systems.js',
   './js/tooltips.js',
   './manifest.webmanifest',

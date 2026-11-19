@@ -38,7 +38,4 @@
 .sk-pane .msc small { white-space: normal; }
 .sk-pane .rare-row .tile { --ts: 58px; }
 .sk-pane .syn-grid { grid-template-columns: repeat(auto-fit, minmax(min(320px, 100%), 1fr)); }
-.spice-win { padding: 0 !important; }
-.spice-win .spice-rack { border-top: 0; }
-.stg-scene > .spice-win { margin-top: -12px; border-top: 0; }
 .stg-side .pk-list { max-height: 460px; overflow-y: auto; scrollbar-width: thin; }

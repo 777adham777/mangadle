@@ -53,8 +53,8 @@ function expCard(a) {
 // The voyage scene follows your first ship.
 {
   const base = spotHTML, baseStats = spotStats;
-  spotHTML = function (skill) {
-    if (skill !== 'voyaging') return base(skill);
+  spotHTML = function (skill, o) {
+    if (skill !== 'voyaging') return base(skill, o);
     const saved = S.action, a = shipAct();
     S.action = a ? { skill: 'voyaging', id: a.id, prog: 0 } : null;   // let the scene draw this ship at sea
     try { return base(skill); } finally { S.action = saved; }

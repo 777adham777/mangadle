@@ -4,7 +4,7 @@
    - Milestones, rare finds, synergies and each skill's extra panels live in a tabbed sub-menu at the
      bottom of the page instead of a tall sidebar. */
 
-const PICK_TITLE = { woodcutting: 'Trees', fishing: 'Fishing spots', mining: 'Ore veins', archaeology: 'Dig sites', cooking: 'Dishes' };
+const PICK_TITLE = { woodcutting: 'Trees', mining: 'Ore veins', archaeology: 'Dig sites' };
 
 function pickRow(skill, a) {
   const st = actState(skill, a), f = farmRates(skill, a), o = wsOut(a);
@@ -30,8 +30,7 @@ function skStageHTML(skill, scene, top) {
   const s = SKILLS[skill];
   let side = s.type === 'gather' || s.type === 'craft' ? pickerHTML(skill) : '';
   side += top;
-  const rack = skill === 'cooking' ? `<section class="win spice-win">${spiceRackHTML()}</section>` : '';
-  return `<div class="sk-stage ${side.trim() ? '' : 'solo'}"><div class="stg-scene">${scene}${rack}</div>${side.trim() ? `<div class="stg-side">${side}</div>` : ''}</div>`;
+  return `<div class="sk-stage ${side.trim() ? '' : 'solo'}"><div class="stg-scene">${scene}</div>${side.trim() ? `<div class="stg-side">${side}</div>` : ''}</div>`;
 }
 
 // Bottom sub-menu: one tab per panel, labelled by the panel's own header.

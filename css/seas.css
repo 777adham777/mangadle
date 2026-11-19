@@ -131,27 +131,6 @@
   .spot-wave, .ship-bob, .flames i, .steam i, .spot .sp-bolt, .fogband, .tile.q-shiny .tile-art::after { animation: none; }
 }
 
-/* ---------------------------------------------------------------- spice rack */
-.spice-rack { display: flex; flex-direction: column; gap: 8px; padding: 10px 14px 14px; border-top: 1px solid var(--line); }
-.spice-rack.locked { flex-direction: row; align-items: center; gap: 10px; color: var(--dim); }
-.spice-rack.locked > .gi { width: 18px; height: 18px; fill: var(--mute); }
-.spice-rack.locked span { display: flex; flex-direction: column; }
-.spice-rack.locked b { font: 700 14px var(--display); color: var(--text); }
-.sr-h { display: flex; align-items: baseline; gap: 10px; }
-.sr-h b { font: 700 13px var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--cream); }
-.sr-h small { color: var(--dim); font-size: 12.5px; }
-.sr-slots { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(178px, 100%), 1fr)); gap: 6px; }
-.sr-slot { display: flex; align-items: center; gap: 8px; padding: 5px 8px 5px 5px; min-width: 0; text-align: left; color: var(--text); background: #18191e; border: 1px solid var(--line); cursor: pointer; }
-.sr-slot:hover { border-color: var(--line2); background: #1e1f25; }
-.sr-slot .tile { --ts: 38px; }
-.sr-slot span { display: flex; flex-direction: column; min-width: 0; }
-.sr-slot b { font: 700 13px var(--display); color: color-mix(in srgb, var(--sc, #fff) 70%, #fff); }
-.sr-slot small { font-size: 11px; line-height: 1.25; color: var(--dim); overflow: hidden; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
-.sr-slot.on { border-color: var(--sel); box-shadow: inset 0 0 0 1px var(--sel), 0 0 12px rgba(232, 153, 44, 0.25); background: #221d16; }
-.sr-slot.empty .tile-n { color: #d03a4c; }
-.sr-slot.locked { opacity: 0.55; border-style: dashed; cursor: default; }
-.sr-slot.shake { animation: shake 0.28s; }
-
 /* ---------------------------------------------------------------- card lines */
 .ac-note.q-line { flex-wrap: wrap; gap: 4px 12px; color: var(--dim); font-size: 12.5px; }
 .ac-note.q-line .gi { width: 13px; height: 13px; fill: currentColor; }
@@ -194,12 +173,6 @@
   .sh-name b, .sh-last b { font-size: 12.5px; }
   .sh-name small, .sh-last small { font-size: 8.5px; }
   .spot-bar { padding: 8px 10px 10px; }
-  .spice-rack { padding: 8px 10px 10px; }
-  .sr-slots { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 5px; }
-  .sr-slot { padding: 4px 6px 4px 4px; gap: 6px; }
-  .sr-slot .tile { --ts: 32px; }
-  .sr-slot b { font-size: 12px; }
-  .sr-slot small { font-size: 10.5px; }
   .spop.tag b { font-size: 11px; }
 }
 

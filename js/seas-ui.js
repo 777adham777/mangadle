@@ -331,12 +331,13 @@ function spotStats(skill) {
       ${a.in ? stat('Can make', fmt(f.can), 'data-canmake') + stat('Runs out', fmtTime(f.runout), 'data-runout') : ''}${outId ? stat('Owned', fmt(familyCount(outId)), `data-fam="${outId}"${QUALITY[skill] ? ` title="Every version: plain, ${skill === 'fishing' ? 'shiny' : 'perfect and seasoned'}"` : ''}`) : ''}
       ${gbtn('Stop', 'stop', 'data-stop', 'dark sm')}</div>`;
 }
-function spotHTML(skill) {
+// o.hud: HTML drawn over the scene in place of the stats strip under it (fishing / cooking, spot-ui.js).
+function spotHTML(skill, o) {
   const a = S.action && S.action.skill === skill ? findAction(skill, S.action.id) : null;
   let cls = '', bg = '', layers = '', name = '', sub = '';
   if (skill === 'fishing') {
     const best = SKILLS.fishing.actions.filter((x) => x.level <= skillLv('fishing')).pop();
-    const sp = fishSpotFor((a || best).level);
+    const sp = fishSpotFor((a || (o && o.look) || best).level);
     cls = 'sp-' + sp.id; bg = fishBg(sp); name = sp.name; sub = a ? a.name : 'Waiting for a cast';
     layers = `<div class="spot-wave mid">${waveStrip(sp.sea[1], 0.55, 4, 30)}</div>${spotAvatar(FISH_BOX, a ? 'fish' : '')}<div class="spot-wave front">${waveStrip(sp.sea[2], 0.8, 6, 26)}</div>`;
     SPOT.fish = sp;
@@ -363,9 +364,10 @@ function spotHTML(skill) {
       ${layers}
       <svg class="spot-fx" viewBox="0 0 800 320" preserveAspectRatio="none" aria-hidden="true"><g data-spotfx></g></svg>
       <div class="spot-pops"></div>
-      <div class="spot-hud"><span class="sh-name"><small>${esc(name)}</small><b>${esc(sub)}</b></span>${last ? `<span class="sh-last">${last}</span>` : '<span class="sh-last" hidden></span>'}</div>
+      <div class="spot-hud"><span class="sh-name"><small>${esc(o && o.hud ? o.kicker || '' : name)}</small><b>${esc(o && o.hud ? name : sub)}</b></span>${last ? `<span class="sh-last">${last}</span>` : '<span class="sh-last" hidden></span>'}</div>
+      ${o && o.hud ? o.hud : ''}
     </div>
-    <div class="spot-bar">${spotStats(skill)}</div>
+    ${o && o.hud ? '' : `<div class="spot-bar">${spotStats(skill)}</div>`}
   </section>`;
 }
 UIX.realmScene.push((realm, skill) => (['fishing', 'cooking', 'voyaging'].includes(skill) ? spotHTML(skill) : ''));
@@ -472,7 +474,7 @@ function setLast(skill, html) {
 }
 on('catch', (d) => {
   const id = d.shiny ? variantId(d.fish, 's') : d.fish, it = ITEMS[id];
-  setLast('fishing', `<small>${d.record ? 'New record' : d.trophy ? 'Trophy catch' : 'Last catch'}</small><b>${esc(it.name)}</b><em>${fmtKg(d.kg)}</em>`);
+  setLast('fishing', `<i class="sh-ic ${d.shiny ? 'shiny' : ''}">${itemIc(id)}</i><small>${d.record ? 'New record' : d.trophy ? 'Trophy catch' : 'Last catch'}</small><b>${esc(it.name)}</b><em>${fmtKg(d.kg)}</em>`);
   const el = spotNow();
   if (!el || el.dataset.spot !== 'fishing') return;
   const sp = SPOT.fish || FISH_SPOTS[0], m = spotPx();
@@ -490,7 +492,7 @@ on('action', (d) => {
     const top = ids.sort((a, b) => rarity(b) - rarity(a))[0];
     if (!top) return;
     const it = ITEMS[top];
-    setLast('cooking', `<small>${it.q === 'p' ? 'Perfect!' : 'Last dish'}</small><b>${esc(it.name)}</b>${it.type === 'food' ? `<em>${ui('hp')}${foodHeal(top)}</em>` : ''}`);
+    setLast('cooking', `<i class="sh-ic ${it.q === 'p' ? 'shiny' : ''}">${itemIc(top)}</i><small>${it.q === 'p' ? 'Perfect!' : 'Last dish'}</small><b>${esc(it.name)}</b>${it.type === 'food' ? `<em>${ui('hp')}${foodHeal(top)}</em>` : ''}`);
     if (!el || el.dataset.spot !== 'cooking') return;
     const [px, py] = SPOT.pan || [400, 200];
     spotPop(`<span class="tile-art">${itemIc(top)}</span>`, px, py - 30, 'dish' + (it.q === 'p' ? ' perfect' : ''), 1400);
@@ -506,16 +508,6 @@ on('action', (d) => {
 });
 
 /* ================================================================ spice rack */
-function spiceRackHTML() {
-  if (!isUnlocked('feature:spices')) return `<div class="spice-rack locked" title="${esc(lockedNote('feature:spices'))}">${ui('lock')}<span><b>Spice rack</b><small>${esc(lockedNote('feature:spices').replace('Locked. ', ''))}</small></span></div>`;
-  const cur = S.kitchen.spice;
-  return `<div class="spice-rack"><span class="sr-h"><b>Spice rack</b><small>${cur ? `Every dish uses 1 ${esc(SPICES[cur].name)}` : 'Pick one: each dish uses 1'}</small></span>
-    <div class="sr-slots">${SPICE_ORDER.map((k) => {
-      const sp = SPICES[k], got = S.found[sp.item], n = count(sp.item), src = sourcesOf(sp.item)[0];
-      if (!got) return `<button class="sr-slot locked" data-spice="${k}" title="Not found yet${src ? ': ' + esc(src.text) : ''}">${tile(sp.item, null, { cls: 'xs', unknown: true })}<span><b>???</b><small>${src ? esc(src.text) : 'Not found yet'}</small></span></button>`;
-      return `<button class="sr-slot ${cur === k ? 'on' : ''} ${n ? '' : 'empty'}" data-spice="${k}" style="--sc:${sp.col}" title="${esc(sp.adj)} dishes: ${esc(spiceText(k))}">${tile(sp.item, fmt(n), { cls: 'xs' })}<span><b>${esc(sp.adj)}</b><small>${esc(spiceText(k))}</small></span></button>`;
-    }).join('')}</div></div>`;
-}
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-spice]');
   if (!t || t.disabled) return;
