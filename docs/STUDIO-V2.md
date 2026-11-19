@@ -89,17 +89,50 @@ Les règles anti-scie sont **intégrées au générateur** : mèches dominantes,
   - Les cheveux s'ébouriffent au départ d'une action (coup, lancer de canne, coup de hache) et retombent légèrement en désordre.
 - **Chapeaux** : chaque chapeau déclare les couches qu'il cache ou aplatit (« cache le dessus », « aplatit la frange »), comme le système de MapleStory. Les débordements disparaissent.
 
-### 2.4 L'éditeur de coiffure
+### 2.4 Le créateur de coiffure : simple d'abord
 
-1. **Partir d'un archétype**, défini avec les paramètres des tutos : piques shōnen, hime cut, carré, queue de cheval, couettes, undercut, longs lisses, ondulés, mèche sur l'œil, coiffé en arrière…
-2. **Travailler couche par couche** (arrière, nuque, côtés, dessus, frange, extras). Chaque couche a ses groupes, avec les curseurs du générateur et un bouton « figer ».
-3. **Retoucher sur la scène** : on tire les points de la colonne, on règle la largeur avec des poignées, on choisit le type de pointe, on fourche une mèche d'un clic, on ajoute une mèche au pinceau. La symétrie et le miroir restent.
-4. **Palette** : on choisit une seule couleur de base. Les ombres, le reflet et le contour sont dérivés selon les règles de clarté (clair = 2 ombres, foncé = 1 ombre + 2 reflets), et chaque teinte reste ajustable.
-5. **Vues de contrôle** :
-   - un test de silhouette (coupe en noir plein : si on ne la reconnaît pas, la forme est à revoir) ;
-   - un tour de tête (face, 3/4, profil) ;
-   - une secousse pour tester la physique ;
-   - la bande des 8 poses.
+Retour du 2026-11-19 : l'outil actuel est beaucoup trop compliqué. Il faut régler des mèches, des angles et des courbures, et on obtient de mauvaises coupes. La v2 inverse la logique, comme Picrew ou les créateurs de personnage des jeux : **on choisit des pièces bien dessinées en cliquant sur des vignettes, puis on règle 3 curseurs**. Toute la technique (couches, ombres, anneau de lumière, règles anti-scie) est dans les pièces, pas dans les mains de l'utilisateur.
+
+```
++-- Nouvelle coupe ------------------------------------------------+
+|                                   | 1 Style                       |
+|                                   |  [Piques][Lisse][Carre][Queue] |
+|      grand apercu anime           |  [Couettes][Long][Undercut]... |
+|      (tete qui tourne,            | 2 Frange   [v][v][v][v][v]...  |
+|       cheveux qui bougent)        | 3 Cotes    [v][v][v][v]...     |
+|                                   | 4 Arriere  [v][v][v][v][v]...  |
+|                                   | 5 Extra    [aucun][rebelle]... |
+|                                   |                               |
+|                                   | Volume    ---o----            |
+|  [face] [3/4] [profil] [bouger]   | Longueur  -----o--            |
+|                                   | Piquant   --o-----  [Variante]|
+|                                   | Couleur  o o o o o o o  +pointes|
+|                                   | Nom ____  Monde [v]  Obtenu [v]|
+|                                   |              [ Enregistrer ]  |
++-------------------------------------------------------------------+
+```
+
+1. **Style** : une vignette remplit les 4 pièces avec une combinaison cohérente (piques shōnen, lisse, carré, queue de cheval, couettes, longs, undercut, mèche sur l'œil, coiffé en arrière, hime cut…).
+2. **Frange, côtés, arrière, extra** : pour changer une pièce, on clique sur une autre vignette. Chaque vignette montre la coupe complète avec cette pièce, pas la pièce seule.
+3. **Trois curseurs** :
+   - Volume : de plaqué à gonflé ;
+   - Longueur ;
+   - Piquant : de lisse et arrondi à piquant.
+
+   Le bouton **Variante** retire l'irrégularité (la graine) sans toucher aux choix. On peut cliquer jusqu'à tomber sur une version qui plaît.
+4. **Couleur** : une pastille parmi les teintures, ou une couleur libre. Les ombres, le reflet et le contour sont calculés. Les **pointes colorées** sont en option.
+5. **Nom, monde, condition d'obtention, Enregistrer.**
+
+Il suffit de 5 clics pour avoir une coupe correcte, et chaque combinaison est jolie par construction. Le réglage mèche par mèche reste disponible, mais caché derrière un bouton « Retoucher » que personne n'est obligé d'ouvrir.
+
+La bibliothèque de pièces de départ est dessinée avec les règles de la section 2.1-2.2, environ :
+- 10 franges ;
+- 6 côtés ;
+- 10 arrières ;
+- 6 extras ;
+- 10 styles.
+
+C'est moi qui la fais, et elle grandit à chaque nouvelle série de coupes.
 
 ## 3. Tenues v2
 
@@ -161,14 +194,15 @@ Chaque monde fournit des modèles de départ qui respectent la construction rée
 | Shinjuku | gakuran | col droit rigide avec liseré blanc, 5 boutons, épaules marquées |
 | Green Island | chasseur | formes carrées : sangles, poches, gilet de cuir superposé |
 
-### 3.6 L'éditeur de tenues
+### 3.6 Le créateur de tenue : même principe
 
-On garde le dessin sur le corps de la v1 et on ajoute :
-- la couche, la coupe (écart), la matière et les couleurs par emplacement ;
-- des réglages de plis (densité, plis visibles ou non) ;
-- la physique des ourlets ;
-- une vue « pose extrême » pour repérer ce qui traverse le corps ;
-- les kits par monde comme point de départ.
+C'est le même écran que pour les coiffures, en 4 étapes :
+1. On choisit un **kit** de monde (ninja, pirate, kimono, gi, gakuran, chasseur).
+2. On remplace des **pièces** par vignettes : haut, manches, bas, ceinture, chaussures, accessoire.
+3. On règle les **couleurs** par emplacement (principal, bordure, accent, métal).
+4. On donne le **nom** et la condition d'obtention, puis on enregistre.
+
+La matière, l'écart avec le corps, les plis et la physique sont réglés dans chaque pièce, pas par l'utilisateur. Le dessin libre sur le corps de la v1 passe dans « Retoucher ».
 
 ## 4. Ce qui est partagé
 
@@ -187,10 +221,10 @@ Chaque étape est livrée et jouable avant de passer à la suivante.
 | Étape | Contenu | Ce que tu verras |
 | --- | --- | --- |
 | **0. Prototype de rendu** | Nouveau rendu de cheveux : couches, contours colorés, ombres dessinées, ombre de frange, anneau de lumière. Appliqué à 3 archétypes codés à la main (piques shōnen, hime cut, queue de cheval) | Une planche avant / après. **Tu valides le rendu avant qu'on construise l'outil** |
-| 1. Moteur de coiffure | Mèches avec colonne, profil et pointes ; fourches ; groupes générateurs ; racines 3D et tête qui tourne ; physique par groupe ; chapeaux qui cachent des couches | Les coupes intégrées refaites en v2 dans le jeu |
-| 2. Éditeur de coiffure | Couches, générateur et figer, retouche sur la scène, palette dérivée, vues de contrôle, 12 archétypes | Tu crées tes coupes toi-même |
+| 1. Moteur et pièces de coiffure | Mèches avec colonne, profil et pointes ; fourches ; racines 3D et tête qui tourne ; physique ; chapeaux qui cachent des couches ; bibliothèque de pièces (franges, côtés, arrières, extras, styles) | Une dizaine de coupes v2 en jeu |
+| 2. Créateur de coiffure simple | Style, pièces par vignettes, 3 curseurs, Variante, couleur et teintures ; remplace l'onglet Hair actuel | Tu crées une coupe en 5 clics |
 | 3. Moteur de tenues | Couches et couverture, coupe par os, pondération aux articulations, plis selon la pose, matières, ombres portées, physique des ourlets | Les tenues intégrées refaites |
-| 4. Éditeur de tenues | Réglages ci-dessus, kits par monde, vue pose extrême | Tu crées tes tenues |
+| 4. Créateur de tenue simple | Kits par monde, pièces par vignettes, couleurs par emplacement | Tu crées une tenue en quelques clics |
 | 5. Contenu | Je refais une première série de coupes et de tenues avec les nouveaux outils, et tu juges | |
 
 ## 6. Décisions (validées le 2026-11-19)
