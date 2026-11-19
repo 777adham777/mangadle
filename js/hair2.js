@@ -240,61 +240,90 @@ const HAIR2_DEFAULT = { seed: 1, c: '#24252f', tip: '', fringe: 'spiky', side: '
 
 /* ---------------------------------------------------------------- building and drawing */
 // The skull cap: an arc over the top, closed by the hairline (y = line in the middle, side at the temples).
-function h2Cap(line, side, off, top) {
+// px moves the parting off-centre and tilt lowers one temple: real hairlines are never symmetric.
+function h2Cap(line, side, off, top, px, tilt) {
   const R = 19 + off, P = [], s = Math.max(-0.95, Math.min(0.95, side / R)), a0 = 180 - Math.asin(s) / D2R, a1 = 360 + Math.asin(s) / D2R;
   for (let i = 0; i <= 14; i++) { const a = a0 + ((a1 - a0) * i) / 14, up = Math.max(0, -Math.sin(a * D2R)); P.push(HP(a, R + up * top)); }
-  const xr = P[14][0], xl = P[0][0], hl = (x) => line + Math.pow(x / 17, 2) * (side - line) * 0.7;
+  const xr = P[14][0], xl = P[0][0], hl = (x) => line + Math.pow((x - px) / 17, 2) * (side - line) * 0.7 + x * tilt;
   P[0].push(1); P[14].push(1);
-  P.push([xr - 2, hl(xr - 2)], [xr * 0.5, hl(xr * 0.5)], [0, line], [xl * 0.5, hl(xl * 0.5)], [xl + 2, hl(xl + 2)]);
+  P.push([xr - 2, hl(xr - 2)], [(xr + px) * 0.5, hl((xr + px) * 0.5)], [px, hl(px)], [(xl + px) * 0.5, hl((xl + px) * 0.5)], [xl + 2, hl(xl + 2)]);
   return { P, hl };
 }
 function hair2Build(def, covered) {
   const d = Object.assign({}, HAIR2_DEFAULT, def), fr = H2_FRINGES[d.fringe] || H2_FRINGES.spiky, bk = H2_BACKS[d.back] || H2_BACKS.short;
-  const vol = Math.max(0, Math.min(1, +d.vol)) * (bk.tight ? 0.35 : 1);
-  const cap = h2Cap(fr.line, fr.side, 0.8 + vol * 2.6, covered ? 0 : vol * 2.2);
-  const P = { vol, L: 0.72 + Math.max(0, Math.min(1, +d.len)) * 0.62, sp: Math.max(0, Math.min(1, +d.spike)), R: (i, j) => hj(i * 7.13 + j * 3.71 + 1, (d.seed || 1) * 1.37), hl: cap.hl };
+  const vol = Math.max(0, Math.min(1, +d.vol)) * (bk.tight ? 0.35 : 1), seed = (d.seed || 1) * 1.37;
+  const R = (i, j) => hj(i * 7.13 + j * 3.71 + 1, seed);
+  // the whole cut leans one way: the parting moves, one side grows longer, everything flows a little to that side
+  const lean = (R(91, 3) - 0.5) * 2;
+  const off = 0.8 + vol * 2.6, cap = h2Cap(fr.line, fr.side, off, covered ? 0 : vol * 2.2, lean * 3, lean * 0.06);
+  const P = { vol, lean, L: 0.72 + Math.max(0, Math.min(1, +d.len)) * 0.62, sp: Math.max(0, Math.min(1, +d.spike)), R, hl: cap.hl };
   let clumps = [];
   for (const [k, lib] of Object.entries(H2_PARTS)) {
     const part = lib[d[k]];
     if (part) clumps = clumps.concat(part.gen(P).map((c) => Object.assign(c, { part: k })));
   }
+  // imperfection: no two clumps alike, no mirrored pair, a gap here and there, a fork now and then
+  clumps.forEach((c, i) => {
+    if (c.bun || !c.len) return;
+    const r = (n) => R(i + 40, n + 20), sd = c.x < -1 ? -1 : c.x > 1 ? 1 : 0, neat = c.tip === 'blunt' ? 0.25 : 1;
+    c.a += (lean * (c.part === 'fringe' ? 9 : 5) + (r(1) - 0.5) * (9 + P.sp * 9)) * neat;
+    c.len *= (1 + (r(2) - 0.5) * 0.32 * neat) * (1 + sd * lean * (c.part === 'side' || c.layer !== 'main' ? 0.17 : 0.06));
+    c.w *= 1 + (r(3) - 0.5) * 0.32;
+    c.bend += (r(4) - 0.5) * 18 * neat;
+    if (c.tip === 'point' && r(5) < 0.13 && c.len > 8) c.tip = 'fork';
+    if (c.part === 'back' && c.layer === 'nape' && c.tip === 'point' && r(6) < 0.13) c.drop = 1;
+    c.detail = r(7) < 0.4 || c.len > 22;
+    c.fold = r(8) < 0.38 && c.len > 9;
+  });
+  clumps = clumps.filter((c) => !c.drop);
+  // one or two flyaway strands
+  if (!covered) {
+    for (let k = 0; k < 1 + (R(77, 1) > 0.45 ? 1 : 0); k++) {
+      const ang = -155 + 130 * R(78 + k, 1), [x, y] = HP(ang, 18.5 + off);
+      clumps.push(h2C({ x, y, a: ang + (R(78 + k, 2) - 0.5) * 70, len: 6 + 6 * R(78 + k, 3), w: 1.8 + R(78 + k, 4), bend: (R(78 + k, 5) - 0.5) * 140, tip: 'point', z: 7, sw: 3, part: 'fly' }));
+    }
+  }
   if (covered) clumps = clumps.filter((c) => !c.crown);
-  // volume pushes the roots of the clumps around the head out a little and widens them
   for (const c of clumps) if (c.layer !== 'main' || c.part === 'side') c.w *= 0.88 + vol * 0.28;
   return { d, cap: cap.P, clumps, pal: hair2Palette(d.c) };
 }
-// Draw one layer: outline + base fill of the union, then each clump in order (fill, shadow wedge, inner tip lines).
-function h2Layer(list, B, o) {
-  if (!list.length && !o.cap) return { svg: '', union: '' };
-  const pal = B.pal, shapes = [];
-  if (o.cap) shapes.push({ P: o.cap, cap: 1 });
+// Shapes of a set of clumps (and the cap): outlines, spines, sides.
+function h2Shapes(list, o, cap) {
+  const out = cap ? [{ P: cap, cap: 1 }] : [];
   for (const c of list.slice().sort((a, b) => a.z - b.z)) {
-    if (c.bun) { const [x, y, r] = c.bun; shapes.push({ P: [...Array(12)].map((_, i) => [x + Math.cos((i / 12) * Math.PI * 2) * r, y + Math.sin((i / 12) * Math.PI * 2) * r * 0.9]), bun: c }); continue; }
+    if (c.bun) { const [x, y, r] = c.bun; out.push({ P: [...Array(12)].map((_, i) => [x + Math.cos((i / 12) * Math.PI * 2) * r * (1 + 0.06 * Math.sin(i * 2.3)), y + Math.sin((i / 12) * Math.PI * 2) * r * 0.9]), bun: c }); continue; }
     const S = h2Spine(c, o.t, o.ha), E = h2Sides(c, S);
-    shapes.push({ c, S, E, P: h2Outline(c, S, E) });
+    out.push({ c, S, E, P: h2Outline(c, S, E) });
   }
-  const union = shapes.map((s) => spline(wind(s.P), true)).join('');
-  const fill = o.fill || pal.base, sh = o.sh || pal.sh;
-  let svg = `<path d="${union}" fill="${fill}" stroke="${pal.line}" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"/>`;
+  return out;
+}
+const h2Union = (shapes) => shapes.map((s) => spline(wind(s.P), true)).join('');
+// The inside of a mass, without its outline: base colour, cel shadow along the lower edges of the
+// WHOLE mass (all), a few fold shadows, a few thin strand lines, coloured tips.
+function h2Body(shapes, B, o, all) {
+  const pal = B.pal, U = h2Union(shapes), id = o.uid + 'c';
+  if (!U) return '';
+  let g = `<path d="${all}" fill="${pal.sh}"/><path d="${all}" fill="${pal.base}" transform="translate(-1.4,-1.9)"/>`;
   let gi = 0;
   for (const s of shapes) {
-    if (s.cap) continue;
-    const d = spline(s.P, true);
-    if (s.bun) { svg += `<path d="${d}" fill="${fill}" stroke="${pal.line}" stroke-width="1.2"/><path d="${spline(s.P.slice(5, 12), false)}" fill="none" stroke="${sh}" stroke-width="2.2" stroke-linecap="round"/>`; continue; }
-    let f = fill;
-    if (o.tip && s.c.len > 8) {
-      const id = `${o.uid}g${gi++}`, a = s.S[Math.round(s.S.length * 0.45)], b = s.S[s.S.length - 1];
-      svg += `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${r1(a[0])}" y1="${r1(a[1])}" x2="${r1(b[0])}" y2="${r1(b[1])}"><stop offset="0" stop-color="${fill}"/><stop offset="1" stop-color="${o.tip}"/></linearGradient>`;
-      f = `url(#${id})`;
+    if (s.cap || s.bun) continue;
+    if (s.c.fold) g += `<path d="${spline(h2Wedge(s.c, s.S, s.E), true)}" fill="${pal.sh}" opacity="${o.soft ? 0.5 : 0.8}"/>`;
+    if (s.c.detail && s.c.len > 7) {
+      const { N, W, n } = s.E, m = Math.floor(n / 2), sd = N[m][0] * H2_LIGHT[0] + N[m][1] * H2_LIGHT[1] > 0 ? -1 : 1;
+      const L = s.S.slice(Math.round(n * 0.45), n).map((p, q) => { const ix = Math.round(n * 0.45) + q; return [p[0] + sd * N[ix][0] * W[ix] * 0.35, p[1] + sd * N[ix][1] * W[ix] * 0.35]; });
+      g += `<path d="${h2Line(L)}" fill="none" stroke="${pal.line}" stroke-width=".7" stroke-linecap="round" opacity=".42"/>`;
     }
-    svg += `<path d="${d}" fill="${f}"/>`;
-    if (s.c.len > 5) svg += `<path d="${spline(h2Wedge(s.c, s.S, s.E), true)}" fill="${sh}" opacity="${o.soft ? 0.55 : 0.9}"/>`;
-    const i0 = Math.round(s.E.n * (o.soft ? 0.72 : 0.55));
-    if (s.c.len > 6) svg += `<path d="${h2Line(s.E.L.slice(i0))}M${h2Line(s.E.R.slice(i0)).slice(1)}" fill="none" stroke="${pal.line}" stroke-width=".75" stroke-linecap="round" opacity="${o.soft ? 0.45 : 0.75}"/>`;
-    if (s.c.tie) { const [x, y] = s.c.tie; svg += `<circle cx="${r1(x)}" cy="${r1(y)}" r="3.4" fill="#e8443a" stroke="${pal.line}" stroke-width="1.4"/>`; }
+    if (o.tip && s.c.len > 8) {
+      const gid = `${o.uid}g${gi++}`, a = s.S[Math.round(s.S.length * 0.45)], b = s.S[s.S.length - 1];
+      g += `<linearGradient id="${gid}" gradientUnits="userSpaceOnUse" x1="${r1(a[0])}" y1="${r1(a[1])}" x2="${r1(b[0])}" y2="${r1(b[1])}"><stop offset="0" stop-color="${o.tip}" stop-opacity="0"/><stop offset="1" stop-color="${o.tip}"/></linearGradient><path d="${spline(s.P, true)}" fill="url(#${gid})"/>`;
+    }
   }
-  return { svg, union };
+  for (const s of shapes) if (s.bun) g += `<path d="${spline(s.P.slice(5, 12), false)}" fill="none" stroke="${pal.sh}" stroke-width="2.2" stroke-linecap="round"/>`;
+  let ties = '';
+  for (const s of shapes) if (s.c && s.c.tie) { const [x, y] = s.c.tie; ties += `<circle cx="${r1(x)}" cy="${r1(y)}" r="3.4" fill="#e8443a" stroke="${pal.line}" stroke-width="1.4"/>`; }
+  return `<path d="${U}" fill="${pal.base}"/><clipPath id="${id}"><path d="${U}"/></clipPath><g clip-path="url(#${id})">${g}</g>${ties}`;
 }
+const h2Outline2 = (U, pal) => `<path d="${U}" fill="${pal.base}" stroke="${pal.line}" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"/>`;
 // The angel ring: a dashed band of light following the skull, one dash per clump, above the fringe.
 function h2Halo(B, uid, union) {
   const pal = B.pal, rr = 16.5 + B.d.vol * 1.8, dark = h2HexToHsl(B.d.c)[2] < 0.25, col = dark ? pal.hi : pal.ring;
@@ -310,23 +339,25 @@ function h2Halo(B, uid, union) {
   const id = uid + 'hc';
   return `<clipPath id="${id}"><path d="${union}"/></clipPath><g clip-path="url(#${id})"><path d="${d}" fill="${col}" opacity=".9"/></g>`;
 }
-// Everything drawAvatar needs, in head-local space.
+// Everything drawAvatar needs, in head-local space. The nape (behind the head) and the main layer
+// (over it) are ONE mass: a single outline around both is drawn behind the head, and the main layer
+// only draws its outline over the face, so no line ever separates them.
 // o: { t (time, null = still), ha (head rotation, for gravity), uid, covered }
 function hair2SVG(def, o) {
   o = o || {};
   const B = hair2Build(def, !!o.covered), uid = (o.uid || 'h2') + '_';
   const by = (l) => B.clumps.filter((c) => c.layer === l);
-  const t = o.t, base = { t, ha: o.ha || 0, uid, tip: B.d.tip || '' };
-  const main = h2Layer(by('main'), B, Object.assign({ cap: B.cap }, base, { uid: uid + 'm' }));
-  const nape = h2Layer(by('nape'), B, Object.assign({}, base, { uid: uid + 'n', fill: B.pal.nape, sh: B.pal.sh }));
-  const back = h2Layer(by('back'), B, Object.assign({}, base, { uid: uid + 'b', fill: B.pal.nape, sh: B.pal.deep, soft: 1 }));
-  // the main layer casts a shadow on the hair behind it
-  const cast = (L, id) => (L.union ? `<clipPath id="${id}"><path d="${L.union}"/></clipPath><g clip-path="url(#${id})"><path d="${main.union}" fill="${B.pal.sh}" opacity=".7" transform="translate(.8,2.4)"/></g>` : '');
+  const base = { t: o.t, ha: o.ha || 0, tip: B.d.tip || '' };
+  const mainS = h2Shapes(by('main'), base, B.cap), napeS = h2Shapes(by('nape'), base), backS = h2Shapes(by('back'), base);
+  const mainU = h2Union(mainS), all = mainU + h2Union(napeS), backU = h2Union(backS);
+  const fid = uid + 'f';
   return {
-    back: back.svg + cast(back, uid + 'cb'),
-    nape: nape.svg + cast(nape, uid + 'cn'),
-    main: main.svg + h2Halo(B, uid, main.union),
-    shadow: main.union,   // cast on the forehead by drawAvatar (clipped to the face)
+    back: backU ? h2Outline2(backU, B.pal) + h2Body(backS, B, Object.assign({ uid: uid + 'b', soft: 1 }, base), backU) : '',
+    nape: h2Outline2(all, B.pal) + h2Body(napeS, B, Object.assign({ uid: uid + 'n' }, base), all),
+    // over the face only: the outer edge of the main layer (its fill then hides every inner edge)
+    main: `<clipPath id="${fid}"><circle r="19.4"/></clipPath><path d="${mainU}" fill="${B.pal.base}" stroke="${B.pal.line}" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke" clip-path="url(#${fid})"/>`
+      + h2Body(mainS, B, Object.assign({ uid: uid + 'm' }, base), all) + h2Halo(B, uid, mainU),
+    shadow: mainU,   // cast on the forehead by drawAvatar (clipped to the face)
     pal: B.pal,
   };
 }
