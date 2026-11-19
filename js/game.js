@@ -185,7 +185,7 @@ function addXp(id, amt) {
 // Multiplier hooks return a factor (1 = no change); 'double' hooks return an added chance.
 const HOOKS = { dmg: [], hp: [], def: [], gold: [], xp: [], speed: [], double: [], rare: [], taken: [], dodge: [], edef: [],
                 tick: [], combat: [], action: [], kill: [], spawn: [], block: [], energy: [],
-                haste: [], heal: [], eat: [], shiny: [], perfect: [], spdStat: [], luckStat: [] };
+                haste: [], heal: [], eat: [], shiny: [], perfect: [], spdStat: [], luckStat: [], espd: [] };
 // Why an action cannot run right now ('' = it can). Systems add reasons (max rank reached, no free plot...).
 const actionBlock = (skill, act) => { for (const f of HOOKS.block) { const r = f(skill, act); if (r) return r; } return ''; };
 const hook = (name, fn) => HOOKS[name].push(fn);
@@ -529,13 +529,16 @@ function tickCombat(dt) {
   const e = curEnemy();
   hrun('combat', dt, e);
   if (C.enemy == null || C.zone == null) return;
-  C.pT -= dt; C.eT -= dt;
+  if (!playerHeld()) C.pT -= dt;          // a stunned fighter's swing waits (foes.js)
+  C.eT -= dt;
   let guard = 0;
   while ((C.pT <= 0 || C.eT <= 0) && guard++ < 50) {
     if (C.pT <= C.eT) { playerHit(e); if (C.enemy == null) return; C.pT += pSpeed(); }
-    else { enemyHit(e); if (C.zone == null) return; C.eT += e.spd; }
+    else { enemyHit(e); if (C.zone == null || C.enemy == null) return; C.eT += e.spd * hmul('espd', e); }
   }
 }
+// Stun and similar holds (foes.js replaces this).
+let playerHeld = () => false;
 function spawnEnemy() {
   const C = S.combat, z = ZONES[C.zone];
   C.enemy = Math.floor(Math.random() * z.enemies.length);
@@ -557,11 +560,12 @@ function playerHit(e) {
   dealDamage(e, dmg, roll > 0.9);
 }
 // Any damage to the current enemy (auto-attacks, techniques, Domain release...).
-function dealDamage(e, dmg, crit, label) {
+// extra: more about the hit for the UI ({ elem: 'weak' | 'resist', blocked }).
+function dealDamage(e, dmg, crit, label, extra) {
   const C = S.combat;
   if (C.enemy == null) return;
   C.eHp -= dmg;
-  emit('hit', { target: 'enemy', dmg, crit, label });
+  emit('hit', Object.assign({ target: 'enemy', dmg, crit, label }, extra));
   if (C.eHp <= 0) killEnemy(e);
 }
 function killEnemy(e) {
@@ -595,13 +599,22 @@ function killEnemy(e) {
   C.enemy = null; C.respawn = z.boss ? 3 : 1.2;
   emit('kill', { enemy: e, gold: g, loot, boss: !!z.boss });
 }
+// foeLanded: damage of the last enemy swing (0 = dodged). foes.js applies on-hit effects only when it connected.
+let foeLanded = 0;
 function enemyHit(e) {
   const C = S.combat;
+  foeLanded = 0;
   if (Math.random() < pDodge()) { clog(`You slip past ${e.name}'s attack.`, 'sys'); emit('hit', { target: 'player', dodge: true }); return; }
   const dmg = Math.max(1, Math.round(e.atk * hmul('taken') * rand(0.5, 1) * mitig(pDef())));
   C.hp -= dmg;
+  foeLanded = dmg;
   emit('hit', { target: 'player', dmg });
   autoEat();
+  if (C.hp <= 0) playerDown(e);
+}
+// Your HP hit 0 (from a blow or from poison, burns...).
+function playerDown(e) {
+  const C = S.combat;
   if (C.hp <= 0 && e.rank) {
     // An Elite or Alpha that beats you gets away; you recover and keep fighting (idle runs never stall on them).
     C.hp = Math.round(pMaxHp() * 0.5);

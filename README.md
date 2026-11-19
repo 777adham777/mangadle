@@ -22,6 +22,7 @@ One character and one progression cross every world; each world adds activities 
 - **Expeditions**: ships sail in parallel with anything else, need hull wood, optional dishes bring back more
 - Worlds open after their guardian falls and you make an offering at the gate; skills and menus open one at a time
 - Renown and Ascension per world, synergies between activities, schematics and relics for iconic gear, loot rarity, chests, Devil Fruits
+- **Foes with kits**: every enemy has a role, an element it is weak to (some resist one), a passive trait and signature moves (stuns, poison, bleed, burns, shields, heals, life steal); big moves are telegraphed and trigger your defensive techniques; bosses change phase at 66% and 33% HP; Elites and Alphas roll random affixes. Non-human foes are drawn creatures, humans are dressed stick figures
 - **Elites and mini-bosses** in every stage; **daily and weekly objectives** from every open world
 - **Collection Log** with items, pets, techniques, a bestiary and companions
 - **Shiny & Perfect** collection logs (Fishing, Cooking so far); offline progress (12 h, the rest fills the Time Chamber), autosave, installable PWA
@@ -57,6 +58,8 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `js/loot.js` | Loot pass: world chests, drop-only gear with utility perks, rarity from drop rates, salvage values |
 | `js/worlds.js` | Worlds 4-7 and the Rift finale, registered with `addWorld()`; content for techniques and awakening |
 | `js/systems.js` | World systems (Renown, Ascension, armor sockets/reforge, farming, transformations, Domain, pacts, contracts, beasts, cards, Echo...), plugged into engine hooks |
+| `js/foes.js` | Foe kits (roles, weaknesses, traits, moves, boss phases, Elite affixes) and the shared status system; power-neutral scaling |
+| `js/creatures.js`, `css/foes.css` | Drawn, animated creatures for every non-human foe; foe HUD, statuses, wind-ups, bestiary page |
 | `js/techniques.js`, `js/techniques-ui.js` | Technique collection, scrolls, fragments, typed slots, combat casting; Techniques page |
 | `js/expeditions.js`, `js/expeditions-ui.js` | Passive expeditions (ships, hauls, provisions); Harbour panel and destination cards |
 | `js/chamber.js` | Time Chamber (stored time, ×2 activities) |

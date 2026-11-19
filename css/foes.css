@@ -1,0 +1,139 @@
+/* ==========================================================================
+   Foes: drawn creatures, foe kit HUD (role, weakness, traits, statuses,
+   wind-up cast bar, boss phases, shield), and their combat floats.
+   js/creatures.js · js/arena.js · js/foes.js
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- creatures */
+.cr { display: block; width: 100%; height: 100%; overflow: visible;
+  filter: drop-shadow(2.5px 0 0 #f3efe6) drop-shadow(-2.5px 0 0 #f3efe6) drop-shadow(0 2.5px 0 #f3efe6) drop-shadow(0 -2.5px 0 #f3efe6); }
+.cr g { transform-box: view-box; }
+.cr .cr-breath { animation: crBreath 2.6s ease-in-out infinite; }
+.cr .cr-head { animation: crNod 2.6s ease-in-out infinite; }
+.cr .cr-tail { animation: crSway 2.2s ease-in-out infinite; }
+.cr .cr-sway { animation: crSway 3s ease-in-out infinite reverse; }
+.cr .cr-wing { animation: crFlap 1.6s ease-in-out infinite; }
+.cr .cr-float { animation: crFloat 3.2s ease-in-out infinite; }
+.cr .cr-bob { animation: crBob 2.4s ease-in-out infinite; }
+.cr .cr-glow { animation: crGlow 1.8s ease-in-out infinite; }
+.cr .cr-embers circle { animation: crEmber 2.4s ease-in infinite; }
+.cr .cr-water { animation: crBob 3s ease-in-out infinite reverse; }
+@keyframes crBreath { 50% { transform: scale(1.02, 0.975); } }
+@keyframes crNod { 50% { transform: rotate(-2deg) translateY(1px); } }
+@keyframes crSway { 50% { transform: rotate(5deg); } }
+@keyframes crFlap { 50% { transform: rotate(-9deg) scaleY(0.92); } }
+@keyframes crFloat { 50% { transform: translateY(-9px); } }
+@keyframes crBob { 50% { transform: translateY(4px) rotate(-1deg); } }
+@keyframes crGlow { 50% { opacity: 0.08; } }
+@keyframes crEmber { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-60px); opacity: 0; } }
+/* attack: head lunges, jaw / lid opens */
+.cr.atk .cr-head { animation: crBite 0.42s cubic-bezier(.2, .9, .3, 1); }
+.cr.atk .cr-jaw { animation: crJaw 0.42s ease-out; }
+.cr.atk .cr-lid { animation: crLid 0.42s ease-out; }
+@keyframes crBite { 35% { transform: translateX(-14px) rotate(-6deg); } }
+@keyframes crJaw { 35% { transform: rotate(16deg) translateY(4px); } }
+@keyframes crLid { 35% { transform: rotate(18deg); } }
+
+/* ---------------------------------------------------------------- foe on the floor */
+.ar-floor .fighter.enemy.foe-cr { width: calc(270px * var(--sz, 1)); height: calc(226px * var(--sz, 1)); right: 7%; bottom: 3%; }
+.ar-floor .fighter.enemy.foe-cr .f-art::after { content: ''; position: absolute; left: 12%; right: 12%; bottom: 2px; height: 12px; border-radius: 50%; background: rgba(0, 0, 0, 0.4); z-index: -1; }
+.ar-floor .fighter.enemy.foe-cr .f-art { position: relative; }
+.ar-floor .fighter.enemy.foe-cr.down .f-art { animation: crDown 0.7s ease-in forwards; transform-origin: 50% 95%; }
+@keyframes crDown { 30% { transform: translateX(10px) scale(1.04, 0.92); } 100% { transform: translateX(20px) scale(0.6, 0.15); opacity: 0; filter: brightness(2.5); } }
+/* Elite / Alpha glow */
+.ar-floor .fighter.enemy.rank1 .f-art { filter: drop-shadow(0 0 10px rgba(122, 196, 255, 0.75)); }
+.ar-floor .fighter.enemy.rank2 .f-art { filter: drop-shadow(0 0 14px rgba(255, 140, 60, 0.9)); }
+.ar-floor .fighter.enemy.rank2 { --sz: 1.12; }
+/* telegraph: the foe glows red and a "!" pops over it */
+.ar-floor .windmark { position: absolute; top: -4px; left: 50%; transform: translateX(-50%) scale(0); width: 34px; height: 34px; display: grid; place-items: center;
+  font: 900 26px/1 var(--display); color: #fff; background: #e0475a; border: 2px solid #fff; border-radius: 50%; box-shadow: 0 0 18px rgba(224, 71, 90, 0.9); transition: transform 0.15s; pointer-events: none; }
+.ar-floor .fighter.enemy.winding .windmark { transform: translateX(-50%) scale(1); animation: windPop 0.6s ease-in-out infinite alternate; }
+.ar-floor .fighter.enemy.winding .f-art { animation: windGlow 0.6s ease-in-out infinite alternate; }
+@keyframes windPop { to { transform: translateX(-50%) scale(1.15) translateY(-4px); } }
+@keyframes windGlow { from { filter: drop-shadow(0 0 4px rgba(255, 70, 90, 0.4)); } to { filter: drop-shadow(0 0 18px rgba(255, 70, 90, 0.95)) brightness(1.12); } }
+/* a special move: a short flare */
+.ar-floor .fighter.enemy.special .f-art { animation: specialFlare 0.5s ease-out; }
+@keyframes specialFlare { 0% { filter: brightness(2) drop-shadow(0 0 22px #ffd76a); transform: scale(1.06); } 100% { filter: none; transform: none; } }
+/* you, stunned */
+.ar-floor .stunmark { position: absolute; top: 2%; left: 50%; transform: translateX(-50%); width: 46px; height: 46px; opacity: 0; color: #ffe46a; pointer-events: none; transition: opacity 0.15s; }
+.ar-floor .stunmark .gi { width: 100%; height: 100%; fill: #ffe46a; filter: drop-shadow(0 0 6px #ffb800); }
+.ar-floor .fighter.me.stunned .stunmark { opacity: 1; animation: stunSpin 1s linear infinite; }
+.ar-floor .fighter.me.stunned .f-art { filter: saturate(0.4) brightness(0.85); }
+@keyframes stunSpin { to { transform: translateX(-50%) rotate(360deg); } }
+
+/* ---------------------------------------------------------------- HUD */
+.hpbar.enemy { position: relative; }
+.hpbar .shieldbar { position: absolute; top: 0; bottom: 0; right: 0; width: 0; background: repeating-linear-gradient(135deg, rgba(150, 220, 255, 0.85) 0 6px, rgba(90, 170, 240, 0.85) 6px 12px); box-shadow: inset 0 0 0 1px #c8f0ff; transition: width 0.18s; }
+.hpbar s { position: absolute; top: 0; bottom: 0; width: 2px; margin-left: -1px; background: rgba(255, 255, 255, 0.75); box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5); text-decoration: none; }
+.castbar { position: relative; }
+.castbar [data-ecastname] { display: none; }
+.castbar.winding .atkbar { height: 14px; background: #2a0d14; box-shadow: inset 0 0 0 1px #e0475a; }
+.castbar.winding .atkbar i { background: linear-gradient(90deg, #ff9a4d, #ff4d6d); }
+.castbar.winding [data-ecastname] { display: grid; place-items: center; position: absolute; inset: 0; font: 700 11px/1 var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: #fff; text-shadow: 0 1px 2px #000; }
+.ftags, .stchips { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 5px; }
+.fhud.enemy .ftags, .fhud.enemy .stchips { justify-content: flex-end; }
+.stchips:empty { display: none; }
+.fchip, .stchip { display: inline-flex; align-items: center; gap: 4px; padding: 1px 6px; font: 600 11.5px/1.5 var(--display); color: #fff; background: #171920; border: 1px solid #2c303b; cursor: default; }
+.fchip .gi, .stchip .gi { width: 12px; height: 12px; fill: currentColor; }
+.fchip em { font-style: normal; }
+.fchip.role { color: #c9cdd8; }
+.fchip.weak { color: #9ff0c4; border-color: #2f7a52; background: #10241a; }
+.fchip.resist { color: #ffb0a0; border-color: #7a3a30; background: #24130f; }
+.fchip.trait { color: #f4d38a; border-color: #6a5326; background: #211a0c; }
+.fchip.affix { color: #ffb36a; border-color: #a0602a; background: #2a1608; }
+.stchip b { color: var(--dim); font-weight: 600; }
+.stchip.bad { color: #ff9aa5; border-color: #7a2a36; background: #220d12; }
+.stchip.buff { color: #ffd27a; border-color: #7a5a22; background: #22190a; }
+.stchip.tech { color: #a8d8ff; border-color: #2a5a8a; background: #0d1a28; }
+.stchip.st-poison { color: #b8f06a; border-color: #4a7a22; background: #14200a; }
+.stchip.st-stun { color: #ffe46a; border-color: #8a7a22; }
+.stchip.st-shield { color: #a8e8ff; border-color: #2a6a8a; background: #0d1d26; }
+
+/* phase banner across the stage */
+.phase-banner { position: absolute; left: 0; right: 0; top: 44%; z-index: 5; display: grid; justify-items: center; gap: 2px; padding: 10px 0; pointer-events: none;
+  background: linear-gradient(90deg, transparent, rgba(120, 10, 30, 0.85) 20%, rgba(120, 10, 30, 0.85) 80%, transparent);
+  border-top: 1px solid rgba(255, 140, 150, 0.6); border-bottom: 1px solid rgba(255, 140, 150, 0.6); animation: phaseIn 2.2s ease-out forwards; }
+.phase-banner small { font: 700 12px var(--display); letter-spacing: 0.4em; text-transform: uppercase; color: #ffb0b8; }
+.phase-banner b { font: 700 26px/1 var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: #fff; text-shadow: 0 0 14px #ff4d6d; }
+@keyframes phaseIn { 0% { opacity: 0; transform: scaleY(0.2); } 12% { opacity: 1; transform: none; } 80% { opacity: 1; } 100% { opacity: 0; } }
+#stage { position: relative; }
+
+/* ---------------------------------------------------------------- floats + log */
+.float.move { color: #ffd0d6; font-size: 20px; }
+.float.move small { font-size: 16px; letter-spacing: 0.08em; color: #fff; text-shadow: 0 0 10px #ff4d6d, 0 1px 2px #000; }
+.float.st { font-size: 14px; color: #ff9aa5; }
+.float.st small { font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+.float.st-poison { color: #b8f06a; }
+.float.st-burn { color: #ffae5a; }
+.float.st-bleed { color: #ff6a7a; }
+.float.st-stun { color: #ffe46a; }
+.float.dot { font-size: 18px; }
+.float.dmg.weak { color: #9ff0c4; }
+.float.dmg small.weak { color: #9ff0c4; }
+.float.dmg.resist { color: #c0c4cc; }
+.float.dmg small.resist { color: #ffb0a0; }
+.float.dmg.blocked { color: #a8e8ff; font-size: 20px; }
+.log .foe { color: #ffc27a; }
+
+/* ---------------------------------------------------------------- bestiary */
+.bst-detail { display: grid; grid-template-columns: 220px minmax(0, 1fr) 200px; gap: 16px; align-items: start; margin-top: 10px; padding: 12px; background: rgba(10, 12, 18, 0.6); border: 1px solid var(--line, #2c303b); }
+.bst-info h3 { margin: 2px 0 6px; font: 700 22px/1.1 var(--display); letter-spacing: 0.04em; text-transform: uppercase; }
+.bst-sub { font: 600 11px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--dim); }
+.bst-info .lore { margin: 0 0 6px; }
+.bst-info .ftags { margin: 0 0 6px; }
+.bst-art { height: 170px; display: grid; place-items: center; background: radial-gradient(ellipse 70% 30% at 50% 92%, color-mix(in srgb, var(--rc, #ff5d73) 35%, transparent), transparent 70%); }
+@media (max-width: 900px) { .bst-detail { grid-template-columns: 1fr; } }
+.bst-art .cr, .bst-art .avatar { width: auto; height: 100%; max-width: 100%; }
+.bst-art .creature { font-size: 110px; }
+.bst-moves li span { display: flex; align-items: center; gap: 6px; }
+.bst-moves li small { color: var(--dim); margin-left: 4px; }
+
+@media (max-width: 700px) {
+  .ar-floor .fighter.enemy.foe-cr { width: calc(180px * var(--sz, 1)); height: calc(150px * var(--sz, 1)); right: 2%; }
+  .fchip em { display: none; }
+  .phase-banner b { font-size: 19px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .cr *, .ar-floor .windmark, .ar-floor .stunmark, .phase-banner { animation: none !important; }
+}
+.bst-art.unknown > * { filter: brightness(0) drop-shadow(0 0 1px #555); opacity: 0.7; }

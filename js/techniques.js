@@ -208,7 +208,8 @@ function infuseTech(id) {
   return true;
 }
 // Defensive techniques wait for their moment.
-const hurt = () => S.combat.hp < 0.85 * pMaxHp();
+// ...or when the foe is winding up a telegraphed move (foes.js).
+const hurt = () => S.combat.hp < 0.85 * pMaxHp() || (typeof foeWinding === 'function' && foeWinding());
 const TECH_WHEN = { healing_palm: () => S.combat.hp < 0.6 * pMaxHp(), mist_step: hurt, iron_skin: hurt, foresight: hurt, nen_conjure: hurt,
   soul_ward: () => S.combat.hp < 0.7 * pMaxHp() };
 hook('combat', (dt, e) => {
@@ -223,6 +224,7 @@ hook('combat', (dt, e) => {
   }
   if ((RT.fx.regen || 0) > 0) { const m = pMaxHp(); S.combat.hp = Math.min(m, S.combat.hp + m * 0.02 * dt); }
   for (const id of equipped()) {
+    if (playerHeld()) break;                 // stunned: no techniques
     if (TECHNIQUES[id].cat === 'passive' || (RT.cd[id] || 0) > 0 || (TECH_WHEN[id] && !TECH_WHEN[id]())) continue;
     RT.cd[id] = techCd(id);
     S.stats.techUses = (S.stats.techUses || 0) + 1;

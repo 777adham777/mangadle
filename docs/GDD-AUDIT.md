@@ -84,7 +84,8 @@ Fait : noms du GDD · niveau de personnage + 5 stats · techniques (27, parchemi
 paliers, recharges, passives, Domain Expansions, catégories de Nen) · monde 1 (Woodcutting, Crafting, Combat) · disciplines
 énergétiques · expéditions passives · Soul City (Smelting, armes par exemplaire : niveau, raffinage, éveil) · Kaio Planet
 (Time Chamber, Tinkering retiré) · Shinjuku (Cursed Research, Binding Vows, Domain) · Green Island (Hunting, 3 compagnons) ·
-élites et mini-boss · objectifs quotidiens / hebdomadaires · Collection Log étendu.
+élites et mini-boss · objectifs quotidiens / hebdomadaires · Collection Log étendu · kits d'ennemis (rôles, faiblesses,
+coups annoncés, phases de boss, affixes d'élites), altérations communes, créatures dessinées et bestiaire détaillé (2026-11-19).
 
 Reste : équilibrage inter-mondes (les mondes 4-7 ont été réglés avant le retrait de plusieurs multiplicateurs : perks de Karma,
 sigils, gadgets, skills fusionnés) · Shiny / Perfect sur les autres skills · scènes animées des mondes 1, 3-6 · Ascension

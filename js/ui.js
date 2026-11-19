@@ -920,9 +920,13 @@ on('hit', (d) => {
   if (!inBattleView()) return;
   const el = $(`[data-portrait="${d.target}"]`);
   if (!el) return;
-  if (d.dodge) { floatAt(el, 'Dodge', 'miss'); return; }
-  if (d.target === 'enemy') floatAt(el, (d.label ? `<small>${esc(d.label)}</small>` : d.crit ? '<small>Crit</small>' : '') + fmt(d.dmg), d.crit || d.label ? 'dmg crit' : 'dmg');
-  else floatAt(el, '-' + fmt(d.dmg), 'hurt');
+  if (d.dodge) { floatAt(el, d.target === 'enemy' ? 'Evaded' : 'Dodge', 'miss'); return; }
+  if (d.dot) { floatAt(el, '-' + fmt(d.dmg), 'hurt dot st-' + d.dot, 20, 10); return; }
+  if (d.target === 'enemy') {
+    if (d.blocked && !d.label && d.dmg === d.blocked) { floatAt(el, `<small>Shield</small>${fmt(d.dmg)}`, 'dmg blocked'); return; }
+    const tag = d.elem === 'weak' ? '<small class="weak">Weak!</small>' : d.elem === 'resist' ? '<small class="resist">Resisted</small>' : '';
+    floatAt(el, tag + (d.label ? `<small>${esc(d.label)}</small>` : d.crit ? '<small>Crit</small>' : '') + fmt(d.dmg), (d.crit || d.label ? 'dmg crit' : 'dmg') + (d.elem ? ' ' + d.elem : ''));
+  } else floatAt(el, '-' + fmt(d.dmg), 'hurt');
   retrigger(el.closest('.fighter'), 'shake');
 });
 on('eat', (d) => { if (inBattleView()) floatAt($('[data-portrait="player"]'), `+${fmt(d.heal)}${ui('hp')}`, 'heal', 0, -20); });
