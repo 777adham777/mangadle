@@ -48,7 +48,8 @@ function foeLook(e, realm) {
   const m = FOE_LOOKS.find(([re]) => re.test(name));
   if (!m) return null;
   const base = (REALMS[realm] && REALMS[realm].color) || '#ff5d73';
-  const over = Object.assign({ style: 'flat', color: 'chalk', hat: 'none', face: 'fierce', back: 'none', aura: 'none', build: 'athletic', stance: 'relaxed', hair: 'none', outfit: 'none', ink: shade(base, -0.32) }, m[1]);
+  const over = Object.assign({ style: 'flat', color: 'chalk', hat: 'none', face: 'fierce', back: 'none', aura: 'none', build: 'athletic', stance: 'relaxed', hair: 'none', top: 'none', bottom: 'none', ink: shade(base, -0.32) }, m[1]);
+  if (over.outfit) { over.top = over.bottom = over.outfit; delete over.outfit; }
   if (e.rank === 2 && over.aura === 'none') over.aura = 'embers';      // an Alpha burns with power
   return { over, weapon: ITEMS[m[2]] ? m[2] : '' };
 }

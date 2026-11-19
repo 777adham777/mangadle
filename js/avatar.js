@@ -66,31 +66,48 @@ const COSMETICS = {
     C('orchid',  'Orchid',        'echo',    4, LV('archaeology', 20), { ink: '#ef7cff' }),
     C('void',    'Rift Void',     'rift',    5, KILLS('tear', 10),     { ink: '#8b7bff' }),
   ],
-  // Hair: each style has its own colour, drawn as a spiky silhouette on the head.
+  // Hair: each cut has its own colour, built from locks on a cap (see HAIR).
   hair: [
     { id: 'tuft', name: 'Messy Black', r: 1, need: FREE },
-    { id: 'none', name: 'Shaved', r: 1, need: FREE },
+    { id: 'buzz', name: 'Buzz Cut', r: 1, need: FREE },
+    { id: 'pony', name: 'High Ponytail', r: 1, need: FREE },
+    { id: 'none', name: 'Bald', r: 1, need: FREE },
     C('mop',    'Sea-Salt Mop',    'seas',    2, LV('fishing', 10)),
     C('spikes', 'Swept Spikes',    'shinobi', 2, LV('character', 10)),
+    C('bun',    'Warrior Topknot', 'shinobi', 3, LV('arts', 15)),
     C('ember',  'Ember Crest',     'soul',    3, LV('mining', 10)),
+    C('long',   'Reaper Locks',    'soul',    3, LV('smithing', 15)),
     C('flame',  'Ascended Flame',  'ki',      5, LV('gravity', 40)),
     C('frost',  'Frost Tousle',    'hex',     3, LV('exorcism', 10)),
     C('wild',   'Wild Broom',      'hunter',  3, LV('tracking', 10)),
     C('swept',  'Slicked Back',    'echo',    3, LV('archaeology', 10)),
     C('crest',  'Rift Crest',      'rift',    5, KILLS('tear', 5)),
   ],
-  // Outfits are worn over the limbs: a top with sleeves, trousers, shoes, a sash.
-  outfit: [
-    { id: 'tee', name: 'Traveler', r: 1, need: FREE },
-    { id: 'none', name: 'Bare', r: 1, need: FREE },
-    C('corsair',  'Corsair Vest',     'seas',    3, LV('voyaging', 10)),
-    C('shinobi',  'Shinobi Track',    'shinobi', 3, KILLS('mist', 50)),
-    C('reaper',   'Reaper Robes',     'soul',    3, KILLS('desert', 50)),
-    C('gi',       'Training Gi',      'ki',      3, KILLS('canyon', 50)),
-    C('uniform',  'Exorcist Uniform', 'hex',     3, KILLS('shrine', 50)),
-    C('wilds',    'Wilds Gear',       'hunter',  3, KILLS('cliffs', 50)),
-    C('longcoat', 'Chained Longcoat', 'echo',    4, KILLS('museum', 50)),
-    C('riftwear', 'Rift Raiment',     'rift',    5, KILLS('tear', 25)),
+  // Clothes are worn over the limbs, in two pieces you mix freely:
+  // a top (with its sleeves, sash and wrist bands) and a bottom (trousers or shorts, belt and shoes).
+  top: [
+    { id: 'tee', name: 'Traveler Tee', r: 1, need: FREE },
+    { id: 'none', name: 'Bare Chest', r: 1, need: FREE },
+    C('corsair',  'Corsair Vest',      'seas',    3, LV('voyaging', 10)),
+    C('shinobi',  'Shinobi Jacket',    'shinobi', 3, KILLS('mist', 50)),
+    C('reaper',   'Reaper Kimono',     'soul',    3, KILLS('desert', 50)),
+    C('gi',       'Training Gi',       'ki',      3, KILLS('canyon', 50)),
+    C('uniform',  'Exorcist Jacket',   'hex',     3, KILLS('shrine', 50)),
+    C('wilds',    'Wilds Tunic',       'hunter',  3, KILLS('cliffs', 50)),
+    C('longcoat', 'Chained Longcoat',  'echo',    4, KILLS('museum', 50)),
+    C('riftwear', 'Rift Raiment',      'rift',    5, KILLS('tear', 25)),
+  ],
+  bottom: [
+    { id: 'tee', name: 'Traveler Trousers', r: 1, need: FREE },
+    { id: 'none', name: 'Bare Legs', r: 1, need: FREE },
+    C('corsair',  'Corsair Shorts',    'seas',    3, KILLS('storm', 25)),
+    C('shinobi',  'Shinobi Trousers',  'shinobi', 3, KILLS('ravine', 50)),
+    C('reaper',   'Reaper Hakama',     'soul',    3, KILLS('spire', 50)),
+    C('gi',       'Gi Trousers',       'ki',      3, KILLS('citadel', 50)),
+    C('uniform',  'Exorcist Slacks',   'hex',     3, KILLS('alleys', 50)),
+    C('wilds',    'Wilds Shorts',      'hunter',  3, KILLS('ruins', 50)),
+    C('longcoat', 'Longcoat Trousers', 'echo',    4, KILLS('pillars', 50)),
+    C('riftwear', 'Rift Leggings',     'rift',    5, KILLS('tear', 40)),
   ],
   hat: [
     { id: 'none', name: 'No hat', r: 1, need: FREE },
@@ -147,7 +164,7 @@ const COSMETICS = {
     C('storm',    'Rift Storm',    'rift',    5, KILLS('tear', 50)),
   ],
 };
-const COS_SLOTS = [['build', 'Build'], ['style', 'Style'], ['stance', 'Stance'], ['color', 'Colour'], ['hair', 'Hair'], ['outfit', 'Outfit'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
+const COS_SLOTS = [['build', 'Build'], ['style', 'Style'], ['stance', 'Stance'], ['color', 'Colour'], ['hair', 'Hair'], ['top', 'Top'], ['bottom', 'Bottom'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
 const COS_RARITY = ['', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
 const cosOf = (slot, id) => COSMETICS[slot].find((c) => c.id === id) || COSMETICS[slot][0];
 const avatarOn = () => isUnlocked('feature:avatar');
@@ -156,6 +173,13 @@ function avState() {
   const A = S.avatar;
   // v2 of the cosmetic list: re-check what this save has earned (quietly)
   if (!A.got || typeof A.got !== 'object' || A.gv !== 3) { A.got = {}; A.gv = 3; A.seeded = 0; }
+  // one outfit became a top and a bottom: wear both halves, keep both if the outfit was earned
+  if (A.outfit !== undefined) {
+    if (A.top === undefined) A.top = A.outfit;
+    if (A.bottom === undefined) A.bottom = A.outfit;
+    for (const k of Object.keys(A.got)) if (k.startsWith('outfit:')) { A.got['top:' + k.slice(7)] = 1; A.got['bottom:' + k.slice(7)] = 1; delete A.got[k]; }
+    delete A.outfit;
+  }
   for (const [s] of COS_SLOTS) if (!COSMETICS[s].some((c) => c.id === A[s])) A[s] = COSMETICS[s][0].id;
   return A;
 }
@@ -197,15 +221,17 @@ const POSES = {
   kick:     { tw: 1, t1: 204, t2: -10, n: 8, h: -6,  ht: 12, st: -6, aF: [58, 44],   aB: [-82, 30],  lF: [94, -4],  lB: [-10, 2],  fF: -10, fB: -10, g: -150, dy: 0, fx: 'kick' },
   hurt:     { tw: 1, t1: 200, t2: -12, n: 16, h: 16, ht: -6, st: 10, aF: [-30, 40],  aB: [-60, 30],  lF: [16, -24], lB: [-22, 6],  fF: 10, fB: -12, g: -150, dy: 6, expr: 'hurt', fx: 'hit' },
   victory:  { tw: 0.6, t1: 184, t2: -5, n: -10, h: -12, ht: 6, st: 10, aF: [180, -8],  aB: [-130, 36], lF: [30, -86], lB: [-8, -26], fF: 20, fB: -40, g: 0,    dy: 0, air: 24, expr: 'happy' },
-  fish:     { sh: 1, t1: 178, t2: 3,  n: 2,  h: 6,   ht: -3, st: 2,  aF: [54, 40],   aB: [20, 98],   lF: [10, -6],  lB: [-8, 2],   fF: 10, fB: -190, g: -36,  dy: 2, prop: 'rod', bf: 1 },
-  cook:     { sh: 1, t1: 176, t2: 5,  n: 5,  h: 10,  ht: -3, st: 2,  aF: [40, 54],   aB: [8, 110],   lF: [10, -6],  lB: [-8, 2],   fF: 10, fB: -190, g: -90,  dy: 2, prop: 'pan', bf: 1 },
+  // fish, cook: full motion cycles, see POSE_DRIVE (their still poses are set there)
 };
-const POSE_KEYS = ['t1', 't2', 'n', 'h', 'ht', 'st', 'tw', 'fF', 'fB', 'g', 'dy', 'air'];
+const POSE_KEYS = ['t1', 't2', 'n', 'h', 'ht', 'st', 'tw', 'fF', 'fB', 'g', 'dy', 'air', 'dx', 'rb', 'cr', 'pt', 'sa'];
 function lerpPose(a, b, k) {
   const o = {};
   for (const key of POSE_KEYS) o[key] = (a[key] || 0) + ((b[key] || 0) - (a[key] || 0)) * k;
   for (const key of ['aF', 'aB', 'lF', 'lB']) o[key] = [0, 1].map((i) => a[key][i] + (b[key][i] - a[key][i]) * k);
-  for (const key of ['expr', 'prop', 'sh', 'bf']) o[key] = k < 0.5 ? a[key] : b[key];
+  for (const key of ['expr', 'prop', 'sh', 'bf', 'ff', 'tool', 'panB']) o[key] = k < 0.5 ? a[key] : b[key];
+  if (a.A != null && b.A != null) o.A = a.A + (b.A - a.A) * k; else o.A = k < 0.5 ? a.A : b.A;
+  o.hang = (a.hang || 0) + ((b.hang || 0) - (a.hang || 0)) * k;
+  o.fd = a.fd && b.fd ? a.fd.map((v, i) => v + (b.fd[i] - v) * k) : k < 0.5 ? a.fd : b.fd;
   o.fx = k > 0.3 ? b.fx : a.fx;
   return o;
 }
@@ -264,7 +290,7 @@ const GROUND = 226;
 function solve(P, B) {
   const s = B.h, W = B.w;
   const len = { ab: 24 * s, ch: 28 * s, nk: 6 * s, ua: 23 * s, fa: 21 * s, th: 36 * s, sh: 35 * s, ft: 4 * s };
-  const pelvis = [100, 120 + P.dy];
+  const pelvis = [100 + (P.dx || 0), 120 + P.dy];
   const waist = add(pelvis, P.t1, len.ab);
   const chestA = P.t1 + P.t2;
   const neckBase = add(waist, chestA, len.ch);
@@ -292,6 +318,160 @@ function solve(P, B) {
   for (const k of ['aF', 'aB', 'lF', 'lB']) J[k] = J[k].map(mv);
   J.foreA = { aF: P.aF[0] + P.aF[1], aB: P.aB[0] + P.aB[1] };
   return J;
+}
+
+/* ================================================================ driven animations */
+// Fishing and cooking are not single poses but full motion cycles, played in step with the
+// action's progress: one cycle per fish caught or dish cooked. Each cycle is a set of key poses
+// (pose to pose, with easing) plus continuous motion (the stirring, the bobbing rod, breathing).
+// Two things keep the body grounded and believable:
+// - planted feet: the legs are solved by IK so the feet never slide while the hips shift weight
+//   from one leg to the other;
+// - two-handed grips: the back hand is solved by IK onto the tool (the reel's crank, the spatula),
+//   so it follows wherever the front hand carries the rod or the pan.
+// Two-bone IK: [upper angle (absolute), bend] that put the end of a chain from o (bones l1, l2) on p.
+// sgn: which way the middle joint points (+1 knees, forward; -1 elbows, downward).
+function ik2(o, p, l1, l2, sgn) {
+  const dx = p[0] - o[0], dy = p[1] - o[1];
+  const d = Math.max(Math.abs(l1 - l2) + 0.01, Math.min(l1 + l2 - 0.01, Math.hypot(dx, dy)));
+  const base = Math.atan2(dx, dy) / D2R;
+  const al = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + d * d - l2 * l2) / (2 * l1 * d)))) / D2R;
+  const be = Math.acos(Math.max(-1, Math.min(1, (l1 * l1 + l2 * l2 - d * d) / (2 * l1 * l2)))) / D2R;
+  return [base + sgn * al, -sgn * (180 - be)];
+}
+// Blend two key poses (numbers and arrays blend, everything else switches half way).
+function mixPose(a, b, k) {
+  const o = {};
+  for (const key in Object.assign({}, a, b)) {
+    const x = a[key], y = b[key];
+    if (typeof x === 'number' && typeof y === 'number') o[key] = x + (y - x) * k;
+    else if (Array.isArray(x) && Array.isArray(y)) o[key] = x.map((v, i) => v + (y[i] - v) * k);
+    else o[key] = k < 0.5 ? (x !== undefined ? x : y) : (y !== undefined ? y : x);
+  }
+  return o;
+}
+// The pose at u (0..1) along keys [[u, pose, easing into it]].
+function keyPose(keys, u) {
+  let i = 0;
+  while (i < keys.length - 2 && u >= keys[i + 1][0]) i++;
+  const [u0, a] = keys[i], [u1, b, e] = keys[i + 1];
+  return mixPose(a, b, ease[e || 'io'](Math.max(0, Math.min(1, (u - u0) / (u1 - u0 || 1)))));
+}
+// 0 outside [a, d], 1 inside [b, c], smooth ramps between.
+const win = (u, a, b, c, d) => (u <= a || u >= d ? 0 : u < b ? ease.io((u - a) / (b - a)) : u > c ? ease.io((d - u) / (d - c)) : 1);
+// Solve the legs onto planted feet (P.feet: ankle x of the front and back foot), then each hand
+// onto the point its function returns (given the solved rig): hands.B for the back hand, hands.F
+// for the front one. Elbows point down, knees forward.
+function plantPose(P, B, hands) {
+  const s = B.h, W = B.w;
+  let J = solve(P, B);
+  const ox = J.pelvis[0] - 100 - (P.dx || 0), oy = J.pelvis[1] - 120 - (P.dy || 0);
+  P.lF = ik2(J.hipF, [100 + P.feet[0] + ox, 120 + 69.5 * s + oy], 36 * s, 35 * s, 1);
+  P.lB = ik2(J.hipB, [100 + P.feet[1] + ox, 120 + 69.5 * s + oy], 36 * s, 35 * s, 1);
+  const reach = (k, sh, target) => {
+    let fa = P[k][0] + P[k][1];
+    for (let i = 0; i < 3; i++) { P[k] = ik2(sh, add(target, fa, -4.2 * W), 23 * s, 21 * s, -1); fa = P[k][0] + P[k][1]; }
+  };
+  if (hands && hands.F) { J = solve(P, B); reach('aF', J.shF, hands.F(J)); }
+  if (hands && hands.B) { J = solve(P, B); reach('aB', J.shB, hands.B(J)); }
+  return P;
+}
+// The reel hangs under the rod just behind the front hand; its crank turns around it.
+const reelAt = (hand, a) => add(add(hand, a, -6), a - 90, 6.5);
+const knobAt = (hand, a, cr) => add(reelAt(hand, a), cr, 4.6);
+// The pan's centre, from the hand holding its handle.
+const panAt0 = (hand, a) => add(hand, a, 24);
+
+// ---- fishing: lift the catch, back-cast, cast, wait (crank in some slack), the bite, the strike.
+// R: the rod's angle · rb: how much it bends · cr: the crank's angle.
+const FISH_BASE = { hang: 0, sh: 1, prop: 'rod', bf: 1, fF: 12, fB: -192, feet: [13, -12], n: 2, t2: 2, ht: -2, st: 2, aB: [30, 90], lF: [0, 0], lB: [0, 0], cr: 40, rb: 0, dx: 0 };
+const FK = (o) => Object.assign({}, FISH_BASE, o);
+const FISH_WAIT = FK({ t1: 178, t2: 2, n: 2, h: 7, aF: [34, 56], R: 128, dy: 1, rb: 0.04, tw: 0.35 });
+const FISH_LIFT = FK({ t1: 190, t2: -6, n: -4, h: -8, ht: -4, st: -2, aF: [140, 22], R: 170, dx: -4, dy: 1, rb: 0.25, tw: 0.45, expr: 'happy', hang: 1 });
+const FISH_KEYS = [
+  [0, FISH_LIFT],
+  [0.05, FK({ t1: 186, t2: -4, n: -2, h: -6, ht: -3, aF: [150, 30], R: 184, dx: -3, dy: 1, rb: 0.12, tw: 0.45, expr: 'happy', hang: 1 })],
+  [0.12, FK({ t1: 189, t2: -8, n: -2, h: -4, ht: -5, st: -4, aF: [168, 40], R: 208, dx: -6, dy: 3, rb: -0.2, tw: 0.55, hang: 1 })],
+  [0.18, FK({ t1: 165, t2: 8, n: -6, h: 0, ht: 5, st: 4, aF: [96, 12], R: 116, dx: 6, dy: 4, rb: 0.14, tw: 0.6 }), 'out'],
+  [0.26, FK({ t1: 172, t2: 6, n: -2, h: 4, ht: 3, aF: [62, 32], R: 112, dx: 4, dy: 2, rb: 0, tw: 0.45 })],
+  [0.34, FISH_WAIT],
+  [0.79, FISH_WAIT],
+  [0.86, FK({ t1: 184, t2: -2, n: 4, h: 11, ht: -3, aF: [40, 50], R: 112, dx: -2, dy: 5, rb: 0.3, tw: 0.45 })],
+  [0.93, FK({ t1: 185, t2: -2, n: 4, h: 11, ht: -3, aF: [42, 50], R: 110, dx: -2, dy: 6, rb: 0.34, tw: 0.45 })],
+  [0.97, FK({ t1: 192, t2: -8, n: -4, h: -8, ht: -5, st: -3, aF: [128, 26], R: 164, dx: -5, dy: 2, rb: 0.45, tw: 0.5 }), 'out'],
+  [1, FISH_LIFT],
+];
+const POSE_DRIVE = {};
+POSE_DRIVE.fish = (u, t, B, calm) => {
+  const P = keyPose(FISH_KEYS, u), w = win(u, 0.3, 0.36, 0.76, 0.8), bite = win(u, 0.8, 0.84, 0.93, 0.95);
+  // waiting: the rod tip bobs, the weight drifts from foot to foot, the line is reeled in a little
+  P.R += Math.sin(t * 1.3) * 2.2 * w; P.t1 += Math.sin(t * 0.7) * 1.4 * w; P.dx += Math.sin(t * 0.7) * 1.6 * w; P.h += Math.sin(t * 0.5) * 2 * w;
+  if (u > 0.5 && u < 0.7) P.cr = 40 + ((u - 0.5) / 0.2) * 1080;
+  // the bite: the fish tugs, the rod dips and shudders, the angler braces
+  if (bite) { const j = Math.sin(t * 26) * 0.5 + Math.sin(t * 17) * 0.5; P.R -= (3 + 4 * j) * bite; P.rb += 0.08 * j * bite; P.t1 += j * 1.2 * bite; }
+  const br = calm ? 0 : Math.sin(t * 2.2);
+  P.t2 += br * 1.5; P.n -= br * 1.1;
+  P.g = P.R - (P.aF[0] + P.aF[1]);
+  return plantPose(P, B, { B: (J) => knobAt(add(J.aF[2], J.foreA.aF, 4.2 * B.w), J.foreA.aF + P.g, P.cr) });
+};
+
+// ---- cooking: stir, pull back, flick the pan (the food flies and flips), catch it, settle.
+// As at a real stove, seen from this side: the far hand holds the pan by its handle, the near
+// hand stirs with a spatula. The pan rests on a burner fixed in the room (c: its centre, from the
+// floor under the figure), so the body sways around it and both arms are solved onto it.
+// A: the handle's angle · pt: the pan's tilt · tx, ty: the spatula's tip in the pan · sa: the spatula's
+// angle · fd: the food [x, height, spin].
+const COOK_BASE = { sh: 1, panB: 1, tool: 'spatula', bf: 1, ff: 1, fF: 12, fB: -192, feet: [12, -13], n: 4, t2: 4, st: 2, ht: -2, aF: [30, 60], aB: [30, 90], lF: [0, 0], lB: [0, 0], tw: 0.7, dx: 0, dy: 1, pt: 0, tx: 2, ty: -1.5, sa: -18, g: 0 };
+const CK = (o) => Object.assign({}, COOK_BASE, o);
+const COOK_STIR = CK({ t1: 168, h: 18, c: [46, -10], A: 98, dx: 2 });
+const COOK_KEYS = [
+  [0, COOK_STIR],
+  [0.58, COOK_STIR],
+  [0.65, CK({ t1: 173, t2: 2, h: 14, c: [40, -6], A: 104, pt: -8, dx: -1, dy: 4, tx: -2, ty: -18, sa: -4 })],
+  [0.69, CK({ t1: 163, t2: 8, n: -2, h: 8, c: [52, -18], A: 92, pt: 24, dx: 4, dy: 1, tx: 0, ty: -24, sa: -2 }), 'out'],
+  [0.78, CK({ t1: 168, t2: 4, n: -4, h: -6, c: [47, -13], A: 96, pt: 4, dx: 2, dy: 2, tx: 0, ty: -20, sa: -6 })],
+  [0.86, CK({ t1: 170, t2: 4, n: 4, h: 14, c: [44, -7], A: 100, pt: -5, dx: 1, dy: 4, tx: 1, ty: -10, sa: -12 })],
+  [0.95, COOK_STIR],
+  [1, COOK_STIR],
+];
+POSE_DRIVE.cook = (u, t, B, calm) => {
+  const P = keyPose(COOK_KEYS, u), stir = win(u, -1, 0, 0.56, 0.6);
+  // stirring: the spatula circles in the pan, the pan hand jiggles it, the body works with the stirring arm
+  if (stir) {
+    const ph = (u / 0.58) * Math.PI * 2 * 3;
+    P.tx += (Math.cos(ph) - 1) * 6 * stir; P.ty += Math.sin(ph) * 2 * stir;
+    P.A += Math.sin(t * 9) * 1.6 * stir; P.c = [P.c[0] + Math.sin(t * 9) * 0.6 * stir, P.c[1]];
+    P.st += Math.cos(ph) * 2 * stir; P.sa += Math.sin(ph) * 8 * stir; P.t1 += Math.cos(ph) * 1 * stir;
+    P.dx += Math.sin(t * 0.8) * 1.4 * stir; P.h += Math.sin(t * 0.6) * 2 * stir;
+  }
+  // the food: pushed around by the spatula, then tossed (it leaves at the flick, lands at the catch)
+  if (u >= 0.67 && u < 0.86) { const k = (u - 0.67) / 0.19; P.fd = [Math.sin(Math.PI * k) * 9 + k * 2, Math.sin(Math.PI * k) * 34, k * 360]; }
+  else P.fd = [P.tx * 0.3, 0, Math.sin(u * 20) * 6];
+  const br = calm ? 0 : Math.sin(t * 2.2);
+  P.t2 += br * 1.3; P.n -= br;
+  const c = [100 + P.c[0], GROUND - 75 + P.c[1]];
+  return plantPose(P, B, {
+    B: () => add(c, P.A, -24),                                      // the pan's handle
+    F: () => add([c[0] + P.tx, c[1] + P.ty], P.sa, -18),            // the spatula, its tip in the pan
+  });
+};
+// Which point of its cycle a driven pose is at: the running action's progress when it is long
+// enough to show a whole cycle, otherwise a steady loop.
+const DRIVE_SKILL = { fish: ['fishing', 4.5], cook: ['cooking', 3] };
+function driveU(name, t) {
+  const [sk, per] = DRIVE_SKILL[name];
+  if (S && S.action && S.action.skill === sk) {
+    const a = findAction(sk, S.action.id), T = a && actionTime(sk, a);
+    if (T >= 1.2) return Math.max(0, Math.min(0.9999, S.action.prog / T));
+    if (T > 0) return ((t / Math.max(0.6, T)) % 1 + 1) % 1;
+  }
+  return ((t / per) % 1 + 1) % 1;
+}
+// Still versions (portraits, previews, the scene's first frame): mid-wait and mid-stir.
+{
+  const B0 = COSMETICS.build[0].b;
+  POSES.fish = POSE_DRIVE.fish(0.5, 0, B0, true);
+  POSES.cook = POSE_DRIVE.cook(0.3, 0, B0, true);
 }
 
 /* ================================================================ drawing */
@@ -554,74 +734,157 @@ const SOLE = 'M-6.2,3 H13.8 Q15.4,3 15.4,4.6 Q15.4,6.2 13.8,6.2 H-6.2 Q-7.6,6.2 
 /* ---------------------------------------------------------------- hair */
 // Head-local polar point: 0° = right, -90° = up, ±180° = left. The head faces the viewer.
 const HP = (a, r) => [Math.cos(a * D2R) * r, Math.sin(a * D2R) * r];
-// Spiky anime hair is a handful of big clumps (V shapes) around the crown plus a fringe of
-// pointed strands over the forehead, read as one clean silhouette with a few inner lines.
-// sp: crown spikes from left to right [angle, length, lean] (lean defaults to fanning outwards)
-// fr: fringe tips [x, y] from right to left · line: hairline height · side: how low it reaches at the temples
-// fan: how much the spikes fan outwards · c / sh / hi: colour, cel shadow, highlight
+// Every haircut is drawn the way anime hair is: a cap that hugs the skull with some volume, and
+// locks (clumps) growing out of it. A lock is a tapered, curved blade from a root on the scalp to a
+// sharp tip; all the locks and the cap merge into one silhouette with one outline.
+// Three layers: back (behind the body: ponytails, long hair), front (over the head) and the fringe,
+// which always stops above the eyes (eye tops sit at y = -2) or falls between them.
+// Lock: x, y root · a direction (0 right, 90 down) · len · w width at the root · bend (degrees of curl)
+// k: 'crown' (flattened under a covering hat) · hang: the direction is in world space (hair falls with gravity)
+// sw: how much it sways (secondary motion)
+const hj = (i, s) => { const v = Math.sin(i * 12.9898 + (s || 0) * 78.233) * 43758.5453; return v - Math.floor(v); };
+function lockPts(L, ha, t) {
+  const n = 6, sp = [], step = L.len / n;
+  const a0 = (L.hang ? L.a - ha : L.a) + (L.sw ? Math.sin(t * 2.1 + (L.ph || 0)) * L.sw : 0);
+  let p = [L.x, L.y];
+  for (let i = 0; i <= n; i++) {
+    sp.push(p);
+    const a = (a0 - L.bend / 2 + (L.bend * (i + 0.5)) / n) * D2R;
+    p = [p[0] + Math.cos(a) * step, p[1] + Math.sin(a) * step];
+  }
+  const hw = sp.map((_, i) => (L.w / 2) * Math.pow(1 - i / n, L.tp || 0.8) + (i === n ? 0 : 0.15));
+  const Lf = offsetVar(sp, hw), Rt = offsetVar(sp, hw.map((h) => -h));
+  return { pts: [...Lf.slice(0, n), [...sp[n], 1], ...Rt.slice(0, n).reverse()], sp };
+}
+// The cap: the skull outline pushed out by R (more on top), closed by the hairline across the
+// forehead (y = line at the middle, curving down to y = side at the temples).
+function hairCap(R, line, side, o) {
+  o = o || {};
+  const P = [], top = o.top || 1.5, a0 = 180 - Math.asin(Math.min(0.9, side / R)) / D2R, a1 = 360 + Math.asin(Math.min(0.9, side / R)) / D2R;
+  for (let i = 0; i <= 12; i++) {
+    const a = a0 + ((a1 - a0) * i) / 12, up = Math.max(0, -Math.sin(a * D2R));
+    P.push(HP(a, R + up * top + (o.back && Math.cos(a * D2R) < 0 ? -Math.cos(a * D2R) * o.back : 0)));
+  }
+  const xr = P[12][0], xl = P[0][0];
+  P[0].push(1); P[12].push(1);
+  const hl = (x) => line + Math.pow(x / 16, 2) * (side - line) * 0.62;
+  P.push([xr - 2.5, hl(xr - 2.5)], [xr * 0.45, hl(xr * 0.45) - (o.part || 0)], [0, line], [xl * 0.45, hl(xl * 0.45)], [xl + 2.5, hl(xl + 2.5)]);
+  return P;
+}
+// Builders for the styles below.
+const crownRing = (a0, a1, n, f) => [...Array(n)].map((_, i) => { const k = n > 1 ? i / (n - 1) : 0.5, a = a0 + (a1 - a0) * k, r = HP(a, 17); return Object.assign({ x: r[0], y: r[1], k: 'crown', bend: 0 }, f(a, k, i)); });
+const lk = (x, y, a, len, w, bend, o) => Object.assign({ x, y, a, len, w, bend: bend || 0 }, o || {});
 const HAIR = {
-  tuft:   { c: '#23242c', sh: '#101116', hi: '#5c5f73', line: -8, side: 5, fan: 0.3,
-    sp: [[-176, 7], [-160, 9], [-144, 8], [-128, 10], [-112, 9], [-96, 11], [-80, 10], [-64, 11], [-48, 9], [-32, 10], [-16, 8], [-2, 7]],
-    fr: [[13, 4], [7, 7], [1, 4], [-5, 7], [-11, 4.5]] },
-  mop:    { c: '#1d1e24', sh: '#0c0d11', hi: '#4c5062', line: -8.5, side: 8, fan: 0.4,
-    sp: [[-178, 5], [-158, 6], [-138, 6], [-118, 7], [-98, 7], [-78, 7], [-58, 7], [-38, 6], [-18, 6], [0, 5]],
-    fr: [[13, 7], [7, 9], [1, 7], [-5, 9], [-11, 7]] },
-  spikes: { c: '#ffd23a', sh: '#e39a12', hi: '#fff4b8', line: -9, side: 3, fan: 0.22, k: 0.75,
-    sp: [[-174, 11], [-152, 15], [-130, 18], [-108, 20], [-88, 21], [-68, 19], [-46, 17], [-24, 14], [-4, 10]],
-    fr: [[11, 4], [3, 7], [-5, 4], [-12, 3]] },
-  ember:  { c: '#ff8a2b', sh: '#c85612', hi: '#ffc896', line: -8, side: 4, fan: 0.3, k: 0.85,
-    sp: [[-172, 9], [-150, 13], [-128, 15], [-106, 16, 6], [-84, 17, 10], [-62, 16, 14], [-40, 15, 16], [-18, 12, 16], [0, 9, 14]],
-    fr: [[12, 4], [4, 7.5], [-4, 3.5], [-11, 5.5]] },
-  flame:  { c: '#ffd84a', sh: '#eb9b10', hi: '#fffbe0', line: -9, side: 2, fan: 0.16, k: 0.8,
-    sp: [[-168, 14], [-144, 22], [-120, 30], [-96, 36], [-74, 33], [-52, 26], [-30, 19], [-8, 12]],
-    fr: [[9, 2], [3, 8.5], [-4, 3], [-10, 5]] },
-  frost:  { c: '#f1f3f8', sh: '#aab3c6', hi: '#ffffff', line: -7, side: 0, fan: 0.08,
-    sp: [[-170, 8], [-150, 12], [-130, 15], [-110, 17], [-90, 18], [-70, 17], [-50, 15], [-30, 12], [-10, 8]],
-    fr: [[13, -4], [7, -2], [1, -4.5], [-5, -2], [-11, -4]] },
-  wild:   { c: '#2f8a3c', sh: '#1a5a24', hi: '#86dc6e', line: -7, side: 2, fan: 0.05, bias: -6, k: 0.8,
-    sp: [[-172, 10], [-152, 18], [-132, 26], [-112, 32], [-94, 34], [-76, 30], [-58, 24], [-38, 16], [-18, 10]],
-    fr: [[11, -3], [5, -1], [-1, -3.5]] },
-  swept:  { c: '#2b2340', sh: '#15102a', hi: '#8f74cc', line: -10, side: 4, fan: 0.5,
-    sp: [[-170, 4], [-145, 6], [-120, 7], [-95, 8], [-70, 7], [-45, 6], [-20, 5]], fr: [] },
-  crest:  { c: '#ff4fbf', sh: '#8b2bd6', hi: '#ffd6f0', line: -8.5, side: 3, fan: 0.05, k: 0.8,
-    sp: [[-160, 4], [-134, 6], [-112, 16], [-96, 26], [-84, 28], [-70, 18], [-46, 6], [-20, 4]],
-    fr: [[6, -1], [-2, 1.5]] },
+  // Messy black: short ragged spikes all round, a choppy fringe over the brows.
+  tuft: { c: '#23242c', sh: '#101116', hi: '#5c5f73', cap: [20.4, -7, 5], locks: () => [
+    ...crownRing(-184, -14, 11, (a, k, i) => ({ a: a + (a + 90) * 0.32 + (hj(i) - 0.5) * 22, len: 7 + hj(i, 1) * 4 + Math.sin(k * Math.PI) * 2.5, w: 9, bend: i % 2 ? 18 : -14 })),
+    lk(14, -13, 70, 9, 7, -10), lk(8, -15, 86, 10.5, 8, 12), lk(1.5, -15.5, 96, 10, 8, -8), lk(-5, -15, 104, 10, 8, 10), lk(-11, -13, 112, 9.5, 7, -6),
+    lk(-17, -6, 100, 11, 7, 12), lk(16.5, -6, 84, 8, 6, -10),
+  ] },
+  // Sea-salt mop: a shaggy round mop, soft clumps, ear-length at the sides, ragged bangs.
+  mop: { c: '#1d1e24', sh: '#0c0d11', hi: '#4c5062', cap: [21.6, -7.5, 8], locks: () => [
+    ...crownRing(-192, -8, 14, (a, k, i) => ({ a: a + (a + 90) * 0.55 + (hj(i, 2) - 0.5) * 34, len: 6 + hj(i, 3) * 3.5, w: 9.5, bend: i % 2 ? 40 : -34, tp: 0.55 })),
+    lk(13, -14, 80, 10.5, 8, -24, { tp: 0.6 }), lk(7, -15.5, 92, 11, 8.5, 26, { tp: 0.6 }), lk(1, -15.5, 86, 10.5, 8, -22, { tp: 0.6 }), lk(-5, -15, 98, 11, 8.5, 24, { tp: 0.6 }), lk(-11, -14, 104, 10.5, 8, -20, { tp: 0.6 }),
+    lk(-18, -4, 96, 14, 9, 22, { tp: 0.6 }), lk(-20, -9, 120, 12, 8, -18, { tp: 0.6 }), lk(17, -5, 86, 11, 7.5, -20, { tp: 0.6 }),
+  ] },
+  // Swept spikes: big golden spikes swept up and back, a few bangs, long locks framing the face.
+  spikes: { c: '#ffd23a', sh: '#e39a12', hi: '#fff4b8', cap: [20.6, -8, 3], locks: () => [
+    ...crownRing(-186, -28, 9, (a, k, i) => ({ a: a + (a + 90) * 0.18 - 14, len: 12 + Math.sin(k * Math.PI) * 10 + hj(i, 4) * 3, w: 11.5, bend: -14 })),
+    lk(15, -12, 40, 10, 9, -16, { k: 'crown' }),
+    lk(11, -15, 76, 11, 8.5, -8), lk(4, -16, 88, 11.5, 8.5, 10), lk(-4, -15.5, 98, 11, 8, -6),
+    lk(16.5, -8, 94, 16, 7, 8), lk(-17, -6, 98, 15, 7.5, -10),
+  ] },
+  // Ember crest: wild orange spikes thrown forward and out, sharp bangs dropping between the eyes.
+  ember: { c: '#ff8a2b', sh: '#c85612', hi: '#ffc896', cap: [20.6, -8, 4], locks: () => [
+    ...crownRing(-182, -6, 10, (a, k, i) => ({ a: a + (a + 90) * 0.38 + 10 + (hj(i, 5) - 0.5) * 12, len: 9 + Math.sin(k * Math.PI) * 6 + hj(i, 6) * 3, w: 10.5, bend: 14 })),
+    lk(12, -14, 74, 10, 8, -10), lk(5, -16, 90, 14, 8, 6), lk(-2, -15.5, 82, 13, 7.5, -8), lk(-9, -14, 102, 10, 7.5, 8),
+    lk(-17, -5, 106, 10, 7, 14),
+  ] },
+  // Ascended flame: tall golden spikes standing straight up, a single bang over the forehead.
+  flame: { c: '#ffd84a', sh: '#eb9b10', hi: '#fffbe0', cap: [21, -9, 2], locks: () => [
+    ...crownRing(-178, -10, 9, (a, k, i) => ({ a: a * 0.45 - 90 * 0.55 - 8, len: 16 + Math.sin(k * Math.PI) * 16 + hj(i, 7) * 4, w: 12.5, bend: -10 })),
+    lk(-17, -4, 160, 13, 9, -14, { k: 'crown' }), lk(17, -6, 20, 10, 8, -18, { k: 'crown' }),
+    lk(3, -17, 100, 14, 6.5, 24), lk(9, -15, 80, 8, 6, -10), lk(-5, -15, 102, 8, 6, 8),
+  ] },
+  // Frost tousle: white hair pushed up and back, soft and fluffy, the face left open.
+  frost: { c: '#f1f3f8', sh: '#aab3c6', hi: '#ffffff', cap: [20.4, -9.5, 1], locks: () => [
+    ...crownRing(-176, -4, 11, (a, k, i) => ({ a: a * 0.42 - 90 * 0.58 + (hj(i, 8) - 0.5) * 20, len: 8 + Math.sin(k * Math.PI) * 7 + hj(i, 9) * 3, w: 11, bend: i % 2 ? 26 : -24, tp: 0.7 })),
+    lk(13, -12, -40, 8, 8, 20, { k: 'crown', tp: 0.7 }), lk(6, -15, -70, 8, 8, -18, { k: 'crown', tp: 0.7 }),
+    lk(-16, -8, 140, 7, 7, -18, { tp: 0.7 }), lk(16, -8, 40, 6, 6, 16, { tp: 0.7 }),
+    lk(9, -14, 96, 8, 6.5, 22, { tp: 0.7 }), lk(1, -15, 84, 9, 6.5, -24, { tp: 0.7 }), lk(-8, -14, 108, 7.5, 6, 20, { tp: 0.7 }),
+  ] },
+  // Wild broom: a tall broom of green spikes, all standing up, leaning back a little.
+  wild: { c: '#2f8a3c', sh: '#1a5a24', hi: '#86dc6e', cap: [20.2, -8, 2], locks: () => [
+    ...crownRing(-170, -14, 12, (a, k, i) => ({ a: -90 + (a + 90) * 0.42 - 10 + (hj(i, 10) - 0.5) * 8, len: 18 + Math.sin(k * Math.PI) * 15 + hj(i, 11) * 5, w: 10, bend: (hj(i, 12) - 0.5) * 16 })),
+    lk(12, -13, -50, 9, 8, -10, { k: 'crown' }), lk(-17, -4, 190, 10, 8, 12),
+  ] },
+  // Slicked back: combed flat and back, the ends flicking out at the nape, one loose strand.
+  swept: { c: '#2b2340', sh: '#15102a', hi: '#8f74cc', cap: [20.8, -9.5, 5], back: 2.5, smooth: 1, locks: () => [
+    lk(-17, -10, 176, 9, 9, -30), lk(-19, -3, 160, 10, 9, -36), lk(-18, 4, 140, 8, 8, -30), lk(-14, -15, 196, 7, 8, -24, { k: 'crown' }),
+    lk(9, -17, 108, 13, 3.6, 70, { tp: 0.6 }),
+  ], combs: [[-60, -170, 15], [-50, -175, 11], [-35, -160, 7]] },
+  // Rift crest: a mohawk of tall spikes running front to back over shaved sides.
+  crest: { c: '#ff4fbf', sh: '#8b2bd6', hi: '#ffd6f0', cap: [19.4, -9, 3], stubble: 1, locks: () => [
+    ...crownRing(-132, -52, 7, (a, k, i) => ({ a: a + (a + 90) * 1.1, len: 12 + Math.sin(k * Math.PI) * 14, w: 9, bend: (k - 0.5) * 20 })),
+  ] },
+  // Buzz cut: short stubble hugging the skull.
+  buzz: { c: '#3a342e', sh: '#211c17', hi: '#6a6258', cap: [19.5, -8.5, 6], buzz: 1, locks: () => [] },
+  // High ponytail: hair pulled back to a tie high on the head, the tail swinging behind.
+  pony: { c: '#7a3b1f', sh: '#4a200e', hi: '#c47a4a', cap: [20.4, -9, 5], back: 1.5, smooth: 1, tie: [-138, 23], locks: () => [
+    lk(-15, -13, 128, 30, 11, -56, { hang: 1, sw: 6, back: 1, tp: 0.9 }), lk(-15, -13, 114, 33, 10, -42, { hang: 1, sw: 8, ph: 0.6, back: 1 }), lk(-15, -13, 102, 28, 8, -24, { hang: 1, sw: 9, ph: 1.2, back: 1 }),
+    lk(12, -15, 110, 12, 7, 36), lk(5, -17, 140, 9, 6, 20), lk(17, -7, 92, 12, 5.5, 8),
+  ], combs: [[-40, -140, 14], [-70, -140, 9]] },
+  // Long and straight: a curtain to the shoulder blades, parted in the middle, locks framing the face.
+  long: { c: '#2c2238', sh: '#160f20', hi: '#7a68a8', cap: [20.8, -8, 7], back: 1.5, smooth: 1, part: 2, locks: () => [
+    lk(-17, -4, 104, 44, 13, 10, { hang: 1, sw: 3, back: 1, tp: 0.5 }), lk(-12, -12, 96, 46, 13, -4, { hang: 1, sw: 4, ph: 0.8, back: 1, tp: 0.5 }), lk(-4, -14, 88, 42, 12, -10, { hang: 1, sw: 3, ph: 1.6, back: 1, tp: 0.5 }),
+    lk(17, -6, 92, 24, 7, -6, { tp: 0.6 }), lk(-18.5, -2, 98, 26, 8, 6, { tp: 0.6 }),
+    lk(6, -16, 74, 11, 9, -14), lk(-6, -16, 106, 11, 9, 14),
+  ], combs: [[-95, -150, 14], [-85, -30, 14]] },
+  // Topknot: tied up in a bun on the crown, loose strands at the temples.
+  bun: { c: '#3a2a1e', sh: '#1e140c', hi: '#7a5a40', cap: [20.2, -9, 5], back: 1, smooth: 1, bun: [-118, 22, 8.5], locks: () => [
+    lk(16.5, -7, 96, 13, 4.4, 14, { tp: 0.6 }), lk(-17.5, -5, 92, 12, 4.4, -12, { tp: 0.6 }),
+  ], combs: [[-150, -120, 15], [-60, -112, 13]] },
 };
-// Hats that cover the crown flatten the top spikes; headbands leave them standing.
+// Hats that cover the crown flatten the top locks; headbands leave them standing.
 const HAT_COVER = { bucket: 1, chef: 1, tricorn: 1, beast: 1, bandana: 1 };
-// Returns the hair silhouette path and its inner lines (head-local, head radius 19).
-function hairShape(id, covered) {
+// The hair of a style, head-local (head radius 19): { front, back, lines, hi, shadow, extra }.
+// ha: head rotation (hanging locks fall with gravity) · t: time (sway).
+function hairShape(id, covered, ha, t) {
   const h = HAIR[id];
   if (!h) return null;
-  const RV = 19.4, side = h.side, sx = Math.sqrt(RV * RV - side * side);
-  const hy = (x) => h.line + Math.pow(x / 17, 2) * 4.5;
-  const sp = h.sp.map(([a, len, lean]) => {
-    if (covered && a < -32 && a > -150) len *= 0.15;
-    return [a, len * (h.k || 1), lean != null ? lean : (a + 90) * h.fan + (h.bias || 0)];
+  const [R, line, side] = h.cap, locks = h.locks();
+  const cap = hairCap(covered ? Math.min(R, 20) : R, line, side, { back: h.back, part: h.part, top: covered ? 0 : 1.5 });
+  // a mohawk: the cap is only stubble; a strip along the top carries the crest
+  const strip = () => [...[0, 1, 2, 3, 4].map((i) => HP(-134 + i * 21, 21)), [5, -12, 1], [0, -12.5], [-5, -12, 1]];
+  const front = [h.stubble ? strip() : cap], back = [];
+  let lines = '', hi = '';
+  locks.forEach((L, i) => {
+    if (covered && L.k === 'crown') { if (L.len < 9) return; L = Object.assign({}, L, { len: L.len * 0.3 }); }
+    const { pts, sp } = lockPts(L, ha || 0, t || 0);
+    (L.back ? back : front).push(pts);
+    // a strand line down the middle of bigger locks, a highlight on their lit (upper left) side
+    if (L.len > 9 && !L.back && i % 2 === 0) lines += spline(sp.slice(1, 5).map((p, j) => [p[0] + (j - 1.5) * 0.3, p[1]]), false);
+    if (L.k === 'crown' && L.len > 8 && i % 3 === 1) hi += spline(offsetVar(sp.slice(1, 4), [L.w * 0.18, L.w * 0.14, L.w * 0.1]), false);
   });
-  let d = `M${r1(-sx)},${r1(side)}`, lines = '';
-  const tipOf = ([a, len, lean]) => HP(a + lean, RV + len);
-  sp.forEach((s, i) => {
-    const prevA = i ? sp[i - 1][0] : Math.atan2(side, -sx) / D2R - 360, nextA = i < sp.length - 1 ? sp[i + 1][0] : Math.atan2(side, sx) / D2R;
-    const v0 = HP((prevA + s[0]) / 2, RV + (i ? 1 : 0)), v1 = HP((s[0] + nextA) / 2, RV + (i < sp.length - 1 ? 1 : 0)), tip = tipOf(s);
-    const ax = HP(s[0] + s[2] * 0.4, RV + s[1] * 0.5);   // the clump's axis: its edges bow towards it
-    const bow = (p) => [p[0] + (ax[0] - p[0]) * 0.16, p[1] + (ax[1] - p[1]) * 0.16];
-    if (!i) d += `L${pt(v0)}`;
-    d += `Q${pt(bow([(v0[0] + tip[0]) / 2, (v0[1] + tip[1]) / 2]))} ${pt(tip)}Q${pt(bow([(v1[0] + tip[0]) / 2, (v1[1] + tip[1]) / 2]))} ${pt(v1)}`;
-    if (s[1] > 9 && i % 2) lines += `M${pt(HP(s[0] + 4, RV - 3))}Q${pt(HP(s[0] + s[2] * 0.3, RV + s[1] * 0.3))} ${pt(HP(s[0] + s[2] * 0.7, RV + s[1] * 0.62))}`;
-  });
-  d += `L${r1(sx)},${r1(side)}`;
-  // the fringe, from the right temple to the left one
-  let prev = [Math.min(sx - 1, 16.5), hy(16.5)];
-  d += `Q${r1(sx - 1)},${r1((side + prev[1]) / 2)} ${pt(prev)}`;
-  h.fr.forEach(([x, y], i) => {
-    const nx = i < h.fr.length - 1 ? (x + h.fr[i + 1][0]) / 2 : -16.5, nb = [nx, hy(nx) + (i < h.fr.length - 1 ? 2 : 0)];
-    d += `Q${r1(prev[0] - (prev[0] - x) * 0.15)},${r1(y - (y - prev[1]) * 0.45)} ${r1(x)},${r1(y)}Q${r1(x - (x - nb[0]) * 0.15)},${r1(nb[1] + (y - nb[1]) * 0.5)} ${pt(nb)}`;
-    prev = nb;
-  });
-  if (!h.fr.length) d += `Q0,${r1(h.line - 2)} -16.5,${r1(hy(-16.5))}`;
-  d += `Q${r1(-sx + 1)},${r1((side + hy(-16.5)) / 2)} ${r1(-sx)},${r1(side)}Z`;
-  return { d, lines, h };
+  if (h.buzz) for (let x = -14; x <= 14; x += 3.5) { const y = -8.5 + Math.pow(x / 16, 2) * 9; lines += `M${r1(x)},${r1(y - 0.3)}l${r1(x * 0.04)},-2.6`; }
+  // combed hair: long curved lines from the hairline back across the cap
+  for (const [a0, a1, r] of h.combs || []) {
+    const pts = [0, 0.25, 0.5, 0.75, 1].map((k) => HP(a0 + (a1 - a0) * k, r + Math.sin(k * Math.PI) * 1.5));
+    lines += spline(pts, false);
+  }
+  if (h.smooth) hi += `M${pt(HP(-150, 15.5))}A15.5,15.5 0 0,1 ${pt(HP(-118, 15.5))}M${pt(HP(-108, 15.5))}A15.5,15.5 0 0,1 ${pt(HP(-96, 15.5))}`;
+  else if (!locks.length || covered) hi += `M${pt(HP(-150, 15))}A15,15 0 0,1 ${pt(HP(-120, 15))}`;
+  // extras drawn over the cap: a hair tie, a bun
+  let extra = '';
+  if (h.tie) { const p = HP(h.tie[0], h.tie[1] - 4); extra += `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="3.4" fill="#e8443a" stroke="${LINE}" stroke-width="1.6"/>`; }
+  if (h.bun && !covered) {
+    const [a, r, s] = h.bun, p = HP(a, r);
+    front.push([...Array(10)].map((_, i) => [p[0] + Math.cos((i / 10) * 2 * Math.PI) * s, p[1] + Math.sin((i / 10) * 2 * Math.PI) * s * 0.9]));
+    lines += `M${r1(p[0] - s * 0.6)},${r1(p[1] - s * 0.3)}Q${r1(p[0])},${r1(p[1] - s * 0.9)} ${r1(p[0] + s * 0.6)},${r1(p[1] - s * 0.2)}M${r1(p[0] - s * 0.5)},${r1(p[1] + s * 0.4)}Q${r1(p[0] + s * 0.2)},${r1(p[1])} ${r1(p[0] + s * 0.7)},${r1(p[1] + s * 0.3)}`;
+    const q = HP(a, r - s * 0.85);
+    extra += `<path d="M${r1(q[0] - 5)},${r1(q[1] + 1)} Q${r1(q[0])},${r1(q[1] - 2.5)} ${r1(q[0] + 5)},${r1(q[1] + 1)}" fill="none" stroke="${LINE}" stroke-width="4.4" stroke-linecap="round"/><path d="M${r1(q[0] - 5)},${r1(q[1] + 1)} Q${r1(q[0])},${r1(q[1] - 2.5)} ${r1(q[0] + 5)},${r1(q[1] + 1)}" fill="none" stroke="#c0392b" stroke-width="2.4" stroke-linecap="round"/>`;
+  }
+  return { h, front: union(...front), back: back.length ? union(...back) : '', stub: h.stubble ? spline(cap, true) : '', lines, hi, extra };
 }
 
 /* ---------------------------------------------------------------- outfits */
@@ -631,17 +894,35 @@ function hairShape(id, covered) {
 //      collar 'high' (cc colour, ch height) · chain · tails (coat length below the waist)
 // bot: c colour · len (0.55 shorts, 1 full) · flare · cuff · fur cuff · wrap (bandage on the near thigh)
 // sash [colour, knot position u] · belt · shoe [kind, colour] · wrist band colour
-const OUTFITS = {
-  tee:      { top: { c: '#5a6880', sl: 0.34, hem: -0.08 }, bot: { c: '#30364a', len: 1, flare: 0.6 }, belt: '#3a2a22', shoe: ['shoe', '#3a2c24'] },
-  corsair:  { top: { c: '#d8343f', sl: 0.36, cuff: '#b8242f', open: 'skin', trim: '#ffd060', hem: -0.06 }, bot: { c: '#3460c4', len: 0.52, flare: 1.4, fur: '#f1ead8' }, sash: ['#f4c430', -0.55], shoe: ['sandal', '#9a6a3a'] },
-  shinobi:  { top: { c: '#ff8a1f', sl: 0.88, cuff: '#22252e', band: [0.64, '#22252e'], zip: '#e9e9ee', collar: 'high', cc: '#ff8a1f', ch: 3, hem: -0.14, fit: 2.8 }, bot: { c: '#ff8a1f', len: 1, flare: 1.6, wrap: '#ecebe6' }, shoe: ['sandal', '#2f4a8a'] },
-  reaper:   { top: { c: '#1b1c22', sl: 0.7, wide: 6, v: '#f2f0ea', kimono: 1, hem: -0.18, fit: 2.8 }, bot: { c: '#1b1c22', len: 1, flare: 7 }, sash: ['#f2f0ea', 0.62], shoe: ['tabi', '#c9a66b'] },
-  gi:       { top: { c: '#ff7a1a', sl: 0.3, slc: '#2b4fb8', v: '#2b4fb8', emblem: '#f6f2e8', hem: -0.1, fit: 2.8 }, bot: { c: '#ff7a1a', len: 1, flare: 2.6 }, sash: ['#2b4fb8', 0.32], wrist: '#2b4fb8', shoe: ['boot', '#2b4fb8'] },
-  uniform:  { top: { c: '#1f2433', sl: 0.9, collar: 'high', ch: 5, buttons: '#f4c66a', zip: '#2c3348', hem: -0.3, fit: 3 }, bot: { c: '#1f2433', len: 1, flare: 1.4 }, shoe: ['shoe', '#121418'] },
-  wilds:    { top: { c: '#3aa84a', sl: 0.32, cuff: '#2a7a35', v: '#e9e4d2', hem: -0.1, fit: 2.6 }, bot: { c: '#2f8a3c', len: 0.55, flare: 1 }, belt: '#8a5a2b', shoe: ['boot', '#2f6a2c'] },
-  longcoat: { top: { c: '#1a1c26', sl: 0.9, cuff: '#f4c66a', collar: 'high', ch: 4, cc: '#1a1c26', chain: '#f4c66a', trim: '#f4c66a', tails: 92, hem: 0, fit: 3.2 }, bot: { c: '#262836', len: 1 }, shoe: ['shoe', '#121418'] },
-  riftwear: { top: { c: '#2c1846', sl: 0.9, cuff: '#ff3fb4', trim: '#ff3fb4', zip: '#ff3fb4', collar: 'high', cc: '#1a0f2a', ch: 3, hem: -0.12, fit: 2.8 }, bot: { c: '#2c1846', len: 1, flare: 1 }, sash: ['#ff3fb4', 0.3], wrist: '#ff3fb4', shoe: ['boot', '#ff3fb4'] },
+// Tops (with their sash and wrist bands) and bottoms (with their belt and shoes) are worn separately.
+const TOPS = {
+  tee:      { top: { c: '#5a6880', sl: 0.34, hem: -0.08 } },
+  corsair:  { top: { c: '#d8343f', sl: 0.36, cuff: '#b8242f', open: 'skin', trim: '#ffd060', hem: -0.06 }, sash: ['#f4c430', -0.55] },
+  shinobi:  { top: { c: '#ff8a1f', sl: 0.88, cuff: '#22252e', band: [0.64, '#22252e'], zip: '#e9e9ee', collar: 'high', cc: '#ff8a1f', ch: 3, hem: -0.14, fit: 2.8 } },
+  reaper:   { top: { c: '#1b1c22', sl: 0.7, wide: 6, v: '#f2f0ea', kimono: 1, hem: -0.18, fit: 2.8 }, sash: ['#f2f0ea', 0.62] },
+  gi:       { top: { c: '#ff7a1a', sl: 0.3, slc: '#2b4fb8', v: '#2b4fb8', emblem: '#f6f2e8', hem: -0.1, fit: 2.8 }, sash: ['#2b4fb8', 0.32], wrist: '#2b4fb8' },
+  uniform:  { top: { c: '#1f2433', sl: 0.9, collar: 'high', ch: 5, buttons: '#f4c66a', zip: '#2c3348', hem: -0.3, fit: 3 } },
+  wilds:    { top: { c: '#3aa84a', sl: 0.32, cuff: '#2a7a35', v: '#e9e4d2', hem: -0.1, fit: 2.6 } },
+  longcoat: { top: { c: '#1a1c26', sl: 0.9, cuff: '#f4c66a', collar: 'high', ch: 4, cc: '#1a1c26', chain: '#f4c66a', trim: '#f4c66a', tails: 92, hem: 0, fit: 3.2 } },
+  riftwear: { top: { c: '#2c1846', sl: 0.9, cuff: '#ff3fb4', trim: '#ff3fb4', zip: '#ff3fb4', collar: 'high', cc: '#1a0f2a', ch: 3, hem: -0.12, fit: 2.8 }, sash: ['#ff3fb4', 0.3], wrist: '#ff3fb4' },
 };
+const BOTTOMS = {
+  tee:      { bot: { c: '#30364a', len: 1, flare: 0.6 }, belt: '#3a2a22', shoe: ['shoe', '#3a2c24'] },
+  corsair:  { bot: { c: '#3460c4', len: 0.52, flare: 1.4, fur: '#f1ead8' }, shoe: ['sandal', '#9a6a3a'] },
+  shinobi:  { bot: { c: '#ff8a1f', len: 1, flare: 1.6, wrap: '#ecebe6' }, shoe: ['sandal', '#2f4a8a'] },
+  reaper:   { bot: { c: '#1b1c22', len: 1, flare: 7 }, shoe: ['tabi', '#c9a66b'] },
+  gi:       { bot: { c: '#ff7a1a', len: 1, flare: 2.6 }, shoe: ['boot', '#2b4fb8'] },
+  uniform:  { bot: { c: '#1f2433', len: 1, flare: 1.4 }, shoe: ['shoe', '#121418'] },
+  wilds:    { bot: { c: '#2f8a3c', len: 0.55, flare: 1 }, belt: '#8a5a2b', shoe: ['boot', '#2f6a2c'] },
+  longcoat: { bot: { c: '#262836', len: 1 }, shoe: ['shoe', '#121418'] },
+  riftwear: { bot: { c: '#2c1846', len: 1, flare: 1 }, shoe: ['boot', '#ff3fb4'] },
+};
+// One outfit made of the worn top and bottom (an old single "outfit" id dresses both).
+function outfitOf(A) {
+  const tp = TOPS[A.top != null ? A.top : A.outfit], bo = BOTTOMS[A.bottom != null ? A.bottom : A.outfit];
+  if (!tp && !bo) return null;
+  return { top: tp && tp.top, sash: tp && tp.sash, wrist: tp && tp.wrist, bot: bo && bo.bot, belt: bo && bo.belt, shoe: bo && bo.shoe };
+}
 
 /* ---------------------------------------------------------------- flame auras */
 // Flickering flames hugging the body in three layers (soft outer glow, mid, hot core),
@@ -694,7 +975,7 @@ function drawAvatar(A, P, t, opt) {
   const St = STYLES[A.style] ? STYLES[A.style](skin) : STYLES.flat(skin);
   LINE = St.line;
   const J = solve(P, B), W = B.w, M = torsoMap(J, W), out = [];
-  const O = OUTFITS[A.outfit] || null, T = O && O.top, Bt = O && O.bot;
+  const O = outfitOf(A), T = O && O.top, Bt = O && O.bot;
   const sway = Math.sin(t * 2.1), air = P.air || 0;
   const col = (v, far) => (v === 'skin' ? (far ? St.far : St.body) : far ? shade(v, -0.1) : v);
   const shd = (v, far) => (v === 'skin' ? (far ? shade(St.sh, -0.08) : St.sh) : lum(v) < 0.2 ? shade(v, 0.16) : shade(v, far ? -0.32 : -0.24));
@@ -721,7 +1002,11 @@ function drawAvatar(A, P, t, opt) {
   if (P.fx) out.push(fxSVG(P.fx, J, worn ? RCOL[Math.min(6, typeof rarity === 'function' ? rarity(worn) : 1)] : skin));
   const hs = J.headR / 19, ha = (P.h || 0) + (180 - J.neckA) * 0.6;
   const onHead = (inner) => `<g transform="translate(${pt(J.head)}) rotate(${r1(ha)}) scale(${r1(hs * 1000) / 1000})">${inner}</g>`;
+  // hair: long locks hang behind the body, the rest sits on the head (shifted as the head turns)
+  const hair = hairShape(A.hair, !!HAT_COVER[A.hat], ha, t), tw = P.tw || 0;
+  const hairT = (s) => `<g transform="translate(${r1(2.2 * tw)},0) scale(${r1((1 + 0.07 * tw) * 100) / 100},1)">${s}</g>`;
   const fig = [G.back];
+  if (hair && hair.back) fig.push(onHead(hairT(cel(hair.back, shade(hair.h.c, -0.08), hair.h.sh, 0.9))));
 
   // ---- limbs
   const crease = (C, i, hw) => {
@@ -821,7 +1106,8 @@ function drawAvatar(A, P, t, opt) {
       const P2 = [M(-1.04, 0.12, ex + 0.4, 1), M(1.04, 0.12, ex + 0.4, 1), M(1.04, 0.03, ex + 0.4, 1), M(-1.04, 0.03, ex + 0.4, 1)], b = M(0.05, 0.075, ex);
       return piece(P2, O.belt, false, 0.4) + frame(J, b, `<rect x="-2.8" y="-2.4" width="5.6" height="4.8" rx=".8" fill="#f4c66a" stroke="${LINE}" stroke-width="1"/>`);
     }
-    if (!O.sash) return '';
+    // trousers worn without a belt or sash still get their own waistband
+    if (!O.sash) return Bt ? piece([M(-1.03, 0.1, ex + 0.3, 1), M(1.03, 0.1, ex + 0.3, 1), M(1.03, 0.03, ex + 0.3, 1), M(-1.03, 0.03, ex + 0.3, 1)], shade(Bt.c, -0.2), false, 0.4) : '';
     const [c, u] = O.sash, P2 = [M(-1.06, 0.17, ex + 0.5, 1), M(1.06, 0.17, ex + 0.5, 1), M(1.06, 0.01, ex + 0.5, 1), M(-1.06, 0.01, ex + 0.5, 1)];
     const k = M(u, 0.09, ex + 0.5);
     const tail = (dx, ln) => tube([k, [k[0] + dx * 0.5 + sway, k[1] + ln * 0.5], [k[0] + dx + sway * 2, k[1] + ln]], [3.2, 3, 2.6], { flatEnd: 1 });
@@ -837,7 +1123,7 @@ function drawAvatar(A, P, t, opt) {
 
   // ---- which arms hang at the sides (behind the torso) and which cross in front of it
   const crossing = (Ar, fa, front) => { const h = add(Ar[2], fa, 4); return h[1] > J.neck[1] && (front ? h[0] < J.shF[0] - 1 : h[0] > J.shB[0] + 1); };
-  const backX = P.bf || crossing(J.aB, J.foreA.aB, false), frontX = crossing(J.aF, J.foreA.aF, true);
+  const backX = P.bf || crossing(J.aB, J.foreA.aB, false), frontX = P.ff || crossing(J.aF, J.foreA.aF, true);
   const back = arm(J.aB, J.foreA.aB, true), front = arm(J.aF, J.foreA.aF, false);
   if (!backX) fig.push(back.s);
   if (!frontX) fig.push(front.s);
@@ -862,21 +1148,26 @@ function drawAvatar(A, P, t, opt) {
   if (!frontX && !(worn && !sheathed && !P.prop) && !P.prop) fig.push(front.hand);
   fig.push(G.under);
   // the head: a flat round disc, the face, the hair, the hat
-  const hair = hairShape(A.hair, !!HAT_COVER[A.hat]);
-  const hairS = hair ? cel(hair.d, hair.h.c, hair.h.sh, 0.9) + (hair.lines ? lineP(hair.lines, LINE, 1, 0.55) : '') + lineP('M-13,-15 Q-6,-20.5 3,-21', hair.h.hi, 2.2, 0.85) : '';
-  const tw = P.tw || 0;
+  // the hair casts a soft shadow on the forehead, under the fringe
+  const hcId = uid + 'hc';
+  const hairS = hair ? (hair.stub ? fillP(hair.stub, hair.h.sh, 0.22) : '')
+    + `<clipPath id="${hcId}"><circle r="19"/></clipPath><g clip-path="url(#${hcId})"><path d="${hair.front}" fill="${St.sh}" opacity=".45" transform="translate(1.2,2.6)"/></g>`
+    + cel(hair.front, hair.h.c, hair.h.sh, 0.9) + (hair.lines ? lineP(hair.lines, LINE, 1, 0.5) : '') + (hair.hi ? lineP(hair.hi, hair.h.hi, 2.2, 0.85) : '') + hair.extra : '';
   fig.push(onHead(ink(circ([0, 0], 19), St.body, 2.4) + `<g transform="translate(${r1(-3.7 * (1 - tw))},1)">${faceSVG(A.face, P.expr, St.eye)}</g>`
-    + `<g transform="translate(${r1(2.2 * tw)},0) scale(${r1((1 + 0.07 * tw) * 100) / 100},1)">${hairS}</g>` + (HATS[A.hat] || '')));
+    + hairT(hairS) + (HATS[A.hat] || '')));
   fig.push(collar());
   if (backX) fig.push(back.s + back.hand);
+  if (P.panB) fig.push(panSVG(back.hp, P.A, t, P, '#ffb36b'), back.hand);
   if (frontX) fig.push(front.s);
   // the weapon or tool gripped in the front fist, drawn over everything else
   const fa = J.foreA.aF, prop = P.prop, weapon = !prop && worn && !sheathed ? worn : null, grip = front.hp;
   if (weapon) fig.push(`<g transform="translate(${pt(grip)}) rotate(${rotTo(fa + P.g)})">${weaponSVG(weapon)}</g>`);
-  if (prop === 'rod') fig.push(rodSVG(grip, fa + P.g, t));
-  if (prop === 'pan') fig.push(panSVG(grip, fa + P.g, t));
+  if (prop === 'rod') fig.push(rodSVG(grip, fa + P.g, t, P));
+  if (prop === 'pan') fig.push(panSVG(grip, fa + P.g, t, P, '#ffb36b'));
+  if (P.tool === 'spatula') fig.push(spatulaSVG(front.hp, P.sa || 40));
+  if (prop === 'rod' && backX) fig.push(back.hand);
   if (prop === 'axe') fig.push(axeSVG(grip, fa + P.g, t));
-  if (frontX || weapon || prop) fig.push(front.hand);
+  if (frontX || weapon || prop || P.tool) fig.push(front.hand);
   fig.push(G.over);
   let figS = fig.join('');
   if (St.filter) figS = `<g filter="url(#${St.filter})">${figS}</g>`;
@@ -1038,11 +1329,27 @@ if (typeof document !== 'undefined' && document.addEventListener) {
   if (document.body) avDefs(); else document.addEventListener('DOMContentLoaded', avDefs);
 }
 
-function rodSVG(hand, a, t) {
-  const tip = add(hand, a, 74), bob = [tip[0] + 22, GROUND - 6 + Math.sin(t * 2.4) * 2.5];
-  return `<path d="M${pt(tip)} Q${r1((tip[0] + bob[0]) / 2 + 4)},${r1(bob[1] - 30)} ${pt(bob)}" fill="none" stroke="#cfd6e4" stroke-width="1" opacity=".8"/>`
-    + part(taper([add(hand, a, -10), tip], [4.2, 1.8]), '#8a5a2b', 2.4)
-    + `<circle cx="${r1(bob[0])}" cy="${r1(bob[1])}" r="3.4" fill="#ff4d5e" stroke="${OL}" stroke-width="1.6"/><path d="M${r1(bob[0] - 3.4)},${r1(bob[1])} h6.8" stroke="#fff" stroke-width="1.4"/>`;
+// A fishing rod: cork grip, a reel under it with a turning crank, a blank that bends under load.
+function rodPts(hand, a, rb) {
+  const pts = [], n = 8;
+  let p = add(hand, a, -10);
+  for (let i = 0; i <= n; i++) { pts.push(p); p = add(p, a - rb * 46 * Math.pow((i + 0.5) / n, 2), 88 / n); }
+  return pts;
+}
+function rodSVG(hand, a, t, P, noLine, col) {
+  P = P || {};
+  const pts = rodPts(hand, a, P.rb || 0), tip = pts[pts.length - 1], rl = reelAt(hand, a), kb = knobAt(hand, a, P.cr || 0);
+  let s = '';
+  // (no scene around: the hook hangs from the tip while the rod is up, else the bobber floats at the feet)
+  const bob = P.hang > 0.5 ? [tip[0] + Math.sin(t * 4.2) * 4, tip[1] + 16] : [tip[0] + 22, GROUND - 6 + Math.sin(t * 2.4) * 2.5];
+  if (!noLine) { s += `<path d="M${pt(tip)} Q${r1((tip[0] + bob[0]) / 2 + 4)},${r1(P.hang > 0.5 ? bob[1] - 8 : bob[1] - 30)} ${pt(bob)}" fill="none" stroke="#cfd6e4" stroke-width="1" opacity=".8"/>`; }
+  s += part(taper(pts, pts.map((_, i) => 4.4 - (2.8 * i) / (pts.length - 1))), col || '#8a5a2b', 2.4);
+  s += part(taper([add(hand, a, -10), add(hand, a, 7)], [5.6, 5]), '#c89a62', 2);
+  s += inkLine(`M${pt(add(hand, a, -6))}L${pt(rl)}`, '#9aa3b5', 1.6);
+  s += `<circle cx="${r1(rl[0])}" cy="${r1(rl[1])}" r="4.6" fill="#cfd6e4" stroke="${OL}" stroke-width="1.6"/><circle cx="${r1(rl[0])}" cy="${r1(rl[1])}" r="1.8" fill="#6c7385"/>`;
+  s += inkLine(`M${pt(rl)}L${pt(kb)}`, '#9aa3b5', 1.4) + `<circle cx="${r1(kb[0])}" cy="${r1(kb[1])}" r="1.9" fill="#3b3f4a" stroke="${OL}" stroke-width="1"/>`;
+  if (!noLine) s += `<circle cx="${r1(bob[0])}" cy="${r1(bob[1])}" r="3.4" fill="#ff4d5e" stroke="${OL}" stroke-width="1.6"/>`;
+  return s;
 }
 // A woodcutter's axe: the blade sits on the leading side of the haft (towards the swing).
 function axeSVG(hand, a, t) {
@@ -1051,11 +1358,24 @@ function axeSVG(hand, a, t) {
     + `<path d="M${pt(at(38, 2))} L${pt(at(54, 2))} Q${pt(at(60, 12))} ${pt(at(60, 24))} Q${pt(at(46, 30))} ${pt(at(30, 24))} Q${pt(at(32, 12))} ${pt(at(38, 2))}Z" fill="#cfd6e4" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/>`
     + `<path d="M${pt(at(32, 22))} Q${pt(at(46, 27))} ${pt(at(59, 22))}" fill="none" stroke="#fff" stroke-width="1.6" opacity=".7"/>`;
 }
-function panSVG(hand, a, t) {
-  const end = add(hand, a, 16), c = add(end, a, 15), flip = (t * 1.3) % 1, up = Math.sin(flip * Math.PI) * 26;
-  return part(taper([hand, end], [3.6, 3.6]), '#3b3f4a', 2.2)
-    + `<ellipse cx="${r1(c[0])}" cy="${r1(c[1])}" rx="16" ry="5" fill="#2a2e38" stroke="${OL}" stroke-width="2.4"/>`
-    + `<g transform="translate(${r1(c[0])},${r1(c[1] - 4 - up)}) rotate(${r1(flip * 360)})"><ellipse rx="7" ry="3" fill="#ffb36b" stroke="${OL}" stroke-width="1.6"/><path d="M6,0 l4,-3 v6z" fill="#ffb36b" stroke="${OL}" stroke-width="1.2"/></g>`;
+// A frying pan held by its handle: a shallow dish seen from above, tilted when it is flicked.
+// The food sits in it, or flies and spins above it (P.fd: [x, height, spin]).
+function panSVG(hand, a, t, P, food) {
+  P = P || {};
+  const end = add(hand, a, 10), c = panAt0(hand, a), fd = P.fd || [0, 0, 0];
+  let s = part(taper([add(hand, a, -4), end], [3.8, 3.4]), '#3b3f4a', 2.2);
+  s += `<g transform="translate(${pt(c)}) rotate(${r1(rotTo(a + (P.pt || 0)))})">`
+    + `<path d="M-15,0 A15,5.2 0 0,0 15,0 L13.6,4.4 A13.6,4.4 0 0,1 -13.6,4.4Z" fill="#1d2028" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/>`
+    + `<ellipse rx="15" ry="5.2" fill="#2a2e38" stroke="${OL}" stroke-width="2"/><ellipse cy=".6" rx="12" ry="3.8" fill="#3a3f4c"/>`
+    + `<path d="M-11,-2.6 Q-4,-4.4 4,-4" fill="none" stroke="#6c7385" stroke-width="1.2" opacity=".7"/></g>`;
+  if (food) s += `<g transform="translate(${r1(c[0] + fd[0])},${r1(c[1] - 1.5 - fd[1])}) rotate(${r1(fd[2])})"><ellipse rx="7.5" ry="3.2" fill="${food}" stroke="${OL}" stroke-width="1.6"/><path d="M-4,-1 h6" stroke="#fff" stroke-width="1.2" opacity=".55"/></g>`;
+  return s;
+}
+// A wooden spatula from the back hand towards the pan (angle a).
+function spatulaSVG(hand, a) {
+  const tip = add(hand, a, 18);
+  return part(taper([add(hand, a, -5), add(hand, a, 11)], [2.6, 2.4]), '#a8743f', 2)
+    + `<g transform="translate(${pt(tip)}) rotate(${rotTo(a)})"><path d="M-7,-2 L2,-4.6 Q7,-4.6 7,0 Q7,4.6 2,4.6 L-7,2Z" fill="#c8925a" stroke="${OL}" stroke-width="1.6" stroke-linejoin="round"/></g>`;
 }
 // A cape hanging from the shoulders behind the body. From the front we see its lining between
 // the outer edges; it trails to the left (behind a figure facing right) and sways.
@@ -1161,24 +1481,33 @@ function avFrame(now) {
   const calm = avCalm(), A = avState(), t = calm ? 0.6 : now / 1000;
   for (const el of els) {
     const st = avAnim(el);
+    if (st.look === undefined) st.look = el.dataset.over ? JSON.parse(el.dataset.over) : null;
+    const look = st.look ? Object.assign({}, A, st.look) : A;
+    const base = basePose(el), drv = POSE_DRIVE[base];
     if (st.cut || now - st.t0 >= st.dur) {
       const nx = st.seq.shift();
-      if (nx) Object.assign(st, { from: st.cur, to: POSES[nx[0]], t0: now, dur: nx[1], easing: nx[2] || 'io' });
+      if (nx) Object.assign(st, { from: st.cur, to: POSES[nx[0]], t0: now, dur: nx[1], easing: nx[2] || 'io', drive: null });
+      else if (drv) { if (st.drive !== base) Object.assign(st, { from: st.cur, to: null, t0: now, dur: 420, easing: 'io', drive: base }); }
       else {
-        const want = POSES[basePose(el)] || POSES.relaxed;
-        if (want !== st.to) Object.assign(st, { from: st.cur, to: want, t0: now, dur: 380, easing: 'io' });
+        const want = POSES[base] || POSES.relaxed;
+        if (want !== st.to || st.drive) Object.assign(st, { from: st.cur, to: want, t0: now, dur: 380, easing: 'io', drive: null });
       }
       st.cut = false;
     }
     const k = Math.min(1, (now - st.t0) / st.dur);
-    const P = lerpPose(st.from, st.to, ease[st.easing](k));
+    let P, Pd;
+    if (st.drive) {
+      // a motion cycle (it breathes on its own); blended in from the previous pose
+      const D = POSE_DRIVE[st.drive] ? POSE_DRIVE[st.drive](driveU(st.drive, t), t, cosOf('build', look.build).b, calm) : st.cur;
+      P = Pd = k < 1 ? lerpPose(st.from, D, ease.io(k)) : D;
+    } else {
+      P = lerpPose(st.from, st.to, ease[st.easing](k));
+      // breathing: the chest rises, the head and arms follow a little behind
+      const br = calm ? 0 : Math.sin(t * 2.2);
+      Pd = Object.assign({}, P, { t2: P.t2 + br * 1.6, n: P.n - br * 1.2, aF: [P.aF[0] + br * 1.4, P.aF[1]], aB: [P.aB[0] - br * 1.4, P.aB[1]] });
+      if (P.air) Pd.air = P.air + Math.sin(t * 1.6) * 4;
+    }
     st.cur = P;
-    // breathing: the chest rises, the head and arms follow a little behind
-    const br = calm ? 0 : Math.sin(t * 2.2);
-    const Pd = Object.assign({}, P, { t2: P.t2 + br * 1.6, n: P.n - br * 1.2, aF: [P.aF[0] + br * 1.4, P.aF[1]], aB: [P.aB[0] - br * 1.4, P.aB[1]] });
-    if (P.air) Pd.air = P.air + Math.sin(t * 1.6) * 4;
-    if (st.look === undefined) st.look = el.dataset.over ? JSON.parse(el.dataset.over) : null;
-    const look = st.look ? Object.assign({}, A, st.look) : A;
     const weapon = el.dataset.weapon !== undefined ? el.dataset.weapon : undefined;
     if (!el.dataset.uid) el.dataset.uid = 'av' + ++avUid;
     el.innerHTML = avWrap(drawAvatar(look, Pd, t, { weapon, uid: el.dataset.uid }), el.dataset.flip);

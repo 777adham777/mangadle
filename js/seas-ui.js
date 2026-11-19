@@ -64,27 +64,21 @@ let SPOT_CUR = null;
     if (SPOT_CUR) { SPOT_CUR.tip = null; SPOT_CUR.pan = null; }
     try { return baseDraw(A, P, t, opt); } finally { SPOT_CUR = null; }
   };
+  // the scene draws the line and the bobber itself, from the rod tip recorded here
   const baseRod = rodSVG;
-  rodSVG = function (hand, a, t) {
-    if (!SPOT_CUR) return baseRod(hand, a, t);
-    const tip = add(hand, a, 78);
-    SPOT_CUR.tip = tip;
-    return part(taper([add(hand, a, -10), tip], [4.4, 1.8]), SPOT_CUR.rod || '#8a5a2b', 2.4)
-      + `<circle cx="${r1(add(hand, a, 8)[0])}" cy="${r1(add(hand, a, 8)[1])}" r="4.2" fill="#cfd6e4" stroke="${OL}" stroke-width="1.6"/>`;
+  rodSVG = function (hand, a, t, P) {
+    if (!SPOT_CUR) return baseRod(hand, a, t, P);
+    const pts = rodPts(hand, a, (P && P.rb) || 0);
+    SPOT_CUR.tip = pts[pts.length - 1];
+    return baseRod(hand, a, t, P, true);
   };
+  // the food (in the dish's colour) only while a dish is cooking
   const basePan = panSVG;
-  panSVG = function (hand, a, t) {
-    if (!SPOT_CUR) return basePan(hand, a, t);
-    const end = add(hand, a, 16), c = add(end, a, 15);
-    SPOT_CUR.pan = c;
-    const k = SPOT_CUR.cook == null ? -1 : SPOT_CUR.cook;
-    const toss = k > 0.8 ? Math.sin(((k - 0.8) / 0.2) * Math.PI) : 0;
-    const food = k < 0 ? '' : `<g transform="translate(${r1(c[0])},${r1(c[1] - 4 - toss * 30)}) rotate(${r1(toss * 320)})"><ellipse rx="8" ry="3.4" fill="${SPOT_CUR.food || '#ffb36b'}" stroke="${OL}" stroke-width="1.6"/><path d="M-4,-1 h6" stroke="#fff" stroke-width="1.2" opacity=".55"/></g>`;
-    return part(taper([hand, end], [3.6, 3.6]), '#3b3f4a', 2.2)
-      + `<ellipse cx="${r1(c[0])}" cy="${r1(c[1])}" rx="17" ry="5.2" fill="#2a2e38" stroke="${OL}" stroke-width="2.4"/>` + food;
+  panSVG = function (hand, a, t, P, food) {
+    if (!SPOT_CUR) return basePan(hand, a, t, P, food);
+    SPOT_CUR.pan = panAt0(hand, a);
+    return basePan(hand, a, t, P, SPOT_CUR.cook == null || SPOT_CUR.cook < 0 ? null : SPOT_CUR.food || '#ffb36b');
   };
-  // the catch: the rod snaps up, then settles back into the cast
-  POSES.reel = Object.assign({}, POSES.fish, { t1: 186, t2: -6, n: -6, h: -6, aF: [104, 26], aB: [44, 92], g: -64, dy: 0, expr: 'happy' });
 }
 // A scene avatar: its rig is tracked from its very first frame.
 function spotAvatar(box, pose, extra) {
@@ -393,19 +387,34 @@ UPD.push(() => {
   if (kind === 'fishing') {
     const av = el.querySelector('.spot-av svg.avatar'), rig = av && SPOT_RIG[av.dataset.uid], g = el.querySelector('[data-spotfx]');
     if (!rig || !g) return;
-    if (!(av.dataset.reel > performance.now())) setPose(av, k >= 0 ? 'fish' : '');
-    if (k < 0 || !rig.tip) { if (g.innerHTML) g.innerHTML = ''; return; }
+    setPose(av, k >= 0 ? 'fish' : '');
+    if (k < 0 || !rig.tip) { if (g.innerHTML) g.innerHTML = ''; SPOT.fishU = null; return; }
+    // the bobber follows the angler's cycle (POSE_DRIVE.fish): it hangs from the rod tip while the
+    // catch is lifted and the rod swings back, flies out on the cast, floats, bobs at the bite and
+    // is pulled under at the strike
+    const u = driveU('fish', t), prevU = SPOT.fishU;
+    SPOT.fishU = u;
     const sp = SPOT.fish || FISH_SPOTS[0], [tx, ty] = rigToSpot(FISH_BOX, rig.tip);
-    const bite = k > 0.78 ? (k - 0.78) / 0.22 : 0;
-    const bx = sp.bob[0] + Math.sin(t * 0.7) * 3, by = sp.bob[1] + Math.sin(t * 2.3) * 1.6 + (bite ? 3 + Math.sin(t * 28) * 2.4 * bite : 0);
-    const sag = Math.max(ty, by) + 26 - bite * 22;
-    let s = `<path d="M${tx.toFixed(1)} ${ty.toFixed(1)} Q${((tx + bx) / 2 + 10).toFixed(1)} ${sag.toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}" fill="none" stroke="#eef4ff" stroke-width="1.2" opacity=".85"/>`;
-    for (let i = 0; i < 3; i++) {
-      const ph = (t * (bite ? 1.6 : 0.6) + i / 3) % 1;
-      s += `<ellipse cx="${bx.toFixed(1)}" cy="${(sp.bob[1] + 3).toFixed(1)}" rx="${(6 + ph * 26).toFixed(1)}" ry="${(1.6 + ph * 5).toFixed(1)}" fill="none" stroke="#fff" stroke-width="1.4" opacity="${((1 - ph) * (bite ? 0.8 : 0.45)).toFixed(2)}"/>`;
+    const hang = [tx + Math.sin(t * 4.2) * 5, ty + 18];
+    const bite = u > 0.8 && u < 0.95 ? Math.min(1, (u - 0.8) / 0.05) : 0, under = u >= 0.95;
+    let bx, by, flying = false;
+    if (u < 0.18) { [bx, by] = hang; flying = true; }
+    else if (u < 0.32) {
+      const f = ease.out((u - 0.18) / 0.14);
+      bx = hang[0] + (sp.bob[0] - hang[0]) * f; by = hang[1] + (sp.bob[1] - hang[1]) * f - Math.sin(Math.PI * f) * 70; flying = true;
+    } else {
+      bx = sp.bob[0] + Math.sin(t * 0.7) * 3;
+      by = sp.bob[1] + Math.sin(t * 2.3) * 1.6 + (bite ? 3 + Math.sin(t * 28) * 2.4 * bite : 0) + (under ? 7 : 0);
     }
-    s += `<ellipse cx="${bx.toFixed(1)}" cy="${(by + 3).toFixed(1)}" rx="5.5" ry="2" fill="#000" opacity=".2"/><circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="5" fill="#ff4d5e" stroke="#0a0c11" stroke-width="1.6"/><path d="M${(bx - 5).toFixed(1)} ${by.toFixed(1)} h10" stroke="#fff" stroke-width="2"/><path d="M${bx.toFixed(1)} ${(by - 5).toFixed(1)} v-5" stroke="#0a0c11" stroke-width="1.6"/>`;
-    if (bite > 0.4) s += `<text x="${bx.toFixed(1)}" y="${(by - 18).toFixed(1)}" class="bite-mark" text-anchor="middle">!</text>`;
+    if (prevU != null && prevU < 0.32 && u >= 0.32 && u < 0.5) spotPop('', sp.bob[0], sp.bob[1] + 2, 'splash', 700);
+    const sag = flying || under ? 4 : 26 - bite * 22;
+    let s = `<path d="M${tx.toFixed(1)} ${ty.toFixed(1)} Q${((tx + bx) / 2 + (flying ? 0 : 10)).toFixed(1)} ${(Math.max(ty, by) + sag).toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}" fill="none" stroke="#eef4ff" stroke-width="1.2" opacity=".85"/>`;
+    if (!flying) for (let i = 0; i < 3; i++) {
+      const ph = (t * (bite || under ? 1.6 : 0.6) + i / 3) % 1;
+      s += `<ellipse cx="${bx.toFixed(1)}" cy="${(sp.bob[1] + 3).toFixed(1)}" rx="${(6 + ph * 26).toFixed(1)}" ry="${(1.6 + ph * 5).toFixed(1)}" fill="none" stroke="#fff" stroke-width="1.4" opacity="${((1 - ph) * (bite || under ? 0.8 : 0.45)).toFixed(2)}"/>`;
+    }
+    if (!under) s += `${flying ? '' : `<ellipse cx="${bx.toFixed(1)}" cy="${(by + 3).toFixed(1)}" rx="5.5" ry="2" fill="#000" opacity=".2"/>`}<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="5" fill="#ff4d5e" stroke="#0a0c11" stroke-width="1.6"/><path d="M${(bx - 5).toFixed(1)} ${by.toFixed(1)} h10" stroke="#fff" stroke-width="2"/><path d="M${bx.toFixed(1)} ${(by - 5).toFixed(1)} v-5" stroke="#0a0c11" stroke-width="1.6"/>`;
+    if (bite > 0.4 || under) s += `<text x="${bx.toFixed(1)}" y="${(sp.bob[1] - 18).toFixed(1)}" class="bite-mark" text-anchor="middle">!</text>`;
     g.innerHTML = s;
   } else if (kind === 'cooking') {
     const av = el.querySelector('.spot-av svg.avatar'), rig = av && SPOT_RIG[av.dataset.uid];
@@ -473,8 +482,6 @@ on('catch', (d) => {
   spotPop(`<b>${esc(it.name)}</b><small>${fmtKg(d.kg)}</small>`, sp.bob[0] - 40, sp.bob[1] - 70, 'tag' + (d.shiny ? ' gold' : ''), 1700);
   if (d.record) spotPop(`${ui('record')}New record!`, 330, 70, 'banner', 2200);
   if (d.shiny) spotPop(`${ui('shiny')}Shiny!`, 400, 52, 'banner shiny', 2600);
-  const av = el.querySelector('.spot-av svg.avatar');
-  if (av) { av.dataset.reel = performance.now() + 700; avPlay(av, [['reel', 130, 'out'], ['reel', 260], ['fish', 380]]); }
 });
 on('action', (d) => {
   const el = spotNow();
