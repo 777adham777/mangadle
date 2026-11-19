@@ -156,7 +156,7 @@ const H2_FRINGES = {
     bend: -sd * (16 + P.R(i, sd + 7) * 10), tip: h2Tip(P, P.R(i, sd + 9)), z: 3 + (2 - i) * 0.2,
   }))) },
   eye: { name: 'Over one eye', line: -10, side: -1, gen: (P) => [
-    h2C({ x: -7, y: -15, a: 97, len: 21 * P.L, w: 13.5, bend: 10, tip: P.sp > 0.5 ? 'point' : 'round', z: 5 }),
+    h2C({ x: -3.5, y: -16, a: 97, len: 23 * P.L, w: 15, bend: 6, tip: 'point', z: 5 }),
     h2C({ x: -13, y: -12, a: 104, len: 15 * P.L, w: 8, bend: 8, tip: h2Tip(P, P.R(1, 1)), z: 4 }),
     ...[1, 6, 11, 15].map((x, i) => h2C({ x, y: P.hl(x) - 4, a: 84 - i * 6, len: (10 - i) * P.L * h2J(P, P.R(i, 2)), w: 7 * h2J(P, P.R(i, 3), 0.6), bend: -8, tip: h2Tip(P, P.R(i, 4)), z: 3 })),
   ] },

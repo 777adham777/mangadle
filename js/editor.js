@@ -88,6 +88,29 @@ const projectPack = () => normPack(typeof CUSTOM_PACK !== 'undefined' ? CUSTOM_P
     if (u) { Object.assign(ST.man, u.man || {}); if (TYPES[u.mode] || u.mode === 'pack') ST.mode = u.mode; Object.assign(ST.sel, u.sel || {}); ST.bg = u.bg || ST.bg; ST.open = u.open || {}; }
   } catch (e) { /* ignore */ }
 })();
+// Content prepared for review (js/studio-inbox.js, loaded by the Studio only, never by the game):
+// added to the draft once per set; it reaches players only when the draft is saved to the project.
+const INBOX_KEY = 'trirealm_studio_inbox';
+let inboxNote = '';
+function takeInbox(force) {
+  if (typeof STUDIO_INBOX === 'undefined' || !STUDIO_INBOX || !STUDIO_INBOX.pack) return 0;
+  let seen = {};
+  try { seen = JSON.parse(localStorage.getItem(INBOX_KEY) || '{}') || {}; } catch (e) { /* no storage */ }
+  if (seen[STUDIO_INBOX.id] && !force) return 0;
+  let n = 0, first = null;
+  for (const t of TYPE_ORDER) for (const it of STUDIO_INBOX.pack[t] || []) {
+    const L = ST.pack[t], i = L.findIndex((x) => x.id === it.id);
+    if (i >= 0) L[i] = clone(it); else L.push(clone(it));
+    if (!first) first = [t, it.id];
+    n++;
+  }
+  seen[STUDIO_INBOX.id] = Date.now();
+  try { localStorage.setItem(INBOX_KEY, JSON.stringify(seen)); } catch (e) { /* no storage */ }
+  if (first) { ST.mode = first[0]; ST.sel[first[0]] = ST.pack[first[0]].findIndex((x) => x.id === first[1]); }
+  inboxNote = `${STUDIO_INBOX.label}: ${n} added to your draft for review. Players get them only when you press Save to project.`;
+  return n;
+}
+takeInbox();
 const items = (t) => ST.pack[t || ST.mode] || [];
 function cur() {
   if (!TYPES[ST.mode]) return null;
@@ -1414,6 +1437,7 @@ function packRight() {
   return sec('save', 'Save', row(btn(IC.save + ' Save to project', 'save', null, 'primary'), btn('Download file', 'download', null, 'ghost'))
       + row(btn('Import…', 'import', null, 'ghost'), btn('Copy JSON', 'copyjson', null, 'ghost'))
       + row(btn('Revert to project file', 'revert', null, 'ghost danger'))
+      + (typeof STUDIO_INBOX !== 'undefined' ? row(btn(`Add the review set again (${esc(STUDIO_INBOX.label)})`, 'inbox', null, 'ghost')) : '')
       + note(differs() ? 'The draft has changes not saved to the project yet.' : 'The draft matches the project file.', differs() ? 'warn' : ''))
     + sec('check', 'Checks', probs.length ? probs.map((p) => note(p, 'bad')).join('') : note('No problem found.'));
 }
@@ -1522,6 +1546,7 @@ const ACT = {
   delitem() { const it = cur(); if (!it || !confirm(`Delete "${it.name}"?`)) return; items().splice(ST.sel[ST.mode], 1); commit(); renderAll(); },
   move(d) { const L = items(), i = ST.sel[ST.mode], j = i + +d; if (j < 0 || j >= L.length) return; [L[i], L[j]] = [L[j], L[i]]; ST.sel[ST.mode] = j; commit(); renderLeft(); },
   undo() { histGo(-1); }, redo() { histGo(1); },
+  inbox() { if (takeInbox(true)) { commit(); renderAll(); autoFit(); toast(inboxNote, 'good'); } },
   save() { saveProject(); }, download() { download(); },
   import() { $('#importfile').click(); },
   copyjson() { navigator.clipboard.writeText(JSON.stringify(ST.pack, null, 1)).then(() => toast('Pack JSON copied.', 'good')); },
@@ -1749,4 +1774,5 @@ registerCustomPack(ST.pack);
 needReg = false;
 renderAll();
 autoFit();
+if (inboxNote) { saveDraft(); toast(inboxNote, 'good'); }
 requestAnimationFrame(tick);
