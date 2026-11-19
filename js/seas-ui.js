@@ -362,7 +362,7 @@ function spotHTML(skill, o) {
     <div class="spot ${cls} ${a ? 'on' : ''}" data-spot="${skill}">
       <svg class="spot-bg" viewBox="0 0 800 320" preserveAspectRatio="none" aria-hidden="true">${bg}</svg>
       ${layers}
-      <svg class="spot-fx" viewBox="0 0 800 320" preserveAspectRatio="none" aria-hidden="true"><g data-spotfx></g></svg>
+      <svg class="spot-fx" viewBox="0 0 800 320" preserveAspectRatio="none" aria-hidden="true"><defs><filter id="sp-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.4"/></filter></defs><g data-spotfx></g><g data-parts></g></svg>
       <div class="spot-pops"></div>
       <div class="spot-hud"><span class="sh-name"><small>${esc(o && o.hud ? o.kicker || '' : name)}</small><b>${esc(o && o.hud ? name : sub)}</b></span>${last ? `<span class="sh-last">${last}</span>` : '<span class="sh-last" hidden></span>'}</div>
       ${o && o.hud ? o.hud : ''}
@@ -380,6 +380,68 @@ const actFrac = (skill) => {
   return a ? Math.min(1, S.action.prog / actionTime(skill, a)) : -1;
 };
 UPD.push(() => { for (const el of $$('[data-fam]')) setText(el, fmt(familyCount(el.dataset.fam))); });
+const mixHex = (a, b, k) => {
+  const A = parseInt(a.slice(1), 16), B = parseInt(b.slice(1), 16);
+  return '#' + [16, 8, 0].map((s) => Math.round(((A >> s) & 255) + (((B >> s) & 255) - ((A >> s) & 255)) * k).toString(16).padStart(2, '0')).join('');
+};
+
+/* ---------------------------------------------------------------- particles */
+// Small physical bits in a scene, in scene coordinates (800 x 320): wood chips and bark that tumble
+// and bounce in the grass, leaves that flutter down, oil drops, sparks, steam puffs, impact flashes.
+// Simulated every frame (gravity, a bounce on the floor, drag for leaves) and drawn in [data-parts].
+const PARTS = [];
+let partT = 0, partSpot = '';
+function partAdd(p) {
+  if (document.hidden || avCalm()) return;
+  PARTS.push(Object.assign({ age: 0, vx: 0, vy: 0, r: 0, vr: 0, g: 900, life: 1, bounce: 1, seed: Math.random() * 6 }, p));
+  if (PARTS.length > 90) PARTS.splice(0, PARTS.length - 90);
+}
+function partStep(p, dt) {
+  if (p.kind === 'leaf') { p.vy = Math.min(p.vy + 90 * dt, 34); p.vx = p.vx * 0.97 + Math.sin(p.age * 2.6 + p.seed) * 70 * dt; }
+  else if (p.kind === 'puff') { p.vx *= 0.97; p.size += 9 * dt; }
+  else p.vy += p.g * dt;
+  p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt;
+  if (p.floor != null && p.y > p.floor && p.vy > 0) {
+    p.y = p.floor;
+    if (p.bounce-- > 0 && p.kind === 'chip') { p.vy *= -0.32; p.vx *= 0.45; p.vr *= 0.4; } else { p.vy = p.vx = p.vr = 0; }
+  }
+}
+function partSVG(p) {
+  const o = Math.min(1, (p.life - p.age) / (p.life * 0.3)), f = (v) => v.toFixed(1), at = `translate(${f(p.x)},${f(p.y)})`;
+  switch (p.kind) {
+    case 'chip': {   // a flat chip seen tumbling: it narrows and widens as it turns over
+      const flip = p.vr ? Math.max(0.25, Math.abs(Math.cos(p.age * 9 + p.seed))) : 1;
+      return `<g transform="${at} rotate(${f(p.r)}) scale(1,${flip.toFixed(2)})" opacity="${o.toFixed(2)}"><rect x="${f(-p.w / 2)}" y="${f(-p.h / 2)}" width="${f(p.w)}" height="${f(p.h)}" rx="1" fill="${p.col}" stroke="#2a1608" stroke-width="1.1"/></g>`;
+    }
+    case 'leaf': {
+      const flut = Math.cos(p.age * 3.4 + p.seed);
+      return `<g transform="${at} rotate(${f(p.r + Math.sin(p.age * 2.6 + p.seed) * 40)}) scale(${(0.35 + 0.65 * Math.abs(flut)).toFixed(2)},1)" opacity="${o.toFixed(2)}"><path d="M-6,0 Q0,-4.5 6,0 Q0,4.5 -6,0Z" fill="${p.col}" stroke="#1f3a16" stroke-width=".9"/></g>`;
+    }
+    case 'drop': {   // a streak along its motion
+      const tx = p.x - p.vx * 0.025, ty = p.y - p.vy * 0.025;
+      return `<path d="M${f(tx)} ${f(ty)} L${f(p.x)} ${f(p.y)}" stroke="#fff6c8" stroke-width="2" stroke-linecap="round" opacity="${o.toFixed(2)}"/>`;
+    }
+    case 'spark': return `<circle cx="${f(p.x + Math.sin(p.age * 12 + p.seed) * 2)}" cy="${f(p.y)}" r="1.8" fill="#ffd36a" opacity="${o.toFixed(2)}"/>`;
+    case 'puff': return `<circle cx="${f(p.x)}" cy="${f(p.y)}" r="${f(p.size)}" fill="#fff" filter="url(#sp-soft)" opacity="${(o * 0.3).toFixed(2)}"/>`;
+    case 'flash': {   // the bite: a white star of short lines bursting out, and a ring
+      const k = p.age / p.life, r0 = 4 + k * 10, r1 = 12 + k * 18;
+      let s = `<circle cx="${f(p.x)}" cy="${f(p.y)}" r="${f(6 + k * 14)}" fill="none" stroke="#fff" stroke-width="${f(3 * (1 - k))}" opacity="${(1 - k).toFixed(2)}"/>`;
+      for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2 + 0.3, c = Math.cos(a), sn = Math.sin(a); s += `<path d="M${f(p.x + c * r0)} ${f(p.y + sn * r0)} L${f(p.x + c * r1)} ${f(p.y + sn * r1)}" stroke="#fff" stroke-width="2.4" stroke-linecap="round" opacity="${(1 - k).toFixed(2)}"/>`; }
+      return s;
+    }
+    default: return '';
+  }
+}
+UPD.push(() => {
+  const now = performance.now() / 1000, dt = Math.min(0.05, Math.max(0, now - (partT || now)));
+  partT = now;
+  const el = spotNow(), g = el && el.querySelector('[data-parts]');
+  if (!g || el.dataset.spot !== partSpot) { PARTS.length = 0; partSpot = el ? el.dataset.spot : ''; }
+  if (!g) return;
+  if (!PARTS.length) { if (g.firstChild) g.innerHTML = ''; return; }
+  for (let i = PARTS.length - 1; i >= 0; i--) { const p = PARTS[i]; p.age += dt; if (p.age >= p.life) PARTS.splice(i, 1); else partStep(p, dt); }
+  g.innerHTML = PARTS.map(partSVG).join('');
+});
 function setPose(av, pose) { if (av && (av.dataset.pose || '') !== pose) { if (pose) av.dataset.pose = pose; else delete av.dataset.pose; } }
 UPD.push(() => {
   const el = spotNow();
@@ -423,8 +485,27 @@ UPD.push(() => {
     setPose(av, k >= 0 ? 'cook' : '');
     if (rig) {
       rig.cook = k >= 0 ? k : null;
-      const a = k >= 0 && findAction('cooking', S.action.id);
-      rig.food = a && a.out ? DISH_COL[Object.keys(a.out)[0]] || '#e9a35a' : null;
+      const a = k >= 0 && findAction('cooking', S.action.id), col = a && a.out ? DISH_COL[Object.keys(a.out)[0]] || '#e9a35a' : null;
+      // the food goes in pale and raw and takes its colour as it cooks
+      rig.food = col ? mixHex('#f3e4d6', col, Math.min(1, k / 0.7)) : null;
+    }
+    if (k < 0 || !rig || !rig.pan) { SPOT.cookU = null; return; }
+    const u = driveU('cook', t), prev = SPOT.cookU, [px, py] = rigToSpot(COOK_BOX, rig.pan), r = Math.random;
+    SPOT.cookU = u;
+    const drop = (n, up, life) => { for (let i = 0; i < n; i++) partAdd({ kind: 'drop', x: px + (r() - 0.5) * 20, y: py - 2, vx: (r() - 0.5) * 120, vy: -up * (0.5 + r() * 0.6), g: 700, life: life || 0.45 }); };
+    // sizzling: the oil spits a little the whole time the pan is on the fire
+    if (u < 0.5 && r() < 0.12) drop(1, 140, 0.35);
+    const crossed = (x) => prev != null && prev < x && u >= x && u - prev < 0.3;
+    // the toss: the flames lick up the side as the pan is flicked (oil in the air catches), a spray of oil
+    if (crossed(COOK_T.launch)) {
+      retrigger(el.querySelector('.flames'), 'flare');
+      drop(4, 200, 0.55);
+      for (let i = 0; i < 3; i++) partAdd({ kind: 'spark', x: px + 10 + (r() - 0.5) * 24, y: py + 4, vx: (r() - 0.5) * 50, vy: -90 - r() * 70, g: -40, life: 0.7 + r() * 0.4 });
+    }
+    // the catch: it lands with a sizzle and a puff of steam
+    if (crossed(COOK_T.land)) {
+      drop(6, 220, 0.5);
+      for (let i = 0; i < 2; i++) partAdd({ kind: 'puff', x: px + (i - 0.5) * 14, y: py - 8, vx: (i - 0.5) * 20, vy: -26, g: 0, size: 4, life: 1.1 });
     }
   } else if (kind === 'voyaging') {
     const ship = el.querySelector('.ship');

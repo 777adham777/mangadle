@@ -9,38 +9,38 @@
    ========================================================================== */
 
 /* ================================================================ the axe */
-POSES.chopUp = Object.assign({}, POSES.windup, { prop: 'axe', sh: 1 });
-POSES.chop = Object.assign({}, POSES.strike, { prop: 'axe', sh: 1, fx: undefined });
-// A scene avatar records where its axe head is (rig coordinates), like the rod tip and the pan.
+// The swing itself is a driven cycle (POSE_DRIVE.wood, avatar.js). A scene avatar records where
+// its blade bites (the middle of the cutting edge, rig coordinates), like the rod tip and the pan.
 {
   const baseAxe = axeSVG;
-  axeSVG = function (hand, a, t) {
-    if (SPOT_CUR) SPOT_CUR.axe = add(hand, a, 50);
-    return baseAxe(hand, a, t);
+  axeSVG = function (hand, a, t, P) {
+    if (SPOT_CUR) SPOT_CUR.axe = add(add(hand, a, 46), a - 90, 27);
+    return baseAxe(hand, a, t, P);
   };
 }
 
 /* ================================================================ trees */
 // One look per log: trunk, bark lines, leaves and the shape of the crown.
 const TREE_LOOK = {
-  pine_log:    { trunk: '#7a4f2c', bark: '#4e3019', leaf: ['#2f6b3a', '#3f8a48'], crown: 'pine' },
-  cedar_log:   { trunk: '#8c4a2a', bark: '#5a2a14', leaf: ['#2d5e36', '#4c8a3e'], crown: 'pine', wide: 1 },
-  bamboo:      { trunk: '#79c04f', bark: '#3f7a2a', leaf: ['#5fae3f', '#9ad86a'], crown: 'bamboo' },
-  mistwood:    { trunk: '#6b6f7a', bark: '#41444d', leaf: ['#5d8a86', '#8fbab4'], crown: 'round', mist: 1 },
-  ironwood:    { trunk: '#3d3a3a', bark: '#1f1d1d', leaf: ['#3a5432', '#5a7a44'], crown: 'round' },
-  blossomwood: { trunk: '#5a3a32', bark: '#36201a', leaf: ['#ff9fc4', '#ffd0e2'], crown: 'round', petals: '#ffc2da' },
-  spirit_oak:  { trunk: '#4a3a5a', bark: '#2a1f36', leaf: ['#4fc9a6', '#9ff3dc'], crown: 'round', glow: '#7fffd8' },
-  heartwood:   { trunk: '#7a3a1a', bark: '#4a1e0a', leaf: ['#ffb43a', '#ffe28a'], crown: 'round', glow: '#ffd36a' },
+  pine_log:    { trunk: '#7a4f2c', bark: '#4e3019', leaf: ['#2f6b3a', '#3f8a48'], crown: 'pine', wood: '#ecc994' },
+  cedar_log:   { trunk: '#8c4a2a', bark: '#5a2a14', leaf: ['#2d5e36', '#4c8a3e'], crown: 'pine', wide: 1, wood: '#e9b98a' },
+  bamboo:      { trunk: '#79c04f', bark: '#3f7a2a', leaf: ['#5fae3f', '#9ad86a'], crown: 'bamboo', wood: '#e2ecb0' },
+  mistwood:    { trunk: '#6b6f7a', bark: '#41444d', leaf: ['#5d8a86', '#8fbab4'], crown: 'round', mist: 1, wood: '#dcd6c8' },
+  ironwood:    { trunk: '#3d3a3a', bark: '#1f1d1d', leaf: ['#3a5432', '#5a7a44'], crown: 'round', wood: '#b8946c' },
+  blossomwood: { trunk: '#5a3a32', bark: '#36201a', leaf: ['#ff9fc4', '#ffd0e2'], crown: 'round', petals: '#ffc2da', wood: '#f2cdb4' },
+  spirit_oak:  { trunk: '#4a3a5a', bark: '#2a1f36', leaf: ['#4fc9a6', '#9ff3dc'], crown: 'round', glow: '#7fffd8', wood: '#cfeedd' },
+  heartwood:   { trunk: '#7a3a1a', bark: '#4a1e0a', leaf: ['#ffb43a', '#ffe28a'], crown: 'round', glow: '#ffd36a', wood: '#ffcf7a' },
 };
 const WOOD_BOX = { x: 120, y: 58, h: 194 };
 const WOOD_GROUND = 252;
-// Where the axe head lands on a full swing (scene coordinates).
-function axeHitAt() {
+// Where the blade bites on swing i (0: the high cut, 1: the low one), in scene coordinates.
+function axeHitAt(i) {
   SPOT_RIG.__probe = {};
-  try { drawAvatar(avState(), POSES.chop, 0, { uid: '__probe' }); } catch (e) { /* rig busy */ }
+  const A = avState();
+  try { drawAvatar(A, POSE_DRIVE.wood((i + WOOD_HIT) / WOOD_SWINGS, 0, cosOf('build', A.build).b, true), 0, { uid: '__probe' }); } catch (e) { /* rig busy */ }
   const p = SPOT_RIG.__probe.axe;
   delete SPOT_RIG.__probe;
-  return p ? rigToSpot(WOOD_BOX, p) : [330, 190];
+  return p ? rigToSpot(WOOD_BOX, p) : [330, 190 + i * 10];
 }
 const wPine = (x, y, w, h, c) => `<path d="M${x} ${y - h} L${x + w / 2} ${y} H${x - w / 2}Z" fill="${c}"/>`;
 const wBlob = (x, y, r, c) => `<circle cx="${x}" cy="${y}" r="${r}" fill="${c}"/>`;
@@ -109,14 +109,14 @@ function logPile(id) {
 function woodHTML() {
   const a = S.action && S.action.skill === 'woodcutting' ? findAction('woodcutting', S.action.id) : null;
   const best = SKILLS.woodcutting.actions.filter((x) => x.level <= skillLv('woodcutting')).pop();
-  const look = (a || best).id, hit = axeHitAt();
-  SPOT.wood = { look, hit };
+  const look = (a || best).id, hits = [axeHitAt(0), axeHitAt(1)], hit = [Math.min(hits[0][0], hits[1][0]), hits[0][1]];
+  SPOT.wood = { look, hit, hits };
   const last = SPOT.last_woodcutting;
   return `<section class="win spot-win" style="--rc:${rc('shinobi')}">
     <div class="spot sp-wood ${a ? 'on' : ''}" data-spot="woodcutting">
       <svg class="spot-bg" viewBox="0 0 800 320" preserveAspectRatio="none" aria-hidden="true">${woodBg(look, hit)}<g data-pile>${logPile(look)}</g></svg>
       ${spotAvatar(WOOD_BOX, a ? 'chopUp' : '')}
-      <svg class="spot-fx" viewBox="0 0 800 320" preserveAspectRatio="none" aria-hidden="true"><g data-spotfx></g></svg>
+      <svg class="spot-fx" viewBox="0 0 800 320" preserveAspectRatio="none" aria-hidden="true"><defs><filter id="sp-soft" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="2.4"/></filter></defs><g data-spotfx></g><g data-parts></g></svg>
       ${TREE_LOOK[look] && TREE_LOOK[look].petals ? '<div class="wc-petals"><i></i><i></i><i></i><i></i><i></i><i></i></div>' : ''}
       <div class="spot-pops"></div>
       <div class="spot-hud"><span class="sh-name"><small>Forest above the village</small><b>${esc(a ? a.name.replace(/ Log$| Stalk$/, '') + ' tree' : 'Pick a tree')}</b></span>${last ? `<span class="sh-last">${last}</span>` : '<span class="sh-last" hidden></span>'}</div>
@@ -126,30 +126,52 @@ function woodHTML() {
 }
 UIX.realmScene.push((realm, skill) => (skill === 'woodcutting' ? woodHTML() : ''));
 
+
 /* ---------------------------------------------------------------- per-frame */
-// Two swings per log. The notch in the trunk deepens until the log comes loose.
-const SWINGS = 2;
+// The avatar swings twice per log (POSE_DRIVE.wood): a high cut, then a low one, so the notch in
+// the trunk is a V that deepens with every blow. On each impact, as games sell a heavy hit: the
+// axe freezes in the wood (the pose holds it), the scene gives a short thud, a flash marks the bite,
+// chips burst out of the cut and tumble to the grass, bark flakes fall, leaves drift down.
+const WC_DEPTH = [4, 13, 24];
+function wcNotch(W, depth) {
+  const [h0, h1] = W.hits, x = W.hit[0] - 6, top = h0[1] - 9 - depth * 0.3, bot = h1[1] + 5, mid = (h0[1] + h1[1]) / 2 + 1;
+  const L = TREE_LOOK[W.look] || TREE_LOOK.pine_log, c = L.wood || '#ecc994', f = (v) => v.toFixed(1);
+  return `<path d="M${f(x)} ${f(top)} L${f(x + depth)} ${f(mid)} L${f(x)} ${f(mid)}Z" fill="${c}"/>`
+    + `<path d="M${f(x)} ${f(mid)} L${f(x + depth)} ${f(mid)} L${f(x)} ${f(bot)}Z" fill="${shade(c, -0.22)}"/>`
+    + `<path d="M${f(x)} ${f(top)} L${f(x + depth)} ${f(mid)} L${f(x)} ${f(bot)}" fill="none" stroke="#3a2210" stroke-width="2.2" stroke-linejoin="round"/>`
+    + `<path d="M${f(x + depth * 0.25)} ${f(top + (mid - top) * 0.3)} l${f(depth * 0.4)} ${f((mid - top) * 0.35)}" stroke="#fff" stroke-width="1.2" opacity=".35"/>`;
+}
+function wcImpact(el, W, i) {
+  const L = TREE_LOOK[W.look] || TREE_LOOK.pine_log, [hx, hy] = W.hits[i], r = Math.random;
+  retrigger(el.querySelector('.wc-tree'), 'hit');
+  retrigger(el, 'thud');
+  partAdd({ kind: 'flash', x: hx + 2, y: hy, life: 0.16, g: 0 });
+  // chips fly out of the cut, mostly back towards the axeman and up, and tumble as they fall
+  for (let k = 0; k < 7; k++) partAdd({ kind: 'chip', x: hx + 2, y: hy + r() * 6 - 3, vx: -60 - r() * 220 + (k === 0 ? 260 : 0), vy: -120 - r() * 260,
+    vr: (r() - 0.5) * 1400, w: 5 + r() * 5, h: 2.5 + r() * 2, col: L.wood || '#ecc994', life: 1.4 + r() * 0.8, floor: WOOD_GROUND + 6 + r() * 40 });
+  for (let k = 0; k < 2; k++) partAdd({ kind: 'chip', x: hx, y: hy - 4, vx: -30 - r() * 90, vy: -40 - r() * 80,
+    vr: (r() - 0.5) * 600, w: 6, h: 3.5, col: L.bark, life: 1.4, floor: WOOD_GROUND + 10 + r() * 30 });
+  // the crown shakes loose a leaf or two (or petals)
+  const n = 1 + (r() < 0.6 ? 1 : 0);
+  for (let k = 0; k < n; k++) partAdd({ kind: 'leaf', x: W.hit[0] + 30 + (r() - 0.5) * 220, y: 30 + r() * 60, vx: (r() - 0.5) * 30, vy: 10,
+    vr: (r() - 0.5) * 200, col: L.petals || L.leaf[k % 2], life: 4.5, g: 0, floor: WOOD_GROUND + 10 + r() * 40, seed: r() * 6 });
+}
 UPD.push(() => {
   const el = spotNow();
   if (!el || el.dataset.spot !== 'woodcutting') return;
   const k = actFrac('woodcutting'), av = el.querySelector('.spot-av svg.avatar'), g = el.querySelector('[data-spotfx]');
   el.classList.toggle('on', k >= 0);
-  setPose(av, k >= 0 ? 'chopUp' : '');
+  setPose(av, k >= 0 ? 'wood' : '');
   const W = SPOT.wood;
   if (!W || !g) return;
-  if (k < 0) { if (g.innerHTML) g.innerHTML = ''; SPOT.wcPh = null; return; }
-  const [hx, hy] = W.hit, depth = 4 + Math.min(1, k) * 26;
-  g.innerHTML = `<path d="M${(hx - 6).toFixed(1)} ${(hy - 12).toFixed(1)} L${(hx - 6 + depth).toFixed(1)} ${hy.toFixed(1)} L${(hx - 6).toFixed(1)} ${(hy + 8).toFixed(1)}Z" fill="#e6c08a" stroke="#3a2210" stroke-width="2" stroke-linejoin="round"/>`;
-  // a swing lands each time the phase passes the hit point
-  const ph = (k * SWINGS) % 1, prev = SPOT.wcPh;
-  SPOT.wcPh = ph;
-  if (prev == null || !(prev < 0.72 && ph >= 0.72)) return;
-  if (av) avPlay(av, [['chop', 130, 'out'], ['chop', 140], ['chopUp', 420]]);
-  setTimeout(() => {
-    const tree = el.querySelector('.wc-tree');
-    if (tree) retrigger(tree, 'hit');
-    spotPop('<i></i><i></i><i></i><i></i><i></i>', hx, hy, 'chips', 700);
-  }, 120);
+  if (k < 0) { if (g.innerHTML) g.innerHTML = ''; SPOT.wcV = null; return; }
+  // where the swing is: which of the two swings, and how far into it
+  const u = driveU('wood', performance.now() / 1000) * WOOD_SWINGS, i = Math.min(WOOD_SWINGS - 1, Math.floor(u)), v = u - i;
+  const landed = i + (v >= WOOD_HIT ? 1 : 0);
+  if (W.depth !== landed) { W.depth = landed; g.innerHTML = wcNotch(W, WC_DEPTH[Math.min(2, landed)]); }
+  const prev = SPOT.wcV;
+  SPOT.wcV = u;
+  if (prev != null && prev < i + WOOD_HIT && u >= i + WOOD_HIT && u - prev < 0.5) wcImpact(el, W, i);
 });
 on('action', (d) => {
   if (d.skill !== 'woodcutting') return;
@@ -158,7 +180,11 @@ on('action', (d) => {
   setLast('woodcutting', `<small>Last log</small><b>${esc(it.name)}</b><em>${fmt(familyCount(id))} owned</em>`);
   const el = spotNow();
   if (!el || el.dataset.spot !== 'woodcutting' || !SPOT.wood) return;
-  const [hx, hy] = SPOT.wood.hit;
+  const W = SPOT.wood, [hx, hy] = W.hit, L = TREE_LOOK[W.look] || TREE_LOOK.pine_log;
+  // the wedge of wood between the two cuts comes loose and drops out of the notch
+  partAdd({ kind: 'chip', x: hx + 4, y: hy + 4, vx: -70, vy: -150, vr: -500, w: 14, h: 7, col: L.wood || '#ecc994', life: 1.8, floor: WOOD_GROUND + 18 });
+  for (let k = 0; k < 3; k++) partAdd({ kind: 'leaf', x: hx + 30 + (Math.random() - 0.5) * 260, y: 20 + Math.random() * 70, vx: 0, vy: 14, vr: 120, col: L.petals || L.leaf[k % 2], life: 4.5, g: 0, floor: WOOD_GROUND + 10 + Math.random() * 40, seed: k * 2 });
+  W.depth = null;
   spotPop(`<span class="tile-art">${itemIc(id)}</span>`, hx, hy - 10, 'dish', 1300);
   spotPop(`<b>+${fmt(d.gains[id] || 1)} ${esc(it.name)}</b>`, hx + 60, hy - 70, 'tag', 1600);
   const pile = el.querySelector('[data-pile]');

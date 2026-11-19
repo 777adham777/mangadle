@@ -223,7 +223,7 @@ const POSES = {
   victory:  { tw: 0.6, t1: 184, t2: -5, n: -10, h: -12, ht: 6, st: 10, aF: [180, -8],  aB: [-130, 36], lF: [30, -86], lB: [-8, -26], fF: 20, fB: -40, g: 0,    dy: 0, air: 24, expr: 'happy' },
   // fish, cook: full motion cycles, see POSE_DRIVE (their still poses are set there)
 };
-const POSE_KEYS = ['t1', 't2', 'n', 'h', 'ht', 'st', 'tw', 'fF', 'fB', 'g', 'dy', 'air', 'dx', 'rb', 'cr', 'pt', 'sa'];
+const POSE_KEYS = ['t1', 't2', 'n', 'h', 'ht', 'st', 'tw', 'fF', 'fB', 'g', 'dy', 'air', 'dx', 'rb', 'cr', 'pt', 'sa', 'fq', 'fl'];
 function lerpPose(a, b, k) {
   const o = {};
   for (const key of POSE_KEYS) o[key] = (a[key] || 0) + ((b[key] || 0) - (a[key] || 0)) * k;
@@ -239,6 +239,8 @@ const ease = {
   io: (x) => (x < 0.5 ? 4 * x * x * x : 1 - Math.pow(-2 * x + 2, 3) / 2),
   out: (x) => 1 - Math.pow(1 - x, 3),
   back: (x) => 1 + 2.4 * Math.pow(x - 1, 3) + 1.4 * Math.pow(x - 1, 2),
+  in: (x) => x * x * x,
+  lin: (x) => x,
 };
 
 /* ================================================================ geometry */
@@ -415,38 +417,81 @@ POSE_DRIVE.fish = (u, t, B, calm) => {
   return plantPose(P, B, { B: (J) => knobAt(add(J.aF[2], J.foreA.aF, 4.2 * B.w), J.foreA.aF + P.g, P.cr) });
 };
 
-// ---- cooking: stir, pull back, flick the pan (the food flies and flips), catch it, settle.
+// ---- cooking: stir, loosen, push, pull back and flick, follow the food up, catch it, settle.
 // As at a real stove, seen from this side: the far hand holds the pan by its handle, the near
 // hand stirs with a spatula. The pan rests on a burner fixed in the room (c: its centre, from the
 // floor under the figure), so the body sways around it and both arms are solved onto it.
-// A: the handle's angle · pt: the pan's tilt · tx, ty: the spatula's tip in the pan · sa: the spatula's
-// angle · fd: the food [x, height, spin].
+// The toss follows how cooks really do it: the motion is mostly back and forth, not up and down.
+// Shake the pan to loosen the food, push it forward (far edge down) so the food slides to the far
+// rim, then pull back sharply while the far lip flicks up: the food leaves the rim, arcs up and
+// back towards the cook, flips, and the pan meets it under the arc and gives a little as it lands.
+// A: the handle's angle · pt: the pan's tilt (+ lifts the far lip) · tx, ty: the spatula's tip in
+// the pan · sa: the spatula's angle · fd: the food [x, height, spin] · fb: two small bits [x, h, x, h]
+// · fq: squash (+ flattened, - stretched) · fl: 1 while the food is in the air.
 const COOK_BASE = { sh: 1, panB: 1, tool: 'spatula', bf: 1, ff: 1, fF: 12, fB: -192, feet: [12, -13], n: 4, t2: 4, st: 2, ht: -2, aF: [30, 60], aB: [30, 90], lF: [0, 0], lB: [0, 0], tw: 0.7, dx: 0, dy: 1, pt: 0, tx: 2, ty: -1.5, sa: -18, g: 0 };
 const CK = (o) => Object.assign({}, COOK_BASE, o);
 const COOK_STIR = CK({ t1: 168, h: 18, c: [46, -10], A: 98, dx: 2 });
+const COOK_T = { push: 0.565, launch: 0.645, land: 0.8 };
+const COOK_PUSH = CK({ t1: 161, t2: 7, n: -1, h: 17, c: [57, -10], A: 97, pt: -15, dx: 6, dy: 3, tx: -3, ty: -16, sa: -6 });
 const COOK_KEYS = [
   [0, COOK_STIR],
-  [0.58, COOK_STIR],
-  [0.65, CK({ t1: 173, t2: 2, h: 14, c: [40, -6], A: 104, pt: -8, dx: -1, dy: 4, tx: -2, ty: -18, sa: -4 })],
-  [0.69, CK({ t1: 163, t2: 8, n: -2, h: 8, c: [52, -18], A: 92, pt: 24, dx: 4, dy: 1, tx: 0, ty: -24, sa: -2 }), 'out'],
-  [0.78, CK({ t1: 168, t2: 4, n: -4, h: -6, c: [47, -13], A: 96, pt: 4, dx: 2, dy: 2, tx: 0, ty: -20, sa: -6 })],
-  [0.86, CK({ t1: 170, t2: 4, n: 4, h: 14, c: [44, -7], A: 100, pt: -5, dx: 1, dy: 4, tx: 1, ty: -10, sa: -12 })],
-  [0.95, COOK_STIR],
+  [0.5, COOK_STIR],
+  // loosen: two quick shakes, the spatula comes out of the pan (anticipation)
+  [0.555, CK({ t1: 170, h: 16, c: [45, -11], A: 99, pt: 2, dx: 0, dy: 2, tx: -4, ty: -14, sa: -8 })],
+  // push forward, far edge down: the food slides to the far rim
+  [0.625, COOK_PUSH],
+  [COOK_T.launch, CK(Object.assign({}, COOK_PUSH, { c: [58, -10], pt: -17, dx: 7 }))],
+  // pull back sharply and flick the far lip up: the food leaves the pan
+  [0.675, CK({ t1: 175, t2: 1, n: -4, h: 2, c: [43, -17], A: 101, pt: 24, dx: -2, dy: 1, tx: -2, ty: -22, sa: -4 }), 'out'],
+  // follow the food up with the eyes, bring the pan back under it
+  [0.745, CK({ t1: 170, t2: 3, n: -6, h: -4, c: [47, -13], A: 98, pt: 4, dx: 1, dy: 1, tx: -2, ty: -20, sa: -6 })],
+  [COOK_T.land, CK({ t1: 168, t2: 4, n: 0, h: 10, c: [48, -10], A: 98, pt: -2, dx: 2, dy: 2, tx: -2, ty: -16, sa: -8 })],
+  // the catch: the pan and the knees give a little, like catching a ball
+  [0.835, CK({ t1: 166, t2: 5, n: 4, h: 16, c: [48, -5], A: 98, pt: 0, dx: 2, dy: 5, tx: 0, ty: -9, sa: -12 }), 'out'],
+  [0.92, CK({ t1: 168, h: 17, c: [46, -9], A: 98, dx: 2, tx: 2, ty: -3, sa: -16 })],
   [1, COOK_STIR],
 ];
+// Where the food is in the room (same frame as c): from the far rim at the launch to the pan's centre at the catch.
+const COOK_FROM = [69, -10], COOK_TO = [48, -10];
+function cookFood(k, peak, land) {
+  const e = ease.io(k);
+  return [COOK_FROM[0] + (COOK_TO[0] + land - COOK_FROM[0]) * e, COOK_FROM[1] + (COOK_TO[1] - COOK_FROM[1]) * k - Math.sin(Math.PI * k) * peak];
+}
 POSE_DRIVE.cook = (u, t, B, calm) => {
-  const P = keyPose(COOK_KEYS, u), stir = win(u, -1, 0, 0.56, 0.6);
+  const P = keyPose(COOK_KEYS, u), stir = win(u, -1, 0, 0.47, 0.52);
   // stirring: the spatula circles in the pan, the pan hand jiggles it, the body works with the stirring arm
   if (stir) {
-    const ph = (u / 0.58) * Math.PI * 2 * 3;
+    const ph = (u / 0.5) * Math.PI * 2 * 3;
     P.tx += (Math.cos(ph) - 1) * 6 * stir; P.ty += Math.sin(ph) * 2 * stir;
     P.A += Math.sin(t * 9) * 1.6 * stir; P.c = [P.c[0] + Math.sin(t * 9) * 0.6 * stir, P.c[1]];
     P.st += Math.cos(ph) * 2 * stir; P.sa += Math.sin(ph) * 8 * stir; P.t1 += Math.cos(ph) * 1 * stir;
     P.dx += Math.sin(t * 0.8) * 1.4 * stir; P.h += Math.sin(t * 0.6) * 2 * stir;
   }
-  // the food: pushed around by the spatula, then tossed (it leaves at the flick, lands at the catch)
-  if (u >= 0.67 && u < 0.86) { const k = (u - 0.67) / 0.19; P.fd = [Math.sin(Math.PI * k) * 9 + k * 2, Math.sin(Math.PI * k) * 34, k * 360]; }
-  else P.fd = [P.tx * 0.3, 0, Math.sin(u * 20) * 6];
+  // loosening: two short shakes of the pan
+  const sh = win(u, 0.5, 0.505, 0.55, 0.56);
+  if (sh) { const w = Math.sin(((u - 0.5) / 0.06) * Math.PI * 4); P.c = [P.c[0] + w * 2.6 * sh, P.c[1]]; P.pt += w * 4 * sh; }
+  // the food: pushed around by the spatula, slid to the far rim, tossed, caught (a hop as it lands)
+  const T = COOK_T, rest = [P.tx * 0.3, 0, Math.sin(u * 20) * 6], bitsRest = [-6 + P.tx * 0.2, 0, 5.5 + P.tx * 0.25, 0];
+  P.fq = 0; P.fl = 0;
+  if (u < T.launch) {
+    const s = ease.io(Math.max(0, Math.min(1, (u - T.push) / (T.launch - T.push))));
+    P.fd = [rest[0] + (11 - rest[0]) * s, 0, rest[2] * (1 - s)];
+    P.fb = [bitsRest[0] + (7 - bitsRest[0]) * s, 0, bitsRest[2] + (12 - bitsRest[2]) * s, 0];
+  } else {
+    const fly = (d, peak, land, x0) => {
+      const k = (u - T.launch - d) / (T.land - T.launch);
+      if (k <= 0) return [x0, 0];
+      if (k >= 1) { const hop = Math.sin(Math.PI * Math.min(1, (u - T.land - d) / 0.04)); return [land, Math.max(0, hop) * 3]; }
+      const p = cookFood(k, peak, land);
+      return [p[0] - P.c[0], P.c[1] - p[1]];
+    };
+    const k = (u - T.launch) / (T.land - T.launch), m = fly(0, 44, 0, 11);
+    P.fd = [m[0], m[1], k < 1 ? ease.io(k) * 360 : 0];
+    P.fb = [...fly(0.012, 36, -6, 7), ...fly(0.022, 50, 5.5, 12)];
+    P.fl = k > 0 && k < 1 ? 1 : 0;
+    // stretched as it leaves, squashed flat as it lands
+    P.fq = -0.25 * win(u, T.launch, T.launch + 0.01, T.launch + 0.03, T.launch + 0.06) + 0.45 * win(u, T.land - 0.005, T.land + 0.005, T.land + 0.012, T.land + 0.06);
+  }
   const br = calm ? 0 : Math.sin(t * 2.2);
   P.t2 += br * 1.3; P.n -= br;
   const c = [100 + P.c[0], GROUND - 75 + P.c[1]];
@@ -455,9 +500,65 @@ POSE_DRIVE.cook = (u, t, B, calm) => {
     F: () => add([c[0] + P.tx, c[1] + P.ty], P.sa, -18),            // the spatula, its tip in the pan
   });
 };
+
+// ---- woodcutting: the felling swing, twice per log (a high cut, then a lower one: the notch is a V).
+// Built from how an axe is really swung and from game animation practice:
+// - a slow, readable wind-up (the weight goes onto the back foot, the axe rises behind the head, the
+//   eyes stay on the cut), a short hang at the top, then a very fast strike: anticipation slow,
+//   action fast ("delay the start and hold the ending");
+// - the hands: the front hand stays near the end of the haft, the back hand slides up near the head
+//   on the wind-up and down to meet the other hand at impact;
+// - the hips drive the swing, the chest, head and arms follow and settle at different moments
+//   (overlapping action), the knees drop the weight into the blow;
+// - hit-stop: the axe freezes in the wood for a few frames, then quivers, is levered up and down to
+//   free it and pulled back.
+// G: the front hand, from the floor under the figure · R: the haft's angle · s: where the back hand
+// holds the haft (distance from the front hand) · smR: the haft's angle a moment ago (the smear).
+const WOOD_SWINGS = 2, WOOD_HIT = 0.55;
+const WOOD_BASE = { sh: 1, prop: 'axe', bf: 1, fF: 12, fB: -194, feet: [17, -15], n: 0, t2: 2, st: 0, ht: 0, aF: [30, 60], aB: [30, 90], lF: [0, 0], lB: [0, 0], g: 0 };
+function woodKeys(low) {
+  const W = (o) => Object.assign({}, WOOD_BASE, o), y = low ? -9 : 0;
+  const ready = W({ t1: 176, t2: 2, h: 9, tw: 0.75, dx: 2, dy: 3, G: [24, 84 + y], R: 120, s: 11 });
+  const top = W({ t1: 195 - (low ? 3 : 0), t2: -10, n: 4, h: 4, tw: 0.42, st: 8, ht: -5, dx: -8, dy: -1, G: [-17, 136 + y * 0.6], R: 246 - (low ? 10 : 0), s: 27 });
+  const hit = W({ t1: 163, t2: 9, n: -3, h: 13, tw: 0.92, st: -7, ht: 6, dx: 8, dy: 10, G: [31, 86 + y], R: 133 - (low ? 7 : 0), s: 7, expr: 'hurt' });
+  const after = (o) => W(Object.assign({}, hit, { expr: undefined }, o));
+  return [
+    [0, ready],
+    [0.1, W({ t1: 182, t2: -3, h: 6, tw: 0.62, dx: -2, dy: 2, G: [6, 118 + y], R: 190, s: 19 })],
+    [0.4, top, 'out'],
+    [0.47, W(Object.assign({}, top, { t1: top.t1 + 1, G: [-19, 137 + y * 0.6], R: top.R + 5 }))],
+    [0.51, W({ t1: 178, t2: 4, n: 0, h: 7, tw: 0.72, st: -2, ht: 2, dx: 3, dy: 4, G: [14, 134 + y], R: 172 - (low ? 4 : 0), s: 15 }), 'in'],
+    [WOOD_HIT, hit, 'lin'],
+    [0.61, hit],                                                          // hit-stop: frozen in the wood
+    [0.67, after({ t1: 161, t2: 10, h: 15, dy: 12, n: -1 }), 'out'],      // the body follows through
+    [0.75, after({ t1: 169, t2: 5, h: 11, dy: 7, G: [28, 93 + y], R: hit.R + 11, s: 8 })],
+    [0.81, after({ t1: 172, t2: 4, h: 10, dy: 6, G: [26, 82 + y], R: hit.R - 9, s: 9 })],
+    [0.9, after({ t1: 177, t2: 2, h: 9, tw: 0.78, st: 0, ht: 0, dx: 1, dy: 4, G: [19, 86 + y], R: 114, s: 11 }), 'out'],
+    [1, ready],
+  ];
+}
+const WOOD_KEYS = [woodKeys(false), woodKeys(true)];
+POSE_DRIVE.wood = (u, t, B, calm) => {
+  const w = Math.max(0, Math.min(WOOD_SWINGS - 0.0001, u * WOOD_SWINGS)), i = Math.floor(w), v = w - i, keys = WOOD_KEYS[i % 2];
+  const P = keyPose(keys, v);
+  // the smear: where the haft was a moment ago, during the strike only
+  if (v > 0.475 && v <= WOOD_HIT) P.smR = keyPose(keys, Math.max(0.47, v - 0.03)).R;
+  // after the freeze the haft quivers in the wood, dying out
+  const q = win(v, 0.6, 0.61, 0.63, 0.72);
+  if (q) P.R += Math.sin(v * 900) * 2.2 * q * (1 - (v - 0.6) / 0.12);
+  const br = calm ? 0 : Math.sin(t * 2.2);
+  P.t2 += br * 1.2; P.n -= br * 0.8;
+  const G = [100 + P.G[0], GROUND - P.G[1]];
+  plantPose(P, B, {
+    F: () => G,
+    B: (J) => add(add(J.aF[2], J.foreA.aF, 4.2 * B.w), P.R, P.s),   // the sliding hand, on the haft
+  });
+  P.g = P.R - (P.aF[0] + P.aF[1]);
+  return P;
+};
 // Which point of its cycle a driven pose is at: the running action's progress when it is long
 // enough to show a whole cycle, otherwise a steady loop.
-const DRIVE_SKILL = { fish: ['fishing', 4.5], cook: ['cooking', 3] };
+const DRIVE_SKILL = { fish: ['fishing', 4.5], cook: ['cooking', 3], wood: ['woodcutting', 3] };
 function driveU(name, t) {
   const [sk, per] = DRIVE_SKILL[name];
   if (S && S.action && S.action.skill === sk) {
@@ -467,11 +568,12 @@ function driveU(name, t) {
   }
   return ((t / per) % 1 + 1) % 1;
 }
-// Still versions (portraits, previews, the scene's first frame): mid-wait and mid-stir.
+// Still versions (portraits, previews, the scene's first frame): mid-wait, mid-stir, ready to swing.
 {
   const B0 = COSMETICS.build[0].b;
   POSES.fish = POSE_DRIVE.fish(0.5, 0, B0, true);
   POSES.cook = POSE_DRIVE.cook(0.3, 0, B0, true);
+  POSES.wood = POSE_DRIVE.wood(0.02, 0, B0, true);
 }
 
 /* ================================================================ drawing */
@@ -1166,7 +1268,8 @@ function drawAvatar(A, P, t, opt) {
   if (prop === 'pan') fig.push(panSVG(grip, fa + P.g, t, P, '#ffb36b'));
   if (P.tool === 'spatula') fig.push(spatulaSVG(front.hp, P.sa || 40));
   if (prop === 'rod' && backX) fig.push(back.hand);
-  if (prop === 'axe') fig.push(axeSVG(grip, fa + P.g, t));
+  if (prop === 'axe') fig.push(axeSVG(grip, fa + P.g, t, P));
+  if (prop === 'axe' && backX) fig.push(back.hand);   // the sliding hand wraps the haft
   if (frontX || weapon || prop || P.tool) fig.push(front.hand);
   fig.push(G.over);
   let figS = fig.join('');
@@ -1352,9 +1455,18 @@ function rodSVG(hand, a, t, P, noLine, col) {
   return s;
 }
 // A woodcutter's axe: the blade sits on the leading side of the haft (towards the swing).
-function axeSVG(hand, a, t) {
+// During the strike a smear (P.smR: where the haft was a moment ago) fans out behind the head: one
+// solid arc the colour of the blade, the way 2D animators draw a fast swing in a single frame.
+function axeSVG(hand, a, t, P) {
   const at = (d, side) => add(add(hand, a, d), a - 90, side);
-  return part(taper([add(hand, a, -12), add(hand, a, 54)], [3.6, 3]), '#8a5a2b', 2.2)
+  let sm = '';
+  if (P && P.smR != null && Math.abs(P.smR - a) > 4) {
+    const n = 7, outer = [], inner = [];
+    for (let i = 0; i <= n; i++) { const b = P.smR + (a - P.smR) * (i / n); outer.push(add(add(hand, b, 52), b - 90, 26)); inner.push(add(hand, b, 30 + 14 * (i / n))); }
+    sm = `<path d="M${outer.map(pt).join('L')}L${inner.reverse().map(pt).join('L')}Z" fill="#eef3fb" opacity=".42"/>`
+      + `<path d="M${outer.slice(2).map(pt).join('L')}" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" opacity=".8"/>`;
+  }
+  return sm + part(taper([add(hand, a, -12), add(hand, a, 54)], [3.6, 3]), '#8a5a2b', 2.2)
     + `<path d="M${pt(at(38, 2))} L${pt(at(54, 2))} Q${pt(at(60, 12))} ${pt(at(60, 24))} Q${pt(at(46, 30))} ${pt(at(30, 24))} Q${pt(at(32, 12))} ${pt(at(38, 2))}Z" fill="#cfd6e4" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/>`
     + `<path d="M${pt(at(32, 22))} Q${pt(at(46, 27))} ${pt(at(59, 22))}" fill="none" stroke="#fff" stroke-width="1.6" opacity=".7"/>`;
 }
@@ -1368,7 +1480,12 @@ function panSVG(hand, a, t, P, food) {
     + `<path d="M-15,0 A15,5.2 0 0,0 15,0 L13.6,4.4 A13.6,4.4 0 0,1 -13.6,4.4Z" fill="#1d2028" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/>`
     + `<ellipse rx="15" ry="5.2" fill="#2a2e38" stroke="${OL}" stroke-width="2"/><ellipse cy=".6" rx="12" ry="3.8" fill="#3a3f4c"/>`
     + `<path d="M-11,-2.6 Q-4,-4.4 4,-4" fill="none" stroke="#6c7385" stroke-width="1.2" opacity=".7"/></g>`;
-  if (food) s += `<g transform="translate(${r1(c[0] + fd[0])},${r1(c[1] - 1.5 - fd[1])}) rotate(${r1(fd[2])})"><ellipse rx="7.5" ry="3.2" fill="${food}" stroke="${OL}" stroke-width="1.6"/><path d="M-4,-1 h6" stroke="#fff" stroke-width="1.2" opacity=".55"/></g>`;
+  // the food: a main piece and two small bits; squashed as it lands (P.fq), stretched as it leaves
+  if (food) {
+    const q = P.fq || 0, fb = P.fb || [-6, 0, 5.5, 0], sq = `scale(${r1((1 + q * 0.5) * 10) / 10},${r1((1 - q) * 100) / 100})`;
+    for (const i of [0, 2]) s += `<g transform="translate(${r1(c[0] + fb[i])},${r1(c[1] - 1.2 - fb[i + 1])}) rotate(${r1(fd[2] * (i ? -1.3 : 0.8))})"><ellipse rx="3.4" ry="2.2" fill="${shade(food, -0.12)}" stroke="${OL}" stroke-width="1.3"/></g>`;
+    s += `<g transform="translate(${r1(c[0] + fd[0])},${r1(c[1] - 1.5 - fd[1])}) rotate(${r1(fd[2])}) ${sq}"><ellipse rx="7.5" ry="3.2" fill="${food}" stroke="${OL}" stroke-width="1.6"/><path d="M-4,-1 h6" stroke="#fff" stroke-width="1.2" opacity=".55"/></g>`;
+  }
   return s;
 }
 // A wooden spatula from the back hand towards the pan (angle a).
@@ -1456,7 +1573,7 @@ function basePose(el) {
   if (ctx === 'preview') return el.dataset.pose || A.stance;
   if (ctx === 'battle') return S.combat.zone != null ? 'guard' : A.stance;
   if (ctx === 'enemy') return 'guard';
-  if (S.action) return S.action.skill === 'fishing' ? 'fish' : S.action.skill === 'cooking' ? 'cook' : S.action.skill === 'woodcutting' && POSES.chopUp ? 'chopUp' : A.stance;
+  if (S.action) return S.action.skill === 'fishing' ? 'fish' : S.action.skill === 'cooking' ? 'cook' : S.action.skill === 'woodcutting' ? 'wood' : A.stance;
   return A.stance;
 }
 function avAnim(el) {
@@ -1546,7 +1663,7 @@ on('kill', () => avPlay(playerAv(), [['victory', 240, 'back'], ['victory', 420],
 
 /* ================================================================ view */
 let avSlot = 'build', avPreview = '';
-const PREVIEWS = [['', 'Stance'], ['guard', 'Guard'], ['strike', 'Attack'], ['victory', 'Victory'], ['hurt', 'Hurt'], ['fish', 'Fishing'], ['cook', 'Cooking']];
+const PREVIEWS = [['', 'Stance'], ['guard', 'Guard'], ['strike', 'Attack'], ['victory', 'Victory'], ['hurt', 'Hurt'], ['fish', 'Fishing'], ['cook', 'Cooking'], ['wood', 'Chopping']];
 function avatarHTML() {
   const A = avState();
   return `
