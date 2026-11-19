@@ -6,6 +6,8 @@
    - Every skill that opts in (QUALITY) keeps a log: the first shiny / perfect
      of each of its actions. Filling the log pays set bonuses at 25 / 50 / 75 /
      100 % (Q_TIERS). Skills opt in world by world.
+   - Shiny logs are filled by hand (claim): one shiny of each is spent to log
+     it, the others are trophies to sell. Perfect logs fill on their own.
    - Shiny, perfect and seasoned items are "variants" of their base item
      (id `base~s`, `base~p`, `base~n~spice`, `base~p~spice`), created on demand
      so the item list does not explode. They have their own logs and do not
@@ -17,7 +19,7 @@
 // Shiny: per catch, up to ×2 with the action's mastery, and luck (~25 min for a first shiny Minnow, ~1h for a Sea King).
 // Perfect: per dish, + mastery and levels above the recipe (1% → ~9%).
 const QUALITY = {
-  fishing: { kind: 'shiny',   base: 1 / 500 },
+  fishing: { kind: 'shiny',   base: 1 / 500, claim: true },
   cooking: { kind: 'perfect', base: 0.01 },
 };
 const Q_WORD = { s: 'Shiny', p: 'Perfect' };
@@ -104,21 +106,24 @@ function perfectChance(skill, act) {
 const qChance = (skill, act) => (qKind(skill) === 'shiny' ? shinyChance(skill, act) : perfectChance(skill, act));
 
 /* ------------------------------------------------------------- logs */
-// One entry per action that makes an item: { act, base, vid, n (how many made so far) }.
+// One entry per action that makes an item: { act, base, vid, n (how many made so far), got (in the log),
+// ready (owned but not logged yet: a claim log can take it) }.
 function qEntries(skill) {
-  const code = Q_CODE[qKind(skill)];
+  const code = Q_CODE[qKind(skill)], claim = QUALITY[skill].claim, C = S.quality.claim;
   return SKILLS[skill].actions.filter((a) => a.out).map((a) => {
-    const base = Object.keys(a.out)[0], vid = variantId(base, code);
-    return { act: a, base, vid, n: (S.quality.log[vid] || 0) };
+    const base = Object.keys(a.out)[0], vid = variantId(base, code), n = S.quality.log[vid] || 0;
+    const got = claim ? !!C[vid] : n > 0;
+    return { act: a, base, vid, n, got, ready: !!claim && !got && count(vid) > 0 };
   });
 }
-const qCount = (skill) => qEntries(skill).filter((e) => e.n > 0).length;
+const qCount = (skill) => qEntries(skill).filter((e) => e.got).length;
+const qReady = (skill) => (QUALITY[skill] && QUALITY[skill].claim ? qEntries(skill).filter((e) => e.ready) : []);
 function qTotal(skill) { return QUALITY[skill] ? qEntries(skill).reduce((a, e) => a + e.n, 0) : 0; }
 function qTiers(skill) {
-  const E = qEntries(skill), have = E.filter((e) => e.n > 0).length;
+  const E = qEntries(skill), have = E.filter((e) => e.got).length;
   return (Q_TIERS[skill] || []).map(([f, fx, text]) => { const need = Math.max(1, Math.ceil(f * E.length)); return { need, fx, text, on: have >= need }; });
 }
-const qLogDone = (skill) => !!QUALITY[skill] && qEntries(skill).every((e) => e.n > 0);
+const qLogDone = (skill) => !!QUALITY[skill] && qEntries(skill).every((e) => e.got);
 // Bonuses from every log, cached until a log gains a new entry (or another save is loaded).
 let Q_CACHE = null, Q_CACHE_S = null, Q_VER = 0, Q_CACHE_VER = -1;
 function qBonus() {
@@ -144,9 +149,24 @@ function logQuality(skill, base, q, n, item) {
   L[vid] = (L[vid] || 0) + n;
   if (first) { Q_VER++; dirty = true; }
   emit('quality', { skill, base, q, item: item || vid, first, have: qCount(skill), total: qEntries(skill).length });
-  if (!first) return;
+  if (!first || QUALITY[skill].claim) return;
+  qTierCheck(skill, tiersBefore);
+}
+function qTierCheck(skill, before) {
   const T = qTiers(skill), after = T.filter((t) => t.on).length;
-  if (after > tiersBefore) emit('qtier', { skill, tier: T[after - 1], i: after - 1 });
+  if (after > before) emit('qtier', { skill, tier: T[after - 1], i: after - 1 });
+}
+// Claim logs: spend one shiny of each to log it (the rest can be sold).
+function qClaim(skill, base) {
+  const e = qEntries(skill).find((x) => x.base === base);
+  if (!e || !e.ready) return false;
+  const before = qTiers(skill).filter((t) => t.on).length;
+  removeItem(e.vid, 1);
+  S.quality.claim[e.vid] = 1;
+  Q_VER++; dirty = true;
+  emit('qclaim', { skill, base, item: e.vid, have: qCount(skill), total: qEntries(skill).length });
+  qTierCheck(skill, before);
+  return true;
 }
 
 /* ------------------------------------------------------------- the roll */

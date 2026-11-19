@@ -163,6 +163,12 @@
 .ql-grid { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 9px; }
 .ql-grid .tile { --ts: 42px; }
 .qlog .pbar { height: 6px; margin-bottom: 9px; }
+/* a shiny owned but not handed in yet: click to log it */
+.ql-grid .tile.ql-ready { cursor: pointer; padding: 0; border-color: #ffd75e; box-shadow: 0 0 0 1px #ffd75e, 0 0 10px rgba(255, 215, 94, 0.45); animation: qlReady 1.4s ease-in-out infinite alternate; }
+.ql-grid .tile.ql-ready:hover { transform: translateY(-1px); }
+@keyframes qlReady { to { box-shadow: 0 0 0 1px #ffd75e, 0 0 3px rgba(255, 215, 94, 0.2); } }
+.ql-claim { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.ql-claim small { color: var(--dim); font-size: 11.5px; }
 .ql-tiers { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
 .ql-tiers li { display: flex; align-items: center; gap: 8px; padding: 4px 8px 4px 4px; font-size: 12.5px; color: var(--mute); background: rgba(255, 255, 255, 0.02); border: 1px solid var(--line); }
 .ql-tiers li b { display: grid; place-items: center; min-width: 24px; height: 22px; font: 700 12px var(--display); color: var(--dim); background: #222328; }
