@@ -1,0 +1,342 @@
+'use strict';
+/* ==========================================================================
+   TRI-REALM IDLE — hair v2
+   Haircuts built the way anime artists build them (see docs/STUDIO-V2.md):
+   - separate layers: long hair behind the body, the nape behind the head, and
+     the main layer (the cap on the skull, side locks, fringe, crown spikes, extras);
+   - clumps, not lines: each one a curved ribbon (wide at the root, a belly,
+     a tip that is pointed, rounded, cut straight or forked), irregular on purpose
+     (2-3 dominant clumps, varied widths and lengths) so crowns never look like saws;
+   - one silhouette outline per layer in a dark tint of the hair colour, thin inner
+     lines only towards the tips, where clumps overlap;
+   - designed shadows: a wedge on the shaded side of each clump, the main layer's
+     shadow cast on the nape, the fringe's shadow cast on the forehead;
+   - the "angel ring": one highlight band that follows the skull, broken per clump;
+   - colours derived from one base colour (shadows hue-shifted towards violet).
+   A haircut is a recipe: { fringe, side, back, extra, vol, len, spike, seed, c, tip }.
+   Head-local space: head centre 0,0, radius 19, eyes at y ≈ 2 (x ≈ ±5.7).
+   Loaded after avatar.js.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- colour */
+function h2HexToHsl(hex) {
+  const n = parseInt(String(hex || '#000000').slice(1), 16), r = (n >> 16) / 255, g = ((n >> 8) & 255) / 255, b = (n & 255) / 255;
+  const mx = Math.max(r, g, b), mn = Math.min(r, g, b), l = (mx + mn) / 2, d = mx - mn;
+  if (!d) return [0, 0, l];
+  const s = d / (1 - Math.abs(2 * l - 1));
+  const h = mx === r ? ((g - b) / d) % 6 : mx === g ? (b - r) / d + 2 : (r - g) / d + 4;
+  return [(h * 60 + 360) % 360, s, l];
+}
+function h2Hsl(h, s, l) {
+  s = Math.max(0, Math.min(1, s)); l = Math.max(0, Math.min(1, l));
+  const c = (1 - Math.abs(2 * l - 1)) * s, x = c * (1 - Math.abs(((h / 60) % 2) - 1)), m = l - c / 2;
+  const [r, g, b] = h < 60 ? [c, x, 0] : h < 120 ? [x, c, 0] : h < 180 ? [0, c, x] : h < 240 ? [0, x, c] : h < 300 ? [x, 0, c] : [c, 0, x];
+  return '#' + [r, g, b].map((v) => Math.round((v + m) * 255).toString(16).padStart(2, '0')).join('');
+}
+const h2Wrap = (a) => ((((a + 180) % 360) + 360) % 360) - 180;
+// Shadows lean towards blue-violet; dark hair gets lighter highlights, light hair deeper shadows.
+function hair2Palette(c) {
+  const [h, s, l] = h2HexToHsl(c), toV = (k) => (h + h2Wrap(255 - h) * k + 360) % 360;
+  const dark = l < 0.25;
+  return {
+    base: c,
+    nape: h2Hsl(toV(0.06), s, dark ? l * 0.8 : l - 0.06),
+    sh: h2Hsl(toV(0.16), Math.min(1, s * 1.05 + 0.04), dark ? l * 0.62 : l - 0.17),
+    deep: h2Hsl(toV(0.24), Math.min(1, s * 1.05 + 0.04), dark ? l * 0.45 : l - 0.3),
+    hi: h2Hsl(h, s * (dark ? 0.35 : 0.8), dark ? l + 0.3 : l + (1 - l) * 0.45),
+    ring: h2Hsl(toV(dark ? 0.12 : 0), s * (dark ? 0.3 : 0.6), dark ? l + 0.5 : l + (1 - l) * 0.75),
+    line: h2Hsl(toV(0.15), Math.min(1, s + 0.12), Math.min(0.2, l * 0.32)),
+  };
+}
+
+/* ---------------------------------------------------------------- clumps */
+// A clump: root x, y · a direction (0 right, 90 down) · len · w (width at the root) · bend (degrees
+// of curl along it) · tip · hang (0-1, pulled down by gravity) · sw (sway) · wave · z (draw order).
+const H2_PROF = {
+  point: (k) => Math.pow(1 - k, 0.85) * (1 + 0.28 * Math.sin(Math.PI * Math.min(1, k * 1.3))),
+  round: (k) => Math.sqrt(Math.max(0, 1 - Math.pow(k, 5))) * (1 + 0.12 * Math.sin(Math.PI * k)) * (1 - 0.25 * k),
+  blunt: (k) => 1 - 0.14 * k,
+  fork: (k) => Math.pow(1 - k * 0.7, 0.9) * (1 + 0.2 * Math.sin(Math.PI * k)),
+};
+const H2_LIGHT = [-0.6, -0.8];
+function h2Spine(c, t, ha) {
+  const n = 8, step = c.len / n, down = 90 - (ha || 0), pts = [[c.x, c.y]];
+  let x = c.x, y = c.y;
+  for (let i = 0; i < n; i++) {
+    const k = (i + 0.5) / n;
+    let a = c.a - c.bend / 2 + c.bend * k;
+    if (c.hang) a += h2Wrap(down - a) * c.hang * Math.pow(k, 1.2);
+    if (c.wave) a += Math.sin(k * Math.PI * 2 * (c.wf || 1.5) + (c.ph || 0)) * c.wave;
+    if (c.sw && t != null) a += Math.sin(t * 2.1 + (c.ph || 0)) * c.sw * k;
+    x += Math.cos(a * D2R) * step; y += Math.sin(a * D2R) * step;
+    pts.push([x, y]);
+  }
+  return pts;
+}
+function h2Sides(c, S) {
+  const n = S.length - 1, prof = H2_PROF[c.tip] || H2_PROF.point, L = [], R = [], N = [], W = [];
+  for (let i = 0; i <= n; i++) {
+    const a = S[Math.max(0, i - 1)], b = S[Math.min(n, i + 1)];
+    let tx = b[0] - a[0], ty = b[1] - a[1];
+    const l = Math.hypot(tx, ty) || 1; tx /= l; ty /= l;
+    const hw = (c.w / 2) * prof(i / n);
+    N.push([-ty, tx]); W.push(hw);
+    L.push([S[i][0] - ty * hw, S[i][1] + tx * hw]); R.push([S[i][0] + ty * hw, S[i][1] - tx * hw]);
+  }
+  return { L, R, N, W, n };
+}
+function h2Outline(c, S, E) {
+  const { L, R, N, W, n } = E, mid = (p) => p.slice(1, n);
+  const rootL = [...L[0], 1], rootR = [...R[0], 1];
+  if (c.tip === 'blunt') return [rootL, ...mid(L), [...L[n], 1], [...R[n], 1], ...mid(R).reverse(), rootR];
+  if (c.tip === 'fork') {
+    const t = S[n], nn = N[n], hw = W[n - 2] * 0.55, b = S[n - 1];
+    return [rootL, ...L.slice(1, n - 1), [t[0] + nn[0] * hw, t[1] + nn[1] * hw, 1], [...S[n - 2], 1], [b[0] - N[n - 1][0] * hw * 1.1, b[1] - N[n - 1][1] * hw * 1.1, 1], ...R.slice(1, n - 1).reverse(), rootR];
+  }
+  if (c.tip === 'round') return [rootL, ...mid(L), S[n], ...mid(R).reverse(), rootR];
+  return [rootL, ...mid(L), [...S[n], 1], ...mid(R).reverse(), rootR];
+}
+// The shadow wedge on the clump's shaded side, widening towards the tip.
+function h2Wedge(c, S, E) {
+  const { L, R, N, W, n } = E, m = Math.floor(n / 2);
+  const s = N[m][0] * H2_LIGHT[0] + N[m][1] * H2_LIGHT[1] > 0 ? -1 : 1, side = s > 0 ? L : R;
+  const i0 = Math.round(n * 0.3), edge = [], inner = [];
+  for (let i = i0; i < n; i++) {
+    const k = (i - i0) / (n - i0), f = Math.min(c.soft ? 0.35 : 0.85, 0.12 + 0.6 * k);
+    edge.push(side[i]);
+    inner.push([side[i][0] - s * N[i][0] * W[i] * 2 * f, side[i][1] - s * N[i][1] * W[i] * 2 * f]);
+  }
+  const end = c.tip === 'blunt' ? [[...side[n], 1], [...S[n], 1]] : [[...S[n], 1]];
+  const back = inner.slice().reverse();
+  return [[...edge[0], 1], ...edge.slice(1), ...end, ...back.slice(0, -1), [...back[back.length - 1], 1]];
+}
+const h2Line = (P) => 'M' + P.map(pt).join('L');
+
+/* ---------------------------------------------------------------- the part library */
+// Every part is a generator: (P) → clumps. P: { vol, L (length factor), sp (spikiness 0-1), R(i, j) → 0-1, hl(x) → hairline y }.
+const h2C = (o) => Object.assign({ bend: 0, tip: 'point', hang: 0, sw: 0.8, z: 2, layer: 'main' }, o);
+const h2Tip = (P, r) => (r < 1 - P.sp ? (P.sp > 0.3 && r > 0.72 - P.sp * 0.3 ? 'fork' : 'round') : 'point');
+const h2J = (P, r, k) => 1 + (r - 0.5) * (k || 0.5) * (0.4 + P.sp * 0.6);
+const H2_FRINGES = {
+  spiky: { name: 'Pointed', line: -10, side: -1, gen: (P) => [...Array(6)].map((_, i) => {
+    const x = -15 + i * 5.8 + (P.R(i, 1) - 0.5) * 2, dom = i === 2 || i === 4 ? 1.12 : 1;
+    return h2C({ x, y: P.hl(x) - 4, a: 90 - x * 1.6 + (P.R(i, 2) - 0.5) * 14, len: (9 + 3.5 * Math.cos(x / 12)) * P.L * dom * h2J(P, P.R(i, 3)), w: 8.5 * h2J(P, P.R(i, 4), 0.7), bend: (x < 0 ? 1 : -1) * (6 + 16 * P.R(i, 5)) * (0.5 + P.sp), tip: h2Tip(P, P.R(i, 6)), z: 3 + (P.R(i, 7) > 0.65 ? 1 : 0) });
+  }) },
+  blunt: { name: 'Straight cut', line: -9, side: 1, gen: (P) => [...Array(8)].map((_, i) => {
+    const x = -16.5 + i * 4.7, cut = -2.5 + (P.L - 1) * 7 + (P.R(i, 1) - 0.5) * 1.2, y = P.hl(x) - 4;
+    return h2C({ x, y, a: 90 - x * 0.45, len: Math.max(4, cut - y), w: 7.2, tip: 'blunt', z: 3 + (i % 2) });
+  }) },
+  swept: { name: 'Swept', line: -10, side: -1, gen: (P) => [...Array(6)].map((_, i) => {
+    const x = -15 + i * 4.8;
+    return h2C({ x, y: P.hl(x) - 4, a: 52 + P.R(i, 1) * 10 + (i > 3 ? 10 : 0), len: (9 + i * 2) * P.L * h2J(P, P.R(i, 2)), w: 9 * h2J(P, P.R(i, 3), 0.6), bend: 14 + P.R(i, 4) * 10, tip: h2Tip(P, P.R(i, 5)), z: 3 + i * 0.1 });
+  }) },
+  parted: { name: 'Middle part', line: -10, side: 0, gen: (P) => [0, 1, 2].flatMap((i) => [-1, 1].map((sd) => h2C({
+    x: sd * (2.5 + i * 5), y: P.hl(sd * (2.5 + i * 5)) - 4, a: 90 + sd * -(18 + i * 9) + (P.R(i, sd) - 0.5) * 8, len: (14 - i * 1.5) * P.L * h2J(P, P.R(i, sd + 3)), w: 8 * h2J(P, P.R(i, sd + 5), 0.6),
+    bend: -sd * (16 + P.R(i, sd + 7) * 10), tip: h2Tip(P, P.R(i, sd + 9)), z: 3 + (2 - i) * 0.2,
+  }))) },
+  eye: { name: 'Over one eye', line: -10, side: -1, gen: (P) => [
+    h2C({ x: -7, y: -15, a: 97, len: 21 * P.L, w: 13.5, bend: 10, tip: P.sp > 0.5 ? 'point' : 'round', z: 5 }),
+    h2C({ x: -13, y: -12, a: 104, len: 15 * P.L, w: 8, bend: 8, tip: h2Tip(P, P.R(1, 1)), z: 4 }),
+    ...[1, 6, 11, 15].map((x, i) => h2C({ x, y: P.hl(x) - 4, a: 84 - i * 6, len: (10 - i) * P.L * h2J(P, P.R(i, 2)), w: 7 * h2J(P, P.R(i, 3), 0.6), bend: -8, tip: h2Tip(P, P.R(i, 4)), z: 3 })),
+  ] },
+  open: { name: 'Swept up', line: -13, side: -3, gen: (P) => [-11, -4, 3, 10].map((x, i) => h2C({
+    x, y: P.hl(x) + 0.5, a: -112 + i * 8 + (P.R(i, 1) - 0.5) * 16, len: (6 + 4 * P.sp) * P.L * h2J(P, P.R(i, 2)), w: 8 * h2J(P, P.R(i, 3), 0.6), bend: -14, tip: h2Tip(P, P.R(i, 4)), z: 3,
+  })) },
+  framing: { name: 'Long locks', line: -10, side: -1, gen: (P) => [
+    h2C({ x: 1, y: -15, a: 92, len: 17 * P.L, w: 5.5, bend: -4, tip: 'point', z: 5 }),
+    h2C({ x: -11, y: -13, a: 107, len: 21 * P.L, w: 7, bend: -8, tip: 'point', z: 4 }),
+    h2C({ x: 12, y: -12, a: 74, len: 21 * P.L, w: 7, bend: 8, tip: 'point', z: 4 }),
+    h2C({ x: -5, y: -15, a: 101, len: 11 * P.L * h2J(P, P.R(1, 1)), w: 6.5, bend: 10, tip: h2Tip(P, P.R(1, 2)), z: 3 }),
+    h2C({ x: 6, y: -15, a: 82, len: 11 * P.L * h2J(P, P.R(2, 1)), w: 6.5, bend: -10, tip: h2Tip(P, P.R(2, 2)), z: 3 }),
+  ] },
+  messy: { name: 'Messy', line: -10, side: -1, gen: (P) => [...Array(8)].map((_, i) => {
+    const x = -16 + i * 4.4 + (P.R(i, 1) - 0.5) * 2;
+    return h2C({ x, y: P.hl(x) - 4, a: 90 - x * 1.2 + (P.R(i, 2) - 0.5) * 40, len: (7 + 7 * P.R(i, 3)) * P.L, w: 7 * h2J(P, P.R(i, 4), 0.8), bend: (P.R(i, 5) - 0.5) * 60, tip: h2Tip(P, P.R(i, 6)), z: 3 + P.R(i, 7) });
+  }) },
+};
+const H2_SIDES = {
+  none: { name: 'None', gen: () => [] },
+  short: { name: 'Short', gen: (P) => [-1, 1].map((sd) => h2C({ x: sd * 17.5, y: -5, a: 90 - sd * 14, len: 9 * P.L, w: 8, bend: sd * -10, tip: h2Tip(P, P.R(sd, 1)), z: 1 })) },
+  long: { name: 'Long locks', gen: (P) => [-1, 1].flatMap((sd) => [
+    h2C({ x: sd * 17.5, y: -7, a: 90 - sd * 6, len: (21 + 8 * P.L) * P.L, w: 7.5, bend: -sd * 8, tip: 'point', hang: 0.6, sw: 2.5, ph: sd, z: 1 }),
+    h2C({ x: sd * 15.5, y: -8, a: 90 - sd * 4, len: (16 + 4 * P.L) * P.L, w: 4.5, bend: sd * 10, tip: 'point', hang: 0.5, sw: 3, ph: sd + 1, z: 1.1 }),
+  ]) },
+  panels: { name: 'Straight panels', gen: (P) => [-1, 1].map((sd) => h2C({ x: sd * 18, y: -8, a: 90 - sd * 1.5, len: 23 * P.L, w: 8, tip: 'blunt', hang: 0.3, sw: 1.5, ph: sd, z: 1 })) },
+  bob: { name: 'Bob', gen: (P) => [-1, 1].flatMap((sd) => [
+    h2C({ x: sd * 18.5, y: -9, a: 90 - sd * 3, len: 21 * P.L, w: 8.5, bend: sd * 14, tip: 'round', sw: 1, z: 1 }),
+    h2C({ x: sd * 15.5, y: -11, a: 90 - sd * 1, len: 18 * P.L, w: 6.5, bend: sd * 10, tip: 'point', sw: 1, ph: 1, z: 1.1 }),
+  ]) },
+  spiky: { name: 'Spiky', gen: (P) => [-1, 1].flatMap((sd) => [
+    h2C({ x: sd * 18, y: -6, a: sd > 0 ? 18 : 162, len: 9 * P.L * h2J(P, P.R(sd, 1)), w: 9, bend: sd * 12, tip: 'point', z: 1 }),
+    h2C({ x: sd * 18.5, y: 1, a: sd > 0 ? 45 : 135, len: 7.5 * P.L * h2J(P, P.R(sd, 2)), w: 8, bend: sd * 14, tip: 'point', z: 1 }),
+  ]) },
+};
+// Around the head: roots on the skull at angle ang (0 right, -90 top).
+const h2Ring = (ang, r) => HP(ang, r);
+const H2_BACKS = {
+  short: { name: 'Short', gen: (P) => [150, 168, 12, 30].map((ang, i) => { const [x, y] = h2Ring(ang, 16); return h2C({ x, y, a: ang + (ang > 90 ? -18 : 18), len: 6 * P.L, w: 9, tip: h2Tip(P, P.R(i, 1)), layer: 'nape' }); }) },
+  spiky: { name: 'Spikes', gen: (P) => {
+    const n = 8 + Math.round(P.sp * 3), out = [], dom = [Math.floor(P.R(1, 9) * n), Math.floor(P.R(2, 9) * n)];
+    for (let i = 0; i < n; i++) {
+      const k = i / (n - 1), ang = -205 + 230 * k + (P.R(i, 1) - 0.5) * 8, [x, y] = h2Ring(ang, 15);
+      out.push(h2C({ x, y, a: ang * 0.82 - 90 * 0.18 + (P.R(i, 2) - 0.5) * 14, len: (9 + 9 * Math.sin(Math.PI * k) + 4 * P.R(i, 3)) * (0.75 + 0.5 * P.sp) * (dom.includes(i) ? 1.35 : 1) * (0.85 + P.L * 0.25), w: 12 * h2J(P, P.R(i, 4), 0.6), bend: (i % 2 ? 1 : -1) * (8 + 10 * P.R(i, 5)), tip: 'point', layer: 'nape', z: P.R(i, 6), crown: ang > -160 && ang < -20 ? 1 : 0 }));
+    }
+    out.push(h2C({ x: -7, y: -15, a: -128, len: 8 * (0.7 + P.sp * 0.6), w: 9, bend: -12, crown: 1, z: 0.5 }), h2C({ x: 6, y: -16, a: -58, len: 8 * (0.7 + P.sp * 0.6), w: 9, bend: 12, crown: 1, z: 0.5 }));
+    return out;
+  } },
+  up: { name: 'Standing up', gen: (P) => {
+    const n = 10, out = [];
+    for (let i = 0; i < n; i++) {
+      const k = i / (n - 1), ang = -198 + 214 * k, [x, y] = h2Ring(ang, 15);
+      out.push(h2C({ x, y, a: -96 + (ang + 90) * 0.34 + (P.R(i, 2) - 0.5) * 10, len: (11 + 19 * Math.sin(Math.PI * Math.min(1, k * 1.05)) + 4 * P.R(i, 3)) * (0.7 + 0.5 * P.sp) * (0.85 + P.L * 0.25), w: 12.5 * h2J(P, P.R(i, 4), 0.5), bend: -6 - 8 * P.R(i, 5), tip: 'point', layer: 'nape', z: P.R(i, 6), crown: ang > -165 && ang < -15 ? 1 : 0 }));
+    }
+    out.push(h2C({ x: -2, y: -16, a: -100, len: 11 * (0.7 + P.sp * 0.5), w: 10, bend: -10, crown: 1, z: 0.5 }));
+    return out;
+  } },
+  bob: { name: 'Bob', gen: (P) => [175, 195, 212, 5, -15, -32].map((ang, i) => { const [x, y] = h2Ring(ang, 17), sd = ang > 90 ? -1 : 1; return h2C({ x, y, a: 90 - sd * 8, len: (18 + (i % 3) * 2) * P.L, w: 12, bend: sd * 12, tip: 'round', layer: 'nape', sw: 1, ph: i }); }) },
+  medium: { name: 'Shoulder length', gen: (P) => [172, 192, 210, 8, -12, -30].map((ang, i) => { const [x, y] = h2Ring(ang, 17), sd = ang > 90 ? -1 : 1; return h2C({ x, y, a: 90 - sd * 12, len: (30 + 4 * P.R(i, 1)) * P.L, w: 12.5, bend: sd * 10, tip: h2Tip(P, P.R(i, 2)), hang: 0.6, layer: 'nape', sw: 2, ph: i }); }) },
+  long: { name: 'Long', gen: (P) => [
+    ...[172, 196, 218, 8, -16, -38].map((ang, i) => { const [x, y] = h2Ring(ang, 17), sd = ang > 90 ? -1 : 1; return h2C({ x, y, a: 90 - sd * 3, len: (44 + 28 * P.L) * (0.97 + 0.06 * P.R(i, 1)), w: 17, tip: P.sp > 0.5 ? 'point' : 'blunt', hang: 1, layer: 'back', sw: 2.5, ph: i, soft: 1, z: i % 3 }); }),
+    ...[180, 0].map((ang, i) => { const [x, y] = h2Ring(ang, 17), sd = ang > 90 ? -1 : 1; return h2C({ x, y, a: 90 - sd * 3, len: 24, w: 13, tip: 'point', hang: 0.8, layer: 'nape', sw: 1, ph: i, soft: 1 }); }),
+  ] },
+  wavy: { name: 'Long waves', gen: (P) => [
+    ...[168, 186, 204, 220, 12, -6, -24, -40].map((ang, i) => { const [x, y] = h2Ring(ang, 17); return h2C({ x, y, a: 90, len: (44 + 26 * P.L) * (0.94 + 0.12 * P.R(i, 1)), w: 14, tip: 'point', hang: 0.9, wave: 16, wf: 1.6, ph: i * 0.7, layer: 'back', sw: 2.5 }); }),
+    ...[176, 200, 4, -20].map((ang, i) => { const [x, y] = h2Ring(ang, 17), sd = ang > 90 ? -1 : 1; return h2C({ x, y, a: 90 - sd * 6, len: 24, w: 12, tip: 'round', hang: 0.7, wave: 10, layer: 'nape', ph: i }); }),
+  ] },
+  ponytail: { name: 'Ponytail', tight: 1, gen: (P) => {
+    const T = [-17, -12];
+    return [0, 1, 2].map((i) => h2C({ x: T[0] + i, y: T[1] + i * 1.5, a: 118 - i * 10, len: (30 + 14 * P.L) * (1 - i * 0.12), w: 11 - i * 1.5, bend: -18 + i * 6, tip: 'point', hang: 0.8, sw: 3.5, ph: i * 0.8, layer: 'back' }))
+      .concat([h2C({ x: -12, y: -14, a: 200, len: 7, w: 9, tip: 'round', layer: 'nape', z: 2, tie: T })]);
+  } },
+  twintails: { name: 'Twin tails', tight: 1, gen: (P) => [-1, 1].flatMap((sd) => {
+    const T = [sd * 17, -11];
+    return [0, 1].map((i) => h2C({ x: T[0], y: T[1] + i * 1.5, a: 90 - sd * (22 - i * 12), len: (26 + 18 * P.L) * (1 - i * 0.15), w: 11 - i * 2, bend: sd * (14 - i * 8), tip: 'point', hang: 0.75, sw: 3.5, ph: sd + i, layer: 'back', tie: i ? null : T }));
+  }) },
+};
+const H2_EXTRAS = {
+  none: { name: 'None', gen: () => [] },
+  ahoge: { name: 'Cowlick', gen: () => [h2C({ x: 1, y: -19, a: -70, len: 12, w: 3.6, bend: 130, tip: 'point', sw: 4, z: 6 })] },
+  antenna: { name: 'Two cowlicks', gen: () => [h2C({ x: -3, y: -19, a: -105, len: 11, w: 3.2, bend: -110, tip: 'point', sw: 4, z: 6 }), h2C({ x: 4, y: -19, a: -72, len: 10, w: 3.2, bend: 110, tip: 'point', sw: 4, ph: 1, z: 6 })] },
+  strands: { name: 'Stray strands', gen: () => [h2C({ x: -14, y: -11, a: 112, len: 15, w: 2.4, bend: 46, tip: 'point', sw: 3, z: 6 }), h2C({ x: 13, y: -12, a: 68, len: 13, w: 2.2, bend: -46, tip: 'point', sw: 3, ph: 1, z: 6 })] },
+  bun: { name: 'Bun', gen: () => [h2C({ x: -8, y: -27, a: 0, len: 0, w: 0, bun: [-6, -26, 8], layer: 'nape' })] },
+};
+// Ready-made combinations.
+const H2_STYLES = {
+  shonen: { name: 'Shonen spikes', fringe: 'spiky', side: 'short', back: 'spiky', extra: 'none', vol: 0.6, len: 0.5, spike: 0.85 },
+  upright: { name: 'Standing tall', fringe: 'open', side: 'none', back: 'up', extra: 'none', vol: 0.5, len: 0.5, spike: 0.8 },
+  messy: { name: 'Messy', fringe: 'messy', side: 'spiky', back: 'spiky', extra: 'ahoge', vol: 0.7, len: 0.5, spike: 0.6 },
+  neat: { name: 'Neat short', fringe: 'swept', side: 'short', back: 'short', extra: 'none', vol: 0.35, len: 0.5, spike: 0.25 },
+  framing: { name: 'Long bangs', fringe: 'framing', side: 'long', back: 'spiky', extra: 'none', vol: 0.5, len: 0.5, spike: 0.6 },
+  hime: { name: 'Hime cut', fringe: 'blunt', side: 'panels', back: 'long', extra: 'none', vol: 0.4, len: 0.55, spike: 0 },
+  bob: { name: 'Bob', fringe: 'parted', side: 'bob', back: 'bob', extra: 'none', vol: 0.5, len: 0.5, spike: 0.1 },
+  waves: { name: 'Long waves', fringe: 'swept', side: 'long', back: 'wavy', extra: 'strands', vol: 0.55, len: 0.5, spike: 0.3 },
+  ponytail: { name: 'Ponytail', fringe: 'parted', side: 'long', back: 'ponytail', extra: 'none', vol: 0.3, len: 0.5, spike: 0.4 },
+  twintails: { name: 'Twin tails', fringe: 'spiky', side: 'short', back: 'twintails', extra: 'ahoge', vol: 0.4, len: 0.5, spike: 0.4 },
+  oneeye: { name: 'Over one eye', fringe: 'eye', side: 'short', back: 'short', extra: 'none', vol: 0.45, len: 0.5, spike: 0.3 },
+  bun: { name: 'Top bun', fringe: 'parted', side: 'long', back: 'short', extra: 'bun', vol: 0.3, len: 0.45, spike: 0.2 },
+};
+const H2_PARTS = { fringe: H2_FRINGES, side: H2_SIDES, back: H2_BACKS, extra: H2_EXTRAS };
+const HAIR2_DEFAULT = { seed: 1, c: '#24252f', tip: '', fringe: 'spiky', side: 'short', back: 'spiky', extra: 'none', vol: 0.6, len: 0.5, spike: 0.85 };
+
+/* ---------------------------------------------------------------- building and drawing */
+// The skull cap: an arc over the top, closed by the hairline (y = line in the middle, side at the temples).
+function h2Cap(line, side, off, top) {
+  const R = 19 + off, P = [], s = Math.max(-0.95, Math.min(0.95, side / R)), a0 = 180 - Math.asin(s) / D2R, a1 = 360 + Math.asin(s) / D2R;
+  for (let i = 0; i <= 14; i++) { const a = a0 + ((a1 - a0) * i) / 14, up = Math.max(0, -Math.sin(a * D2R)); P.push(HP(a, R + up * top)); }
+  const xr = P[14][0], xl = P[0][0], hl = (x) => line + Math.pow(x / 17, 2) * (side - line) * 0.7;
+  P[0].push(1); P[14].push(1);
+  P.push([xr - 2, hl(xr - 2)], [xr * 0.5, hl(xr * 0.5)], [0, line], [xl * 0.5, hl(xl * 0.5)], [xl + 2, hl(xl + 2)]);
+  return { P, hl };
+}
+function hair2Build(def, covered) {
+  const d = Object.assign({}, HAIR2_DEFAULT, def), fr = H2_FRINGES[d.fringe] || H2_FRINGES.spiky, bk = H2_BACKS[d.back] || H2_BACKS.short;
+  const vol = Math.max(0, Math.min(1, +d.vol)) * (bk.tight ? 0.35 : 1);
+  const cap = h2Cap(fr.line, fr.side, 0.8 + vol * 2.6, covered ? 0 : vol * 2.2);
+  const P = { vol, L: 0.72 + Math.max(0, Math.min(1, +d.len)) * 0.62, sp: Math.max(0, Math.min(1, +d.spike)), R: (i, j) => hj(i * 7.13 + j * 3.71 + 1, (d.seed || 1) * 1.37), hl: cap.hl };
+  let clumps = [];
+  for (const [k, lib] of Object.entries(H2_PARTS)) {
+    const part = lib[d[k]];
+    if (part) clumps = clumps.concat(part.gen(P).map((c) => Object.assign(c, { part: k })));
+  }
+  if (covered) clumps = clumps.filter((c) => !c.crown);
+  // volume pushes the roots of the clumps around the head out a little and widens them
+  for (const c of clumps) if (c.layer !== 'main' || c.part === 'side') c.w *= 0.88 + vol * 0.28;
+  return { d, cap: cap.P, clumps, pal: hair2Palette(d.c) };
+}
+// Draw one layer: outline + base fill of the union, then each clump in order (fill, shadow wedge, inner tip lines).
+function h2Layer(list, B, o) {
+  if (!list.length && !o.cap) return { svg: '', union: '' };
+  const pal = B.pal, shapes = [];
+  if (o.cap) shapes.push({ P: o.cap, cap: 1 });
+  for (const c of list.slice().sort((a, b) => a.z - b.z)) {
+    if (c.bun) { const [x, y, r] = c.bun; shapes.push({ P: [...Array(12)].map((_, i) => [x + Math.cos((i / 12) * Math.PI * 2) * r, y + Math.sin((i / 12) * Math.PI * 2) * r * 0.9]), bun: c }); continue; }
+    const S = h2Spine(c, o.t, o.ha), E = h2Sides(c, S);
+    shapes.push({ c, S, E, P: h2Outline(c, S, E) });
+  }
+  const union = shapes.map((s) => spline(wind(s.P), true)).join('');
+  const fill = o.fill || pal.base, sh = o.sh || pal.sh;
+  let svg = `<path d="${union}" fill="${fill}" stroke="${pal.line}" stroke-width="2.6" stroke-linejoin="round" paint-order="stroke"/>`;
+  let gi = 0;
+  for (const s of shapes) {
+    if (s.cap) continue;
+    const d = spline(s.P, true);
+    if (s.bun) { svg += `<path d="${d}" fill="${fill}" stroke="${pal.line}" stroke-width="1.2"/><path d="${spline(s.P.slice(5, 12), false)}" fill="none" stroke="${sh}" stroke-width="2.2" stroke-linecap="round"/>`; continue; }
+    let f = fill;
+    if (o.tip && s.c.len > 8) {
+      const id = `${o.uid}g${gi++}`, a = s.S[Math.round(s.S.length * 0.45)], b = s.S[s.S.length - 1];
+      svg += `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${r1(a[0])}" y1="${r1(a[1])}" x2="${r1(b[0])}" y2="${r1(b[1])}"><stop offset="0" stop-color="${fill}"/><stop offset="1" stop-color="${o.tip}"/></linearGradient>`;
+      f = `url(#${id})`;
+    }
+    svg += `<path d="${d}" fill="${f}"/>`;
+    if (s.c.len > 5) svg += `<path d="${spline(h2Wedge(s.c, s.S, s.E), true)}" fill="${sh}" opacity="${o.soft ? 0.55 : 0.9}"/>`;
+    const i0 = Math.round(s.E.n * (o.soft ? 0.72 : 0.55));
+    if (s.c.len > 6) svg += `<path d="${h2Line(s.E.L.slice(i0))}M${h2Line(s.E.R.slice(i0)).slice(1)}" fill="none" stroke="${pal.line}" stroke-width=".75" stroke-linecap="round" opacity="${o.soft ? 0.45 : 0.75}"/>`;
+    if (s.c.tie) { const [x, y] = s.c.tie; svg += `<circle cx="${r1(x)}" cy="${r1(y)}" r="3.4" fill="#e8443a" stroke="${pal.line}" stroke-width="1.4"/>`; }
+  }
+  return { svg, union };
+}
+// The angel ring: a dashed band of light following the skull, one dash per clump, above the fringe.
+function h2Halo(B, uid, union) {
+  const pal = B.pal, rr = 16.5 + B.d.vol * 1.8, dark = h2HexToHsl(B.d.c)[2] < 0.25, col = dark ? pal.hi : pal.ring;
+  let d = '';
+  const segs = 5;
+  for (let i = 0; i < segs; i++) {
+    const a0 = -148 + i * (116 / segs) + 1.2 * (i % 2), a1 = a0 + 116 / segs - 3.5, th = i % 2 ? 0.95 : 1.3, o = (i % 2 ? -0.7 : 0.4);
+    const P = [];
+    for (let k = 0; k <= 4; k++) P.push(HP(a0 + ((a1 - a0) * k) / 4, rr + o + th * Math.sin((Math.PI * k) / 4)));
+    for (let k = 4; k >= 0; k--) P.push(HP(a0 + ((a1 - a0) * k) / 4, rr + o - th * Math.sin((Math.PI * k) / 4)));
+    d += 'M' + P.map(pt).join('L') + 'Z';
+  }
+  const id = uid + 'hc';
+  return `<clipPath id="${id}"><path d="${union}"/></clipPath><g clip-path="url(#${id})"><path d="${d}" fill="${col}" opacity=".9"/></g>`;
+}
+// Everything drawAvatar needs, in head-local space.
+// o: { t (time, null = still), ha (head rotation, for gravity), uid, covered }
+function hair2SVG(def, o) {
+  o = o || {};
+  const B = hair2Build(def, !!o.covered), uid = (o.uid || 'h2') + '_';
+  const by = (l) => B.clumps.filter((c) => c.layer === l);
+  const t = o.t, base = { t, ha: o.ha || 0, uid, tip: B.d.tip || '' };
+  const main = h2Layer(by('main'), B, Object.assign({ cap: B.cap }, base, { uid: uid + 'm' }));
+  const nape = h2Layer(by('nape'), B, Object.assign({}, base, { uid: uid + 'n', fill: B.pal.nape, sh: B.pal.sh }));
+  const back = h2Layer(by('back'), B, Object.assign({}, base, { uid: uid + 'b', fill: B.pal.nape, sh: B.pal.deep, soft: 1 }));
+  // the main layer casts a shadow on the hair behind it
+  const cast = (L, id) => (L.union ? `<clipPath id="${id}"><path d="${L.union}"/></clipPath><g clip-path="url(#${id})"><path d="${main.union}" fill="${B.pal.sh}" opacity=".7" transform="translate(.8,2.4)"/></g>` : '');
+  return {
+    back: back.svg + cast(back, uid + 'cb'),
+    nape: nape.svg + cast(nape, uid + 'cn'),
+    main: main.svg + h2Halo(B, uid, main.union),
+    shadow: main.union,   // cast on the forehead by drawAvatar (clipped to the face)
+    pal: B.pal,
+  };
+}
+// A head portrait for the Studio's tiles (no body: shoulders, head, face, hair).
+function hair2Portrait(def, uid, o) {
+  o = o || {};
+  const H = hair2SVG(def, { t: null, uid }), skin = o.skin || '#eef1f6', sh = o.skinSh || '#c6cad6';
+  const id = uid + 'fc';
+  return `${H.back}<path d="M-16,40 Q-15,22 0,21 Q15,22 16,40Z" fill="#5a6880" stroke="${OL}" stroke-width="2"/>${H.nape}`
+    + `<circle r="19" fill="${skin}" stroke="${OL}" stroke-width="2.4" paint-order="stroke"/>`
+    + `<clipPath id="${id}"><circle r="19"/></clipPath><g clip-path="url(#${id})"><path d="${H.shadow}" fill="${sh}" transform="translate(.6,2.8)"/></g>`
+    + `<g transform="translate(-3.7,1)">${faceSVG('dots', null, OL)}</g>${H.main}`;
+}

@@ -41,7 +41,7 @@ const HEAD_MODES = { hair: 1, hat: 1, face: 1 };
 const VEC_MODES = { hat: 1, face: 1, back: 1 };
 const GAR_MODES = { top: 1, bottom: 1 };
 // Modes where the stage edits points of shapes: hats, faces, back art, garment pieces, hair masses.
-const isVec = () => !!(VEC_MODES[ST.mode] || GAR_MODES[ST.mode] || (ST.mode === 'hair' && ST.hairEdit === 'mass'));
+const isVec = () => !!(VEC_MODES[ST.mode] || GAR_MODES[ST.mode] || (ST.mode === 'hair' && ST.hairEdit === 'mass' && cur() && !cur().v2));
 
 // What the game already has (ids a custom item may not take).
 registerCustomPack(null);
@@ -231,7 +231,9 @@ function makeItem(type, tpl) {
       break;
     }
     case 'hair':
-      it = Object.assign(META(tpl ? cosName('hair', tpl) + ' (copy)' : 'New haircut'), hairFrom(tpl || 'tuft'));
+      // new haircuts use the v2 creator; built-in (v1) cuts can still be copied
+      if (!tpl || tpl.startsWith('v2:')) { const st = H2_STYLES[tpl ? tpl.slice(3) : 'shonen']; it = Object.assign(META(tpl ? st.name : 'New haircut'), { v2: Object.assign({}, HAIR2_DEFAULT, h2Pick(st)) }); }
+      else it = Object.assign(META(cosName('hair', tpl) + ' (copy)'), hairFrom(tpl));
       break;
     case 'top': {
       const src = tpl ? TOPS[tpl] : null;
@@ -293,7 +295,7 @@ const TEMPLATES = {
   anim: () => [['Poses', BUILTIN_POSES.filter((k) => !['fish', 'cook', 'wood'].includes(k)).map((k) => ['pose:' + k, POSES_NAMES[k] || k])],
     ['Motion cycles (baked into keys)', [['drive:fish', 'Fishing cycle'], ['drive:cook', 'Cooking cycle'], ['drive:wood', 'Chopping cycle']]],
     ['Attacks', ATTACKS.map((_, i) => ['atk:' + i, ['Slash', 'Thrust', 'Kick'][i] + ' attack'])]],
-  hair: () => [['Built-in haircuts', BUILTIN_HAIR.map((k) => [k, cosName('hair', k)])]],
+  hair: () => [['Styles', Object.entries(H2_STYLES).map(([k, v]) => ['v2:' + k, v.name])], ['Old system (copy a built-in cut)', BUILTIN_HAIR.map((k) => [k, cosName('hair', k)])]],
   top: () => [['Built-in tops', BUILTIN_TOPS.map((k) => [k, cosName('top', k)])]],
   bottom: () => [['Built-in bottoms', BUILTIN_BOTTOMS.map((k) => [k, cosName('bottom', k)])]],
   hat: () => [['Built-in hats', BUILTIN_HATS.map((k) => [k, cosName('hat', k)])]],
@@ -497,7 +499,7 @@ function handlesSVG(P, B, A) {
   }
   if (ST.mode === 'hair' && !isVec()) {
     const it = cur();
-    if (!it) return '';
+    if (!it || it.v2) return '';
     const hx = headXf(J, P, true, false);
     if (drag && drag.brush && drag.brush.length > 1) out.push(`<path class="bone f" d="M${drag.brush.map((q) => hx.toW(q)).map((p) => `${rd2(p[0])},${rd2(p[1])}`).join('L')}" stroke-width="${rd2(3 / zoomK())}"/>`);
     if (ST.guide) out.push(guideHead(headXf(J, P, false, false)));
@@ -915,7 +917,7 @@ function renderStagebar() {
   const el = $('#stagebar');
   if (ST.mode === 'pack') { el.innerHTML = ''; return; }
   const tools = [];
-  if (ST.mode === 'hair' && !isVec()) tools.push(`<button class="b ${ST.tool === 'brush' ? 'on' : ''}" data-act="tool" data-arg="brush" title="Paint a lock on the head: it follows your stroke (B)">${IC.plus} Brush</button>`,
+  if (ST.mode === 'hair' && !isVec() && !(cur() && cur().v2)) tools.push(`<button class="b ${ST.tool === 'brush' ? 'on' : ''}" data-act="tool" data-arg="brush" title="Paint a lock on the head: it follows your stroke (B)">${IC.plus} Brush</button>`,
     `<button class="b ${ST.tool === 'addlock' ? 'on' : ''}" data-act="tool" data-arg="addlock" title="Click on the head and drag from root to tip (L)">${IC.plus} Arc lock</button>`,
     `<label class="chk"><input type="checkbox" data-bind="st:sym" data-t="b" ${ST.sym ? 'checked' : ''}><span>Symmetry</span></label>`);
   if (isVec()) tools.push(`<button class="b ${ST.tool === 'draw' ? 'on' : ''}" data-act="tool" data-arg="draw" title="Click to add points to the selected shape (D)">${IC.plus} Add points</button>`, GAR_MODES[ST.mode] ? '' : `<label class="chk"><input type="checkbox" data-bind="st:snap" data-t="b" ${ST.snap ? 'checked' : ''}><span>Snap ½</span></label>`);
@@ -1171,7 +1173,31 @@ function massesSec(h) {
     + (ST.point >= 0 && m.pts[ST.point] ? row(fNum('x', `layer:pts.${ST.point}.0`, -40, 40, 0.5), fNum('y', `layer:pts.${ST.point}.1`, -45, 60, 0.5)) : ''));
   return out;
 }
+// ---- the simple haircut creator (v2): style, parts as tiles, 3 sliders, colour
+const H2_DYES = [['#24252f', 'Black'], ['#4a3226', 'Dark brown'], ['#8a5a34', 'Chestnut'], ['#e8c25a', 'Blond'], ['#f3e3a6', 'Platinum'], ['#ff8a3d', 'Orange'], ['#d8343f', 'Red'], ['#f28fae', 'Pink'], ['#7a5cff', 'Violet'], ['#2f5fd0', 'Blue'], ['#2c2f5a', 'Indigo'], ['#3aa86a', 'Green'], ['#1f3a2a', 'Dark green'], ['#dfe3ec', 'Silver'], ['#f8f8f8', 'White']];
+const h2Pick = (st) => ({ fringe: st.fringe, side: st.side, back: st.back, extra: st.extra, vol: st.vol, len: st.len, spike: st.spike });
+let h2TileN = 0;
+function h2Tile(kind, key, name, def, on) {
+  return `<button class="h2t ${on ? 'on' : ''}" data-act="h2pick" data-arg="${kind}:${key}" title="${esc(name)}"><svg viewBox="-38 -50 76 88">${hair2Portrait(def, 't' + h2TileN++)}</svg><span>${esc(name)}</span></button>`;
+}
+function hair2Inspector(h) {
+  const d = h.v2;
+  const isStyle = (st) => ['fringe', 'side', 'back', 'extra'].every((p) => d[p] === st[p]);
+  let s = sec('h2name', 'Haircut', fTxt('Name', 'item:name') + note('Pick a style, swap any part, set the shape and the colour. That\'s it.'));
+  s += sec('h2style', '1 · Style', `<div class="h2g">${Object.entries(H2_STYLES).map(([k, st]) => h2Tile('style', k, st.name, Object.assign({}, d, h2Pick(st)), isStyle(st))).join('')}</div>`);
+  for (const [part, label, lib] of [['fringe', '2 · Fringe', H2_FRINGES], ['side', '3 · Sides', H2_SIDES], ['back', '4 · Back', H2_BACKS], ['extra', '5 · Extra', H2_EXTRAS]]) {
+    s += sec('h2' + part, label, `<div class="h2g">${Object.entries(lib).map(([k, v]) => h2Tile(part, k, v.name, Object.assign({}, d, { [part]: k }), d[part] === k)).join('')}</div>`);
+  }
+  s += sec('h2tune', '6 · Shape', fNum('Volume', 'item:v2.vol', 0, 1, 0.05, 1) + fNum('Length', 'item:v2.len', 0, 1, 0.05, 1) + fNum('Spiky', 'item:v2.spike', 0, 1, 0.05, 1)
+    + row(btn('Another variation', 'h2var', 1, 'primary', 'Same choices, a different irregularity'), btn('Back', 'h2var', -1, 'ghost')));
+  s += sec('h2col', '7 · Colour', `<div class="dyes">${H2_DYES.map(([c, n]) => `<button class="dye ${d.c === c ? 'on' : ''}" style="background:${c}" data-act="h2col" data-arg="${c}" title="${n}"></button>`).join('')}</div>`
+    + fCol('Own colour', 'item:v2.c') + fOptCol('Coloured tips', 'item:v2.tip', '#ff6a3d'));
+  s += sec('meta', 'In the game', metaSec('hair', h, 1));
+  return s;
+}
 ST.ring = { a0: -184, a1: -14, n: 10, len: 9, peak: 4, w: 10, fan: 0.3, lean: 0, bend: 14, jit: 14 };
+const INSPECT_HAIR_V1 = INSPECT.hair;
+INSPECT.hair = (h) => (h.v2 ? hair2Inspector(h) : INSPECT_HAIR_V1(h));
 
 // ---- clothes
 const PARTS = [['torso', 'Torso and hips'], ['arms', 'Both arms'], ['armF', 'Front arm'], ['armB', 'Back arm'], ['legs', 'Both legs'], ['legF', 'Front leg'], ['legB', 'Back leg']];
@@ -1515,6 +1541,14 @@ const ACT = {
     }
     ST.lock = it.locks.length - 1; commit(); renderRight();
   },
+  h2pick(v) {
+    const it = cur(), [kind, key] = v.split(':');
+    if (!it || !it.v2) return;
+    if (kind === 'style') Object.assign(it.v2, h2Pick(H2_STYLES[key])); else it.v2[kind] = key;
+    commit(); renderRight(); renderLeft();
+  },
+  h2var(k) { const it = cur(); if (!it || !it.v2) return; it.v2.seed = Math.max(1, (it.v2.seed || 1) + (+k || 1)); commit(); renderRight(); renderLeft(); },
+  h2col(c) { const it = cur(); if (!it || !it.v2) return; it.v2.c = c; commit(); renderRight(); renderLeft(); },
   'comb-add'() { const it = cur(); (it.combs = it.combs || []).push([-60, -170, 14]); commit(); renderRight(); },
   'comb-del'(i) { cur().combs.splice(+i, 1); commit(); renderRight(); },
   // vector layers

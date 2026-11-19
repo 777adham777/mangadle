@@ -227,6 +227,13 @@ Chaque étape est livrée et jouable avant de passer à la suivante.
 | 4. Créateur de tenue simple | Kits par monde, pièces par vignettes, couleurs par emplacement | Tu crées une tenue en quelques clics |
 | 5. Contenu | Je refais une première série de coupes et de tenues avec les nouveaux outils, et tu juges | |
 
+## Avancement
+
+- 2026-11-19 : première version du moteur de coiffure v2 (`js/hair2.js` : couches, mèches irrégulières, contours colorés, ombres dessinées, ombre de frange, anneau de lumière) et du **créateur simple** dans l'onglet Hair du Studio.
+  - Le créateur propose 12 styles, 8 franges, 6 côtés, 9 arrières et 5 extras, avec 3 curseurs, un bouton Variante, 15 couleurs et des pointes colorées.
+  - Les anciennes coupes restent copiables (« Old system »).
+- Reste à faire : la tête qui tourne (racines 3D), la physique en chaîne, les teintures à débloquer, et les tenues.
+
 ## 6. Décisions (validées le 2026-11-19)
 
 | Sujet | Décision |

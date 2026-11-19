@@ -224,3 +224,14 @@ select:focus, input:focus, textarea:focus { outline: 1px solid var(--acc); }
 .seg button { flex: 1; border: 0; background: none; padding: 5px; border-radius: 4px; cursor: pointer; color: var(--mut); font-weight: 600; }
 .seg button.on { background: var(--acc); color: #fff; }
 .chip.pa { box-shadow: inset 0 -2px 0 var(--front); }
+
+/* ---- simple haircut creator */
+.h2g { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.h2t { display: flex; flex-direction: column; align-items: center; padding: 3px 2px 4px; background: #0f1117; border: 1px solid var(--line); border-radius: 6px; cursor: pointer; color: var(--mut); font-size: 10.5px; line-height: 1.15; min-width: 0; }
+.h2t svg { width: 100%; aspect-ratio: 76 / 88; height: auto; background: #2b3040; border-radius: 4px; }
+.h2t span { margin-top: 3px; text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 100%; }
+.h2t:hover { border-color: var(--acc2); color: var(--tx); }
+.h2t.on { border-color: var(--sel); color: var(--tx); box-shadow: 0 0 0 1px var(--sel); }
+.dyes { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 8px; }
+.dye { width: 24px; height: 24px; border-radius: 50%; border: 2px solid #0b0d12; cursor: pointer; box-shadow: 0 0 0 1px var(--line2); }
+.dye.on { box-shadow: 0 0 0 2px var(--sel); }

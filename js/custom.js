@@ -245,6 +245,7 @@ function registerCustomPack(pack) {
   }
   for (const h of list('hair')) {
     if (taken('hair', h.id, HAIR)) continue;
+    if (h.v2 && typeof h.v2 === 'object') { put(HAIR, h.id, { v2: Object.assign({}, h.v2), c: h.v2.c }); cos('hair', h); continue; }
     const locks = (h.locks || []).filter((L) => L && ['x', 'y', 'w'].every((k) => isFinite(L[k])) && (L.path ? L.path.length > 1 : isFinite(L.a) && isFinite(L.len)))
       .map((L) => (L.path ? Object.assign({}, L, { a: 0, bend: 0, len: L.path.reduce((a, p, i) => a + Math.hypot(p[0] - (i ? L.path[i - 1][0] : 0), p[1] - (i ? L.path[i - 1][1] : 0)), 0) }) : L));
     put(HAIR, h.id, {

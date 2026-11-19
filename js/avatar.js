@@ -1126,10 +1126,14 @@ function drawAvatar(A, P, t, opt) {
   const hs = J.headR / 19, ha = (P.h || 0) + (180 - J.neckA) * 0.6;
   const onHead = (inner) => `<g transform="translate(${pt(J.head)}) rotate(${r1(ha)}) scale(${r1(hs * 1000) / 1000})">${inner}</g>`;
   // hair: long locks hang behind the body, the rest sits on the head (shifted as the head turns)
-  const hair = hairShape(A.hair, !!HAT_COVER[A.hat], ha, t), tw = P.tw || 0;
+  // hair v2 (js/hair2.js): layered clumps, drawn by its own renderer
+  const h2def = HAIR[A.hair] && HAIR[A.hair].v2;
+  const h2 = h2def && typeof hair2SVG === 'function' ? hair2SVG(h2def, { t, ha, uid: uid + 'h2', covered: !!HAT_COVER[A.hat] }) : null;
+  const hair = h2 ? null : hairShape(A.hair, !!HAT_COVER[A.hat], ha, t), tw = P.tw || 0;
   const hairT = (s) => `<g transform="translate(${r1(2.2 * tw)},0) scale(${r1((1 + 0.07 * tw) * 100) / 100},1)">${s}</g>`;
   const fig = [G.back];
   if (hair && hair.back) fig.push(onHead(hairT(cel(hair.back, shade(hair.h.c, -0.08), hair.h.sh, 0.9))));
+  if (h2 && h2.back) fig.push(onHead(hairT(h2.back)));
 
   // ---- limbs
   const crease = (C, i, hw) => {
@@ -1279,8 +1283,12 @@ function drawAvatar(A, P, t, opt) {
   const hairS = hair ? (hair.stub ? fillP(hair.stub, hair.h.sh, 0.22) : '')
     + `<clipPath id="${hcId}"><circle r="19"/></clipPath><g clip-path="url(#${hcId})"><path d="${hair.front}" fill="${St.sh}" opacity=".45" transform="translate(1.2,2.6)"/></g>`
     + cel(hair.front, hair.h.c, hair.h.sh, 0.9) + (hair.lines ? lineP(hair.lines, LINE, 1, 0.5) : '') + (hair.hi ? lineP(hair.hi, hair.h.hi, 2.2, 0.85) : '') + hair.extra : '';
-  fig.push(onHead(ink(circ([0, 0], 19), St.body, 2.4) + `<g transform="translate(${r1(-3.7 * (1 - tw))},1)">${faceSVG(A.face, P.expr, St.eye)}</g>`
-    + hairT(hairS) + (HATS[A.hat] || '')));
+  const faceG = `<g transform="translate(${r1(-3.7 * (1 - tw))},1)">${faceSVG(A.face, P.expr, St.eye)}</g>`;
+  // v2: the nape behind the head, the fringe's shadow on the forehead, then the hair over the face
+  if (h2) fig.push(onHead(hairT(h2.nape) + ink(circ([0, 0], 19), St.body, 2.4)
+    + `<clipPath id="${uid}fs"><circle r="19"/></clipPath><g clip-path="url(#${uid}fs)">${hairT(`<path d="${h2.shadow}" fill="${St.sh}" opacity=".85" transform="translate(.6,2.8)"/>`)}</g>`
+    + faceG + hairT(h2.main) + (HATS[A.hat] || '')));
+  else fig.push(onHead(ink(circ([0, 0], 19), St.body, 2.4) + faceG + hairT(hairS) + (HATS[A.hat] || '')));
   fig.push(collar());
   if (backX) fig.push(back.s + back.hand);
   if (P.panB) fig.push(panSVG(back.hp, P.A, t, P, '#ffb36b'), back.hand);
