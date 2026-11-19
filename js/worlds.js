@@ -235,7 +235,7 @@ const EXTRA_USES = [];
   SKILLS.gravity = { name: 'Gravity Training', realm: 'ki', icon: '💪', type: 'gather',
     desc: 'Train under crushing gravity. Each level trains your energy disciplines 2% faster, grows your stamina, unlocks transformations and enlarges the Time Chamber.' };
   SKILLS.farming = { name: 'Farming', realm: 'ki', icon: '🌱', type: 'farm',
-    desc: 'Plant seeds on plots that grow in real time, even while you do something else. Crops feed buff meals and Vital Beans.' };
+    desc: 'Plant seeds on plots that grow in real time, even while you do something else. Crops feed buff meals and Senzu Beans.' };
   SKILLS.gravity.actions = [
     gather('ki_dust', 1, 3), gather('ki_spark', 10, 3.5), gather('ki_orb', 22, 4), gather('ki_core', 35, 4.5),
     gather('ki_flare', 50, 5), gather('ki_nova', 65, 5.5), gather('ki_star', 80, 6.5),
@@ -267,7 +267,7 @@ const EXTRA_USES = [];
   RARE_FINDS.woodcutting.push(['seed_vital_bean', 1 / 60], ['seed_sun_wheat', 1 / 120], ['seed_moon_rice', 1 / 250], ['seed_fire_pepper', 1 / 500]);
   RARE_FINDS.gravity.push(['seed_frost_melon', 1 / 400], ['seed_thunder_root', 1 / 700], ['seed_star_fruit', 1 / 1200]);
   SHOP.push(
-    { id: 'buy_beans', cat: 'Supplies', realm: 'ki', name: '5× Vital Bean Seed', icon: '🌱', desc: 'Starter seeds for your first plots.', cost: 400, give: ['seed_vital_bean', 5] },
+    { id: 'buy_beans', cat: 'Supplies', realm: 'ki', name: '5× Senzu Bean Seed', icon: '🌱', desc: 'Starter seeds for your first plots.', cost: 400, give: ['seed_vital_bean', 5] },
     { id: 'buy_wheat', cat: 'Supplies', realm: 'ki', name: '5× Sun Wheat Seed', icon: '🌱', desc: 'Grows into flour for Sunbread.', cost: 1500, give: ['seed_sun_wheat', 5] },
     { id: 'tools_ki', cat: 'Tools', realm: 'ki', name: 'Capsule Workshop', icon: '🛠️', desc: '+10% speed for Kaio Planet skills per tier.', costs: [20000, 80000, 300000, 1e6, 3e6] },
   );
@@ -303,7 +303,7 @@ const EXTRA_USES = [];
     unlocks: [
       { id: 'skill:gravity', name: 'Gravity Training', need: () => !!S.gates.ki || usedSkill('gravity') },
       { id: 'skill:farming', name: 'Farming', need: () => skillLv('gravity') >= 5 || usedSkill('farming'),
-        hint: () => 'Reach Gravity Training level 5', why: 'An old farmer on the plains hands you Vital Bean seeds and three plots.' },
+        hint: () => 'Reach Gravity Training level 5', why: 'An old farmer on the plains hands you Senzu Bean seeds and three plots.' },
       { id: 'feature:transform', name: 'Transformations', need: () => skillLv('gravity') >= 10,
         hint: () => 'Reach Gravity Training level 10', why: 'Your body can finally hold a surge of ki. Pick a form on the Battlefield.' },
       { id: 'feature:wishes', name: 'Dragon Balls', need: () => (S.combat.kills.plains || 0) >= 10,
@@ -551,7 +551,7 @@ const ECHOES = [
   defItem('ancient_gravity_bracer', 'Ancient Gravity Bracer', '⭕', 130000, eq('accessory', { atk: 230, def: 100, hp: 1100 }));
 
   SKILLS.archaeology = { name: 'Archaeology', realm: 'echo', icon: '⛏️', type: 'gather',
-    desc: 'Dig one site in every world. Fragments, that world\'s materials, and rare Awakening Shards.' };
+    desc: 'Dig one site in every world. Fragments, that world\'s materials, and rare Stand Arrow Shards.' };
   SKILLS.restoration = { name: 'Restoration', realm: 'echo', icon: '🏺', type: 'craft',
     desc: 'Restore artifacts for permanent museum bonuses, and rebuild ancient versions of iconic gear.' };
   SKILLS.bonding = { name: 'Echo Bonding', realm: 'echo', icon: '👤', type: 'bond',

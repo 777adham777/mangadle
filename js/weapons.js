@@ -37,6 +37,7 @@ const FAMILIES = {
   cutlass: { name: 'Cutlass',     desc: '+10 Luck.' },
 };
 function armFamily(id) {
+  if (ITEMS[id].fam) return ITEMS[id].fam;   // set when a manga name hides the family (lore.js)
   const n = ITEMS[id].name.toLowerCase();
   if (/bow|cannon|gun/.test(n)) return 'ranged';
   if (/hammer|cleaver|axe|claw|lance|sickle|gauntlet|fist/.test(n)) return 'heavy';

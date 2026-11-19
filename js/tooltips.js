@@ -116,6 +116,7 @@ function tipHTML(id, arm, stackN) {
       <small><span class="rar r${r}">${RARITY_NAME[r] || ''}</span> · <span class="kind-lab k-${k}">${ui('k-' + k)}${K.one}</span>${type !== K.one ? ' · ' + esc(type) : ''}</small></div></div>
     ${rows.length ? `<div class="it-rows">${rows.map(([icn, l, v]) => `<div><i>${ui(icn)}</i><span>${esc(l)}</span><b>${esc(v)}</b></div>`).join('')}</div>` : ''}
     ${text ? `<p class="it-text${rows.length ? ' more' : ''}">${esc(text)}</p>` : ''}
+    ${(it.base ? ITEMS[it.base] : it).lore ? `<p class="it-text it-lore more">${esc((it.base ? ITEMS[it.base] : it).lore)}</p>` : ''}
     ${src.length ? `<div class="it-src more"><small>Where to find</small>${src.map((x) => `<div><i>${ic(x.icon[0], x.icon[1])}</i><span>${esc(x.text)}</span>${x.rate != null ? `<b>${fmtRate(x.rate)}</b>` : ''}</div>`).join('')}</div>` : ''}
     <div class="it-foot more">${arm ? `<span>${esc(armTag(arm))}</span><span>${ui('gold')}<b>${fmt(it.value * (1 + arm.ref))}</b> g</span>` : `<span>${stackN != null ? 'In this stack' : 'Owned'} <b>${fmt(n)}</b></span><span>${ui('gold')}<b>${fmt(it.value)}</b> g each</span>`}</div>${TIP_HINT}</div>`;
 }

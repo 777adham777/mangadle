@@ -297,7 +297,7 @@ function echoTaskOptions() {
 }
 UIX.realmTop.push((realm, skill) => {
   if (skill !== 'bonding') return '';
-  if (!echoOn()) return `<section class="win echo-none">${ui('echo')}<div><b>No Echo yet</b><p class="muted small">Gather 3 Awakening Shards (Archaeology, Echo Quarter foes, the Rift) and use <b>Awaken an Echo</b> below. Each Echo has its own grades and ability.</p></div></section>`;
+  if (!echoOn()) return `<section class="win echo-none">${ui('echo')}<div><b>No Echo yet</b><p class="muted small">Gather 3 Stand Arrow Shards (Archaeology, Echo Quarter foes, the Rift) and use <b>Awaken an Echo</b> below. Each Echo has its own grades and ability.</p></div></section>`;
   const E = ECHO_BY[S.echo.id], bl = bondLv(), bp = Math.sqrt((S.echo.bond || 0) / 30) - bl;
   const why = S.echo.task ? echoTaskBlock() : '';
   return `<section class="win echo-card" style="--rc:${rc('echo')}">

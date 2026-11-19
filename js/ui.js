@@ -647,7 +647,7 @@ VIEWS.hero = (tab) => {
 };
 function itemHead(id, unknown) {
   const it = ITEMS[id], r = unknown ? 0 : rarity(id);
-  return `<div class="dt-hero r${r}"><div class="dt-name"><small>${unknown ? 'Undiscovered' : `<span class="rar r${r}">${RARITY_NAME[r] || ''}</span> · <span class="kind-lab k-${itemKind(id)}">${ui('k-' + itemKind(id))}${KINDS[itemKind(id)].one}</span>${typeLabel(id) !== KINDS[itemKind(id)].one ? ' · ' + typeLabel(id) : ''}`}</small><h2>${unknown ? '???' : esc(it.name)}</h2>${unknown ? '' : stars(r)}</div>
+  return `<div class="dt-hero r${r}"><div class="dt-name"><small>${unknown ? 'Undiscovered' : `<span class="rar r${r}">${RARITY_NAME[r] || ''}</span> · <span class="kind-lab k-${itemKind(id)}">${ui('k-' + itemKind(id))}${KINDS[itemKind(id)].one}</span>${typeLabel(id) !== KINDS[itemKind(id)].one ? ' · ' + typeLabel(id) : ''}`}</small><h2>${unknown ? '???' : esc(it.name)}</h2>${unknown ? '' : stars(r)}${!unknown && (it.base ? ITEMS[it.base] : it).lore ? `<p class="lore dt-lore">${esc((it.base ? ITEMS[it.base] : it).lore)}</p>` : ''}</div>
     <div class="dt-art">${unknown ? '<b class="q">?</b>' : itemIc(id)}</div></div>`;
 }
 function inspectorHTML() {

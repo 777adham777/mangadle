@@ -568,10 +568,10 @@ const GOALS = [
   G('Defeat the Admiral of the Tide', 'battle', 1, kills('admiral'), 3000),
   G('Open the Drowned Seal', 'home', 1, gate('soul'), 3500),
   // Soul City
-  G('Mine 20 Spirit Ore', 'realm:soul:mining', 20, made('spirit_ore'), 2000),
+  G('Mine 20 Reishi Ore', 'realm:soul:mining', 20, made('spirit_ore'), 2000),
   G('Smelt 10 Reishi Ingots', 'realm:soul:smithing', 10, made('reishi_ingot'), 2500),
   G('Defeat 10 foes in the Outer Districts', 'battle', 10, kills('districts'), 2500),
-  G('Craft a Spirit Katana from ingots', 'realm:shinobi:arts', 1, made('spirit_katana'), 3000),
+  G('Craft an Asauchi Katana from ingots', 'realm:shinobi:arts', 1, made('spirit_katana'), 3000),
   G('Refine a weapon to +1', 'hero', 1, () => [S.arms.some((a) => a.ref > 0) ? 1 : 0], 3500),
   G('Awaken a weapon', 'hero', 1, () => [S.arms.some((a) => a.awk > 0) ? 1 : 0], 4000),
   G('Reach Reiatsu level 10', 'power', 10, () => [S.energy.lvl.reiatsu || 0], 5000),
