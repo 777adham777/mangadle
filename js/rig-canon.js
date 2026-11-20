@@ -120,6 +120,7 @@ const RIG_SKELETON = (() => {
       { name: 'hair.sides', bone: 'skull', att: 'hair', ink: 'hair' },
       { name: 'hair.bangs', bone: 'skull', att: 'hair', ink: 'hair' },
       { name: 'hair.strands', bone: 'skull', att: 'hair', ink: 'hair' },
+      { name: 'ear', bone: 'skull', att: 'ear', ink: 'ear' },
       { name: 'hat', bone: 'skull', att: 'hat', ink: 'hat' },
       // the near arm, in front of the body and the head; a held weapon sits under the fist
       { name: 'armN.upper', bone: 'upperArmN', att: 'skin', ink: 'armN' },
@@ -214,9 +215,10 @@ const RIG_BODY = (() => {
 
 /* ---------------------------------------------------------------- faces */
 // A face is a skin for the 'face' slot: one attachment per expression, drawn on the skull
-// (centre 0,0, radius 19). Anchors shared by every face: near eye (-2, 2), far eye (9.5, 2),
-// mouth (4.6, 10.5); the face looks right, so the far eye is a little narrower.
-const RIG_FACE_ANCHOR = { eyeN: [-2, 2], eyeF: [9.5, 2], mouth: [4.6, 10.5], browY: -4 };
+// (centre 0,0, radius 19). Anchors shared by every face, measured on the validated reference
+// sheet (2026-11-20, 25 heads): near eye (-0.5, -0.4), far eye (13.3, -0.4), mouth (5.9, 10);
+// the face looks right, so the far eye is a little narrower.
+const RIG_FACE_ANCHOR = { eyeN: [-0.5, -0.4], eyeF: [13.3, -0.4], mouth: [5.9, 10], browY: -5.6 };
 function rigFace(id, name, X) {
   const E = '$eye', st = (d, w) => `<path d="${d}" fill="none" stroke="${E}" stroke-width="${w || 2}" stroke-linecap="round" stroke-linejoin="round"/>`;
   const svg = (s) => ({ kind: 'svg', svg: s });
@@ -225,17 +227,27 @@ function rigFace(id, name, X) {
   return { name: 'face:' + id, id, label: name, att: { face: att } };
 }
 const RIG_FACES = {
-  // Calm: round eyes with a catch light, a small mouth.
+  // Calm: solid oval eyes, a small smile.
   calm: rigFace('calm', 'Calm', {
-    neutral: (st) => `<ellipse cx="-2" cy="2" rx="2.2" ry="3.2" fill="$eye"/><ellipse cx="9.5" cy="2" rx="1.9" ry="3" fill="$eye"/>`
-      + `<circle cx="-1.3" cy=".6" r=".85" fill="#fff" opacity=".85"/><circle cx="10.1" cy=".6" r=".75" fill="#fff" opacity=".85"/>` + st('M2.8,10.6 Q4.6,11.6 6.6,10.4', 1.6),
-    angry: (st) => st('M-6.2,-5.2 L0.6,-2.6 M12.6,-5.4 L7.6,-2.7', 2) + `<ellipse cx="-2" cy="2.6" rx="2.1" ry="2.5" fill="$eye"/><ellipse cx="9.5" cy="2.6" rx="1.8" ry="2.4" fill="$eye"/>`
-      + `<path d="M2,9.2 Q4.8,8.4 7.6,9.2 Q7,13.8 4.7,13.9 Q2.5,13.7 2,9.2Z" fill="$eye"/><path d="M3.4,12.4 Q4.8,11.6 6.2,12.4" fill="none" stroke="#c0404c" stroke-width="1.2" stroke-linecap="round"/>`,
-    hurt: (st) => st('M-4.8,-0.8 L-0.6,2 L-4.8,4.8 M12,-0.8 L8,2 L12,4.8', 2) + st('M2.2,12 Q3.4,10.2 4.6,11.4 Q5.8,12.6 7,10.8', 1.6),
-    dead: (st) => st('M-4.4,-0.4 L0.4,4.4 M0.4,-0.4 L-4.4,4.4 M7.6,-0.2 L11.4,4.2 M11.4,-0.2 L7.6,4.2', 1.9) + st('M2.6,11.2 H6.8', 1.6),
-    happy: (st) => st('M-4.6,3.2 Q-2,-1.6 0.6,3.2 M7.2,3.2 Q9.5,-1.4 11.8,3.2', 2) + st('M1.8,8.8 Q4.6,13.6 7.6,8.8', 1.8),
+    neutral: (st) => `<ellipse cx="-0.5" cy="-0.4" rx="2.05" ry="3.35" fill="$eye"/><ellipse cx="13.3" cy="-0.4" rx="1.8" ry="3.2" fill="$eye"/>` + st('M3.4,9.5 Q5.9,11.7 8.4,9.4', 1.5),
+    angry: (st) => st('M-4.6,-7.4 L2,-4.6 M17,-7.2 L10.6,-4.6', 2) + `<ellipse cx="-0.5" cy="0.2" rx="2" ry="2.6" fill="$eye"/><ellipse cx="13.3" cy="0.2" rx="1.75" ry="2.5" fill="$eye"/>`
+      + `<path d="M3.2,8.4 Q5.9,7.6 8.6,8.4 Q8,13 5.8,13.1 Q3.7,12.9 3.2,8.4Z" fill="$eye"/><path d="M4.6,11.6 Q5.9,10.8 7.2,11.6" fill="none" stroke="#c0404c" stroke-width="1.2" stroke-linecap="round"/>`,
+    hurt: (st) => st('M-3.4,-3.2 L0.9,-0.4 L-3.4,2.4 M15.6,-3.2 L11.5,-0.4 L15.6,2.4', 2) + st('M3.2,11.2 Q4.5,9.4 5.8,10.6 Q7.1,11.8 8.4,10', 1.5),
+    dead: (st) => st('M-2.8,-2.8 L1.8,2 M1.8,-2.8 L-2.8,2 M11.3,-2.6 L15.3,1.8 M15.3,-2.6 L11.3,1.8', 1.9) + st('M3.6,10.4 H8.2', 1.5),
+    happy: (st) => st('M-3,0.8 Q-0.5,-3.8 2,0.8 M11,0.8 Q13.3,-3.6 15.6,0.8', 2) + st('M2.8,7.8 Q5.9,12.8 9,7.8', 1.7),
   }),
 };
+// The near ear, on the side of the skull (measured on the reference sheet: centre (-20.8, 5.3)).
+// Drawn over the hair; a hairstyle that covers the ears hides it.
+// Its inner edge follows the skull circle, so it only ever sticks out of the head, never over the face.
+RIG_SHAPES.ear = { kind: 'shape', fill: '$skinEar', sh: '$skinLine', cel: 0.6,
+  pts: [[-18.95, 1.33, 1], [-20.6, 0.4], [-22.7, 2.3], [-23.2, 5.3], [-22.3, 8.3], [-20.2, 9.8], [-17.08, 8.33, 1], [-17.62, 7.12], [-18.26, 5.24], [-18.71, 3.3]],
+  lines: [{ d: 'M-19.2,3 Q-21.7,2.8 -21.5,5.5 Q-21.3,7.6 -19.4,8.1', c: '$skinLine', w: 1.1 }] };
+RIG_BODY.att.ear = { ear: Object.assign({}, RIG_SHAPES.ear) };
+RIG_BODY.pal.skinEar = '#d3d7e1';
+// the face is shaded lighter than the body, as on the reference sheet
+RIG_BODY.att.head.head.sh = '$skinHeadSh';
+RIG_BODY.pal.skinHeadSh = '#d2d6e0';
 
 /* ---------------------------------------------------------------- weapons */
 // A weapon is a skin for a weapon slot, drawn along +x from the grip (the centre of the fist,

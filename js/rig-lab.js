@@ -8,9 +8,9 @@
 (() => {
   const $ = (id) => document.getElementById(id);
   const f2 = RIG.f2, esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
-  const DYES = ['#2b2e44', '#6b4a36', '#e8b830', '#d8503a', '#4f9a5c', '#e9edf6'];
+  const DYES = [RIG_HAIR_DEFS[RIG_HAIR_REF].c, '#2b2e44', '#6b4a36', '#e8b830', '#d8503a', '#4f9a5c', '#e9edf6'];
   const L = {
-    hair: 'shonen', dye: null, outfit: 'traveler', weapon: 'katana', face: 'calm',
+    hair: RIG_HAIR_REF, dye: null, outfit: 'traveler', weapon: 'katana', face: 'calm',
     base: 'idle', anim: 'idle', speed: 1, playing: true, t: 0,
     canon: { bones: true, names: false, groups: false, grid: true, dressed: false },
     view: { bones: false, groups: false },
@@ -96,7 +96,7 @@
     $('playPause').textContent = L.playing ? 'Pause' : 'Play';
     const pick = (id, label, list, key) => { $(id).innerHTML = `<label>${label}</label>` + list.map(([v, l]) => btn(l, L[key] === v, `data-pick="${key}:${v}"`)).join(''); };
     pick('pickHair', 'Hair', [...Object.keys(RIG_HAIRS).map((k) => [k, RIG_HAIRS[k].label]), ['none', 'None']], 'hair');
-    $('pickDye').innerHTML = '<label>Dye</label>' + DYES.map((c) => `<button class="sw ${(L.dye || RIG_HAIR_DEFS.shonen.c) === c ? 'on' : ''}" style="background:${c}" data-dye="${c}" title="${c}"></button>`).join('');
+    $('pickDye').innerHTML = '<label>Dye</label>' + DYES.map((c) => `<button class="sw ${(L.dye || RIG_HAIR_DEFS[RIG_HAIR_REF].c) === c ? 'on' : ''}" style="background:${c}" data-dye="${c}" title="${c}"></button>`).join('');
     pick('pickOutfit', 'Outfit', [...Object.keys(RIG_OUTFITS).map((k) => [k, RIG_OUTFITS[k].label]), ['none', 'Bare']], 'outfit');
     pick('pickWeapon', 'Weapon', [...Object.keys(RIG_WEAPONS).map((k) => [k, RIG_WEAPONS[k].label]), ['none', 'None']], 'weapon');
     pick('pickFace', 'Face', Object.keys(RIG_FACES).map((k) => [k, RIG_FACES[k].label]), 'face');
@@ -125,7 +125,7 @@
       for (let i = 0; i < n; i++) {
         const t = a.loop ? (a.dur * i) / n : (a.dur * i) / (n - 1);
         c2.at(name, t);
-        h += `<figure><svg viewBox="${wide ? '-100 -192 200 204' : '-70 -192 140 204'}" width="${wide ? 149 : 104}" height="152">${c2.svg({ uid: `s${name}${i}` })}</svg><figcaption>${t.toFixed(2)}s</figcaption></figure>`;
+        h += `<figure><svg viewBox="${wide ? '-136 -192 236 204' : '-80 -204 160 216'}" width="${wide ? 172 : 116}" height="152">${c2.svg({ uid: `s${name}${i}` })}</svg><figcaption>${t.toFixed(2)}s</figcaption></figure>`;
       }
       h += '</div>';
     }
@@ -149,24 +149,24 @@
   }
   function headView(skins, uid, size, extra) {
     const c2 = new RIG.Character(RIG_SKELETON, skins, {}), w = c2.pose.W[c2.pose.c.idx.skull];
-    return `<svg viewBox="${f2(w.x - 38)} ${f2(w.y - 42)} 76 76" width="100%" style="max-width:${size}px">${c2.svg({ uid })}${extra ? `<g transform="translate(${f2(w.x)},${f2(w.y)})">${extra}</g>` : ''}</svg>`;
+    return `<svg viewBox="${f2(w.x - 52)} ${f2(w.y - 54)} 104 88" width="100%" style="max-width:${size}px">${c2.svg({ uid })}${extra ? `<g transform="translate(${f2(w.x)},${f2(w.y)})">${extra}</g>` : ''}</svg>`;
   }
   function hairSection() {
     const base = [RIG_BODY, RIG_OUTFITS.traveler, RIG_FACES.calm];
     $('headRef').innerHTML = `<div style="padding:8px 0">${headView(base, 'hr', 520, landmarks())}</div>`;
-    const H = RIG_HAIRS.shonen, only = (keys) => Object.assign({}, H, { att: Object.fromEntries(Object.entries(H.att).filter(([k]) => keys.includes(k))) });
-    const M = H.meta.locks;
+    const H = RIG_HAIRS[RIG_HAIR_REF], only = (keys) => Object.assign({}, H, { att: Object.fromEntries(Object.entries(H.att).filter(([k]) => keys.includes(k))) });
+    const M = H.meta.locks, D = H.meta.def, tips = (E) => (E || []).filter((e) => e[2] === 't').length;
     const layers = [
-      ['Back mass', `${M.back.length} tufts behind the head (and the body), darker, on a spring`, ['hairBack']],
-      ['Scalp volume', `cut on the canonical hairline, ${M.crown.length} spikes standing on the crown`, ['hair.scalp']],
+      ['Back mass', `behind the head (and the body), darker, on a spring${D.backEdge ? ` · ${tips(D.backEdge)} spikes` : ''}${M.back.filter((k) => k.spec).length ? ` · ${M.back.filter((k) => k.spec).length} tufts` : ''}`, ['hairBack']],
+      ['Scalp volume', `cut on the canonical hairline${D.edge ? ` · ${tips(D.edge)} spikes on its edge` : ''}${M.crown.length ? ` · ${M.crown.length} crown spikes` : ''}`, ['hair.scalp']],
       ['Side locks', `${M.sides.length}, from the temples`, ['hair.sides']],
-      ['Bangs', `${M.bangs.length}, from the hairline; their shadow on the forehead`, ['hair.bangs', 'hairShade']],
-      ['Strands', `${M.strands.length} cowlick`, ['hair.strands']],
-      ['Assembled', 'one silhouette, one outline', Object.keys(H.att)],
+      ['Bangs', `${M.bangs.length}, from the hairline`, ['hair.bangs', 'hairShade']],
+      ['Strands', M.strands.length ? `${M.strands.length}` : 'none in this cut (optional)', ['hair.strands']],
+      ['Assembled', `one silhouette, one outline${D.match ? ` · matches its reference: silhouette ${Math.round(D.match.silhouette * 100)} %, face ${Math.round(D.match.face * 100)} %` : ''}`, Object.keys(H.att)],
     ];
     $('hairLayers').innerHTML = layers.map(([n, d, keys], i) => `<figure>${headView([...base, only(keys)], 'hl' + i, 240)}<figcaption><b>${n}</b>${d}</figcaption></figure>`).join('');
-    $('hairDyes').innerHTML = DYES.map((c, i) => `<figure>${headView([...base, hairOf('shonen', c)], 'hd' + i, 200)}<figcaption><b>${c}</b>${i ? 'dye' : 'default'}</figcaption></figure>`).join('');
-    const def = RIG_HAIR_DEFS.shonen;
+    $('hairDyes').innerHTML = DYES.map((c, i) => `<figure>${headView([...base, hairOf(RIG_HAIR_REF, c)], 'hd' + i, 200)}<figcaption><b>${c}</b>${i ? 'dye' : 'default'}</figcaption></figure>`).join('');
+    const def = RIG_HAIR_DEFS[RIG_HAIR_REF];
     $('hairRecipe').textContent = JSON.stringify(def, null, 1).replace(/\n\s+(?=[\]\d"-])/g, ' ').replace(/\{\n\s+/g, '{ ').replace(/\n\s+\}/g, ' }');
   }
 
@@ -237,7 +237,7 @@
     }
     if (d.speed) { L.speed = +d.speed; controls(); return; }
     if (d.view) { L.view[d.view] = !L.view[d.view]; controls(); return; }
-    if (d.dye) { L.dye = d.dye === RIG_HAIR_DEFS.shonen.c ? null : d.dye; rebuild(); controls(); strips(); if (L.canon.dressed) drawCanon(); return; }
+    if (d.dye) { L.dye = d.dye === RIG_HAIR_DEFS[RIG_HAIR_REF].c ? null : d.dye; rebuild(); controls(); strips(); if (L.canon.dressed) drawCanon(); return; }
     if (d.pick) { const [k, v] = d.pick.split(':'); L[k] = v; rebuild(); controls(); strips(); if (L.canon.dressed) drawCanon(); }
   });
   $('scrub').addEventListener('input', (ev) => {

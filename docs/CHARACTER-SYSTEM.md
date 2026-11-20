@@ -7,8 +7,8 @@ Started 2026-11-20. It replaces the way characters are built and animated. The o
 | 1. Audit | Done (below) |
 | 2. Canonical model | Done: `js/rig-canon.js` |
 | 3. Rig and animations | Done: `js/rig.js`, `js/rig-anims.js` (idle, run, attack, hit, death) |
-| 4. Hair production | Done for the **reference hairstyle only** (`js/rig-hair.js`); waiting for validation before any other cut |
-| 5. Validation prototype | Automated checks and the Rig Lab done (`js/rig-check.js`, `rig.html`). Assets so far: 1 hairstyle, 1 outfit, 1 weapon, 1 face. Still to make after the hair is validated: 2 hairstyles, 2 outfits, 1 weapon, 1 face |
+| 4. Hair production | Done for the **reference hairstyle only** (`js/rig-hair.js`), rebuilt on 2026-11-20 to match the user's reference sheet; waiting for validation before any other cut |
+| 5. Validation prototype | Automated checks and the Rig Lab done (`js/rig-check.js`, `rig.html`). Assets so far: 1 hairstyle, 1 outfit, 1 weapon, 1 face. Still to make after the hair is validated: 2 hairstyles (from the reference sheet), 2 outfits, 1 weapon, 1 face |
 | 6. Integration | Not started (plan and open questions at the end) |
 
 ![Old renderer and new rig, same moments](rig-before-after.png)
@@ -75,7 +75,8 @@ Spine's model is exactly what was missing: bones, slots with a draw order, skins
 - Feet and shoes fit the **foot box** (heel −9, toe 12, sole at 4.6).
 - Garments sit at most 2.8 units over the body. Full-length trousers stop 3.5 above the ankle; the shoe covers the rest.
 - Outfits come from a recipe (`rigOutfit`: sleeve length, hem, fit, collar, trouser length, flare, belt, shoe), so they always fit the body the same way.
-- Faces provide five expressions on fixed anchors: near eye (−2, 2), far eye (9.5, 2), mouth (4.6, 10.5). The expressions are neutral, angry, hurt, dead and happy.
+- Faces provide five expressions on fixed anchors: near eye (−0.5, −0.4), far eye (13.3, −0.4), mouth (5.9, 10). The expressions are neutral, angry, hurt, dead and happy. These anchors were measured on the user's reference sheet (25 heads); the first version had the eyes lower and closer.
+- The **near ear** belongs to the head (centre (−20.8, 5.3), measured on the sheet). Its inner edge follows the skull, so it only sticks out of the head. It is drawn over the hair; a cut that covers the ears hides it (`ears: false`).
 - Weapons are parts along +x from the grip. The fist is drawn over the handle.
 
 The old "build" cosmetic, which scaled the skeleton, has no equivalent. That is a deliberate consequence of the brief.
@@ -99,23 +100,28 @@ The old "build" cosmetic, which scaled the skeleton, has no equivalent. That is 
 
 ## 5. Hair production (`js/rig-hair.js`)
 
-- **Head reference (`RIG_HEAD`, version 1).** Every hairstyle is built on it: the skull (r 19), eye boxes, the hairline, the sideburns, temple roots, the nape line and the crown (whorl). These define the **scalp region** (where hair grows) and a **growth field**. In `fall` mode hair leaves the crown and gravity pulls it down (bangs, side locks, long hair). In `stand` mode it leaves straight out of the skull (spikes, tufts).
-- **A hairstyle is a recipe, not a drawing.** It has a colour, a volume and five layers of locks:
+**Target (2026-11-20).** The user sent a reference sheet of 36 manga haircuts drawn on this avatar's head (6 worlds × 6 cuts). It is the visual target. It stays out of the public repo; the measurements live in the recipes.
+
+**How a cut is matched to the sheet.** For each cell, the head circle is fitted on the chin and cheek arc (RANSAC: 37.3 px for r 19, so 1.97 px per unit). Our portrait is then rendered at that exact scale and position, and two numbers are compared: the overlap of the head-and-hair silhouettes (above the chin) and the overlap of the visible face (where the bangs and side locks end). Tips, valleys and the fringe's lower edge are measured in head units, on the black outline (the white rim fills narrow valleys). The reference cut scores **silhouette 96 %, face 90 %**.
+
+
+- **Head reference (`RIG_HEAD`, version 2: the measured face, the ear, the hairline centred on that face).** Every hairstyle is built on it: the skull (r 19), eye boxes, the hairline, the sideburns, temple roots, the nape line and the crown (whorl). These define the **scalp region** (where hair grows) and a **growth field**. In `fall` mode hair leaves the crown and gravity pulls it down (bangs, side locks, long hair). In `stand` mode it leaves straight out of the skull (spikes, tufts).
+- **Authored edges (version 2).** The sheet's cuts are big masses, not thin locks. So the scalp's outer edge can be written directly as tips and valleys around the skull (`edge: [[angle, radius, 't' | 'v']]`); each side of a spike is hollowed slightly. The back mass is written the same way (`backEdge`), and the fringe's lower edge over the face as a zigzag (`fringe: [[x, y, 't' | 'v']]`) whose top always starts on the canonical hairline. A lock can also be placed by the point its tip reaches (`to: [x, y]`). The scalp is still closed exactly on the canonical hairline, sideburn and nape, and every check still applies (spikes 4–36 wide at the base, standing out of their valleys; bangs hanging below their gaps).
+- **A hairstyle is a recipe, not a drawing.** It has a colour, a volume (or an authored edge) and five layers:
   - back mass: behind the head and the body, darker, on its spring;
   - scalp: the volume over the skull, **cut exactly on the canonical hairline**, with the crown spikes;
   - side locks;
   - bangs;
   - strands (optional).
 - **Locks.** Each lock is anchored to a landmark (`['hairline', u]`, `['skull', angle]`, `['temple', 'N']`, `['nape', u]`, `['crown']`). It leaves along the growth direction there, give or take a turn. It is a tapered ribbon with a root width, a belly and a tip (point, round or blunt).
-- **One set of drawing rules:**
-  - one outline of one width around the whole mass (the scalp merges into the back mass);
-  - fills painted back to front;
-  - a shadow wedge on the side of each lock away from the light;
-  - a tapered brush line on its lit edge;
-  - the highlight ring on the scalp;
-  - the fringe's shadow on the forehead.
-- **Colours.** The palette comes from one base colour, so any dye works.
-- **The reference cut, "Shonen Spikes".** 6 back tufts, 5 crown spikes, 2 side locks, 5 bangs (the longest between the eyes) and 1 cowlick. The Lab shows it layer by layer and in six colours.
+- **One set of drawing rules, matching the sheet:**
+  - one black outline around the whole mass, the body's line (the scalp merges into the back mass); where hair lies on the face the line is as heavy as the silhouette's;
+  - every lock cel-shaded like the body (one light, upper left);
+  - thin tapered black lines along lock edges and from each valley into the mass;
+  - gloss streaks on the upper left; no cast shadow on the forehead.
+- **Colours.** The palette comes from one base colour, so any dye works. Shadows move away from yellow: warm hair shades towards red (yellow → orange), cool hair towards blue-violet.
+- **Hair is soft.** Where it would pass through the floor (a body lying down) it is pressed flat on it.
+- **The reference cut, "Leaf Spikes"** (the sheet's Naruto cut, world 1). An authored edge with 8 spikes, 3 darker spikes behind the head, a measured fringe (a bang left of the near eye, the forehead showing above it, a long bang sloping to between the eyes, two small ones), a side lock in front of the ear and one past the far temple. The Lab shows it layer by layer and in seven colours.
 
 The other hairstyles will be made from this recipe format **only after this one is validated**.
 
@@ -149,11 +155,11 @@ The checks run on **every combination of cosmetics, every animation, frame by fr
 - a cosmetic with its own bones, an oversized shoe, a missing expression;
 - a hairstyle that is misaligned, bald, covers the eyes, roots a lock off the scalp, grows a bang against the flow, has a lock that is too wide, or targets another head.
 
-**Result on 2026-11-20:** **271/271 checks pass** (4 combinations × 5 animations, 660 frames), and the self-test catches **21/21 faults**.
+**Result on 2026-11-20:** **271/271 checks pass** (4 combinations × 5 animations, 660 frames), and the self-test catches **22/22 faults** (one more: a spike thinner than a strand).
 
 ## 7. Adding content (the pipeline)
 
-- **Hairstyle.** Write a recipe in `RIG_HAIR_DEFS` (landmark-anchored locks per layer), compile it with `rigHairstyle()`, and register it in `RIG_HAIRS`. The Lab draws it on the head reference and adds it to every combination; the hair checks gate it.
+- **Hairstyle.** Write a recipe in `RIG_HAIR_DEFS` (an authored edge, fringe and back edge measured on its reference cell, plus landmark-anchored locks), compile it with `rigHairstyle()`, and register it in `RIG_HAIRS`. Compare it with its reference at the same scale until both overlaps are high. The Lab draws it on the head reference and adds it to every combination; the hair checks gate it.
 - **Outfit.** Write a `rigOutfit({...})` recipe in `RIG_OUTFITS`.
 - **Weapon.** Use `rigWeapon(id, name, parts)` along +x from the grip.
 - **Face.** Use `rigFace(id, name, { neutral, angry, hurt, dead, happy })` on the shared anchors.

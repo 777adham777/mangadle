@@ -114,6 +114,7 @@ const RIG_CHECK = (() => {
     for (const [slot, name] of [['armN.upper', 'skin'], ['armN.fore', 'skin'], ['handN', 'fist'], ['armF.upper', 'skin'], ['armF.fore', 'skin'], ['handF', 'fist'],
       ['legN.thigh', 'skin'], ['legN.shin', 'skin'], ['footN', 'foot'], ['legF.thigh', 'skin'], ['legF.shin', 'skin'], ['footF', 'foot'],
       ['body.pelvis', 'skin'], ['body.belly', 'skin'], ['body.chest', 'skin'], ['body.neck', 'skin'], ['head', 'head'], ['face', 'neutral']]) if (!has(slot, name)) miss.push(`${slot}/${name}`);
+    if (!RIG.lookup([RIG_BODY], 'ear', 'ear')) miss.push('ear/ear (the body has no ear)');
     for (const n in anims) for (const slot in anims[n].slots || {}) for (const [, v] of anims[n].slots[slot]) if (v && !has(slot, v)) miss.push(`${n}: ${slot}/${v}`);
     // garments come in whole pieces: a forearm sleeve needs its upper sleeve, a trouser shin its thigh
     for (const s of ['N', 'F']) {
@@ -202,8 +203,9 @@ const RIG_CHECK = (() => {
       if (hits) P.push({ id: 'intersect.torso', msg: `the torso covers the ${s === 'N' ? 'near' : 'far'} leg (${hits} points)`, v: hits });
     }
     // nothing goes through the floor
+    // (hair is soft: its painter presses it flat on the floor, so it is never drawn below it)
     let low = -Infinity, lowS = '';
-    for (const s of shapes) for (const q of s.poly) if (q[1] > low) { low = q[1]; lowS = s.slot; }
+    for (const s of shapes) if (s.kind !== 'hair') for (const q of s.poly) if (q[1] > low) { low = q[1]; lowS = s.slot; }
     if (low > 0.6) P.push({ id: 'intersect.ground', msg: `${lowS} ${fmt(low)} below the floor`, v: low });
     return P;
   }
