@@ -211,6 +211,8 @@ function customClean(o) {
 }
 function registerCustomPack(pack) {
   while (CUSTOM_UNDO.length) { try { CUSTOM_UNDO.pop()(); } catch (e) { /* already gone */ } }
+  // the manga haircuts' hand adjustments (moved / resized in the Studio's Manga cuts tab)
+  if (typeof HAIR_FIT !== 'undefined') HAIR_FIT.adjust(pack && typeof pack === 'object' ? pack.cuts : null);
   if (!pack || typeof pack !== 'object') return 0;
   let n = 0;
   const put = (obj, id, val) => { obj[id] = val; CUSTOM_UNDO.push(() => { if (obj[id] === val) delete obj[id]; }); };

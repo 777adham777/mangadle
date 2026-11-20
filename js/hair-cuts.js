@@ -79,7 +79,10 @@ const HAIR_FIT = (() => {
     const k = 1 + 0.07 * tw, X = (x) => (x - 3.7 * (1 - tw) - 2.2 * tw) / k;
     SPECS['av' + tw] = { mid: (X(-2) + X(9.5)) / 2, eyes: [[X(-2), 2, 2.1 / k, 3.1], [X(9.5), 2, 1.8 / k, 2.9]] };
   }
-  const cache = {}, jobs = [], imgs = {}, seen = {};
+  const cache = {}, jobs = [], imgs = {}, seen = {}, ver = {};
+  // each cut's box as registered, before any hand adjustment (HAIR_FIT.adjust)
+  const BASE = {};
+  for (const id in HAIR_CUTS) BASE[id] = { x: HAIR_CUTS[id].x, y: HAIR_CUTS[id].y, w: HAIR_CUTS[id].w, h: HAIR_CUTS[id].h, reach: HAIR_CUTS[id].reach };
   let busy = false, failed = false;
   const listeners = [];
   const raw = (id) => { const A = HAIR_CUTS[id]; return { href: HAIR_CUT_BASE + id + '.png', x: A.x, y: A.y, w: A.w, h: A.h, fitted: false }; };
@@ -275,8 +278,12 @@ const HAIR_FIT = (() => {
   function pump() {
     if (busy || !jobs.length) return;
     busy = true;
-    const [id, key, done] = jobs.shift();
-    build(id, key).then((r) => { cache[id + '|' + key] = r; done(r); listeners.forEach((f) => f(id, key)); })
+    const [id, key, done] = jobs.shift(), v = ver[id] || 0;
+    build(id, key).then((r) => {
+      // the cut was moved or resized meanwhile: this morph is stale, the next draw asks again
+      if ((ver[id] || 0) !== v) { delete seen[id + '|' + key]; done(r); return; }
+      cache[id + '|' + key] = r; done(r); listeners.forEach((f) => f(id, key));
+    })
       .catch((e) => { if (/security|tainted|insecure/i.test(e.message || e.name || '')) failed = true; cache[id + '|' + key] = Object.assign(raw(id), { error: e.message }); done(cache[id + '|' + key]); })
       .finally(() => { busy = false; setTimeout(pump, 0); });
   }
@@ -302,5 +309,31 @@ const HAIR_FIT = (() => {
   }
   // avatar spec for a head turn
   const avKey = (tw) => 'av' + (tw < 0.25 ? 0 : tw < 0.75 ? 0.5 : 1);
-  return { SPECS, get, ready, morph, measure, raw, avKey, onReady: (f) => listeners.push(f), K, PAD };
+  // Hand adjustments (made in the Studio, saved in the pack as cuts: { id: { x, y, s, sw, sh } }):
+  // x, y move the cut (skull units); s scales it, sw / sh stretch its width / height (percent);
+  // sizes grow from the skull's centre. Cuts not listed go back to their registered box.
+  const ADJ0 = { x: 0, y: 0, s: 100, sw: 100, sh: 100 };
+  function adjOf(a) {
+    const o = Object.assign({}, ADJ0);
+    if (a && typeof a === 'object') for (const k in ADJ0) if (isFinite(+a[k])) o[k] = +a[k];
+    o.s = Math.max(40, Math.min(200, o.s)); o.sw = Math.max(40, Math.min(200, o.sw)); o.sh = Math.max(40, Math.min(200, o.sh));
+    o.x = Math.max(-30, Math.min(30, o.x)); o.y = Math.max(-30, Math.min(30, o.y));
+    return o;
+  }
+  function adjust(map) {
+    map = map && typeof map === 'object' ? map : {};
+    for (const id in BASE) {
+      const b = BASE[id], a = adjOf(map[id]), kx = (a.s / 100) * (a.sw / 100), ky = (a.s / 100) * (a.sh / 100);
+      const box = { x: b.x * kx + a.x, y: b.y * ky + a.y, w: b.w * kx, h: b.h * ky, reach: Math.round((b.reach * Math.max(kx, ky) + Math.hypot(a.x, a.y)) * 10) / 10 };
+      const A = HAIR_CUTS[id];
+      if (['x', 'y', 'w', 'h'].every((k) => Math.abs(A[k] - box[k]) < 1e-6)) continue;
+      Object.assign(A, box);
+      ver[id] = (ver[id] || 0) + 1;
+      for (const k in cache) if (k.startsWith(id + '|')) { if (/^blob:/.test(cache[k].href)) URL.revokeObjectURL(cache[k].href); delete cache[k]; }
+      for (const k in seen) if (k.startsWith(id + '|')) delete seen[k];
+      for (let i = jobs.length - 1; i >= 0; i--) if (jobs[i][0] === id) { const j = jobs.splice(i, 1)[0]; j[2](raw(id)); }
+    }
+  }
+  const base = (id) => BASE[id] && Object.assign({}, BASE[id]);
+  return { SPECS, get, ready, morph, measure, raw, avKey, adjust, adjOf, base, onReady: (f) => listeners.push(f), K, PAD };
 })();

@@ -135,6 +135,7 @@ Instead of redrawing each cut as a recipe, the user wanted the original cuts as 
   4. *eyes*: whatever still lies on an eye is cleared, so every expression shows (except an eye the cut hides).
 
   Specs: `rig` (the rig's face) and `av0` / `av0.5` / `av1`, the game's avatar facing us, half turned and 3/4 in combat. The avatar picks the nearest spec for its current turn. Until a morph is ready, or where the page cannot read pixels (`file://`), the plain picture is drawn.
+- **Hand adjustments (Studio, "Manga cuts" tab).** Each cut can be moved and resized by hand on the game's avatar: drag the handles (move, size from the skull's centre, width, height) or use the sliders. The adjustments are saved in the pack (`cuts: { id: { x, y, s, sw, sh } }` in `js/custom-pack.js`, via Save to project). `registerCustomPack` applies them with `HAIR_FIT.adjust`, which also re-fits the cut. The game and the Rig Lab both read them.
 - **In the game.** The 36 cuts are hair cosmetics `cut_<id>`. They are locked: how they are earned is not decided yet, and the dev tool's "unlock every look" makes them wearable. The avatar draws the fitted picture over its head and face.
 - **Limits.** No dyes (the colours are the pictures'); one layer seen from the front (no back hair on a spring); a hat that covers the head does not flatten the picture.
 

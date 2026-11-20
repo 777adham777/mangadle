@@ -37,7 +37,7 @@ const TYPES = {
   aura: { label: 'Auras', one: 'aura', slot: 'aura' },
   color: { label: 'Colours', one: 'colour', slot: 'color' },
 };
-const HEAD_MODES = { hair: 1, hat: 1, face: 1 };
+const HEAD_MODES = { hair: 1, hat: 1, face: 1, cuts: 1 };
 const VEC_MODES = { hat: 1, face: 1, back: 1 };
 const GAR_MODES = { top: 1, bottom: 1 };
 // Modes where the stage edits points of shapes: hats, faces, back art, garment pieces, hair masses.
@@ -68,13 +68,25 @@ const ST = {
   u: 0, playing: false, loop: true, speed: 1, onion: true, clip: null,
   lock: 0, layer: 0, point: -1, emitter: 0,
   tool: '', snap: true, h2d: { l: 'main', w: 7, tip: 'point' }, hairEdit: 'locks', sym: false, brush: { w: 8, tp: 0.8, back: false, hang: false, k: false }, animate: true, bg: 'dark', handles: true, guide: true,
-  previewPose: 'relaxed', view: { x: -10, y: 4, w: 220, h: 240 },
+  previewPose: 'relaxed', cut: typeof HAIR_CUTS !== 'undefined' ? Object.keys(HAIR_CUTS)[0] : '', view: { x: -10, y: 4, w: 220, h: 240 },
   man: { build: 'athletic', style: 'flat', color: 'chalk', hair: 'tuft', top: 'tee', bottom: 'tee', hat: 'none', face: 'dots', back: 'none', aura: 'none', weapon: '' },
   open: {},
 };
 function normPack(p) {
   const o = { v: 1 };
   for (const t of TYPE_ORDER) o[t] = Array.isArray(p && p[t]) ? clone(p[t].filter((x) => x && typeof x === 'object')) : [];
+  o.cuts = normCuts(p && p.cuts);
+  return o;
+}
+// The manga haircuts' hand adjustments: { id: { x, y, s, sw, sh } }, only the cuts that were changed.
+function normCuts(c) {
+  const o = {};
+  if (typeof HAIR_FIT === 'undefined' || !c || typeof c !== 'object') return o;
+  for (const id of Object.keys(c)) {
+    if (!HAIR_CUTS[id]) continue;
+    const a = HAIR_FIT.adjOf(c[id]);
+    if (a.x || a.y || a.s !== 100 || a.sw !== 100 || a.sh !== 100) o[id] = { x: rd2(a.x), y: rd2(a.y), s: rd(a.s), sw: rd(a.sw), sh: rd(a.sh) };
+  }
   return o;
 }
 const projectPack = () => normPack(typeof CUSTOM_PACK !== 'undefined' ? CUSTOM_PACK : null);
@@ -85,7 +97,7 @@ const projectPack = () => normPack(typeof CUSTOM_PACK !== 'undefined' ? CUSTOM_P
   ST.live = !!(d && d.live);
   try {
     const u = JSON.parse(localStorage.getItem(UI_KEY) || 'null');
-    if (u) { Object.assign(ST.man, u.man || {}); if (TYPES[u.mode] || u.mode === 'pack') ST.mode = u.mode; Object.assign(ST.sel, u.sel || {}); ST.bg = u.bg || ST.bg; ST.open = u.open || {}; }
+    if (u) { Object.assign(ST.man, u.man || {}); if (TYPES[u.mode] || u.mode === 'pack' || u.mode === 'cuts') ST.mode = u.mode; if (u.cut) ST.cut = u.cut; Object.assign(ST.sel, u.sel || {}); ST.bg = u.bg || ST.bg; ST.open = u.open || {}; }
   } catch (e) { /* ignore */ }
 })();
 // Content prepared for review (js/studio-inbox.js, loaded by the Studio only, never by the game):
@@ -133,7 +145,7 @@ function saveDraft() {
   saveT = setTimeout(() => {
     try {
       localStorage.setItem(STUDIO_DRAFT_KEY, JSON.stringify({ pack: ST.pack, live: ST.live, t: Date.now() }));
-      localStorage.setItem(UI_KEY, JSON.stringify({ man: ST.man, mode: ST.mode, sel: ST.sel, bg: ST.bg, open: ST.open }));
+      localStorage.setItem(UI_KEY, JSON.stringify({ man: ST.man, mode: ST.mode, sel: ST.sel, bg: ST.bg, open: ST.open, cut: ST.cut }));
     } catch (e) { /* storage full or blocked */ }
     renderTop();
   }, 250);
@@ -371,6 +383,7 @@ function wearing() {
   for (const s of Object.keys(A)) if (COSMETICS[s] && !COSMETICS[s].some((c) => c.id === A[s])) A[s] = COSMETICS[s][0].id;
   if (it && ST.mode !== 'anim' && ST.mode !== 'pack') A[TYPES[ST.mode].slot] = it.id;
   if (ST.mode === 'anim') A.stance = 'relaxed';
+  if (ST.mode === 'cuts' && HAIR_CUTS[ST.cut]) A.hair = 'cut_' + ST.cut;
   return A;
 }
 function breathe(P, t) {
@@ -514,6 +527,16 @@ const seg = (a, b, cls) => `<path class="bone ${cls || ''}" d="M${rd2(a[0])},${r
 function handlesSVG(P, B, A) {
   if (!ST.handles) return '';
   const J = solve(P, B), out = [];
+  if (ST.mode === 'cuts') {
+    const C = HAIR_CUTS[ST.cut];
+    if (!C) return '';
+    const hx = headXf(J, P, true, false), pt = (q) => hx.toW(q), path = (Q) => Q.map(pt).map((p) => `${rd2(p[0])},${rd2(p[1])}`).join('L');
+    const x0 = C.x, y0 = C.y, x1 = C.x + C.w, y1 = C.y + C.h;
+    if (ST.guide) out.push(guideHead(headXf(J, P, false, false)));
+    out.push(`<path class="bone o" d="M${path([[x0, y0], [x1, y0], [x1, y1], [x0, y1]])}Z" fill="none" stroke-width="${rd2(1 / zoomK())}" stroke-dasharray="${rd2(3 / zoomK())}"/>`);
+    out.push(hdl('cut:move', pt([(x0 + x1) / 2, (y0 + y1) / 2]), 'f', 'di'), hdl('cut:size', pt([x1, y1]), 'w', 'sq'), hdl('cut:sw', pt([x1, (y0 + y1) / 2]), 'o', 'sm'), hdl('cut:sh', pt([(x0 + x1) / 2, y1]), 'o', 'sm'));
+    return `<g class="handles">${out.join('')}</g>`;
+  }
   if (ST.mode === 'anim') {
     if (ST.playing || !cur()) return '';
     const wpnHand = add(J.aF[2], J.foreA.aF, 4.2 * B.w);
@@ -606,6 +629,7 @@ function onionSVG(A, B) {
 }
 function drawStage() {
   if (ST.mode === 'pack') return;
+  if (ST.mode === 'cuts') ensureCutsLive();
   const A = wearing(), B = cosOf('build', A.build).b, P = stagePose(B);
   let s = bgSVG();
   if (ST.mode === 'anim') s += onionSVG(A, B);
@@ -711,6 +735,7 @@ function endDrag() {
   if (was.pan) { if (was.click && isVec()) { ST.point = -1; } return; }
   if (was.brush) { brushLock(was.brush); return; }
   if (was.h2) { h2AddStroke(was.h2); return; }
+  if (ST.mode === 'cuts') { ST.pack.cuts = normCuts(ST.pack.cuts); commit(); renderLeft(); renderRight(); renderTop(); return; }
   if (was.add && ST.mode === 'hair') { const L = curLock(); if (L && L.len < 3) L.len = 10; if (L && ST.sym) cur().locks.push(mirrorLock(L)); }
   commit();
   renderRight();
@@ -727,7 +752,7 @@ stage.addEventListener('wheel', (ev) => {
 }, { passive: false });
 function frameNow() {
   const A = wearing(), B = cosOf('build', A.build).b, P = stagePose(B), J = solve(P, B);
-  return ST.mode === 'hair' ? headXf(J, P, true, false) : vecFrame(J, P, B);
+  return ST.mode === 'hair' || ST.mode === 'cuts' ? headXf(J, P, true, false) : vecFrame(J, P, B);
 }
 // A stroke drawn on a v2 haircut becomes one of its locks: from the end nearer the head's centre
 // (where the hair grows) to the other (its tip), resampled, mirrored if asked.
@@ -796,6 +821,7 @@ function mirrorLock(L) {
 const snapP = (q) => (GAR_MODES[ST.mode] ? [rd2(q[0]), rd2(q[1])] : ST.snap ? [Math.round(q[0] * 2) / 2, Math.round(q[1] * 2) / 2] : [rd2(q[0]), rd2(q[1])]);
 
 function applyDrag(id, w, ev) {
+  if (ST.mode === 'cuts' && id.startsWith('cut:')) { dragCut(id.slice(4), frameNow().toL(w)); return; }
   const A = wearing(), B = cosOf('build', A.build).b;
   if (ST.mode === 'anim') {
     const k = ensureKey();
@@ -894,6 +920,7 @@ function rootOf(r) {
     case 'em': return curEmitter();
     case 'man': return ST.man;
     case 'st': return ST;
+    case 'cut': { if (!HAIR_CUTS[ST.cut]) return null; const C = ST.pack.cuts || (ST.pack.cuts = {}); return C[ST.cut] || (C[ST.cut] = { x: 0, y: 0, s: 100, sw: 100, sh: 100 }); }
     default: return null;
   }
 }
@@ -947,7 +974,7 @@ function renderTop() {
   const dirtyFile = differs();
   $('#top').innerHTML = `
     <div class="brand"><b>TRI·REALM</b><span>Studio</span></div>
-    <nav class="modes">${TYPE_ORDER.map((t) => `<button class="${ST.mode === t ? 'on' : ''}" data-act="mode" data-arg="${t}">${TYPES[t].label}<em>${items(t).length}</em></button>`).join('')}<button class="${ST.mode === 'pack' ? 'on' : ''}" data-act="mode" data-arg="pack">Pack</button></nav>
+    <nav class="modes">${TYPE_ORDER.map((t) => `<button class="${ST.mode === t ? 'on' : ''}" data-act="mode" data-arg="${t}">${TYPES[t].label}<em>${items(t).length}</em></button>`).join('')}<button class="${ST.mode === 'cuts' ? 'on' : ''}" data-act="mode" data-arg="cuts" title="Move and resize the 36 manga haircuts">Manga cuts<em>${Object.keys(ST.pack.cuts || {}).length}</em></button><button class="${ST.mode === 'pack' ? 'on' : ''}" data-act="mode" data-arg="pack">Pack</button></nav>
     <div class="tb">
       <button class="ib" data-act="undo" title="Undo (Ctrl+Z)" ${HIST.i > 0 ? '' : 'disabled'}>${IC.undo}</button>
       <button class="ib" data-act="redo" title="Redo (Ctrl+Y)" ${HIST.i < HIST.list.length - 1 ? '' : 'disabled'}>${IC.redo}</button>
@@ -975,6 +1002,7 @@ function thumbSVG(type, it) {
 function renderLeft() {
   const el = $('#left');
   if (ST.mode === 'pack') { el.innerHTML = packLeft(); return; }
+  if (ST.mode === 'cuts') { el.innerHTML = cutsLeft(); return; }
   const t = ST.mode, L = items(), sel = ST.sel[t] | 0;
   const tpl = TEMPLATES[t]();
   el.innerHTML = `
@@ -1140,6 +1168,7 @@ function metaSec(t, it, noName) {
 function renderRight() {
   const el = $('#right');
   if (ST.mode === 'pack') { el.innerHTML = packRight(); return; }
+  if (ST.mode === 'cuts') { const scroll = el.scrollTop; el.innerHTML = cutsRight() + mannequinSec(); el.scrollTop = scroll; return; }
   const it = cur(), t = ST.mode;
   if (!it) { el.innerHTML = `<div class="sec"><div class="sb">${note(`Nothing selected. Make a ${TYPES[t].one} on the left.`)}</div></div>` + mannequinSec(); return; }
   const scroll = el.scrollTop;
@@ -1148,7 +1177,7 @@ function renderRight() {
 }
 function mannequinSec() {
   ensureReg();
-  const s = COS_SLOTS.filter(([k]) => k !== 'stance' && k !== TYPES[ST.mode === 'pack' ? 'anim' : ST.mode].slot).map(([k, l]) => fSel(l, 'man:' + k, COSMETICS[k].map((c) => [c.id, c.name + (c.custom ? ' ✦' : '')])));
+  const s = COS_SLOTS.filter(([k]) => k !== 'stance' && k !== (ST.mode === 'cuts' ? 'hair' : TYPES[ST.mode === 'pack' ? 'anim' : ST.mode].slot)).map(([k, l]) => fSel(l, 'man:' + k, COSMETICS[k].map((c) => [c.id, c.name + (c.custom ? ' ✦' : '')])));
   const weapons = [['', 'Bare hands'], ['katana', 'Katana'], ['kunai', 'Kunai'], ['cutlass', 'Cutlass'], ['cleaver', 'Cleaver'], ['hammer', 'Hammer'], ['sickle', 'Sickle'], ['lance', 'Lance'], ['bow', 'Bow'], ['cannon', 'Cannon'], ['gauntlet', 'Gauntlets'], ['claw', 'Claws']];
   return sec('man', 'Mannequin', note('What the figure wears around the piece you edit (✦ = custom).') + s.join('') + fSel('Weapon', 'man:weapon', weapons), '');
 }
@@ -1434,6 +1463,57 @@ INSPECT.aura = (it) => {
 };
 INSPECT.color = (it) => sec('meta', 'Colour', metaSec('color', it) + fCol('Body colour', 'item:ink') + note('The figure\'s skin in the Flat style, and the glow of the Neon style.'));
 
+/* ================================================================ manga cuts */
+// The 36 manga haircuts (js/hair-cuts.js) are pictures fitted to the head at run time. Here each one
+// can be moved and resized by hand; the result is saved in the pack (cuts) like any other content.
+let cutsApplied = '';
+function ensureCutsLive() {
+  const k = JSON.stringify(ST.pack.cuts || {});
+  if (k === cutsApplied) return;
+  cutsApplied = k;
+  HAIR_FIT.adjust(ST.pack.cuts);
+}
+function cutsChanged() { ensureCutsLive(); }
+function cutAdj(id) { return HAIR_FIT.adjOf((ST.pack.cuts || {})[id]); }
+const cutEdited = (id) => !!(ST.pack.cuts || {})[id];
+function cutThumb(id) {
+  const A = Object.assign(wearing(), { hair: 'cut_' + id }), B = cosOf('build', A.build).b, J = solve(FRONT_POSE, B);
+  try { return `<svg viewBox="${rd(J.head[0] - 32)} ${rd(J.head[1] - 40)} 64 72">${drawAvatar(A, FRONT_POSE, 0.6, { weapon: '', uid: 'ct' + thumbN++ })}</svg>`; } catch (e) { return ''; }
+}
+function cutsLeft() {
+  ensureCutsLive();
+  const groups = Object.entries(HAIR_CUT_WORLDS).map(([w, name]) => [name, Object.keys(HAIR_CUTS).filter((id) => HAIR_CUTS[id].world === w)]);
+  return `<div class="lh"><h2>Manga cuts</h2>${note('Pick a cut, then move and resize it on the head (drag the handles, or use the sliders). <b>Save to project</b> ships it with the pack.')}</div>`
+    + `<ul class="list">${groups.map(([g, ids]) => `<li class="grp">${esc(g)}</li>${ids.map((id) => `<li class="${id === ST.cut ? 'on' : ''}" data-act="cutpick" data-arg="${id}"><span class="th">${cutThumb(id)}</span><span class="nm"><b>${esc(HAIR_CUTS[id].name)}</b><small>${esc(id)}</small>${cutEdited(id) ? '<small class="tag">adjusted</small>' : ''}</span></li>`).join('')}`).join('')}</ul>`;
+}
+function cutsRight() {
+  const id = ST.cut, C = HAIR_CUTS[id];
+  if (!C) return `<div class="sec"><div class="sb">${note('Pick a cut on the left.')}</div></div>`;
+  const a = cutAdj(id), b = HAIR_FIT.base(id), n = Object.keys(ST.pack.cuts || {}).length;
+  return sec('cutfit', esc(C.name), note(`On the stage: <b>◆</b> moves it, <b>■</b> resizes it, <b>●</b> stretch its width or height. Sizes grow from the centre of the skull (the dashed circle).`)
+      + fNum('Move left / right', 'cut:x', -30, 30, 0.1) + fNum('Move up / down', 'cut:y', -30, 30, 0.1)
+      + fNum('Size (%)', 'cut:s', 40, 200, 1) + fNum('Width (%)', 'cut:sw', 40, 200, 1) + fNum('Height (%)', 'cut:sh', 40, 200, 1)
+      + row(btn('Reset this cut', 'cutreset', id, 'ghost'), btn('Next cut', 'cutnext', 1, 'ghost'))
+      + note(`Box on the skull: ${rd(C.x)}, ${rd(C.y)} · ${rd(C.w)} × ${rd(C.h)} (as registered: ${rd(b.x)}, ${rd(b.y)} · ${rd(b.w)} × ${rd(b.h)}).${a.x || a.y || a.s !== 100 || a.sw !== 100 || a.sh !== 100 ? '' : ' Not adjusted.'}`))
+    + sec('cutsave', 'Save', note(`${n} cut${n === 1 ? '' : 's'} adjusted. The changes are kept in this browser's draft; <b>Save to project</b> writes them into <code>js/custom-pack.js</code> (the game and the Rig Lab read them there). Tick <b>Preview in game</b> to try them in your game first.`)
+      + row(btn(IC.save + ' Save to project', 'save', null, 'primary'), btn('Download file', 'download', null, 'ghost'))
+      + (n ? row(btn('Reset every cut', 'cutresetall', null, 'ghost danger')) : ''));
+}
+// Drag on the stage, in the hair's frame (q): move, size (from the skull's centre) or stretch.
+function dragCut(h, q) {
+  const id = ST.cut, C = ST.pack.cuts || (ST.pack.cuts = {}), a = cutAdj(id);
+  if (!drag.cut) drag.cut = { q0: q, a0: Object.assign({}, a) };
+  const { q0, a0 } = drag.cut, n = Object.assign({}, a0);
+  if (h === 'move') { n.x = a0.x + (q[0] - q0[0]); n.y = a0.y + (q[1] - q0[1]); }
+  if (h === 'size') { const d0 = Math.hypot(q0[0] - a0.x, q0[1] - a0.y), d1 = Math.hypot(q[0] - a0.x, q[1] - a0.y); if (d0 > 2) n.s = a0.s * (d1 / d0); }
+  if (h === 'sw' && Math.abs(q0[0] - a0.x) > 2) n.sw = a0.sw * ((q[0] - a0.x) / (q0[0] - a0.x));
+  if (h === 'sh' && Math.abs(q0[1] - a0.y) > 2) n.sh = a0.sh * ((q[1] - a0.y) / (q0[1] - a0.y));
+  const v = HAIR_FIT.adjOf(n);
+  C[id] = { x: rd2(v.x), y: rd2(v.y), s: rd(v.s), sw: rd(v.sw), sh: rd(v.sh) };
+  ensureCutsLive();
+  renderRightSoon();
+}
+
 /* ================================================================ pack page */
 function packLeft() {
   return `<div class="lh"><h2>Pack</h2></div><div class="sb">${note('Everything you made, ready to ship. The game reads <code>js/custom-pack.js</code>; the Studio keeps a draft in this browser until you save.')}
@@ -1570,6 +1650,10 @@ const ACT = {
   fold(id) { ST.open[id] = ST.open[id] === false; renderRight(); saveDraft(); },
   view(v) { if (v === 'head') fitHead(); else if (v === 'torso') fitTorso(); else fitBody(); },
   tool(t) { ST.tool = ST.tool === t ? '' : t; renderStagebar(); if (t.startsWith('h2')) renderRight(); },
+  cutpick(id) { ST.cut = id; renderLeft(); renderRight(); saveDraft(); },
+  cutnext(d) { const ids = Object.keys(HAIR_CUTS), i = ids.indexOf(ST.cut); ST.cut = ids[(i + +d + ids.length) % ids.length]; renderLeft(); renderRight(); saveDraft(); const li = $('#left li.on'); if (li) li.scrollIntoView({ block: 'nearest' }); },
+  cutreset(id) { if (ST.pack.cuts) delete ST.pack.cuts[id]; ensureCutsLive(); commit(); renderLeft(); renderRight(); renderTop(); },
+  cutresetall() { if (!confirm('Put every manga cut back where it was registered?')) return; ST.pack.cuts = {}; ensureCutsLive(); commit(); renderLeft(); renderRight(); renderTop(); },
   goto(v) { const [t, i] = v.split(':'); ST.mode = t; ST.sel[t] = +i; renderAll(); autoFit(); },
   // animation
   play() { const a = cur(); if (!a) return; if (!ST.playing && ST.u >= 1 && !ST.loop) ST.u = 0; ST.playing = !ST.playing; renderTimeline(); renderRight(); },
@@ -1693,6 +1777,7 @@ function onBind(el, final) {
   if (b === 'item:use' && v === 'skill' && !SKILLS[cur().skill]) cur().skill = Object.keys(SKILLS)[0];
   if (el.dataset.t === 'n') $$(`[data-bind="${b}"]`).forEach((x) => { if (x !== el) x.value = v; });
   if (el.type === 'color') { const c = el.parentElement.querySelector('code'); if (c) c.textContent = v; }
+  if (b.startsWith('cut:')) { cutsChanged(); if (final) { ST.pack.cuts = normCuts(ST.pack.cuts); commit(); renderLeft(); renderTop(); } return; }
   if (b.startsWith('st:') || b.startsWith('man:')) {
     if (b === 'st:previewPose' || b.startsWith('man:')) { needReg = true; }
     if (final && b.startsWith('man:')) { renderLeft(); }
