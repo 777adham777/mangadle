@@ -24,6 +24,7 @@ Choix validés avec le joueur le 2026-11-18, puis propositions à valider.
 
 | Sujet | Proposition |
 | --- | --- |
+| Personnages : rig v3 (2026-11-20) | Nouveau système de personnage (voir `docs/CHARACTER-SYSTEM.md`, page de validation `rig.html`) : un squelette canonique unique (proportions fixes, 3/4 face tournée vers la droite), des cosmétiques qui ne sont que des skins sur ses os, un ordre d'affichage fixe, des animations idle / course / attaque / coup reçu / mort, une référence de tête pour toutes les coiffures, et des contrôles automatiques sur toutes les combinaisons. Spine évalué : on reprend son modèle de données, pas son runtime (licence, éditeur, rendu raster). Une seule coiffure de référence en attendant sa validation ; l'ancien rendu reste en jeu jusqu'à l'intégration. À trancher avant d'intégrer : les morphologies (slim / stout / tall) qui redimensionnent le squelette, les 4 styles d'encrage, les animations des scènes de métier, le portage des cosmétiques existants. |
 | Soin dans le monde 1 | Crafting fabrique les Soldier Pills avec les Healing Leaves que donne Woodcutting (sous-bois). Les techniques défensives (Healing Palm, Iron Skin, Mist Step) complètent. |
 | Herbes (ex-Herbalism) | Sous-produits de Woodcutting : chaque arbre donne l'herbe de son palier (25-30 %), les arbres anciens un peu de chakra brut. |
 | Cristaux de chakra (ex-Chakra Focus) | Deviennent des drops de combat du monde 1, utilisés par Crafting. |
