@@ -522,27 +522,32 @@ function RIG_HAIR_CHECK(skin, skins) {
   }
   return out;
 }
-// A haircut cut out of the sheet: measured at the cut (eyes, face, top) and placed on the skull.
-const RIG_HAIR_IMAGE_LIMITS = { eye: 0.12, hidden: 0.9, face: 0.4, perHiddenEye: 0.15 };
-function rigHairImageCheck(skin, R) {
-  const H = RIG_HEAD, A = skin.meta.image, out = [], ids = Object.keys(skin.att || {});
+// A haircut picture (js/hair-cuts.js), fitted to the rig's head by HAIR_FIT. The fit is measured on
+// the morphed picture (m: { eyes, top, rim, face }); the Lab fits every cut before it checks.
+const RIG_HAIR_IMAGE_LIMITS = { eye: 0.03, hidden: 0.85, face: 0.4, perHiddenEye: 0.15, top: 0.6, rim: 0.85 };
+function rigHairImageCheck(skin, R, m) {
+  const H = RIG_HEAD, A = skin.meta.image, out = [], ids = Object.keys(skin.att || {}), L = RIG_HAIR_IMAGE_LIMITS;
   const slots = ids.filter((s) => !['hair.scalp', 'ear'].includes(s)), a = skin.att['hair.scalp'] && skin.att['hair.scalp'].hair;
-  out.push(R('hair.anchor', 'Attached to the skull, cut on head reference v' + H.version, [...(skin.meta.head !== H.version ? [`made for head v${skin.meta.head}`] : []), ...slots.map((x) => `draws in slot ${x}`), ...(a ? [] : ['no picture on the skull'])], `the cut-out rides the skull bone, sheet cell ${A.sheet}`));
-  out.push(R('hair.layers', 'Front and back layering', [], 'one cut-out drawn over the head (the sheet shows the hair from the front only); the rig draws the ear over it' + (A.ear ? '' : ' — hidden: this cut covers it')));
-  // an eye is either clear (the rig draws it, with every expression) or, when the cut is made to hide
-  // it (A.covers: 'N' / 'F', like a curtain over one eye), hidden whole; never half covered
-  const covers = A.covers || '', pc = (v) => Math.round(v * 100) + ' %';
-  const eyes = A.eyes.map((v, i) => {
-    const side = i ? 'far' : 'near';
-    if (covers.includes('NF'[i])) return v < RIG_HAIR_IMAGE_LIMITS.hidden ? `the ${side} eye is meant to be hidden but only ${pc(v)} is` : '';
-    return v > RIG_HAIR_IMAGE_LIMITS.eye ? `hair over the ${side} eye (${pc(v)})` : '';
-  }).filter(Boolean);
-  out.push(R('hair.eyes', 'Eyes clear (the rig draws them, with every expression), or hidden whole by design', eyes, `eyes covered ${pc(A.eyes[0])} / ${pc(A.eyes[1])}${covers ? ` · hidden by the cut: ${covers.split('').map((k) => (k === 'N' ? 'near' : 'far')).join(', ')} eye` : ''}`));
-  const faceLim = RIG_HAIR_IMAGE_LIMITS.face + RIG_HAIR_IMAGE_LIMITS.perHiddenEye * covers.length;
-  const face = A.face > faceLim ? [`hair over ${Math.round(A.face * 100)} % of the face`] : [];
-  out.push(R('hair.align', 'The cut-out sits on the canonical face (its face hole on the face)', [...face, ...(a && a.y > -H.r ? ['the hair does not reach the top of the skull'] : [])], `face covered ${Math.round(A.face * 100)} %, top of the skull covered ${Math.round(A.top * 100)} %`));
+  if (m === undefined && typeof HAIR_FIT !== 'undefined' && HAIR_CUTS[skin.id] === A) { const f = HAIR_FIT.get(skin.id, 'rig'); m = f && f.measure; }
+  const pc = (v) => Math.round(v * 100) + ' %', covers = A.covers || '';
+  out.push(R('hair.anchor', 'Attached to the skull, cut on head reference v' + H.version, [...(skin.meta.head !== H.version ? [`made for head v${skin.meta.head}`] : []), ...slots.map((x) => `draws in slot ${x}`), ...(a ? [] : ['no picture on the skull'])], `the picture rides the skull bone (sheet cell ${A.sheet})`));
+  out.push(R('hair.layers', 'Front and back layering', [], 'one picture drawn over the head, seen from the front; the rig draws the ear over it' + (A.ear ? '' : ' — hidden: this cut covers it')));
+  out.push(R('hair.fit', 'Fitted to this head (turned, fringe lifted off the eyes, pulled onto the skull)', m ? [] : ['the picture could not be fitted here (the page cannot read it: open the Lab over http)'], m ? 'morphed for the rig\'s head' : ''));
+  if (m) {
+    // an eye is either clear (the rig draws it, with every expression) or, when the cut is made to hide
+    // it (covers 'N' / 'F', like a curtain over one eye), hidden whole; never half covered
+    const eyes = m.eyes.map((v, i) => {
+      const side = i ? 'far' : 'near';
+      if (covers.includes('NF'[i])) return v < L.hidden ? `the ${side} eye is meant to be hidden but only ${pc(v)} is` : '';
+      return v > L.eye ? `hair over the ${side} eye (${pc(v)})` : '';
+    }).filter(Boolean);
+    out.push(R('hair.eyes', 'Eyes clear (the rig draws them, with every expression), or hidden whole by design', eyes, `eyes covered ${pc(m.eyes[0])} / ${pc(m.eyes[1])}${covers ? ` · hidden by the cut: ${covers.split('').map((k) => (k === 'N' ? 'near' : 'far')).join(', ')} eye` : ''}`));
+    const faceLim = L.face + L.perHiddenEye * covers.length;
+    const bad = [...(m.face > faceLim ? [`hair over ${pc(m.face)} of the face`] : []), ...(m.top < L.top ? [`only ${pc(m.top)} of the scalp under hair`] : []), ...(m.rim < L.rim ? [`the skull's outline shows through the hair (${pc(1 - m.rim)} of the scalp's rim)`] : [])];
+    out.push(R('hair.align', 'Sits on the head: face open, scalp and its rim covered', bad, `face covered ${pc(m.face)}, scalp ${pc(m.top)}, scalp rim ${pc(m.rim)}`));
+  }
   const far = !a ? 0 : a.reach != null ? a.reach : Math.max(...[[a.x, a.y], [a.x + a.w, a.y], [a.x, a.y + a.h], [a.x + a.w, a.y + a.h]].map((p) => Math.hypot(p[0], p[1])));
-  out.push(R('hair.silhouette', 'Within bounds', far > H.r * 3.2 ? [`reaches ${far.toFixed(1)} from the skull centre`] : [], `the picture spans ${a ? a.w.toFixed(0) + ' x ' + a.h.toFixed(0) : '?'} units, its hair reaches ${far.toFixed(1)} (max ${(H.r * 3.2).toFixed(1)})`));
+  out.push(R('hair.silhouette', 'Within bounds', far > H.r * 3.2 ? [`reaches ${far.toFixed(1)} from the skull centre`] : [], `its hair reaches ${far.toFixed(1)} (max ${(H.r * 3.2).toFixed(1)})`));
   out.push(R('hair.motion', 'Stays on the head in motion', [], 'rigid on the skull; pressed flat on the floor when lying down'));
   return out;
 }
@@ -561,8 +566,18 @@ function RIG_HAIR_SELFTEST() {
     ['A lock 20 units wide', 'hair.thickness', () => fails(mk({ sides: [Object.assign({}, D.sides[0], { w: 20 })] }), 'hair.thickness')],
     ['A spike thinner than a strand', 'hair.thickness', () => { const i = D.edge.findIndex((e) => e[2] === 't'), [a, r] = D.edge[i], E = D.edge.slice(); E.splice(i + 1, 0, [a - 1, r - 4, 'v'], [a - 2, r, 't'], [a - 3, r - 4, 'v']); return fails(mk({ edge: E }), 'hair.thickness'); }],
     ['Made for another head', 'hair.anchor', () => fails(mk({ head: 99 }), 'hair.anchor')],
-    ['A cut-out that hides an eye', 'hair.eyes', () => rigHairImageCheck(rigHairAsset('x', { name: 'x', sheet: '0,0', x: -40, y: -40, w: 70, h: 60, ear: true, eyes: [0.6, 0], face: 0.1, top: 1 }), (id, n, bad) => ({ id, status: bad.length ? 'fail' : 'pass' })).some((r) => r.id === 'hair.eyes' && r.status === 'fail')],
-    ['A cut-out that half hides the eye it is meant to hide', 'hair.eyes', () => rigHairImageCheck(rigHairAsset('x', { name: 'x', sheet: '0,0', x: -40, y: -40, w: 70, h: 60, ear: true, covers: 'F', eyes: [0, 0.5], face: 0.3, top: 1 }), (id, n, bad) => ({ id, status: bad.length ? 'fail' : 'pass' })).some((r) => r.id === 'hair.eyes' && r.status === 'fail')],
-    ['A cut-out placed off the face', 'hair.align', () => rigHairImageCheck(rigHairAsset('x', { name: 'x', sheet: '0,0', x: -40, y: -10, w: 70, h: 60, ear: true, eyes: [0, 0], face: 0.7, top: 0 }), (id, n, bad) => ({ id, status: bad.length ? 'fail' : 'pass' })).some((r) => r.id === 'hair.align' && r.status === 'fail')],
+    ...(typeof rigHairAsset === 'function' ? (() => {
+      const pic = rigHairAsset('x', { name: 'x', sheet: '0,0', x: -40, y: -40, w: 70, h: 60, ear: true, reach: 40 });
+      const hid = rigHairAsset('x', { name: 'x', sheet: '0,0', x: -40, y: -40, w: 70, h: 60, ear: true, covers: 'F', reach: 40 });
+      const R0 = (id, n, bad) => ({ id, status: bad.length ? 'fail' : 'pass' }), ok = { eyes: [0, 0], top: 1, rim: 1, face: 0.1 };
+      const f = (skin, m, id) => rigHairImageCheck(skin, R0, Object.assign({}, ok, m)).some((r) => r.id === id && r.status === 'fail');
+      return [
+        ['A picture whose fringe stays on an eye', 'hair.eyes', () => f(pic, { eyes: [0.3, 0] }, 'hair.eyes')],
+        ['A picture that half hides the eye it is meant to hide', 'hair.eyes', () => f(hid, { eyes: [0, 0.5] }, 'hair.eyes')],
+        ['A picture sliding off the head (skull top bare)', 'hair.align', () => f(pic, { top: 0.4, face: 0.6 }, 'hair.align')],
+        ['A picture that leaves the skull\'s outline showing', 'hair.align', () => f(pic, { rim: 0.6 }, 'hair.align')],
+        ['A picture that could not be fitted', 'hair.fit', () => rigHairImageCheck(pic, R0, null).some((r) => r.id === 'hair.fit' && r.status === 'fail')],
+      ];
+    })() : []),
   ];
 }

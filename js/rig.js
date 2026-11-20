@@ -104,8 +104,9 @@ const RIG = (() => {
     else if (a.kind === 'path') g = { d: a.d, poly: a.poly || [] };
     else if (a.kind === 'image' || a.kind === 'hairImage') {
       // a picture placed in the bone's frame: its rectangle (for the checks; it is drawn as an image)
+      // (not kept: a fitted picture may change its box once its morph is ready)
       const P = [[a.x, a.y], [a.x + a.w, a.y], [a.x + a.w, a.y + a.h], [a.x, a.y + a.h]];
-      g = { d: '', poly: P, rect: P };
+      return { d: '', poly: P, rect: P };
     }
     else g = { d: '', poly: [] };
     Object.defineProperty(a, '_g', { value: g, enumerable: false, writable: true });

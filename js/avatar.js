@@ -86,6 +86,9 @@ const COSMETICS = {
     C('wild',   'Wild Broom',      'hunter',  3, LV('tracking', 10)),
     C('swept',  'Slicked Back',    'echo',    3, LV('archaeology', 10)),
     C('crest',  'Rift Crest',      'rift',    5, KILLS('tear', 5)),
+    // the 36 manga haircuts (pictures, js/hair-cuts.js), fitted to the head as it turns.
+    // How they are earned is not decided yet: for now only the dev tool unlocks them.
+    ...(typeof HAIR_CUTS !== 'undefined' ? Object.keys(HAIR_CUTS).map((id) => C('cut_' + id, HAIR_CUTS[id].name, HAIR_CUTS[id].world, 3, { need: () => false, hint: 'Not obtainable yet' })) : []),
   ],
   // Clothes are worn over the limbs, in two pieces you mix freely:
   // a top (with its sleeves, sash and wrist bands) and a bottom (trousers or shorts, belt and shoes).
@@ -1131,6 +1134,10 @@ function drawAvatar(A, P, t, opt) {
   const h2 = h2def && typeof hair2SVG === 'function' ? hair2SVG(h2def, { t, ha, uid: uid + 'h2', covered: !!HAT_COVER[A.hat], face: [(-2.2 * (P.tw || 0)) / (1 + 0.07 * (P.tw || 0)), 19 / (1 + 0.07 * (P.tw || 0))] }) : null;
   const hair = h2 ? null : hairShape(A.hair, !!HAT_COVER[A.hat], ha, t), tw = P.tw || 0;
   const hairT = (s) => `<g transform="translate(${r1(2.2 * tw)},0) scale(${r1((1 + 0.07 * tw) * 100) / 100},1)">${s}</g>`;
+  // a manga haircut picture (js/hair-cuts.js): morphed for this head and its turn by HAIR_FIT
+  const cutId = typeof HAIR_CUTS !== 'undefined' && /^cut_/.test(A.hair || '') ? A.hair.slice(4) : null;
+  const cut = cutId && HAIR_CUTS[cutId] ? HAIR_FIT.get(cutId, HAIR_FIT.avKey(tw)) : null;
+  const cutS = cut ? `<image href="${cut.href}" x="${r1(cut.x)}" y="${r1(cut.y)}" width="${r1(cut.w)}" height="${r1(cut.h)}" preserveAspectRatio="none"/>` : '';
   const fig = [G.back];
   if (hair && hair.back) fig.push(onHead(hairT(cel(hair.back, shade(hair.h.c, -0.08), hair.h.sh, 0.9))));
   if (h2 && h2.back) fig.push(onHead(hairT(h2.back)));
@@ -1288,7 +1295,7 @@ function drawAvatar(A, P, t, opt) {
   if (h2) fig.push(onHead(hairT(h2.nape) + ink(circ([0, 0], 19), St.body, 2.4)
     + `<clipPath id="${uid}fs"><circle r="19"/></clipPath><g clip-path="url(#${uid}fs)">${hairT(`<path d="${h2.shadow}" fill="${St.sh}" opacity=".85" transform="translate(.6,2.8)"/>`)}</g>`
     + faceG + hairT(h2.main) + (HATS[A.hat] || '')));
-  else fig.push(onHead(ink(circ([0, 0], 19), St.body, 2.4) + faceG + hairT(hairS) + (HATS[A.hat] || '')));
+  else fig.push(onHead(ink(circ([0, 0], 19), St.body, 2.4) + faceG + hairT(hairS + cutS) + (HATS[A.hat] || '')));
   fig.push(collar());
   if (backX) fig.push(back.s + back.hand);
   if (P.panB) fig.push(panSVG(back.hp, P.A, t, P, '#ffb36b'), back.hand);

@@ -166,11 +166,11 @@
   const BASE = () => [RIG_BODY, RIG_OUTFITS.traveler, RIG_FACES.calm];
   const exprSkin = (e) => ({ name: 'expr:' + e, att: { face: { neutral: RIG_FACES.calm.att.face[e] } } });
   // the picture alone, in skull units, on a checkerboard: the skull and the eye boxes it leaves clear
-  function assetView(A, id) {
+  function assetView(A, id, F) {
     const H = RIG_HEAD, eye = (k) => { const E = H.eyes[k]; return `<ellipse cx="${E.c[0]}" cy="${E.c[1]}" rx="${E.rx}" ry="${E.ry}" fill="none" stroke="#33dd88" stroke-width=".45" stroke-dasharray="1 .6"/>`; };
-    return `<svg viewBox="-52 -54 104 88" width="100%" style="max-width:240px"><defs><pattern id="chk" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill="#9aa1b0"/><rect width="2" height="2" fill="#c3c8d2"/><rect x="2" y="2" width="2" height="2" fill="#c3c8d2"/></pattern></defs>`
-      + `<rect x="-52" y="-54" width="104" height="88" fill="url(#chk)"/><image href="${RIG_HAIR_BASE}${id}.png" x="${A.x}" y="${A.y}" width="${A.w}" height="${A.h}" preserveAspectRatio="none"/>`
-      + `<rect x="${A.x}" y="${A.y}" width="${A.w}" height="${A.h}" fill="none" stroke="#ff9a3c" stroke-width=".4" stroke-dasharray="2 1"/><circle r="19" fill="none" stroke="#3aa0ff" stroke-width=".5" stroke-dasharray="1.5 1"/>${eye('N')}${eye('F')}<circle r=".9" fill="#ff4f7f"/></svg>`;
+    return `<svg viewBox="-52 -54 104 88" width="100%" style="max-width:240px"><defs><pattern id="chk${esc(id)}" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill="#9aa1b0"/><rect width="2" height="2" fill="#c3c8d2"/><rect x="2" y="2" width="2" height="2" fill="#c3c8d2"/></pattern></defs>`
+      + `<rect x="-52" y="-54" width="104" height="88" fill="url(#chk${esc(id)})"/><image href="${F.href}" x="${F.x}" y="${F.y}" width="${F.w}" height="${F.h}" preserveAspectRatio="none"/>`
+      + `<rect x="${F.x}" y="${F.y}" width="${F.w}" height="${F.h}" fill="none" stroke="#ff9a3c" stroke-width=".4" stroke-dasharray="2 1"/><circle r="19" fill="none" stroke="#3aa0ff" stroke-width=".5" stroke-dasharray="1.5 1"/>${eye('N')}${eye('F')}<circle r=".9" fill="#ff4f7f"/></svg>`;
   }
   function lyingView(skins, uid) {
     const c2 = new RIG.Character(RIG_SKELETON, skins, RIG_ANIMS);
@@ -184,7 +184,11 @@
     const A = H.meta && H.meta.image, base = BASE(), hair = hairOf(id, L.dye);
     $('cutTitle').textContent = H.label + (A ? ` · ${RIG_HAIR_WORLDS[A.world]} · sheet cell ${A.sheet}` : ' · procedural recipe');
     let h = '';
-    if (A) h += `<figure>${assetView(A, id)}<figcaption><b>The asset</b>${esc(id)}.png, ${A.w.toFixed(0)} × ${A.h.toFixed(0)} skull units at (${A.x.toFixed(1)}, ${A.y.toFixed(1)})${A.covers ? ` · hides the ${A.covers === 'F' ? 'far' : 'near'} eye` : ''}${A.ear ? '' : ' · covers the ear'}</figcaption></figure>`;
+    if (A) {
+      const F = HAIR_FIT.get(id, 'rig'), m = F.measure;
+      h += `<figure>${assetView(A, id, HAIR_FIT.raw(id))}<figcaption><b>The asset</b>${esc(id)}.png, ${A.w.toFixed(0)} × ${A.h.toFixed(0)} skull units at (${A.x.toFixed(1)}, ${A.y.toFixed(1)})${A.covers ? ` · hides the ${A.covers === 'F' ? 'far' : 'near'} eye` : ''}${A.ear ? '' : ' · covers the ear'}</figcaption></figure>`;
+      h += `<figure>${assetView(A, id + 'f', F)}<figcaption><b>Fitted to this head</b>${F.fitted ? `morphed: eyes ${Math.round(m.eyes[0] * 100)} / ${Math.round(m.eyes[1] * 100)} % covered, scalp ${Math.round(m.top * 100)} %, rim ${Math.round(m.rim * 100)} %` : 'not fitted yet (plain picture)'}</figcaption></figure>`;
+    }
     h += `<figure>${headView([...base, hair], 'cd0', 240)}<figcaption><b>On the rig</b>the rig's own head, face, ear and outline</figcaption></figure>`;
     h += ['angry', 'hurt', 'dead', 'happy'].map((e, i) => `<figure>${headView([...base, exprSkin(e), hair], 'cde' + i, 200)}<figcaption><b>${e[0].toUpperCase() + e.slice(1)}</b>the rig's expression shows through</figcaption></figure>`).join('');
     h += `<figure style="grid-column:span 2">${lyingView([...base, hair], 'cdl')}<figcaption><b>Lying down</b>end of the death animation: pressed flat on the floor</figcaption></figure>`;
@@ -210,6 +214,13 @@
     const t0 = performance.now(), st0 = $('status');
     const first = RIG_HAIRS[RIG_HAIR_START], hairs = [first, ...Object.values(RIG_HAIRS).filter((h) => h !== first)];
     const sets = { hair: hairs, outfit: [null, ...Object.values(RIG_OUTFITS)], weapon: [null, ...Object.values(RIG_WEAPONS)], face: Object.values(RIG_FACES) };
+    // every cut is first fitted to the rig's head (HAIR_FIT), then the gallery shows the fitted cuts
+    if (typeof HAIR_FIT !== 'undefined') {
+      let n = 0;
+      const ids = Object.keys(HAIR_CUTS);
+      await Promise.all(ids.map((id) => HAIR_FIT.ready(id, 'rig').then(() => { st0.textContent = `Fitting the cuts… ${++n}/${ids.length}`; })));
+      hairSection(); strips();
+    }
     const R = await RIG_CHECK.allAsync(sets, { fps: 30, hairAxis: 'separate' }, (i, n) => { st0.textContent = `Checking… ${i}/${n}`; });
     R.results.push(await imageChecks());
     const S = RIG_CHECK.selfTest(), ms = Math.round(performance.now() - t0);
