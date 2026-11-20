@@ -843,8 +843,8 @@ const SHOE = spline([[-5, -4.6], [1.6, -5.6], [8.2, -3.6], [13.6, 0.4], [13.8, 4
 // the bare hand: a ball, centred a little past the wrist (the grip point is its centre)
 const HAND = circ([0.8, 0], 8.2);
 // the bare foot: an inclined block, ankle at 0,0, sole on y = 5 (the ground), toe towards +x
-const FOOT_BLOCK = 'M-6.4,-5.6 C-1.6,-6.8 4.2,-5.2 9.4,-2.2 C12.8,-0.2 14.6,1.6 14.6,3 C14.6,4.4 13.6,5 12.2,5 L-7,5 C-8.6,5 -9.2,3.6 -9.2,1 C-9.2,-2.6 -8.4,-4.8 -6.4,-5.6Z';
-const FOOT_SOLE = 'M-9.1,2.6 L14.4,2.6 C14.6,2.8 14.6,2.9 14.6,3 C14.6,4.4 13.6,5 12.2,5 L-7,5 C-8.6,5 -9.2,4 -9.1,2.6Z';
+const FOOT_BLOCK = 'M-6.6,5 C-9.6,5 -10.2,2.6 -10.2,-0.6 C-10.2,-4.6 -8,-7.4 -3.4,-7.6 C1.6,-7.8 5.8,-6 9.4,-3.4 C12.4,-1.2 14,0.8 14,2.6 C14,4.2 12.9,5 11.2,5Z';
+const FOOT_SOLE = 'M-10,2.4 L13.8,2.4 C13.95,2.5 14,2.55 14,2.6 C14,4.2 12.9,5 11.2,5 L-6.6,5 C-8.8,5 -9.8,3.8 -10,2.4Z';
 const SOLE = 'M-6.2,3 H13.8 Q15.4,3 15.4,4.6 Q15.4,6.2 13.8,6.2 H-6.2 Q-7.6,6.2 -7.6,4.6 Q-7.6,3 -6.2,3Z';
 
 /* ---------------------------------------------------------------- hair */
@@ -1172,6 +1172,10 @@ function drawAvatar(A, P, t, opt) {
   // way the foot points, never upside down
   const shoe = (L, far) => {
     let a = Math.atan2(L[3][0] - L[2][0], L[3][1] - L[2][1]) / D2R;
+    // a foot standing on the floor lies flat on it (the block is long: a small tilt would lift the toe)
+    const flatA = Math.sin(a * D2R) < 0 ? -90 : 90, dA = ((a - flatA + 540) % 360) - 180;
+    const onFloor = Math.max(0, Math.min(1, (L[2][1] + 5 - (GROUND - 7)) / 5));
+    if (Math.abs(dA) < 35) a -= dA * onFloor;
     const flip = Math.sin(a * D2R) < 0, sk = far ? St.far : St.body;
     const [k, c] = (O && O.shoe) || ['bare'];
     const foot = FOOT_BLOCK;
@@ -1269,7 +1273,7 @@ function drawAvatar(A, P, t, opt) {
   if (!frontX) fig.push(front.s);
   // below the waist the body is one shape: the hips and both whole legs merged, so the torso
   // flows into the legs with no seam; the same for the trousers over it
-  const skinC = [legC(J.lB), legC(J.lF)], skinW = legW(8);
+  const skinC = [bez(J.lB, -0.04, 0.95, 8), bez(J.lF, -0.04, 0.95, 8)], skinW = legW(8);
   const neckC = [add(J.neckBase, J.neckA, -6), J.neck, add(J.neck, J.neckA, 9)], neckW = [3.9 * W, 3.7 * W, 3.7 * W];
   fig.push(cel(union(tube(neckC, neckW), torsoOutline(M, -0.3, 1, 0), tube(skinC[0], skinW), tube(skinC[1], skinW)), St.body, St.sh) + legEdge(skinC[1], skinW)
     + fillP(spline(tube([add(J.neckBase, J.neckA, 1), add(J.neck, J.neckA, 9)], [neckW[1], neckW[2]], { flatStart: 1 }), true), St.sh, 0.7));
