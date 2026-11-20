@@ -1549,15 +1549,19 @@ function idb(mode, fn) {
     r.onsuccess = () => { const tx = r.result.transaction('kv', mode), q = fn(tx.objectStore('kv')); tx.oncomplete = () => ok(q && q.result); tx.onerror = () => no(tx.error); };
   });
 }
+const PACK_FILE = 'custom-pack.js';
 async function saveProject() {
   if (!window.showSaveFilePicker) { download(); toast('This browser cannot write files: downloaded custom-pack.js instead. Put it in the js folder.', 'warn'); return; }
   try {
     let h = null;
     try { h = await idb('readonly', (s) => s.get('pack')); } catch (e) { /* no handle */ }
+    // only ever write custom-pack.js: picking another file (custom.js is the game's loader) would break the game
+    if (h && h.name !== PACK_FILE) { h = null; try { await idb('readwrite', (s) => s.delete('pack')); } catch (e) { /* nothing stored */ } }
     if (h && (await h.queryPermission({ mode: 'readwrite' })) !== 'granted' && (await h.requestPermission({ mode: 'readwrite' })) !== 'granted') h = null;
     if (!h) {
       toast('Pick js/custom-pack.js in the game folder (asked only once).');
-      h = await window.showSaveFilePicker({ suggestedName: 'custom-pack.js', types: [{ description: 'JavaScript', accept: { 'text/javascript': ['.js'] } }] });
+      h = await window.showSaveFilePicker({ suggestedName: PACK_FILE, types: [{ description: 'JavaScript', accept: { 'text/javascript': ['.js'] } }] });
+      if (h.name !== PACK_FILE) { toast(`Not saved: "${h.name}" is not ${PACK_FILE}. Pick js/${PACK_FILE} (writing another file would break the game).`, 'bad'); return; }
       try { await idb('readwrite', (s) => s.put(h, 'pack')); } catch (e) { /* not remembered */ }
     }
     const w = await h.createWritable();
