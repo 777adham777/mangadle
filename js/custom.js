@@ -232,7 +232,7 @@ function registerCustomPack(pack) {
     const dur = Math.max(0.2, +a.dur || 1), keys = customKeys(a);
     put(POSE_DRIVE, a.id, drive);
     put(DRIVE_SKILL, a.id, [a.use === 'skill' ? a.skill : '', dur]);
-    put(POSES, a.id, drive(0, 0, COSMETICS.build[0].b, true));
+    put(POSES, a.id, drive(0, 0, BODY, true));
     const pv = [a.id, a.name || a.id];
     PREVIEWS.push(pv);
     CUSTOM_UNDO.push(() => { const i = PREVIEWS.indexOf(pv); if (i >= 0) PREVIEWS.splice(i, 1); });

@@ -35,13 +35,10 @@ const KILLS = (z, n) => ({ need: () => kzOf(z) >= n, hint: `Defeat ${n} foes in 
 // wear: drawn garment pieces by 'top:id' / 'bottom:id', called for each body part (see drawAvatar).
 const AV_EXT = { face: {}, back: {}, aura: {}, skill: {}, attacks: [], wear: {} };
 const C = (id, name, w, r, req, extra) => Object.assign({ id, name, w, r }, req, extra || {});
+// One body for everyone (no builds): the base character sheet. Its proportions live in solve()
+// and drawAvatar(); these factors stay at 1 for the code that still takes a body argument.
+const BODY = { w: 1, h: 1, head: 1 };
 const COSMETICS = {
-  build: [
-    { id: 'athletic', name: 'Athletic', r: 1, need: FREE, b: { w: 1, h: 1, head: 1 } },
-    { id: 'slim',     name: 'Slim',     r: 1, need: FREE, b: { w: 0.78, h: 1.04, head: 0.96 } },
-    { id: 'stout',    name: 'Stout',    r: 1, need: FREE, b: { w: 1.4, h: 0.93, head: 1.06 } },
-    { id: 'tall',     name: 'Tall',     r: 1, need: FREE, b: { w: 0.92, h: 1.12, head: 0.94 } },
-  ],
   // How the figure is inked. Flat: bright body, darker rim. Ink: black body, white rim.
   // Neon: black body with a glowing rim. Sketch: pencil lines on paper.
   style: [
@@ -171,7 +168,7 @@ const COSMETICS = {
     C('storm',    'Rift Storm',    'rift',    5, KILLS('tear', 50)),
   ],
 };
-const COS_SLOTS = [['build', 'Build'], ['style', 'Style'], ['stance', 'Stance'], ['color', 'Colour'], ['hair', 'Hair'], ['top', 'Top'], ['bottom', 'Bottom'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
+const COS_SLOTS = [['style', 'Style'], ['stance', 'Stance'], ['color', 'Colour'], ['hair', 'Hair'], ['top', 'Top'], ['bottom', 'Bottom'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
 const COS_RARITY = ['', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
 const cosOf = (slot, id) => COSMETICS[slot].find((c) => c.id === id) || COSMETICS[slot][0];
 const avatarOn = () => isUnlocked('feature:avatar');
@@ -187,6 +184,7 @@ function avState() {
     for (const k of Object.keys(A.got)) if (k.startsWith('outfit:')) { A.got['top:' + k.slice(7)] = 1; A.got['bottom:' + k.slice(7)] = 1; delete A.got[k]; }
     delete A.outfit;
   }
+  delete A.build;   // builds are gone: one body for everyone
   for (const [s] of COS_SLOTS) if (!COSMETICS[s].some((c) => c.id === A[s])) A[s] = COSMETICS[s][0].id;
   return A;
 }
@@ -291,14 +289,15 @@ const OL = '#0a0c11';
 const part = (d, fill, ow) => `<path d="${d}" fill="${OL}" stroke="${OL}" stroke-width="${ow || 3.2}" stroke-linejoin="round"/><path d="${d}" fill="${fill}"/>`;
 
 /* ================================================================ rig */
-// Proportions of the concept art (about 4.4 heads): a big round head on a short neck, a sturdy
-// torso as wide as the head, legs a little longer than the torso, arms reaching the hips.
+// Proportions of the base character sheet (about 4.2 heads): a big round head on a very short neck,
+// a short rounded-box torso a little wider at the hips, long straight legs (about 1.4 torsos),
+// arms long enough that the round fists hang at the crotch.
 // Bone lengths are fixed (forward kinematics); the body faces the viewer, so shoulders and hips
 // sit apart, and they tilt against each other (contrapposto).
 const GROUND = 226;
 function solve(P, B) {
   const s = B.h, W = B.w;
-  const len = { ab: 24 * s, ch: 28 * s, nk: 6 * s, ua: 23 * s, fa: 21 * s, th: 36 * s, sh: 35 * s, ft: 4 * s };
+  const len = { ab: 17 * s, ch: 20 * s, nk: 8 * s, ua: 23 * s, fa: 21 * s, th: 36 * s, sh: 35 * s, ft: 4 * s };
   const pelvis = [100 + (P.dx || 0), 120 + P.dy];
   const waist = add(pelvis, P.t1, len.ab);
   const chestA = P.t1 + P.t2;
@@ -310,8 +309,8 @@ function solve(P, B) {
   const sl = add(neckBase, chestA, -7 * s);                 // the shoulder line
   const st = P.st || 0, ht = P.ht || 0;
   const tw = P.tw || 0;
-  const shF = add(sl, chestA - 90 + st, 12.5 * W * (1 - 0.18 * tw)), shB = add(sl, chestA + 90 + st, 12.5 * W * (1 - 0.42 * tw));
-  const hipF = add(pelvis, P.t1 - 90 + ht, 7.5 * W * (1 - 0.2 * tw)), hipB = add(pelvis, P.t1 + 90 + ht, 7.5 * W * (1 - 0.4 * tw));
+  const shF = add(sl, chestA - 90 + st, 13.5 * W * (1 - 0.18 * tw)), shB = add(sl, chestA + 90 + st, 13.5 * W * (1 - 0.42 * tw));
+  const hipF = add(pelvis, P.t1 - 90 + ht, 8 * W * (1 - 0.2 * tw)), hipB = add(pelvis, P.t1 + 90 + ht, 8 * W * (1 - 0.4 * tw));
   const arm = (o, a) => { const e = add(o, a[0], len.ua); return [o, e, add(e, a[0] + a[1], len.fa)]; };
   const leg = (o, l, ft) => {
     const k = add(o, l[0], len.th), an = add(k, l[0] + l[1], len.sh);
@@ -577,7 +576,7 @@ function driveU(name, t) {
 }
 // Still versions (portraits, previews, the scene's first frame): mid-wait, mid-stir, ready to swing.
 {
-  const B0 = COSMETICS.build[0].b;
+  const B0 = BODY;
   POSES.fish = POSE_DRIVE.fish(0.5, 0, B0, true);
   POSES.cook = POSE_DRIVE.cook(0.3, 0, B0, true);
   POSES.wood = POSE_DRIVE.wood(0.02, 0, B0, true);
@@ -803,7 +802,7 @@ const frame = (J, p, inner) => `<g transform="translate(${pt(p)}) rotate(${r1(18
 
 /* ---------------------------------------------------------------- torso */
 // The torso is mapped as (u, v): u from -1 (left edge) to 1 (right edge), v from 0 (pelvis) to 1 (neck).
-const TORSO_W = [[-0.4, 13.2], [0, 13.2], [0.3, 12.2], [0.6, 13], [0.84, 14.2], [0.97, 12.6], [1.1, 5.4], [1.4, 4.2]];
+const TORSO_W = [[-0.4, 15], [0, 15], [0.3, 13.9], [0.6, 13.3], [0.84, 13.2], [0.97, 11.6], [1.1, 5], [1.4, 4]];
 function hwAt(v) {
   if (v <= TORSO_W[0][0]) return TORSO_W[0][1];
   for (let i = 1; i < TORSO_W.length; i++) if (v <= TORSO_W[i][0]) { const [a, x] = TORSO_W[i - 1], [b, y] = TORSO_W[i]; return x + ((y - x) * (v - a)) / (b - a); }
@@ -841,6 +840,11 @@ function torsoShade(M, v0, v1, ex, u0) {
 const FIST = spline([[-1.2, -4.6], [3.6, -5.7], [8, -3.9], [9.5, 0.4], [7.7, 4.5], [3, 5.5], [-1.2, 4.3], [-2.6, 0]], true);
 const FOOT = spline([[-4, -3.4], [2, -4], [8, -2.2], [12.4, 0.6], [12.3, 3.6, 1], [-4.4, 3.6, 1], [-5.6, 0.4]], true);
 const SHOE = spline([[-5, -4.6], [1.6, -5.6], [8.2, -3.6], [13.6, 0.4], [13.8, 4.6, 1], [-5.8, 4.6, 1], [-6.8, 0]], true);
+// the bare hand: a ball, centred a little past the wrist (the grip point is its centre)
+const HAND = circ([0.8, 0], 8.2);
+// the bare foot: an inclined block, ankle at 0,0, sole on y = 5 (the ground), toe towards +x
+const FOOT_BLOCK = 'M-6.4,-5.6 C-1.6,-6.8 4.2,-5.2 9.4,-2.2 C12.8,-0.2 14.6,1.6 14.6,3 C14.6,4.4 13.6,5 12.2,5 L-7,5 C-8.6,5 -9.2,3.6 -9.2,1 C-9.2,-2.6 -8.4,-4.8 -6.4,-5.6Z';
+const FOOT_SOLE = 'M-9.1,2.6 L14.4,2.6 C14.6,2.8 14.6,2.9 14.6,3 C14.6,4.4 13.6,5 12.2,5 L-7,5 C-8.6,5 -9.2,4 -9.1,2.6Z';
 const SOLE = 'M-6.2,3 H13.8 Q15.4,3 15.4,4.6 Q15.4,6.2 13.8,6.2 H-6.2 Q-7.6,6.2 -7.6,4.6 Q-7.6,3 -6.2,3Z';
 
 /* ---------------------------------------------------------------- hair */
@@ -1094,7 +1098,7 @@ const wind = (P) => (area(P) > 0 ? P.slice().reverse() : P);
 // One path made of several closed shapes wound the same way: it fills and outlines as a single silhouette.
 const union = (...shapes) => shapes.filter(Boolean).map((P) => spline(wind(P), true)).join('');
 function drawAvatar(A, P, t, opt) {
-  const B = cosOf('build', A.build).b, skin = A.ink || cosOf('color', A.color).ink;
+  const B = BODY, skin = A.ink || cosOf('color', A.color).ink;
   const St = STYLES[A.style] ? STYLES[A.style](skin) : STYLES.flat(skin);
   LINE = St.line;
   const J = solve(P, B), W = B.w, M = torsoMap(J, W), out = [];
@@ -1151,7 +1155,7 @@ function drawAvatar(A, P, t, opt) {
   // an arm: skin, sleeve, cuff, wrist band, and an oval mitten hand
   const arm = (Ar, fa, far) => {
     const n = 8, C = bez(Ar, 0, 1, n), sk = far ? St.far : St.body;
-    let s = cel(spline(tube(C, lerpW(n, 4.6 * W, 4 * W)), true), sk, shd('skin', far), 0.8);
+    let s = cel(spline(tube(C, lerpW(n, 4.5 * W, 4.1 * W)), true), sk, shd('skin', far), 0.8);
     if (T && T.sl) {
       const Cs = bez(Ar, -0.08, T.sl, n), w1 = (T.wide ? 6.4 + T.wide : 6.4) * W, hw = lerpW(n, 7.2 * W, w1), c = T.slc || T.c;
       s += piece(tube(Cs, hw, { flatEnd: 1 }), c, far);
@@ -1161,26 +1165,27 @@ function drawAvatar(A, P, t, opt) {
     s += xw(far ? 'armB' : 'armF', { L: Ar, far });
     if (O && O.wrist) s += piece(tube(bez(Ar, 0.78, 0.93, 2), [5.4 * W, 5.3 * W, 5.2 * W], { flatStart: 1, flatEnd: 1 }), O.wrist, far, 0.6);
     const hp = add(Ar[2], fa, 4.2 * W), r = rotTo(fa);
-    const hand = `<g transform="translate(${pt(hp)}) rotate(${r})">${cel('M-6.6,-0.4C-6.6,-5.4 -3.4,-7 0.6,-7C5,-7 7.6,-4 7.6,0C7.6,4.2 4.8,7 0.4,7C-3.6,7 -6.6,4.6 -6.6,-0.4Z', O && O.glove ? col(O.glove, far) : sk, O && O.glove ? shd(O.glove, far) : shd('skin', far), 0.8)}</g>`;
+    const hand = `<g transform="translate(${pt(hp)}) rotate(${r})">${cel(HAND, O && O.glove ? col(O.glove, far) : sk, O && O.glove ? shd(O.glove, far) : shd('skin', far), 0.8)}</g>`;
     return { s, hand, hp };
   };
-  // the foot: a rounded stub (or shoe) pointing the way the foot points, never upside down
+  // the foot: an inclined block (high at the heel, sloping to a round toe, flat sole), pointing the
+  // way the foot points, never upside down
   const shoe = (L, far) => {
     let a = Math.atan2(L[3][0] - L[2][0], L[3][1] - L[2][1]) / D2R;
     const flip = Math.sin(a * D2R) < 0, sk = far ? St.far : St.body;
     const [k, c] = (O && O.shoe) || ['bare'];
-    const foot = 'M-6.5,-4.6 C-1,-5.6 5,-5 8.6,-2 C10.4,-0.4 10.4,3.4 9.6,4.6 L-7,4.6 C-8,2 -8,-2.4 -6.5,-4.6Z';
+    const foot = FOOT_BLOCK;
     const boot = 'M-7.4,-6.2 C-1,-7.2 6,-6.4 9.8,-2.6 C11.8,-0.8 11.8,3.8 11,5.2 L-8,5.2 C-9,2.4 -9,-3.4 -7.4,-6.2Z';
     let g;
     if (k === 'sandal') g = piece([[-8.6, 3.2, 1], [11.6, 3.2, 1], [11.6, 6.4, 1], [-8.6, 6.4, 1]], c, far, 0.4) + cel(foot, sk, shd('skin', far), 0.6) + inkLine('M1.6,-5 Q3.4,-0.6 2.4,3.6', col(c, far), 1.8);
     else if (k === 'tabi') g = piece([[-8.6, 3.4, 1], [11.6, 3.4, 1], [11.6, 6.4, 1], [-8.6, 6.4, 1]], c, far, 0.4) + cel(foot, far ? '#d6d2c6' : '#f2f0ea', '#c4c0b4', 0.6) + inkLine('M4.5,-4.6 L2.6,3.6', '#2a2a30', 1.3);
     else if (k === 'shoe' || k === 'boot') g = cel(boot, col(c, far), shd(c, far), 0.7) + fillP('M-8.2,3 H11.4 V5.2 H-8.2Z', shade(c, -0.42));
-    else g = cel(foot, sk, shd('skin', far), 0.6);
+    else g = cel(foot, sk, shd('skin', far), 0.6) + fillP(FOOT_SOLE, shd('skin', far), 0.75);
     const tr = flip ? `translate(${pt(L[2])}) scale(-1,1) rotate(${rotTo(-a)})` : `translate(${pt(L[2])}) rotate(${rotTo(a)})`;
     return `<g transform="${tr} scale(${r1(W * (far ? 0.92 : 1) * 100) / 100})">${g}</g>`;
   };
   const legC = (L) => bez(L, -0.04, 1, 8);
-  const legW = (n) => lerpW(n, 6.4 * W, 5.4 * W);
+  const legW = (n) => lerpW(n, 7 * W, 6.5 * W);
   const pantW = (n) => [...Array(n + 1)].map((_, i) => W * (i <= n / 2 ? 9.8 - 1.2 * (i / (n / 2)) : 8.6 + (Bt.flare || 0) * 0.9 * ((i - n / 2) / (n / 2))));
   // details on a trouser leg (creases, bandage, fur cuff) and boots, drawn over the merged trousers
   const legDetails = (L, far) => {
@@ -1265,7 +1270,9 @@ function drawAvatar(A, P, t, opt) {
   // below the waist the body is one shape: the hips and both whole legs merged, so the torso
   // flows into the legs with no seam; the same for the trousers over it
   const skinC = [legC(J.lB), legC(J.lF)], skinW = legW(8);
-  fig.push(cel(union(torsoOutline(M, -0.3, 1, 0), tube(skinC[0], skinW), tube(skinC[1], skinW)), St.body, St.sh) + legEdge(skinC[1], skinW));
+  const neckC = [add(J.neckBase, J.neckA, -6), J.neck, add(J.neck, J.neckA, 9)], neckW = [3.9 * W, 3.7 * W, 3.7 * W];
+  fig.push(cel(union(tube(neckC, neckW), torsoOutline(M, -0.3, 1, 0), tube(skinC[0], skinW), tube(skinC[1], skinW)), St.body, St.sh) + legEdge(skinC[1], skinW)
+    + fillP(spline(tube([add(J.neckBase, J.neckA, 1), add(J.neck, J.neckA, 9)], [neckW[1], neckW[2]], { flatStart: 1 }), true), St.sh, 0.7));
   fig.push(shoe(J.lB, true), shoe(J.lF, false));
   if (Bt) {
     const pc = [bez(J.lB, -0.06, Bt.len, 8), bez(J.lF, -0.06, Bt.len, 8)], pw = pantW(8);
@@ -1273,10 +1280,8 @@ function drawAvatar(A, P, t, opt) {
   }
   fig.push(legDetails(J.lB, true) + xw('legB', { L: J.lB, far: true }), legDetails(J.lF, false) + xw('legF', { L: J.lF, far: false }));
   fig.push(tails());
-  // the neck, the torso (bare or dressed)
-  fig.push(cel(spline(tube([add(J.neckBase, J.neckA, -6), J.neck, add(J.neck, J.neckA, 9)], [4.4 * W, 4.1 * W, 4.1 * W]), true), St.far, shd('skin', true), 0.6));
-  if (!T) fig.push(lineP(spline([M(-0.4, 0.64, 0), M(0, 0.6, 0), M(0.4, 0.64, 0)], false), St.sh, 1.2, 0.8) + lineP(spline([M(0, 0.52, 0), M(0, 0.32, 0)], false), St.sh, 1, 0.7));
-  else fig.push(top());
+  // the torso: bare (a plain rounded box) or dressed
+  if (T) fig.push(top());
   fig.push(xw('torso'));
   if (O) fig.push(sash());
   fig.push(xw('torsoTop'));
@@ -1656,7 +1661,7 @@ function avFrame(now) {
     let P, Pd;
     if (st.drive) {
       // a motion cycle (it breathes on its own); blended in from the previous pose
-      const D = POSE_DRIVE[st.drive] ? POSE_DRIVE[st.drive](driveU(st.drive, t), t, cosOf('build', look.build).b, calm) : st.cur;
+      const D = POSE_DRIVE[st.drive] ? POSE_DRIVE[st.drive](driveU(st.drive, t), t, BODY, calm) : st.cur;
       P = Pd = k < 1 ? lerpPose(st.from, D, ease.io(k)) : D;
     } else {
       P = lerpPose(st.from, st.to, ease[st.easing](k));
@@ -1706,7 +1711,7 @@ on('hit', (d) => {
 on('kill', () => avPlay(playerAv(), [['victory', 240, 'back'], ['victory', 420], ['guard', 380, 'out']]));
 
 /* ================================================================ view */
-let avSlot = 'build', avPreview = '';
+let avSlot = 'style', avPreview = '';
 const PREVIEWS = [['', 'Stance'], ['guard', 'Guard'], ['strike', 'Attack'], ['victory', 'Victory'], ['hurt', 'Hurt'], ['fish', 'Fishing'], ['cook', 'Cooking'], ['wood', 'Chopping']];
 function avatarHTML() {
   const A = avState();
@@ -1746,7 +1751,6 @@ document.addEventListener('click', (ev) => {
     if (avPreview === 'strike') { avPreview = 'guard'; setTimeout(() => avPlay(document.querySelector('.av-floor svg.avatar'), ATTACKS[0].concat(ATTACKS[1], ATTACKS[2])), 80); }
   } else if ('avrandom' in t.dataset) {
     for (const [s] of COS_SLOTS) {
-      if (s === 'build') continue;
       const own = COSMETICS[s].filter((c) => cosOwned(s, c));
       A[s] = own[Math.floor(Math.random() * own.length)].id;
     }

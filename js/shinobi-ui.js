@@ -37,7 +37,7 @@ const WOOD_GROUND = 252;
 function axeHitAt(i) {
   SPOT_RIG.__probe = {};
   const A = avState();
-  try { drawAvatar(A, POSE_DRIVE.wood((i + WOOD_HIT) / WOOD_SWINGS, 0, cosOf('build', A.build).b, true), 0, { uid: '__probe' }); } catch (e) { /* rig busy */ }
+  try { drawAvatar(A, POSE_DRIVE.wood((i + WOOD_HIT) / WOOD_SWINGS, 0, BODY, true), 0, { uid: '__probe' }); } catch (e) { /* rig busy */ }
   const p = SPOT_RIG.__probe.axe;
   delete SPOT_RIG.__probe;
   return p ? rigToSpot(WOOD_BOX, p) : [330, 190 + i * 10];

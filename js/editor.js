@@ -56,7 +56,7 @@ const RESERVED = {
   hat: new Set([...BUILTIN.hat, ...BUILTIN_HATS]), face: BUILTIN.face, back: BUILTIN.back, aura: BUILTIN.aura, color: BUILTIN.color,
 };
 const cosName = (slot, id) => (COSMETICS[slot].find((c) => c.id === id) || {}).name || id;
-const B0 = COSMETICS.build[0].b;
+const B0 = BODY;
 const FRONT_POSE = Object.assign({}, CUSTOM_POSE0, { t1: 180, aF: [14, 4], aB: [-14, -4], lF: [8, -1], lB: [-8, 1] });
 // Arms and legs apart, to draw clothes on each part.
 const TPOSE = Object.assign({}, CUSTOM_POSE0, { t1: 180, aF: [64, 4], aB: [-64, -4], lF: [15, -1], lB: [-15, 1] });
@@ -69,7 +69,7 @@ const ST = {
   lock: 0, layer: 0, point: -1, emitter: 0,
   tool: '', snap: true, h2d: { l: 'main', w: 7, tip: 'point' }, hairEdit: 'locks', sym: false, brush: { w: 8, tp: 0.8, back: false, hang: false, k: false }, animate: true, bg: 'dark', handles: true, guide: true,
   previewPose: 'relaxed', cut: typeof HAIR_CUTS !== 'undefined' ? Object.keys(HAIR_CUTS)[0] : '', view: { x: -10, y: 4, w: 220, h: 240 },
-  man: { build: 'athletic', style: 'flat', color: 'chalk', hair: 'tuft', top: 'tee', bottom: 'tee', hat: 'none', face: 'dots', back: 'none', aura: 'none', weapon: '' },
+  man: { style: 'flat', color: 'chalk', hair: 'tuft', top: 'tee', bottom: 'tee', hat: 'none', face: 'dots', back: 'none', aura: 'none', weapon: '' },
   open: {},
 };
 function normPack(p) {
@@ -499,11 +499,11 @@ function bgSVG() {
 function setView(v) { ST.view = v; stage.setAttribute('viewBox', `${rd(v.x)} ${rd(v.y)} ${rd(v.w)} ${rd(v.h)}`); }
 function fitBody() { setView({ x: -14, y: 2, w: 228, h: 240 }); }
 function fitHead() {
-  const B = cosOf('build', wearing().build).b, J = solve(stagePose(B), B);
+  const B = BODY, J = solve(stagePose(B), B);
   setView({ x: J.head[0] - 38, y: J.head[1] - 46, w: 76, h: 84 });
 }
 function fitTorso() {
-  const B = cosOf('build', wearing().build).b, J = solve(stagePose(B), B);
+  const B = BODY, J = solve(stagePose(B), B);
   setView({ x: J.pelvis[0] - 70, y: J.neckBase[1] - 40, w: 140, h: 150 });
 }
 function autoFit() { if (HEAD_MODES[ST.mode]) fitHead(); else if (ST.mode === 'back' && cur() && cur().art.layers.length && !cur().cape.on) fitTorso(); else fitBody(); }
@@ -630,7 +630,7 @@ function onionSVG(A, B) {
 function drawStage() {
   if (ST.mode === 'pack') return;
   if (ST.mode === 'cuts') ensureCutsLive();
-  const A = wearing(), B = cosOf('build', A.build).b, P = stagePose(B);
+  const A = wearing(), B = BODY, P = stagePose(B);
   let s = bgSVG();
   if (ST.mode === 'anim') s += onionSVG(A, B);
   try { s += drawAvatar(A, P, T, { weapon: ST.man.weapon, uid: 'stg' }); } catch (e) { s += `<text x="20" y="40" fill="#ff6a6a" font-size="8">Drawing error: ${esc(e.message)}</text>`; }
@@ -751,7 +751,7 @@ stage.addEventListener('wheel', (ev) => {
   setView({ x: w[0] - (w[0] - V.x) * k, y: w[1] - (w[1] - V.y) * k, w: nw, h: V.h * k });
 }, { passive: false });
 function frameNow() {
-  const A = wearing(), B = cosOf('build', A.build).b, P = stagePose(B), J = solve(P, B);
+  const A = wearing(), B = BODY, P = stagePose(B), J = solve(P, B);
   return ST.mode === 'hair' || ST.mode === 'cuts' ? headXf(J, P, true, false) : vecFrame(J, P, B);
 }
 // A stroke drawn on a v2 haircut becomes one of its locks: from the end nearer the head's centre
@@ -822,7 +822,7 @@ const snapP = (q) => (GAR_MODES[ST.mode] ? [rd2(q[0]), rd2(q[1])] : ST.snap ? [M
 
 function applyDrag(id, w, ev) {
   if (ST.mode === 'cuts' && id.startsWith('cut:')) { dragCut(id.slice(4), frameNow().toL(w)); return; }
-  const A = wearing(), B = cosOf('build', A.build).b;
+  const A = wearing(), B = BODY;
   if (ST.mode === 'anim') {
     const k = ensureKey();
     if (!k) return;
@@ -992,7 +992,7 @@ let thumbN = 0;
 function ensureReg() { if (!needReg) return; needReg = false; try { registerCustomPack(ST.pack); } catch (e) { console.error(e); } stripSoon(); }
 function thumbSVG(type, it) {
   ensureReg();
-  const A = wearing(), B = cosOf('build', A.build).b;
+  const A = wearing(), B = BODY;
   if (type === 'anim') { A.stance = 'relaxed'; } else A[TYPES[type].slot] = it.id;
   const P = type === 'anim' ? (it.keys.length ? customPose(it.keys[Math.floor(it.keys.length / 2)].p) : POSES.relaxed) : HEAD_MODES[type] ? FRONT_POSE : POSES.relaxed;
   let vb = '6 0 188 240';
@@ -1095,7 +1095,7 @@ function renderStrip() {
   if (ST.mode === 'anim' || ST.mode === 'pack' || !cur()) { el.innerHTML = ''; el.hidden = true; return; }
   el.hidden = false;
   stripAt = performance.now();
-  const A = wearing(), B = cosOf('build', A.build).b;
+  const A = wearing(), B = BODY;
   el.innerHTML = `<div class="strip">${STRIP.map(([k, l], i) => {
     let svg = '';
     try { svg = drawAvatar(A, previewPoseStill(k, B), 0.6, { weapon: ST.man.weapon, uid: 'sp' + i }); } catch (e) { /* skip */ }
@@ -1477,7 +1477,7 @@ function cutsChanged() { ensureCutsLive(); }
 function cutAdj(id) { return HAIR_FIT.adjOf((ST.pack.cuts || {})[id]); }
 const cutEdited = (id) => !!(ST.pack.cuts || {})[id];
 function cutThumb(id) {
-  const A = Object.assign(wearing(), { hair: 'cut_' + id }), B = cosOf('build', A.build).b, J = solve(FRONT_POSE, B);
+  const A = Object.assign(wearing(), { hair: 'cut_' + id }), B = BODY, J = solve(FRONT_POSE, B);
   try { return `<svg viewBox="${rd(J.head[0] - 32)} ${rd(J.head[1] - 40)} 64 72">${drawAvatar(A, FRONT_POSE, 0.6, { weapon: '', uid: 'ct' + thumbN++ })}</svg>`; } catch (e) { return ''; }
 }
 function cutsLeft() {
