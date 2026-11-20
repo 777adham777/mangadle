@@ -2,15 +2,19 @@
 /* ==========================================================================
    TRI-REALM — Rig Lab (rig.html)
    The validation page of the character system: the canonical model, the
-   animations played live, the reference hairstyle, and the automated checks
-   over every combination of cosmetics. Nothing here is used by the game.
+   animations played live, the haircuts (the reference sheet's originals as
+   assets on the skull), and the automated checks over every combination of
+   cosmetics. Nothing here is used by the game.
    ========================================================================== */
 (() => {
   const $ = (id) => document.getElementById(id);
   const f2 = RIG.f2, esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
   const DYES = [RIG_HAIR_DEFS[RIG_HAIR_REF].c, '#2b2e44', '#6b4a36', '#e8b830', '#d8503a', '#4f9a5c', '#e9edf6'];
+  // the first haircut shown: the sheet's own reference cut, as an asset (the procedural recipe stays in the list)
+  const RIG_HAIR_START = typeof RIG_HAIR_ASSETS !== 'undefined' && RIG_HAIRS.leafsun ? 'leafsun' : RIG_HAIR_REF;
+  const isRecipe = (id) => !!RIG_HAIR_DEFS[id];
   const L = {
-    hair: RIG_HAIR_REF, dye: null, outfit: 'traveler', weapon: 'katana', face: 'calm',
+    hair: RIG_HAIR_START, dye: null, outfit: 'traveler', weapon: 'katana', face: 'calm',
     base: 'idle', anim: 'idle', speed: 1, playing: true, t: 0,
     canon: { bones: true, names: false, groups: false, grid: true, dressed: false },
     view: { bones: false, groups: false },
@@ -19,7 +23,7 @@
   const hairOf = (id, dye) => {
     if (!id || id === 'none') return null;
     const k = id + (dye || '');
-    if (!hairCache[k]) hairCache[k] = dye ? rigHairstyle(Object.assign({}, RIG_HAIR_DEFS[id], { c: dye })) : RIG_HAIRS[id];
+    if (!hairCache[k]) hairCache[k] = dye && isRecipe(id) ? rigHairstyle(Object.assign({}, RIG_HAIR_DEFS[id], { c: dye })) : RIG_HAIRS[id];
     return hairCache[k];
   };
   const skinsOf = (o) => [RIG_BODY, o.outfit !== 'none' ? RIG_OUTFITS[o.outfit] : null, RIG_FACES[o.face], o.weapon !== 'none' ? RIG_WEAPONS[o.weapon] : null, hairOf(o.hair, o.dye), RIG_FX].filter(Boolean);
@@ -95,7 +99,8 @@
     $('playToggles').innerHTML = btn('Skeleton', L.view.bones, 'data-view="bones"') + btn('Ink groups', L.view.groups, 'data-view="groups"');
     $('playPause').textContent = L.playing ? 'Pause' : 'Play';
     const pick = (id, label, list, key) => { $(id).innerHTML = `<label>${label}</label>` + list.map(([v, l]) => btn(l, L[key] === v, `data-pick="${key}:${v}"`)).join(''); };
-    pick('pickHair', 'Hair', [...Object.keys(RIG_HAIRS).map((k) => [k, RIG_HAIRS[k].label]), ['none', 'None']], 'hair');
+    $('pickHair').innerHTML = `<label>Hair</label><select id="hairSel">${hairGroups().map(([g, ids]) => `<optgroup label="${esc(g)}">${ids.map((k) => `<option value="${k}" ${L.hair === k ? 'selected' : ''}>${esc(RIG_HAIRS[k].label)}</option>`).join('')}</optgroup>`).join('')}<option value="none" ${L.hair === 'none' ? 'selected' : ''}>None</option></select>`;
+    $('pickDye').style.display = isRecipe(L.hair) ? '' : 'none';
     $('pickDye').innerHTML = '<label>Dye</label>' + DYES.map((c) => `<button class="sw ${(L.dye || RIG_HAIR_DEFS[RIG_HAIR_REF].c) === c ? 'on' : ''}" style="background:${c}" data-dye="${c}" title="${c}"></button>`).join('');
     pick('pickOutfit', 'Outfit', [...Object.keys(RIG_OUTFITS).map((k) => [k, RIG_OUTFITS[k].label]), ['none', 'Bare']], 'outfit');
     pick('pickWeapon', 'Weapon', [...Object.keys(RIG_WEAPONS).map((k) => [k, RIG_WEAPONS[k].label]), ['none', 'None']], 'weapon');
@@ -151,36 +156,70 @@
     const c2 = new RIG.Character(RIG_SKELETON, skins, {}), w = c2.pose.W[c2.pose.c.idx.skull];
     return `<svg viewBox="${f2(w.x - 52)} ${f2(w.y - 54)} 104 88" width="100%" style="max-width:${size}px">${c2.svg({ uid })}${extra ? `<g transform="translate(${f2(w.x)},${f2(w.y)})">${extra}</g>` : ''}</svg>`;
   }
+  // the haircuts by world (the sheet's rows), then the procedural recipe
+  function hairGroups() {
+    const g = [], A = typeof RIG_HAIR_ASSETS !== 'undefined' ? RIG_HAIR_ASSETS : {};
+    for (const [w, name] of Object.entries(typeof RIG_HAIR_WORLDS !== 'undefined' ? RIG_HAIR_WORLDS : {})) g.push([name, Object.keys(A).filter((k) => A[k].world === w && RIG_HAIRS[k])]);
+    g.push(['Procedural recipe', Object.keys(RIG_HAIRS).filter((k) => !A[k])]);
+    return g.filter(([, ids]) => ids.length);
+  }
+  const BASE = () => [RIG_BODY, RIG_OUTFITS.traveler, RIG_FACES.calm];
+  const exprSkin = (e) => ({ name: 'expr:' + e, att: { face: { neutral: RIG_FACES.calm.att.face[e] } } });
+  // the picture alone, in skull units, on a checkerboard: the skull and the eye boxes it leaves clear
+  function assetView(A, id) {
+    const H = RIG_HEAD, eye = (k) => { const E = H.eyes[k]; return `<ellipse cx="${E.c[0]}" cy="${E.c[1]}" rx="${E.rx}" ry="${E.ry}" fill="none" stroke="#33dd88" stroke-width=".45" stroke-dasharray="1 .6"/>`; };
+    return `<svg viewBox="-52 -54 104 88" width="100%" style="max-width:240px"><defs><pattern id="chk" width="4" height="4" patternUnits="userSpaceOnUse"><rect width="4" height="4" fill="#9aa1b0"/><rect width="2" height="2" fill="#c3c8d2"/><rect x="2" y="2" width="2" height="2" fill="#c3c8d2"/></pattern></defs>`
+      + `<rect x="-52" y="-54" width="104" height="88" fill="url(#chk)"/><image href="${RIG_HAIR_BASE}${id}.png" x="${A.x}" y="${A.y}" width="${A.w}" height="${A.h}" preserveAspectRatio="none"/>`
+      + `<rect x="${A.x}" y="${A.y}" width="${A.w}" height="${A.h}" fill="none" stroke="#ff9a3c" stroke-width=".4" stroke-dasharray="2 1"/><circle r="19" fill="none" stroke="#3aa0ff" stroke-width=".5" stroke-dasharray="1.5 1"/>${eye('N')}${eye('F')}<circle r=".9" fill="#ff4f7f"/></svg>`;
+  }
+  function lyingView(skins, uid) {
+    const c2 = new RIG.Character(RIG_SKELETON, skins, RIG_ANIMS);
+    c2.at('death', RIG_ANIMS.death.dur);
+    return `<svg viewBox="-136 -62 236 74" width="100%" style="max-width:300px">${c2.svg({ uid })}</svg>`;
+  }
+  function cutDetail() {
+    const id = L.hair, H = RIG_HAIRS[id];
+    for (const el of document.querySelectorAll('#gallery figure[data-pick]')) el.classList.toggle('on', el.dataset.pick === 'hair:' + id);
+    if (!H) { $('cutTitle').textContent = 'No hair'; $('cutDetail').innerHTML = ''; return; }
+    const A = H.meta && H.meta.image, base = BASE(), hair = hairOf(id, L.dye);
+    $('cutTitle').textContent = H.label + (A ? ` · ${RIG_HAIR_WORLDS[A.world]} · sheet cell ${A.sheet}` : ' · procedural recipe');
+    let h = '';
+    if (A) h += `<figure>${assetView(A, id)}<figcaption><b>The asset</b>${esc(id)}.png, ${A.w.toFixed(0)} × ${A.h.toFixed(0)} skull units at (${A.x.toFixed(1)}, ${A.y.toFixed(1)})${A.covers ? ` · hides the ${A.covers === 'F' ? 'far' : 'near'} eye` : ''}${A.ear ? '' : ' · covers the ear'}</figcaption></figure>`;
+    h += `<figure>${headView([...base, hair], 'cd0', 240)}<figcaption><b>On the rig</b>the rig's own head, face, ear and outline</figcaption></figure>`;
+    h += ['angry', 'hurt', 'dead', 'happy'].map((e, i) => `<figure>${headView([...base, exprSkin(e), hair], 'cde' + i, 200)}<figcaption><b>${e[0].toUpperCase() + e.slice(1)}</b>the rig's expression shows through</figcaption></figure>`).join('');
+    h += `<figure style="grid-column:span 2">${lyingView([...base, hair], 'cdl')}<figcaption><b>Lying down</b>end of the death animation: pressed flat on the floor</figcaption></figure>`;
+    $('cutDetail').innerHTML = h;
+  }
   function hairSection() {
-    const base = [RIG_BODY, RIG_OUTFITS.traveler, RIG_FACES.calm];
-    $('headRef').innerHTML = `<div style="padding:8px 0">${headView(base, 'hr', 520, landmarks())}</div>`;
-    const H = RIG_HAIRS[RIG_HAIR_REF], only = (keys) => Object.assign({}, H, { att: Object.fromEntries(Object.entries(H.att).filter(([k]) => keys.includes(k))) });
-    const M = H.meta.locks, D = H.meta.def, tips = (E) => (E || []).filter((e) => e[2] === 't').length;
-    const layers = [
-      ['Back mass', `behind the head (and the body), darker, on a spring${D.backEdge ? ` · ${tips(D.backEdge)} spikes` : ''}${M.back.filter((k) => k.spec).length ? ` · ${M.back.filter((k) => k.spec).length} tufts` : ''}`, ['hairBack']],
-      ['Scalp volume', `cut on the canonical hairline${D.edge ? ` · ${tips(D.edge)} spikes on its edge` : ''}${M.crown.length ? ` · ${M.crown.length} crown spikes` : ''}`, ['hair.scalp']],
-      ['Side locks', `${M.sides.length}, from the temples`, ['hair.sides']],
-      ['Bangs', `${M.bangs.length}, from the hairline`, ['hair.bangs', 'hairShade']],
-      ['Strands', M.strands.length ? `${M.strands.length}` : 'none in this cut (optional)', ['hair.strands']],
-      ['Assembled', `one silhouette, one outline${D.match ? ` · matches its reference: silhouette ${Math.round(D.match.silhouette * 100)} %, face ${Math.round(D.match.face * 100)} %` : ''}`, Object.keys(H.att)],
-    ];
-    $('hairLayers').innerHTML = layers.map(([n, d, keys], i) => `<figure>${headView([...base, only(keys)], 'hl' + i, 240)}<figcaption><b>${n}</b>${d}</figcaption></figure>`).join('');
-    $('hairDyes').innerHTML = DYES.map((c, i) => `<figure>${headView([...base, hairOf(RIG_HAIR_REF, c)], 'hd' + i, 200)}<figcaption><b>${c}</b>${i ? 'dye' : 'default'}</figcaption></figure>`).join('');
-    const def = RIG_HAIR_DEFS[RIG_HAIR_REF];
-    $('hairRecipe').textContent = JSON.stringify(def, null, 1).replace(/\n\s+(?=[\]\d"-])/g, ' ').replace(/\{\n\s+/g, '{ ').replace(/\n\s+\}/g, ' }');
+    $('headRef').innerHTML = `<div style="padding:8px 0">${headView(BASE(), 'hr', 520, landmarks())}</div>`;
+    const base = BASE();
+    $('gallery').innerHTML = hairGroups().map(([g, ids], gi) => `<h4>${esc(g)}</h4><div class="layers cuts">${ids.map((k, i) => `<figure data-pick="hair:${k}" class="${L.hair === k ? 'on' : ''}">${headView([...base, hairOf(k)], `g${gi}_${i}`, 170)}<figcaption><b>${esc(RIG_HAIRS[k].label)}</b>${esc(k)}</figcaption></figure>`).join('')}</div>`).join('');
+    cutDetail();
+  }
+  // every hair picture must load (a missing file would leave a bald character)
+  function imageChecks() {
+    const ids = typeof RIG_HAIR_ASSETS !== 'undefined' ? Object.keys(RIG_HAIR_ASSETS) : [];
+    return Promise.all(ids.map((id) => new Promise((ok) => { const im = new Image(); im.onload = () => ok([id, im.naturalWidth > 0]); im.onerror = () => ok([id, false]); im.src = RIG_HAIR_BASE + id + '.png'; })))
+      .then((rs) => { const bad = rs.filter(([, v]) => !v).map(([id]) => id); return { group: 'Attachments', id: 'att.images', name: 'Every hair picture loads', anim: null, status: bad.length ? 'fail' : 'pass', detail: bad.length ? `missing: ${bad.join(', ')}` : `${rs.length} pictures` }; });
   }
 
   /* ------------------------------------------------------------- 4 checks */
-  function runChecks() {
-    const t0 = performance.now();
-    const sets = { hair: Object.values(RIG_HAIRS), outfit: [null, ...Object.values(RIG_OUTFITS)], weapon: [null, ...Object.values(RIG_WEAPONS)], face: Object.values(RIG_FACES) };
-    const R = RIG_CHECK.all(sets, { fps: 30 }), S = RIG_CHECK.selfTest(), ms = Math.round(performance.now() - t0);
+  // The hair rides the skull, so the body combinations are played with one hair, and every other
+  // hair with one dressed body (hairAxis 'separate'); all of it in steps, so the page stays live.
+  async function runChecks() {
+    const t0 = performance.now(), st0 = $('status');
+    const first = RIG_HAIRS[RIG_HAIR_START], hairs = [first, ...Object.values(RIG_HAIRS).filter((h) => h !== first)];
+    const sets = { hair: hairs, outfit: [null, ...Object.values(RIG_OUTFITS)], weapon: [null, ...Object.values(RIG_WEAPONS)], face: Object.values(RIG_FACES) };
+    const R = await RIG_CHECK.allAsync(sets, { fps: 30, hairAxis: 'separate' }, (i, n) => { st0.textContent = `Checking… ${i}/${n}`; });
+    R.results.push(await imageChecks());
+    const S = RIG_CHECK.selfTest(), ms = Math.round(performance.now() - t0);
     const fails = R.results.filter((r) => r.status === 'fail'), caught = S.filter((t) => t.caught).length;
     const ok = !fails.length && caught === S.length;
     const st = $('status');
     st.className = 'pill ' + (ok ? 'ok' : 'bad');
     st.textContent = ok ? `All ${R.results.length} checks pass` : `${fails.length} failing · ${S.length - caught} faults missed`;
     const frames = Object.values(RIG_ANIMS).reduce((n, a) => n + Math.round(a.dur * 30) + 1, 0) * R.matrix.length;
+    window.RIG_LAB_RESULT = { ok, checks: R.results.length, fails: fails.map((f) => `${f.id} ${f.anim || ''} ${f.combo || ''}: ${f.detail}`), combos: R.matrix.length, selfTest: `${caught}/${S.length}`, missed: S.filter((t) => !t.caught).map((t) => t.name + (t.err ? ' (' + t.err + ')' : '')), ms };
     $('sum').innerHTML = `<span class="big" style="color:${fails.length ? 'var(--bad)' : 'var(--ok)'}">${R.results.length - fails.length}/${R.results.length}</span><span>checks pass</span>`
       + `<span class="pill">${R.matrix.length} combinations</span><span class="pill">${Object.keys(RIG_ANIMS).length} animations</span><span class="pill">${frames} frames measured</span>`
       + `<span class="pill ${caught === S.length ? 'ok' : 'bad'}">self-test: ${caught}/${S.length} faults caught</span><span class="pill">${ms} ms</span>`;
@@ -216,6 +255,7 @@
   document.addEventListener('click', (ev) => {
     const b = ev.target.closest('[data-canon],[data-play],[data-combo],[data-speed],[data-view],[data-pick],[data-dye],[data-jump],#playPause');
     if (!b) return;
+    if (b.tagName === 'FIGURE' && b.dataset.pick) document.getElementById('cutWin').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
     const d = b.dataset;
     if (d.canon) { L.canon[d.canon] = !L.canon[d.canon]; drawCanon(); return; }
     if (d.jump) {
@@ -237,8 +277,14 @@
     }
     if (d.speed) { L.speed = +d.speed; controls(); return; }
     if (d.view) { L.view[d.view] = !L.view[d.view]; controls(); return; }
-    if (d.dye) { L.dye = d.dye === RIG_HAIR_DEFS[RIG_HAIR_REF].c ? null : d.dye; rebuild(); controls(); strips(); if (L.canon.dressed) drawCanon(); return; }
-    if (d.pick) { const [k, v] = d.pick.split(':'); L[k] = v; rebuild(); controls(); strips(); if (L.canon.dressed) drawCanon(); }
+    if (d.dye) { L.dye = d.dye === RIG_HAIR_DEFS[RIG_HAIR_REF].c ? null : d.dye; rebuild(); controls(); strips(); cutDetail(); if (L.canon.dressed) drawCanon(); return; }
+    if (d.pick) { const [k, v] = d.pick.split(':'); L[k] = v; if (k === 'hair' && !isRecipe(v)) L.dye = null; rebuild(); controls(); strips(); if (k === 'hair') cutDetail(); if (L.canon.dressed) drawCanon(); }
+  });
+  document.addEventListener('change', (ev) => {
+    if (ev.target.id !== 'hairSel') return;
+    L.hair = ev.target.value;
+    if (!isRecipe(L.hair)) L.dye = null;
+    rebuild(); controls(); strips(); cutDetail(); if (L.canon.dressed) drawCanon();
   });
   $('scrub').addEventListener('input', (ev) => {
     if (L.playing) { L.playing = false; L.anim = ch.state.cur.name; }

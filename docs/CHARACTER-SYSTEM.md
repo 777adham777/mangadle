@@ -7,8 +7,8 @@ Started 2026-11-20. It replaces the way characters are built and animated. The o
 | 1. Audit | Done (below) |
 | 2. Canonical model | Done: `js/rig-canon.js` |
 | 3. Rig and animations | Done: `js/rig.js`, `js/rig-anims.js` (idle, run, attack, hit, death) |
-| 4. Hair production | Done for the **reference hairstyle only** (`js/rig-hair.js`), rebuilt on 2026-11-20 to match the user's reference sheet; waiting for validation before any other cut |
-| 5. Validation prototype | Automated checks and the Rig Lab done (`js/rig-check.js`, `rig.html`). Assets so far: 1 hairstyle, 1 outfit, 1 weapon, 1 face. Still to make after the hair is validated: 2 hairstyles (from the reference sheet), 2 outfits, 1 weapon, 1 face |
+| 4. Hair production | Done. The user's choice: **the sheet's 36 original haircuts are the assets**, cut out as pictures and hung on the skull (`js/rig-hair-assets.js`, `assets/hair/`). The procedural recipe (`js/rig-hair.js`) stays as one more cut |
+| 5. Validation prototype | Automated checks and the Rig Lab done (`js/rig-check.js`, `rig.html`). Assets so far: 37 hairstyles, 1 outfit, 1 weapon, 1 face. Still to make: 2 outfits, 1 weapon, 1 face |
 | 6. Integration | Not started (plan and open questions at the end) |
 
 ![Old renderer and new rig, same moments](rig-before-after.png)
@@ -123,7 +123,20 @@ The old "build" cosmetic, which scaled the skeleton, has no equivalent. That is 
 - **Hair is soft.** Where it would pass through the floor (a body lying down) it is pressed flat on it.
 - **The reference cut, "Leaf Spikes"** (the sheet's Naruto cut, world 1). An authored edge with 8 spikes, 3 darker spikes behind the head, a measured fringe (a bang left of the near eye, the forehead showing above it, a long bang sloping to between the eyes, two small ones), a side lock in front of the ear and one past the far temple. The Lab shows it layer by layer and in seven colours.
 
-The other hairstyles will be made from this recipe format **only after this one is validated**.
+### The sheet's originals as assets (2026-11-20, the user's decision)
+
+Instead of redrawing each cut as a recipe, the user asked for **the original haircuts of the sheet, turned into assets and fitted to the rig**. So each of the 36 cells is cut into one transparent PNG (`assets/hair/<id>.png`, 2× the sheet's pixels, 256 colours, about 520 KB for all 36), and `js/rig-hair-assets.js` registers one skin per cut:
+
+- **Placement.** The picture hangs on the skull bone, in skull units: `x, y, w, h` from the head fitted on that cell (1.97 px per unit). The same numbers work for every character, because every head is the canonical one.
+- **Only the hair is kept.** The cut-out removes everything the rig draws itself: the background and the white rim, the face (with its eyes, brows, mouth, and drawn accessories like glasses), the ear, the head's own outline along the chin and jaw, and the shoulders with their outline. Skin left in a pocket between a lock and the face goes too.
+- **The eyes stay the rig's.** The rig's two eyes are always cleared in the picture, so every expression (angry, hurt, dead, happy) shows through. Where the sheet merges an eye with a lock, the rest of the sheet's eye is cleared as well. The one exception is a cut that hides an eye by design (Cook's Curtain hides the far eye): the hair stays and the cut says so (`covers: 'F'`).
+- **The ear** is the rig's, drawn over the hair, unless the cut covers it (`ear: false`).
+- **Measured at the cut:** the share of each eye covered, of the face's core, of the skull's top, and the farthest visible pixel (`reach`). The hair checks read these.
+- **What a picture cannot do:** no dyes (the colours are the sheet's), one layer seen from the front (no separate back mass on a spring), and the sheet's resolution (fine at game size, slightly rough edges when zoomed far in). Very long hair ends where the sheet's cell ends, at shoulder height.
+
+The extraction scripts are not in the repo (they need the sheet, which stays private): they fit the head per cell, cut the picture, and measure it. Compared on the sheet at the same scale, the cut-outs on the rig score on average **silhouette 95 %, face 94 %**.
+
+**Hair checks for a picture** (`rigHairImageCheck`): attached to the skull, on head reference v2, in the hair slot only; each eye either clear (≤ 12 % covered) or hidden whole by design (≥ 90 %); the face's core at most 40 % covered (+15 % per hidden eye) and the skull's top reached; visible hair within 3.2 skull radii; and every picture file loads.
 
 ## 6. Validation (`js/rig-check.js`, `rig.html`)
 
@@ -132,7 +145,8 @@ The Rig Lab shows:
 - the canonical model, with skeleton, ink-group and head-unit overlays;
 - a live player with pickers for every cosmetic and combat buttons;
 - filmstrips of every animation;
-- the head reference and the hairstyle layers;
+- every haircut, grouped by world: click one to wear it. The selected cut is shown alone (with its box, the skull and the eye boxes), on the rig, with the four other expressions, and lying on the floor at the end of the death animation;
+- the head reference;
 - the check report.
 
 The checks run on **every combination of cosmetics, every animation, frame by frame**, plus crossfades between animations:
@@ -145,7 +159,7 @@ The checks run on **every combination of cosmetics, every animation, frame by fr
 | Intersections | the torso never covers a leg; nothing goes below the floor |
 | Attachments | no missing attachment (body slots, every expression the animations use, whole garments); cosmetics never touch the skeleton; attachments drawn in their bone's frame; feet and shoes in the foot box |
 | Animations | only rotations (translation on the hip and foot targets only); no pops between frames; loops close; planted feet do not skate; one-shots end in the idle pose; death ends flat on the floor; the attack fires `impact`; crossfades stay clean |
-| Hair | the five layers; built on head reference v1, in the hair slots only; no bald spot; the scalp follows the canonical hairline; eyes clear; roots on the scalp and directions along the flow; widths in range and tapering; silhouette in bounds; in motion, every back tuft stays rooted |
+| Hair | for a recipe: the five layers; built on head reference v2, in the hair slots only; no bald spot; the scalp follows the canonical hairline; eyes clear; roots on the scalp and directions along the flow; widths in range and tapering; silhouette in bounds; in motion, every back tuft stays rooted. For a cut-out: the checks listed in section 5 |
 
 **Self-test.** The checks are only worth something if they catch real faults, so the Lab breaks the rig on purpose, one fault at a time, and expects the matching check to fail. The faults include:
 
@@ -153,13 +167,17 @@ The checks run on **every combination of cosmetics, every animation, frame by fr
 - a limb moved off its joint, a gap at the elbow, a knee pulled into the torso, a foot through the floor;
 - a 300° key and a loop that does not close;
 - a cosmetic with its own bones, an oversized shoe, a missing expression;
-- a hairstyle that is misaligned, bald, covers the eyes, roots a lock off the scalp, grows a bang against the flow, has a lock that is too wide, or targets another head.
+- a hairstyle that is misaligned, bald, covers the eyes, roots a lock off the scalp, grows a bang against the flow, has a lock that is too wide, or targets another head;
+- a cut-out that hides an eye, half hides the eye it is meant to hide, or sits off the face.
 
-**Result on 2026-11-20:** **271/271 checks pass** (4 combinations × 5 animations, 660 frames), and the self-test catches **22/22 faults** (one more: a spike thinner than a strand).
+The hair rides the skull and plays no part in the body's checks, so the Lab plays every body combination (outfit × weapon × face) with one cut, and every other cut with one dressed body. It runs in steps, so the page stays live.
+
+**Result on 2026-11-20 (37 cuts):** **2531/2531 checks pass** (40 combinations × 5 animations, 6600 frames), and the self-test catches **25/25 faults**.
 
 ## 7. Adding content (the pipeline)
 
-- **Hairstyle.** Write a recipe in `RIG_HAIR_DEFS` (an authored edge, fringe and back edge measured on its reference cell, plus landmark-anchored locks), compile it with `rigHairstyle()`, and register it in `RIG_HAIRS`. Compare it with its reference at the same scale until both overlaps are high. The Lab draws it on the head reference and adds it to every combination; the hair checks gate it.
+- **Hairstyle from a picture.** Draw the cut on the canonical head (like the reference sheet), cut out only the hair, and add an entry to `RIG_HAIR_ASSETS` with its box in skull units and its measurements. The hair checks gate it.
+- **Hairstyle as a recipe.** Write a recipe in `RIG_HAIR_DEFS` (an authored edge, fringe and back edge measured on its reference cell, plus landmark-anchored locks), compile it with `rigHairstyle()`, and register it in `RIG_HAIRS`. Compare it with its reference at the same scale until both overlaps are high. The Lab draws it on the head reference and adds it to every combination; the hair checks gate it.
 - **Outfit.** Write a `rigOutfit({...})` recipe in `RIG_OUTFITS`.
 - **Weapon.** Use `rigWeapon(id, name, parts)` along +x from the grip.
 - **Face.** Use `rigFace(id, name, { neutral, angry, hurt, dead, happy })` on the shared anchors.
@@ -176,6 +194,7 @@ Nothing ships unless the Lab shows every check passing.
   - Builds (slim / stout / tall) are cosmetics that rescale the skeleton. They must go, or become body-shape skins on the same bones.
   - The four ink styles (flat, ink, neon, sketch) need porting.
   - The skill scenes use their own driven motion: fishing, cooking and woodcutting (`POSE_DRIVE`, IK on rods, pans and axes). These must be rebuilt as rig animations, or keep the old renderer for scenes.
-  - The existing cosmetics have to be ported to the new rig: 14 haircuts, 18 tops / bottoms, 12 hats, 15 faces, 10 back items and 9 auras. Hats need a "covers" rule for hair layers.
+  - The existing cosmetics have to be ported to the new rig: 18 tops / bottoms, 12 hats, 15 faces, 10 back items and 9 auras (the 36 sheet cuts can replace the old haircuts). Hats need a "covers" rule for hair layers.
+  - Whether the 36 cuts become world cosmetics (one row of the sheet per world), and how they are unlocked.
   - Death needs room: a body lying flat is about 170 units wide, more than the 156-wide avatar box.
 - **Performance.** The same immediate SVG rebuild as today. Later, attachment paths can be cached per skin and only transforms updated.

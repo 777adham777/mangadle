@@ -88,7 +88,8 @@ const RIG_CHECK = (() => {
         if (!a) continue;
         for (const part of a.parts || [a]) {
           const poly = RIG.geomOf(part).poly || [];
-          const m = poly.reduce((x, p) => Math.max(x, Math.hypot(p[0], p[1])), 0);
+          // a picture may state how far its visible pixels reach (its box corners are often empty)
+          const m = part.reach != null ? part.reach : poly.reduce((x, p) => Math.max(x, Math.hypot(p[0], p[1])), 0);
           if (m > lim) far.push(`${s.name}/${slot}/${n} reaches ${fmt(m)} from ${b.name} (max ${lim})`);
         }
       }
@@ -205,7 +206,7 @@ const RIG_CHECK = (() => {
     // nothing goes through the floor
     // (hair is soft: its painter presses it flat on the floor, so it is never drawn below it)
     let low = -Infinity, lowS = '';
-    for (const s of shapes) if (s.kind !== 'hair') for (const q of s.poly) if (q[1] > low) { low = q[1]; lowS = s.slot; }
+    for (const s of shapes) if (s.kind !== 'hair' && s.kind !== 'hairImage') for (const q of s.poly) if (q[1] > low) { low = q[1]; lowS = s.slot; }
     if (low > 0.6) P.push({ id: 'intersect.ground', msg: `${lowS} ${fmt(low)} below the floor`, v: low });
     return P;
   }
@@ -352,18 +353,23 @@ const RIG_CHECK = (() => {
 
   /* ------------------------------------------------------------- everything */
   // Every combination of the given cosmetics, every animation. sets: { hair: [skin], outfit: [skin|null], weapon: [skin|null], face: [skin] }.
-  function combos(sets) {
-    const out = [];
-    for (const h of sets.hair || [null]) for (const o of sets.outfit || [null]) for (const w of sets.weapon || [null]) for (const f of sets.face || [null]) {
-      out.push({ key: [h, o, w, f].map((s) => (s ? s.id || s.name : 'none')).join(' · '), hair: h, outfit: o, weapon: w, face: f,
-        skins: [RIG_BODY, o, f, w, h, RIG_FX].filter(Boolean) });
+  // hairAxis 'separate': the hair rides the skull and plays no part in the body's checks, so every
+  // body combination is played with the first hair, and every other hair with the fully dressed body.
+  function combos(sets, opt) {
+    const out = [], mk = (h, o, w, f) => ({ key: [h, o, w, f].map((s) => (s ? s.id || s.name : 'none')).join(' · '), hair: h, outfit: o, weapon: w, face: f, skins: [RIG_BODY, o, f, w, h, RIG_FX].filter(Boolean) });
+    const H = sets.hair || [null], O = sets.outfit || [null], W = sets.weapon || [null], F = sets.face || [null];
+    if (opt && opt.hairAxis === 'separate') {
+      for (const o of O) for (const w of W) for (const f of F) out.push(mk(H[0], o, w, f));
+      for (const h of H.slice(1)) out.push(mk(h, O[O.length - 1], W[W.length - 1], F[0]));
+      return out;
     }
+    for (const h of H) for (const o of O) for (const w of W) for (const f of F) out.push(mk(h, o, w, f));
     return out;
   }
   function all(sets, opt) {
     opt = opt || {};
-    const list = combos(sets), allSkins = [RIG_BODY, RIG_FX, ...Object.values(sets).flat().filter(Boolean)];
-    const results = [...staticChecks(allSkins), timelineChecks(RIG_ANIMS)];
+    const list = combos(sets, opt), allSkins = [RIG_BODY, RIG_FX, ...Object.values(sets).flat().filter(Boolean)];
+    const results = opt.noStatic ? [] : [...staticChecks(allSkins), timelineChecks(RIG_ANIMS)];
     const matrix = [];
     for (const cb of list) {
       const row = { key: cb.key, cells: {}, fails: 0 };
@@ -378,9 +384,27 @@ const RIG_CHECK = (() => {
       }
       matrix.push(row);
     }
-    results.push(flowChecks(list[list.length - 1].skins));
+    if (!opt.noStatic) results.push(flowChecks(list[list.length - 1].skins));
     return { results, matrix, anims: Object.keys(RIG_ANIMS) };
   }
+  // The same, one combination at a time, so a page stays responsive: onStep(done, total).
+  function allAsync(sets, opt, onStep) {
+    opt = opt || {};
+    const list = combos(sets, opt), allSkins = [RIG_BODY, RIG_FX, ...Object.values(sets).flat().filter(Boolean)];
+    const results = [...staticChecks(allSkins), timelineChecks(RIG_ANIMS)], matrix = [];
+    return new Promise((done) => {
+      let i = 0;
+      const step = () => {
+        if (i >= list.length) { results.push(flowChecks(list[0].skins)); done({ results, matrix, anims: Object.keys(RIG_ANIMS) }); return; }
+        const one = all(Object.assign({}, { hair: [list[i].hair], outfit: [list[i].outfit], weapon: [list[i].weapon], face: [list[i].face] }), Object.assign({}, opt, { noStatic: true }));
+        results.push(...one.results); matrix.push(...one.matrix);
+        i++;
+        if (onStep) onStep(i, list.length);
+        setTimeout(step, 0);
+      };
+      setTimeout(step, 0);
+    });
+  }
 
-  return { staticChecks, missingChecks, timelineChecks, animChecks, flowChecks, frameProblems, combos, all, selfTest, inside, inAny, popOf };
+  return { staticChecks, missingChecks, timelineChecks, animChecks, flowChecks, frameProblems, combos, all, allAsync, selfTest, inside, inAny, popOf };
 })();

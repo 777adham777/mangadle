@@ -102,6 +102,11 @@ const RIG = (() => {
     else if (a.kind === 'circle') g = { d: circlePath(a.cx || 0, a.cy || 0, a.r), poly: circlePts(a.cx || 0, a.cy || 0, a.r) };
     else if (a.kind === 'shape') g = { d: curve(a.pts, !a.open), poly: curvePts(a.pts, !a.open) };
     else if (a.kind === 'path') g = { d: a.d, poly: a.poly || [] };
+    else if (a.kind === 'image' || a.kind === 'hairImage') {
+      // a picture placed in the bone's frame: its rectangle (for the checks; it is drawn as an image)
+      const P = [[a.x, a.y], [a.x + a.w, a.y], [a.x + a.w, a.y + a.h], [a.x, a.y + a.h]];
+      g = { d: '', poly: P, rect: P };
+    }
     else g = { d: '', poly: [] };
     Object.defineProperty(a, '_g', { value: g, enumerable: false, writable: true });
     return g;
@@ -431,6 +436,9 @@ const RIG = (() => {
     const cel = !clip ? '' : ctx.shading ? `<clipPath id="${id}">${clip}</clipPath><g clip-path="url(#${id})">${dark}${lit}</g>` : lit;
     return outl + cel + det;
   }
+  // A picture asset (a transparent PNG) placed in its bone's frame: x, y, w, h in that frame's units.
+  const imageTag = (it) => `<image href="${it.a.href}" x="${f2(it.a.x)}" y="${f2(it.a.y)}" width="${f2(it.a.w)}" height="${f2(it.a.h)}" preserveAspectRatio="none" transform="${tf(it.F)}"/>`;
+  PAINTERS.image = (items) => items.map(imageTag).join('');
   // Accessories made of several parts (a weapon: grip, guard, blade): each part keeps its own
   // outline, so the guard reads in front of the blade. Painted in the order listed.
   PAINTERS.parts = (items, ctx) => items.map((it) => it.a.parts.map((p) => paintOutline(p, it.F, ctx) + paintFill(p, it.F, ctx, it.far)).join('')).join('');
@@ -567,7 +575,7 @@ const RIG = (() => {
     f2, P2, rot, dirOf, angOf, wrap, shade, lum,
     curve, curvePts, capsulePts, capsulePath, circlePath, circlePts, geomOf,
     compile, Pose, State, Character, sample, blend, sampleKeys, lookup, palette, colourOf,
-    draw, layout, worldShapes, frameOf, toWorld, tf, defs, overlay, PAINTERS, paintFill, paintOutline, LIGHT,
+    draw, layout, worldShapes, frameOf, toWorld, tf, defs, overlay, PAINTERS, paintFill, paintOutline, LIGHT, imageTag,
   };
 })();
 if (typeof module !== 'undefined') module.exports = RIG;

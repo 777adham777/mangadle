@@ -96,6 +96,12 @@
     table.mx td.ok { color: var(--ok); }
     table.mx td.bad { color: var(--bad); font-weight: 700; }
     pre.recipe { margin: 0; padding: 10px 12px; max-height: 280px; overflow: auto; font: 11.5px/1.45 ui-monospace, Consolas, monospace; color: #b9c0d0; }
+    #gallery h4 { margin: 0; padding: 10px 12px 0; font: 600 12px 'Exo 2'; color: var(--acc2); text-transform: uppercase; letter-spacing: .1em; }
+    .layers.cuts { grid-template-columns: repeat(auto-fill, minmax(132px, 1fr)); }
+    .layers.cuts figure { cursor: pointer; border: 2px solid transparent; }
+    .layers.cuts figure:hover { border-color: var(--line2); }
+    .layers.cuts figure.on { border-color: var(--acc); }
+    select { font: inherit; font-size: 12px; color: var(--tx); background: var(--panel2); border: 1px solid var(--line2); border-radius: 4px; padding: 4px 6px; }
   </style>
 </head>
 <body>
@@ -131,17 +137,15 @@
     </section>
 
     <section id="hair">
-      <h2>3 · The reference hairstyle</h2>
-      <p class="lead">Built on the head reference: every lock is anchored to a landmark (hairline, temple, crown, nape, an angle on the skull) and grows along the flow there. Five layers, one outline, one set of shading rules, colours from one base colour. The other hairstyles wait for this one to be validated.</p>
+      <h2>3 · Haircuts: the sheet's originals on the rig</h2>
+      <p class="lead">The 36 haircuts of the reference sheet, not redrawn: each one is cut out of the sheet as a transparent picture and hung on the skull bone, placed in skull units measured on the sheet. Only the hair is kept; the head, the face and its expressions, the ear and the outline stay the rig's, so every cut fits every character and every animation.</p>
       <div class="grid2">
-        <div class="win"><h3>Head reference</h3><div class="stagebox" id="headRef"></div>
-          <ul class="rules"><li><b style="color:#ff4f7f">Hairline</b> · <b style="color:#ffb020">temples, sideburn, nape</b> · <b style="color:#ff4f7f">crown</b> (the whorl) · <b style="color:#3aa0ff">scalp region</b> · <b style="color:#33dd88">eye boxes</b> (kept clear) · white arrows: growth direction</li></ul></div>
-        <div class="win"><h3>Layers</h3><div class="layers" id="hairLayers"></div></div>
+        <div class="win" id="cutWin"><h3 id="cutTitle">Selected cut</h3><div class="layers" id="cutDetail"></div>
+          <ul class="rules"><li><b style="color:#ff9a3c">Picture box</b> · <b style="color:#3aa0ff">skull (radius 19)</b> · <b style="color:#33dd88">eye boxes</b> (kept clear, unless the cut hides an eye by design) · <b style="color:#ff4f7f">skull centre</b> (the anchor)</li></ul></div>
+        <div class="win"><h3>Head reference (shared by every cut)</h3><div class="stagebox" id="headRef"></div>
+          <ul class="rules"><li><b style="color:#ff4f7f">Hairline</b> · <b style="color:#ffb020">temples, sideburn, nape</b> · <b style="color:#ff4f7f">crown</b> (the whorl) · <b style="color:#3aa0ff">scalp region</b> · <b style="color:#33dd88">eye boxes</b> · white arrows: growth direction (for procedural cuts)</li></ul></div>
       </div>
-      <div class="grid2" style="margin-top:12px">
-        <div class="win"><h3>One recipe, any colour</h3><div class="layers" id="hairDyes"></div></div>
-        <div class="win"><h3>The recipe</h3><pre class="recipe" id="hairRecipe"></pre></div>
-      </div>
+      <div class="win" style="margin-top:12px"><h3>Every cut, by world · click one to wear it</h3><div id="gallery"></div></div>
     </section>
 
     <section id="checks">
@@ -161,6 +165,7 @@
   <script src="js/rig-anims.js"></script>
   <script src="js/rig-check.js"></script>
   <script src="js/rig-hair.js"></script>
+  <script src="js/rig-hair-assets.js"></script>
   <script src="js/rig-lab.js"></script>
 </body>
 </html>
