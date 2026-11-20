@@ -169,10 +169,10 @@ const COSMETICS = {
   ],
 };
 // Outfits are worn whole (no mixing a top with another bottom): the old clothes as matching pairs,
-// then the picture outfits (js/outfits.js), whose way to be earned is not decided yet (dev tool only).
+// then the outfits of the concept sheet (js/outfits.js), whose way to be earned is not decided yet (dev tool only).
 const OLD_FIT_NAMES = { tee: 'Traveler', none: 'Bare', corsair: 'Corsair', shinobi: 'Shinobi', reaper: 'Reaper', gi: 'Training Gi', uniform: 'Exorcist', wilds: 'Wilds', longcoat: 'Chained Longcoat', riftwear: 'Rift Raiment' };
 COSMETICS.outfit = COSMETICS.top.filter((c) => COSMETICS.bottom.some((b) => b.id === c.id)).map((c) => Object.assign({}, c, { name: OLD_FIT_NAMES[c.id] || c.name }))
-  .concat(typeof OUTFIT_PICS !== 'undefined' ? Object.keys(OUTFIT_PICS).map((id) => C('pic_' + id, OUTFIT_PICS[id].name, OUTFIT_PICS[id].world, 4, { need: () => false, hint: 'Not obtainable yet' })) : []);
+  .concat(typeof FITS !== 'undefined' ? Object.keys(FITS).map((id) => C(id, FITS[id].name, FITS[id].world, 4, { need: () => false, hint: 'Not obtainable yet' })) : []);
 const COS_SLOTS = [['style', 'Style'], ['stance', 'Stance'], ['color', 'Colour'], ['hair', 'Hair'], ['outfit', 'Outfit'], ['hat', 'Hat'], ['face', 'Face'], ['back', 'Back'], ['aura', 'Aura']];
 const COS_RARITY = ['', 'Common', 'Uncommon', 'Rare', 'Epic', 'Legendary'];
 const cosOf = (slot, id) => COSMETICS[slot].find((c) => c.id === id) || COSMETICS[slot][0];
@@ -188,6 +188,9 @@ function avState() {
     delete A.top; delete A.bottom;
   }
   for (const k of Object.keys(A.got)) if (/^(top|bottom):/.test(k)) { A.got['outfit:' + k.slice(k.indexOf(':') + 1)] = 1; delete A.got[k]; }
+  const PIC_TO_FIT = { op1: 'rubber', op2: 'swordsman', op3: 'cook', op4: 'firefist', op5: 'surgeon', op6: 'kingcoat', na1: 'leafsuit', na2: 'jonin', na3: 'redcloud', na4: 'avenger', na5: 'flamecloak', na6: 'clantunic' };
+  if (/^pic_/.test(A.outfit || '')) A.outfit = PIC_TO_FIT[A.outfit.slice(4)];
+  for (const k of Object.keys(A.got)) if (/^outfit:pic_/.test(k)) { A.got['outfit:' + PIC_TO_FIT[k.slice(11)]] = 1; delete A.got[k]; }
   delete A.build;   // builds are gone: one body for everyone
   for (const [s] of COS_SLOTS) if (!COSMETICS[s].some((c) => c.id === A[s])) A[s] = COSMETICS[s][0].id;
   return A;
@@ -1090,75 +1093,232 @@ function bolts(cx, t, col) {
   return lineP(d, col, 5, 0.4) + lineP(d, '#fff', 2);
 }
 
-/* ---------------------------------------------------------------- picture outfits */
-// A whole outfit picture (js/outfits.js) on skinned meshes. Every vertex follows one to three bones with
-// smooth weights (linear blend skinning): the cloth bends round the elbows and knees instead of breaking,
-// and a long coat stretches between the legs. The script that built the meshes stored, for each vertex
-// and each of its bones, where it sits in that bone's frame on our rig ([bone, weight, along, across]):
-// the outfit is already stretched to our longer limbs and widened to cover the body. Each triangle of
-// the picture is then laid on where its three corners land: one <use> of the atlas with an affine
-// transform, clipped to the triangle (the clip paths are made once, in the shared defs).
-const picOf = (id) => (typeof OUTFIT_PICS !== 'undefined' && /^pic_/.test(id || '') && OUTFIT_PICS[id.slice(4)] ? id.slice(4) : null);
-const PIC_DEFS = {};
-function picDefs(id) {
-  if (PIC_DEFS[id] || typeof document === 'undefined') return;
-  const host = document.getElementById('av-defs');
-  if (!host) return;
-  PIC_DEFS[id] = 1;
-  const F = OUTFIT_PICS[id];
-  let s = `<image id="oi-${id}" href="assets/outfits/${id}.png" width="${F.W}" height="${F.H}"/>`;
-  F.m.forEach((m, mi) => {
-    for (let i = 0; i < m.t.length; i += 3) {
-      const P = [0, 1, 2].map((q) => [m.v[2 * m.t[i + q]], m.v[2 * m.t[i + q] + 1]]);
-      const c = [(P[0][0] + P[1][0] + P[2][0]) / 3, (P[0][1] + P[1][1] + P[2][1]) / 3];
-      // each triangle reaches a little past its edges, so no hairline opens between neighbours
-      const E = P.map((q) => { const dx = q[0] - c[0], dy = q[1] - c[1], l = Math.hypot(dx, dy) || 1; return `${Math.round((q[0] + (dx / l) * 1.6) * 10) / 10},${Math.round((q[1] + (dy / l) * 1.6) * 10) / 10}`; });
-      s += `<clipPath id="oc-${id}-${mi}-${i / 3}"><path d="M${E[0]}L${E[1]}L${E[2]}Z"/></clipPath>`;
-    }
-  });
-  host.insertAdjacentHTML('beforeend', `<defs>${s}</defs>`);
-}
-// Where every vertex of the outfit lands for this pose.
-function picPose(id, J, P) {
-  const F = OUTFIT_PICS[id], sq = 1 - 0.14 * (P.tw || 0);
-  const fr = (a, b, w) => { const dx = b[0] - a[0], dy = b[1] - a[1], l = Math.hypot(dx, dy) || 1; return [a, dx / l, dy / l, w]; };
-  // a foot standing on the floor stays flat; a raised one follows its shin
-  const foot = (L) => {
-    const up = 1 - Math.max(0, Math.min(1, (L[2][1] + 5 - (GROUND - 7)) / 5)), sa = (Math.atan2(L[2][0] - L[1][0], L[2][1] - L[1][1]) / D2R) * up, d = dir(sa);
-    return [L[2], d[0], d[1], 1];
+/* ---------------------------------------------------------------- outfits worn whole (FITS) */
+// The outfits of the concept sheet, drawn from the body's own geometry every frame, so they can never
+// come off it or clip through it: the torso shell follows torsoMap (u across, v up the spine), sleeves
+// and trousers are tubes along the bones, a long coat's two panels hang from the waist to a point on
+// each leg, shoes are built on the foot block. What is inside a garment (colour zones, openings, prints,
+// seams, buttons, emblems) is placed in the garment's own coordinates, so it moves and turns with it.
+// One shading rule for every piece: a flat colour, an ink outline, a cel shadow on the lower right.
+// The data is in js/outfits.js (FITS); see the comment there for every field.
+const FIT_MARKS = {
+  // a spiral crest (shoulder or sleeve)
+  spiral: (c) => `<circle r="5" fill="${c}" stroke="${LINE}" stroke-width=".9"/><path d="M0.2,0.3 C1.7,-0.2 1.5,2 -0.3,2.1 C-2.6,2.2 -2.9,-1.2 -0.7,-2.6 C1.9,-4.1 4.5,-1.6 3.7,1.3" fill="none" stroke="${shade(c, -0.5)}" stroke-width="1.1" stroke-linecap="round"/>`,
+  // a cloud with a pale rim (coat print)
+  cloud: (c, r) => `<path d="M-6.4,2.4 C-8.4,2.4 -8.6,-0.8 -6.2,-1.2 C-6.4,-4 -2.6,-4.8 -1.4,-2.6 C-0.4,-5.4 4,-5 4.2,-2 C6.8,-2.4 7.8,1.6 5.4,2.4 Z" fill="${c}" stroke="${r || '#f4f1ec'}" stroke-width="1.5" stroke-linejoin="round"/><path d="M-2.6,0.4 Q-1.4,-1.4 0.2,-0.2 M2.2,0.6 Q3.4,-0.8 4.4,0.6" fill="none" stroke="${shade(c, -0.35)}" stroke-width=".8" stroke-linecap="round"/>`,
+  // a round fan crest: red top, white bottom, a short handle
+  fan: (c) => `<path d="M0,6 V9" stroke="${LINE}" stroke-width="2.6" stroke-linecap="round"/><path d="M0,6 V8.6" stroke="#f4f1ec" stroke-width="1.2" stroke-linecap="round"/><path d="M-5,0.4 A5,5 0 0,1 5,0.4 Z" fill="${c}"/><path d="M-5,0.4 A5,5 0 0,0 5,0.4 Z" fill="#f4f1ec"/><circle r="5" fill="none" stroke="${LINE}" stroke-width=".9"/>`,
+  // a smiling skull in a spiked ring (print)
+  skull: (c, bg) => `<g stroke="${c}" stroke-width="1.3" stroke-linecap="round">${[0, 45, 90, 135, 180, 225, 270, 315].map((a) => { const x = Math.cos(a * D2R), y = Math.sin(a * D2R); return `<path d="M${r1(x * 5.2)},${r1(y * 5.2)} L${r1(x * 7.4)},${r1(y * 7.4)}"/>`; }).join('')}</g>`
+    + `<circle r="5" fill="none" stroke="${c}" stroke-width="1.3"/><path d="M-3.2,-0.6 C-3.2,-4 3.2,-4 3.2,-0.6 C3.2,1.2 2.2,1.8 2,3 H-2 C-2.2,1.8 -3.2,1.2 -3.2,-0.6Z" fill="${c}"/>`
+    + `<circle cx="-1.3" cy="-0.8" r=".9" fill="${bg}"/><circle cx="1.3" cy="-0.8" r=".9" fill="${bg}"/><path d="M-1.6,1.6 Q0,2.6 1.6,1.6" fill="none" stroke="${bg}" stroke-width=".6"/>`,
+  // a five-petal flower (shirt print)
+  flower: (c) => `<g fill="${c}">${[0, 72, 144, 216, 288].map((a) => `<ellipse cx="${r1(Math.cos(a * D2R) * 2.4)}" cy="${r1(Math.sin(a * D2R) * 2.4)}" rx="2.3" ry="1.6" transform="rotate(${a} ${r1(Math.cos(a * D2R) * 2.4)} ${r1(Math.sin(a * D2R) * 2.4)})"/>`).join('')}</g><circle r="1.1" fill="${shade(c, -0.35)}"/>`,
+  // a worn patch (faded jeans)
+  spot: (c) => `<path d="M-3,-1 C-2.6,-3 0.4,-3.2 1.6,-2 C3.4,-2.4 3.8,0.6 2.4,1.4 C2,3 -1,3 -1.6,1.6 C-3.6,1.6 -4,0 -3,-1Z" fill="${c}"/>`,
+  // a pouch strapped to the thigh
+  pouch: (c) => `<rect x="-3.4" y="-4.2" width="6.8" height="8.4" rx="1.6" fill="${c}" stroke="${LINE}" stroke-width=".9"/><path d="M-3.4,-1.2 H3.4" stroke="${LINE}" stroke-width=".8"/><rect x="-1" y="-1.9" width="2" height="1.4" rx=".4" fill="${shade(c, 0.35)}"/>`,
+  // a breast pocket with a flap (vests)
+  pocket: (c) => `<rect x="-3.6" y="-3.2" width="7.2" height="7.6" rx="1" fill="${c}" stroke="${LINE}" stroke-width=".8"/><path d="M-3.6,-0.6 H3.6" stroke="${LINE}" stroke-width=".8"/><circle cx="0" cy="-1.8" r=".7" fill="${shade(c, -0.4)}"/>`,
+};
+const fitMark = (m, p, rot, far) => `<g transform="translate(${pt(p)}) rotate(${r1(rot)}) scale(${r1(((m.size || 5) / 5) * 100) / 100})">${FIT_MARKS[m.n](far ? shade(m.c, -0.1) : m.c, m.c2)}</g>`;
+
+// All the layers of a whole outfit for one frame. X: the drawing context of drawAvatar.
+function fitLayers(F, X) {
+  const { J, M, W, col, uid, sway } = X;
+  const ex = F.fit || 2.4, uv = (u, v, e) => M(u, v, ex + (e || 0));
+  // a point and the direction along a limb at t (0 root, 0.5 joint, 1 end)
+  const lp = (L, t) => bez(L, t, t, 1)[0];
+  const ld = (L, t) => { const a = bez(L, t - 0.02, t - 0.02, 1)[0], b = bez(L, t + 0.02, t + 0.02, 1)[0], l = Math.hypot(b[0] - a[0], b[1] - a[1]) || 1; return [(b[0] - a[0]) / l, (b[1] - a[1]) / l]; };
+  const lang = (L, t) => { const d = ld(L, t); return Math.atan2(d[1], d[0]) / D2R; };
+  // one garment shape (several point lists merged): outline, flat colour, what is drawn inside it
+  // (clipped to it), then the cel shadow: the shape minus itself moved up-left
+  const garb = (shapes, c, far, inner, k) => {
+    const id = X.cid(), kk = k || 1, dx = -2.3 * kk, dy = -1.7 * kk;
+    const d = union(...shapes), d2 = union(...shapes.map((P) => P.map((p) => (p.length > 2 ? [p[0] + dx, p[1] + dy, 1] : [p[0] + dx, p[1] + dy]))));
+    return `<clipPath id="${id}c"><path d="${d}"/></clipPath><mask id="${id}m"><path d="${d}" fill="#fff"/><path d="${d2}" fill="#000"/></mask>`
+      + ink(d, col(c, far)) + (inner ? `<g clip-path="url(#${id}c)">${inner}</g>` : '') + `<path d="${d}" fill="#05060c" opacity="${far ? 0.3 : 0.22}" mask="url(#${id}m)"/>`;
   };
-  // OUTFIT_BONES: chest abd uaB faB uaF faF thB shB ftB thF shF ftF
-  const B = [fr(J.neckBase, J.waist, sq), fr(J.waist, J.pelvis, sq), fr(J.aB[0], J.aB[1], 1), fr(J.aB[1], J.aB[2], 1), fr(J.aF[0], J.aF[1], 1), fr(J.aF[1], J.aF[2], 1),
-    fr(J.lB[0], J.lB[1], 1), fr(J.lB[1], J.lB[2], 1), foot(J.lB), fr(J.lF[0], J.lF[1], 1), fr(J.lF[1], J.lF[2], 1), foot(J.lF)];
-  return F.m.map((m) => m.s.map((inf) => {
-    let x = 0, y = 0;
-    for (let i = 0; i < inf.length; i += 4) {
-      const [Q, dx, dy, w] = B[inf[i]], wt = inf[i + 1], al = inf[i + 2], ac = inf[i + 3] * w;
-      x += wt * (Q[0] + dx * al - dy * ac); y += wt * (Q[1] + dy * al + dx * ac);
+  const zone = (pts, c, far) => fillP(spline(pts, true), col(c, far));
+  const seam = (pts, c, w, op) => lineP(spline(pts, false), c === 'line' ? LINE : c, w || 1.1, op);
+  // a band round a limb (cuff, bandage, fur, shin wrap): a short tube a little wider than what it wraps
+  const band = (L, b, far, w) => {
+    const [t0, t1] = b.t, hw = (b.w || w) * W, C = bez(L, t0, t1, 3);
+    let inner = '';
+    if (b.wrap) for (const f of [0.22, 0.5, 0.78]) {
+      const p = lp(L, t0 + (t1 - t0) * f), d = ld(L, t0 + (t1 - t0) * f), n = [-d[1], d[0]];
+      inner += lineP(`M${r1(p[0] - n[0] * hw - d[0] * 0.9)},${r1(p[1] - n[1] * hw - d[1] * 0.9)} L${r1(p[0] + n[0] * hw + d[0] * 0.9)},${r1(p[1] + n[1] * hw + d[1] * 0.9)}`, shade(b.c, -0.3), 0.8);
     }
-    return [x, y];
-  }));
-}
-// The triangles of the meshes drawn in layer z (B: back arm, F: front arm, L: legs, T: torso, S: a coat's skirt).
-function picDraw(id, V, z) {
-  const F = OUTFIT_PICS[id];
-  picDefs(id);
-  let out = '';
-  const f3 = (v) => Math.round(v * 1000) / 1000, f2 = (v) => Math.round(v * 100) / 100;
-  F.m.forEach((m, mi) => {
-    if (m.z !== z) return;
-    const pv = V[mi];
-    for (let i = 0; i < m.t.length; i += 3) {
-      const i0 = m.t[i], i1 = m.t[i + 1], i2 = m.t[i + 2];
-      const sx = m.v[2 * i0], sy = m.v[2 * i0 + 1], u1 = m.v[2 * i1] - sx, v1 = m.v[2 * i1 + 1] - sy, u2 = m.v[2 * i2] - sx, v2 = m.v[2 * i2 + 1] - sy;
-      const p0 = pv[i0], q1 = [pv[i1][0] - p0[0], pv[i1][1] - p0[1]], q2 = [pv[i2][0] - p0[0], pv[i2][1] - p0[1]];
-      const det = u1 * v2 - u2 * v1;
-      if (!det) continue;
-      const a = (q1[0] * v2 - q2[0] * v1) / det, c = (q2[0] * u1 - q1[0] * u2) / det, b = (q1[1] * v2 - q2[1] * v1) / det, d = (q2[1] * u1 - q1[1] * u2) / det;
-      out += `<use href="#oi-${id}" transform="matrix(${f3(a)} ${f3(b)} ${f3(c)} ${f3(d)} ${f2(p0[0] - a * sx - c * sy)} ${f2(p0[1] - b * sx - d * sy)})" clip-path="url(#oc-${id}-${mi}-${i / 3})"/>`;
+    const shapes = [tube(C, lerpW(3, hw, hw * 0.98), { flatStart: 1, flatEnd: 1 })];
+    if (b.fur) for (const tt of [t0, t1]) for (let i = -2; i <= 2; i++) {
+      const p = lp(L, tt), d = ld(L, tt), n = [-d[1], d[0]], q = [p[0] + n[0] * hw * i * 0.42 + d[0] * (tt === t0 ? -0.6 : 0.6), p[1] + n[1] * hw * i * 0.42 + d[1] * (tt === t0 ? -0.6 : 0.6)];
+      shapes.push([...Array(8)].map((_, j) => [q[0] + Math.cos(j * Math.PI / 4) * 1.9, q[1] + Math.sin(j * Math.PI / 4) * 1.9]));
     }
-  });
+    return garb(shapes, b.c, far, inner, 0.6);
+  };
+  const out = {};
+
+  // ---- sleeves (an undersleeve first, if any)
+  const sleeve = (Ar, far) => {
+    let s = '';
+    for (const S of [F.under, F.arms]) {
+      if (!S) continue;
+      const n = 8, C = bez(Ar, -0.08, S.len, n), w = S.w || [6.4, 5.6], hw = lerpW(n, w[0] * W, w[1] * W);
+      let inner = '';
+      for (const m of S.marks || []) if (!m.side || m.side === (far ? 'B' : 'F')) inner += fitMark(m, lp(Ar, m.t), lang(Ar, m.t) - 90, far);
+      for (const z of S.zones || []) {   // a colour zone across the sleeve between t0 and t1
+        const Cz = bez(Ar, z.t[0], z.t[1], 3);
+        inner += zone(tube(Cz, lerpW(3, 9, 9), { flatStart: 1, flatEnd: 1 }), z.c, far);
+      }
+      s += garb([tube(C, hw, { flatEnd: 1 })], S.c, far, inner);
+      if (S.len > 0.55) { const i = Math.round(n * 0.55), p = C[i], d = ld(Ar, 0.5), nn = [-d[1], d[0]]; s += lineP(`M${r1(p[0] + nn[0] * hw[i] * 0.7)},${r1(p[1] + nn[1] * hw[i] * 0.7)} Q${r1(p[0] + d[0] * 2)},${r1(p[1] + d[1] * 2)} ${r1(p[0] - nn[0] * hw[i] * 0.1 + d[0] * 3)},${r1(p[1] - nn[1] * hw[i] * 0.1 + d[1] * 3)}`, LINE, 1, 0.45); }
+      for (const b of S.bands || []) s += band(Ar, b, far, (S.w || [6.4, 5.6])[1] + 0.4);
+    }
+    for (const b of F.armBands || []) s += band(Ar, b, far, 5.1);
+    return s;
+  };
+  out.armB = sleeve(J.aB, true);
+  out.armF = sleeve(J.aF, false);
+
+  // ---- trousers: the hips and both legs as one shape, then bands, boots
+  const Lg = F.legs;
+  if (Lg) {
+    const n = 8, pc = [bez(J.lB, -0.06, Lg.len, n), bez(J.lF, -0.06, Lg.len, n)], w = Lg.w || [9.4, 8.6];
+    const pw = [...Array(n + 1)].map((_, i) => W * (w[0] + (w[1] - w[0]) * (i / n)));
+    let inner = '';
+    for (const m of Lg.marks || []) for (const [sd, L] of [['B', J.lB], ['F', J.lF]]) {
+      if (m.side && m.side !== sd) continue;
+      const p = lp(L, m.t), d = ld(L, m.t), nn = [-d[1], d[0]], hw = w[0] + (w[1] - w[0]) * Math.min(1, m.t / Lg.len);
+      inner += fitMark(m, [p[0] + nn[0] * (m.s || 0) * hw, p[1] + nn[1] * (m.s || 0) * hw], lang(L, m.t) - 90, sd === 'B');
+    }
+    out.legs = garb([torsoOutline(M, -0.32, 0.22, 1.6), tube(pc[0], pw, { flatEnd: 1 }), tube(pc[1], pw, { flatEnd: 1 })], Lg.c, false, inner)
+      + X.legEdge(pc[1], pw);
+    if (Lg.len > 0.7) for (const C of pc) { const i = Math.round(n * 0.52); out.legs += lineP(spline([C[i - 1], C[i], C[i + 1]].map((p, j) => [p[0] + (j - 1) * 0.6, p[1]]), false), LINE, 0.9, 0.35); }
+  } else out.legs = '';
+  for (const [L, far] of [[J.lB, true], [J.lF, false]]) {
+    for (const b of (Lg && Lg.bands) || []) if (!b.side || b.side === (far ? 'B' : 'F')) out.legs += band(L, b, far, (b.t[0] < (Lg ? Lg.len : 0) ? ((Lg.w || [9.4, 8.6])[1] + 0.5) : 7.4));
+    for (const b of F.shinBands || []) out.legs += band(L, b, far, 7.4);
+    const ft = F.feet || {};
+    if (ft.k === 'boot' || ft.cuff) {   // the boot's shaft (or a sandal's ankle cuff) up the shin
+      const t0 = ft.k === 'boot' ? ft.h || 0.72 : 0.88, C = bez(L, t0, 1, 4), c = ft.c;
+      out.legs += garb([tube(C, [7.6, 7.4, 7.2, 7, 6.8].map((x) => x * W), { flatStart: 1 })], c, far, '', 0.8)
+        + (ft.k === 'boot' ? band(L, { t: [t0 - 0.02, t0 + 0.05], c: ft.c2 || shade(c, 0.2) }, far, 8) : '');
+    }
+  }
+
+  // ---- a long coat's panels (behind them, for an open coat, its lining)
+  const Sk = F.skirt;
+  out.lining = ''; out.skirt = '';
+  if (Sk) {
+    const top = Sk.top != null ? Sk.top : 0.14, th = Sk.hem || 0.6, legHw = 8.4 + (Sk.flare != null ? Sk.flare : 3);
+    // the hem is pulled by its leg but hangs: halfway between the point on the leg and straight below the hip
+    const at = (L) => {
+      const q = lp(L, th), d = ld(L, th), r = Math.hypot(q[0] - L[0][0], q[1] - L[0][1]), hang = [L[0][0], L[0][1] + r];
+      const p = [q[0] + (hang[0] - q[0]) * 0.45, q[1] + (hang[1] - q[1]) * 0.45];
+      const dd = [p[0] - L[0][0], p[1] - L[0][1]], dl = Math.hypot(dd[0], dd[1]) || 1;
+      return { p, n: [-dd[1] / dl, dd[0] / dl] };
+    };
+    const hb = at(J.lB), hf = at(J.lF);
+    const outward = (me, other) => { const dx = me.p[0] - other.p[0], dy = me.p[1] - other.p[1]; return me.n[0] * dx + me.n[1] * dy >= 0 ? me.n : [-me.n[0], -me.n[1]]; };
+    const nb = outward(hb, hf), nf = outward(hf, hb);
+    const swB = [sway * 2.2, 0], swF = [sway * 1.2, 0];
+    const oB = [hb.p[0] + nb[0] * legHw + swB[0], hb.p[1] + nb[1] * legHw], oF = [hf.p[0] + nf[0] * legHw + swF[0], hf.p[1] + nf[1] * legHw];
+    let iB, iF;
+    if (Sk.gap == null) { const m = [(hb.p[0] + hf.p[0]) / 2, (hb.p[1] + hf.p[1]) / 2]; iB = [m[0] + 3 + sway, m[1] + 1]; iF = [m[0] - 3 + sway, m[1] + 1]; }
+    else { iB = [hb.p[0] - nb[0] * legHw * 0.35 + swB[0], hb.p[1] - nb[1] * legHw * 0.35]; iF = [hf.p[0] - nf[0] * legHw * 0.35 + swF[0], hf.p[1] - nf[1] * legHw * 0.35]; }
+    const g = Sk.gap || 0;
+    const quad = { B: [uv(-1.06, top, 1), uv(Sk.gap == null ? 0.12 : -g, top, 1), iB, oB], F: [uv(1.06, top, 1), uv(Sk.gap == null ? -0.12 : g, top, 1), iF, oF] };
+    if (Sk.lining) out.lining = garb([[uv(-0.95, top, 1), uv(0.95, top, 1), [oF[0] - nf[0] * 3, oF[1] - 2, 1], [oB[0] - nb[0] * 3, oB[1] - 2, 1]]], Sk.lining, true, '', 0.7);
+    for (const sd of ['B', 'F']) {
+      const [wo, wi, hi, ho] = quad[sd], far = sd === 'B';
+      const hip = M(sd === 'B' ? -1.12 : 1.12, -0.28, ex + 1);
+      const shape = [wo, hip, [ho[0], ho[1], 1], [hi[0], hi[1], 1], wi];
+      const bil = (a, b) => [wo[0] + (wi[0] - wo[0]) * a + ((ho[0] + (hi[0] - ho[0]) * a) - (wo[0] + (wi[0] - wo[0]) * a)) * b, wo[1] + (wi[1] - wo[1]) * a + ((ho[1] + (hi[1] - ho[1]) * a) - (wo[1] + (wi[1] - wo[1]) * a)) * b];
+      let inner = '';
+      if (Sk.flames) {   // flames licking up from the hem
+        const up = [(wo[0] + wi[0]) / 2 - (ho[0] + hi[0]) / 2, (wo[1] + wi[1]) / 2 - (ho[1] + hi[1]) / 2], ul = Math.hypot(up[0], up[1]) || 1, U = [up[0] / ul, up[1] / ul];
+        const N = 7, h = Sk.flames.h || 18, P = [[ho[0] - U[0] * 6, ho[1] - U[1] * 6, 1], [hi[0] - U[0] * 6, hi[1] - U[1] * 6, 1]];
+        for (let i = 0; i <= N; i++) {
+          const f = 1 - i / N, q = [hi[0] + (ho[0] - hi[0]) * (1 - f), hi[1] + (ho[1] - hi[1]) * (1 - f)], tip = i % 2 === 1;
+          const hh = tip ? h * (0.75 + 0.25 * Math.sin(i * 2.3)) : h * 0.28;
+          P.push(tip ? [q[0] + U[0] * hh, q[1] + U[1] * hh, 1] : [q[0] + U[0] * hh, q[1] + U[1] * hh]);
+        }
+        inner += fillP(spline(P, true), col(Sk.flames.c, far));
+      }
+      for (const m of Sk.marks || []) if (!m.side || m.side === sd) inner += fitMark(m, bil(m.a, m.b), m.rot || 0, far);
+      if (Sk.trim) inner += lineP(spline([wi, [hi[0], hi[1], 1], [ho[0], ho[1], 1], hip], false), col(Sk.trim, far), 3.2);
+      if (Sk.seam && sd === 'F') inner += lineP(spline([wi, hi], false), col(Sk.seam, far), 2.6);
+      out.skirt += garb([shape], Sk.c, far, inner, 0.9);
+    }
+  }
+
+  // ---- the torso shell and everything on it
+  const T = F.top;
+  const tin = (T.zones || []).map((z) => zone(z.pts.map(([u, v, k]) => (k ? [...uv(u, v), 1] : uv(u, v))), z.c)).join('')
+    + (T.lines || []).map((l) => seam(l.pts.map(([u, v]) => uv(u, v)), l.c, l.w, l.op)).join('')
+    + (T.marks || []).map((m) => fitMark(m, uv(m.u, m.v), 180 - J.chestA + (m.rot || 0))).join('');
+  out.torso = garb([torsoOutline(M, T.hem != null ? T.hem : -0.08, 1, ex, 1)], T.c, false, tin);
+  for (const d of T.dots || []) for (const [u, v] of d.pts) { const p = uv(u, v); out.torso += `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="${d.r || 1.5}" fill="${d.c}" stroke="${LINE}" stroke-width=".8"/>`; }
+  if (T.beads) {   // a necklace of beads hanging on the chest
+    const B = T.beads, C = curveThrough(uv(B.from[0], B.from[1]), uv(B.mid[0], B.mid[1]), uv(B.to[0], B.to[1]), B.n - 1);
+    for (const p of C) out.torso += `<circle cx="${r1(p[0])}" cy="${r1(p[1])}" r="${B.r || 1.8}" fill="${B.c}" stroke="${LINE}" stroke-width=".7"/><circle cx="${r1(p[0] - 0.5)}" cy="${r1(p[1] - 0.6)}" r=".5" fill="#fff" opacity=".6"/>`;
+  }
+  // a hood bunched behind the neck (drawn under the head)
+  out.hood = F.hood ? frame(J, J.neckBase, garb([[[-12, 3], [-12.5, -4], [-7, -9.5], [0, -10.5], [7, -9.5], [12.5, -4], [12, 3], [0, 6]]], F.hood, false, '', 0.7)) : '';
+  // epaulettes: a pad and a gold fringe on each shoulder
+  out.over = '';
+  if (F.epaulettes) for (const [sh, far] of [[J.shB, true], [J.shF, false]]) {
+    const c = col(F.epaulettes, far), a = 180 - J.chestA;
+    out.over += `<g transform="translate(${pt(sh)}) rotate(${r1(a)})">${[-4.5, -2.2, 0, 2.2, 4.5].map((x) => `<path d="M${x},1 V${r1(7.5 - Math.abs(x) * 0.4)}" stroke="${LINE}" stroke-width="2.6" stroke-linecap="round"/><path d="M${x},1 V${r1(7.5 - Math.abs(x) * 0.4)}" stroke="${c}" stroke-width="1.3" stroke-linecap="round"/>`).join('')}`
+      + `<ellipse cx="0" cy="-0.5" rx="6.8" ry="3.4" fill="${c}" stroke="${LINE}" stroke-width="1.2"/><ellipse cx="-1.2" cy="-1.3" rx="3.4" ry="1.2" fill="#fff" opacity=".35"/></g>`;
+  }
+
+  // ---- at the waist: belts, sashes, a rope tied in a big knot
+  out.waist = '';
+  for (const b of F.belts || []) {
+    const [a0, a1] = b.v, [c0, c1] = b.vR || b.v, [ua, ub] = b.u || [-1.08, 1.08];
+    out.waist += garb([[uv(ua, a0, 0.6), uv(ub, c0, 0.6), uv(ub, c1, 0.6), uv(ua, a1, 0.6)].map((p) => [p[0], p[1], 1])], b.c, false, b.lines ? [0.3, 0.6].map((f) => seam([uv(-1.1, a0 + (a1 - a0) * f, 0.6), uv(1.1, c0 + (c1 - c0) * f, 0.6)], shade(b.c, -0.3), 0.8)).join('') : '', 0.4);
+    if (b.buckle) out.waist += frame(J, uv(b.bu != null ? b.bu : 0.06, (a0 + a1) / 2), `<rect x="-3.2" y="-2.6" width="6.4" height="5.2" rx="1" fill="${b.buckle}" stroke="${LINE}" stroke-width="1"/><rect x="-1.4" y="-1.2" width="2.8" height="2.4" rx=".4" fill="${b.c}"/>`);
+  }
+  const Sa = F.sash;
+  if (Sa) {
+    const [v0, v1] = Sa.v, k = uv(Sa.u, (v0 + v1) / 2, 0.8);
+    let s = garb([[uv(-1.1, v1, 0.8), uv(1.1, v1, 0.8), uv(1.1, v0, 0.8), uv(-1.1, v0, 0.8)].map((p) => [p[0], p[1], 1])], Sa.c, false, Sa.rope ? [-0.9, -0.6, -0.3, 0, 0.3, 0.6, 0.9].map((u) => seam([uv(u, v1, 0.8), uv(u + 0.12, v0, 0.8)], shade(Sa.c, -0.35), 0.9)).join('') : '', 0.5);
+    const tail = (dx, ln, w) => tube([k, [k[0] + dx * 0.5 + sway, k[1] + ln * 0.5], [k[0] + dx + sway * 2, k[1] + ln]], [w, w * 0.95, w * 0.85], { flatEnd: !Sa.rope });
+    for (const [dx, ln, w, dk] of Sa.tails || [[-3, 22, 3.4, 0], [3, 16, 3, -0.12]]) s += garb([tail(dx, ln, w)], dk ? shade(Sa.c, dk) : Sa.c, false, '', 0.6);
+    s += garb([[...Array(10)].map((_, i) => [k[0] + Math.cos(i * Math.PI / 5) * (Sa.knot || 3.8), k[1] + Math.sin(i * Math.PI / 5) * (Sa.knot || 3.8) * 0.85])], Sa.c, false, '', 0.6);
+    out.waist += s;
+  }
+  // ---- a high collar standing round the neck (drawn over the chin, like a jacket's)
+  out.collar = '';
+  if (F.collar) {
+    const Co = F.collar, h = Co.h || 6, hw = 7.5 * W + ex, c = Co.c;
+    out.collar = frame(J, J.neckBase, garb([[[-hw, 5, 1], [-hw + 0.8, -h, 1], [0, -h - 2.5], [hw - 0.8, -h, 1], [hw, 5, 1], [0, 8]]], c, false,
+      (Co.lining ? `<path d="M${r1(-hw + 1.4)},${-h + 0.6} Q0,${-h - 3.6} ${r1(hw - 1.4)},${-h + 0.6} Q0,${-h + 2.4} ${r1(-hw + 1.4)},${-h + 0.6}Z" fill="${Co.lining}"/>` : '')
+      + (Co.zip ? `<path d="M${r1(J.tw * 0.45 * hw)},${-h - 1.5} V5" stroke="${Co.zip}" stroke-width="1.4"/>` : '')
+      + (Co.ribs ? [-0.6, -0.2, 0.2, 0.6].map((f) => `<path d="M${r1(f * hw)},${-h} V5" stroke="${shade(c, -0.35)}" stroke-width=".8"/>`).join('') : ''), 0.8));
+  }
   return out;
+}
+// A shoe of a whole outfit, in the foot's frame (ankle at 0,0, sole on y = 5, toe towards +x).
+function fitShoe(ft, far, X) {
+  const { cel, col, shd, St } = X, sk = far ? St.far : St.body, c = ft.c;
+  const foot = cel(FOOT_BLOCK, sk, shd('skin', far), 0.6);
+  switch (ft.k) {
+    case 'straw':    // a straw sandal: a thick sole, a thong between the toes
+      return cel('M-10.4,2.8 H14.8 Q16.2,2.8 16.2,4.6 V6 Q16.2,7.4 14.8,7.4 H-10.4 Q-11.8,7.4 -11.8,6 V4.6 Q-11.8,2.8 -10.4,2.8Z', col(c, far), shd(c, far), 0.4)
+        + foot + inkLine('M3.2,-6.4 Q4.6,-2 4.2,3.2 M3.2,-6.4 Q-1,-3.4 -3.6,3', col(ft.c2 || '#2a2522', far), 1.8);
+    case 'ninja': {  // an open-toed sandal: the heel and the instep covered, the toes out
+      const body = 'M-9.6,4.4 C-10.4,-1 -9.6,-6 -6.4,-7.4 C-2,-8.6 3.4,-7 6.6,-4.6 L8,4.4 Z';
+      return cel('M-10.6,3.6 H14.8 Q16,3.6 16,5 V5.6 Q16,7 14.6,7 H-10.6 Q-11.8,7 -11.8,5.6 V5 Q-11.8,3.6 -10.6,3.6Z', col(ft.c2 || shade(c, -0.25), far), shd(ft.c2 || c, far), 0.4)
+        + foot + cel(body, col(c, far), shd(c, far), 0.6) + inkLine('M6.6,-4.6 L8,4.4', col(shade(c, -0.3), far), 0.8);
+    }
+    case 'sneaker':
+      return cel(FOOT_BLOCK, col(c, far), shd(c, far), 0.6) + fillP('M-9.4,1.6 L14.4,1.6 C14.6,2.2 14.6,2.6 14.6,2.8 C14.6,4.6 13.4,5.4 12,5.4 L-7,5.4 C-8.8,5.4 -9.6,4 -9.4,1.6Z', col(ft.c2 || '#ecebe8', far))
+        + lineP('M-9.4,1.6 L14.4,1.6', LINE, 0.9) + lineP('M6,-3.6 Q9,-1.6 10.6,1.4', LINE, 0.8, 0.6);
+    default:         // boot, shoe: the foot block in leather, a darker heel and sole
+      return cel(FOOT_BLOCK, col(c, far), shd(c, far), 0.6) + fillP(FOOT_SOLE, shade(col(c, far), -0.4), 0.9);
+  }
 }
 
 /* ---------------------------------------------------------------- the figure */
@@ -1180,7 +1340,7 @@ function drawAvatar(A, P, t, opt) {
   // the player wears one outfit whole; foes and the Studio may still give a top and a bottom
   if (A.outfit != null && A.top == null && A.bottom == null) A = Object.assign({}, A, { top: A.outfit, bottom: A.outfit });
   const O = outfitOf(A), T = O && O.top, Bt = O && O.bot;
-  const fit = picOf(A.top) && picOf(A.top) === picOf(A.bottom) ? picOf(A.top) : null, PV = fit ? picPose(fit, J, P) : null;
+  const FT = typeof FITS !== 'undefined' && A.top != null && A.top === A.bottom ? FITS[A.top] || null : null;
   const sway = Math.sin(t * 2.1), air = P.air || 0;
   const col = (v, far) => (v === 'skin' ? (far ? St.far : St.body) : far ? shade(v, -0.1) : v);
   const shd = (v, far) => (v === 'skin' ? (far ? shade(St.sh, -0.08) : St.sh) : lum(v) < 0.2 ? shade(v, 0.16) : shade(v, far ? -0.32 : -0.24));
@@ -1240,7 +1400,7 @@ function drawAvatar(A, P, t, opt) {
       if (T.sl > 0.55) s += crease(Cs, Math.round(n * 0.55), hw[4]);
       if (T.cuff) s += piece(tube(bez(Ar, T.sl - 0.08, T.sl, 2), [w1 + 0.2, w1 + 0.35, w1 + 0.5], { flatStart: 1, flatEnd: 1 }), T.cuff, far, 0.6);
     }
-    if (fit) s += picDraw(fit, PV, far ? 'B' : 'F');
+    if (FL) s += far ? FL.armB : FL.armF;
     s += xw(far ? 'armB' : 'armF', { L: Ar, far });
     if (O && O.wrist) s += piece(tube(bez(Ar, 0.78, 0.93, 2), [5.4 * W, 5.3 * W, 5.2 * W], { flatStart: 1, flatEnd: 1 }), O.wrist, far, 0.6);
     const hp = add(Ar[2], fa, 4.2 * W), r = rotTo(fa);
@@ -1256,11 +1416,12 @@ function drawAvatar(A, P, t, opt) {
     const onFloor = Math.max(0, Math.min(1, (L[2][1] + 5 - (GROUND - 7)) / 5));
     if (Math.abs(dA) < 35) a -= dA * onFloor;
     const flip = Math.sin(a * D2R) < 0, sk = far ? St.far : St.body;
-    const [k, c] = (O && O.shoe) || ['bare'];
+    const [k, c] = FT && FT.feet ? ['fit'] : (O && O.shoe) || ['bare'];
     const foot = FOOT_BLOCK;
     const boot = 'M-7.4,-6.2 C-1,-7.2 6,-6.4 9.8,-2.6 C11.8,-0.8 11.8,3.8 11,5.2 L-8,5.2 C-9,2.4 -9,-3.4 -7.4,-6.2Z';
     let g;
-    if (k === 'sandal') g = piece([[-8.6, 3.2, 1], [11.6, 3.2, 1], [11.6, 6.4, 1], [-8.6, 6.4, 1]], c, far, 0.4) + cel(foot, sk, shd('skin', far), 0.6) + inkLine('M1.6,-5 Q3.4,-0.6 2.4,3.6', col(c, far), 1.8);
+    if (k === 'fit') g = fitShoe(FT.feet, far, { cel, col, shd, St });
+    else if (k === 'sandal') g = piece([[-8.6, 3.2, 1], [11.6, 3.2, 1], [11.6, 6.4, 1], [-8.6, 6.4, 1]], c, far, 0.4) + cel(foot, sk, shd('skin', far), 0.6) + inkLine('M1.6,-5 Q3.4,-0.6 2.4,3.6', col(c, far), 1.8);
     else if (k === 'tabi') g = piece([[-8.6, 3.4, 1], [11.6, 3.4, 1], [11.6, 6.4, 1], [-8.6, 6.4, 1]], c, far, 0.4) + cel(foot, far ? '#d6d2c6' : '#f2f0ea', '#c4c0b4', 0.6) + inkLine('M4.5,-4.6 L2.6,3.6', '#2a2a30', 1.3);
     else if (k === 'shoe' || k === 'boot') g = cel(boot, col(c, far), shd(c, far), 0.7) + fillP('M-8.2,3 H11.4 V5.2 H-8.2Z', shade(c, -0.42));
     else g = cel(foot, sk, shd('skin', far), 0.6) + fillP(FOOT_SOLE, shd('skin', far), 0.75);
@@ -1344,6 +1505,9 @@ function drawAvatar(A, P, t, opt) {
       + (T.chain ? inkLine(`M${r1(-hw + 2)},2 Q${r1(-hw * 0.3)},13 ${r1(hw * 0.2)},4`, T.chain, 1.6) : ''));
   };
 
+  // ---- an outfit worn whole: all its layers for this frame
+  const FL = FT ? fitLayers(FT, { J, M, W, col, sway, legEdge, cid: () => uid + nClip++ }) : null;
+
   // ---- which arms hang at the sides (behind the torso) and which cross in front of it
   const crossing = (Ar, fa, front) => { const h = add(Ar[2], fa, 4); return h[1] > J.neck[1] && (front ? h[0] < J.shF[0] - 1 : h[0] > J.shB[0] + 1); };
   const backX = P.bf || crossing(J.aB, J.foreA.aB, false), frontX = P.ff || crossing(J.aF, J.foreA.aF, true);
@@ -1352,17 +1516,13 @@ function drawAvatar(A, P, t, opt) {
   if (!frontX) fig.push(front.s);
   // below the waist the body is one shape: the hips and both whole legs merged, so the torso
   // flows into the legs with no seam; the same for the trousers over it
+  if (FL) fig.push(FL.lining);
   const skinC = [bez(J.lB, -0.04, 0.95, 8), bez(J.lF, -0.04, 0.95, 8)], skinW = legW(8);
   const neckC = [add(J.neckBase, J.neckA, -6), J.neck, add(J.neck, J.neckA, 9)], neckW = [3.9 * W, 3.7 * W, 3.7 * W];
   fig.push(cel(union(tube(neckC, neckW), torsoOutline(M, -0.3, 1, 0), tube(skinC[0], skinW), tube(skinC[1], skinW)), St.body, St.sh) + legEdge(skinC[1], skinW)
     + fillP(spline(tube([add(J.neckBase, J.neckA, 1), add(J.neck, J.neckA, 9)], [neckW[1], neckW[2]], { flatStart: 1 }), true), St.sh, 0.7));
-  const pic = fit && OUTFIT_PICS[fit];
-  if (!pic) fig.push(shoe(J.lB, true), shoe(J.lF, false));
-  else {
-    // under a long coat the thighs are not in the picture: trousers of the colour seen below the hem
-    if (pic.leg) for (const [L, far] of [[J.lB, true], [J.lF, false]]) fig.push(piece(tube(bez(L, -0.04, 0.62, 6), lerpW(6, 8.2 * W, 7.4 * W), { flatEnd: 1 }), pic.leg, far, 0.6));
-    fig.push(picDraw(fit, PV, 'L'));
-  }
+  fig.push(shoe(J.lB, true), shoe(J.lF, false));
+  if (FL) fig.push(FL.legs, FL.skirt);
   if (Bt) {
     const pc = [bez(J.lB, -0.06, Bt.len, 8), bez(J.lF, -0.06, Bt.len, 8)], pw = pantW(8);
     fig.push(cel(union(torsoOutline(M, -0.32, 0.22, 1.6), tube(pc[0], pw, { flatEnd: 1 }), tube(pc[1], pw, { flatEnd: 1 })), Bt.c, shd(Bt.c)) + legEdge(pc[1], pw));
@@ -1371,9 +1531,10 @@ function drawAvatar(A, P, t, opt) {
   fig.push(tails());
   // the torso: bare (a plain rounded box) or dressed
   if (T) fig.push(top());
-  if (pic) fig.push(picDraw(fit, PV, 'T') + picDraw(fit, PV, 'S'));
+  if (FL) fig.push(FL.torso, FL.hood, FL.collar);
   fig.push(xw('torso'));
   if (O) fig.push(sash());
+  if (FL) fig.push(FL.waist, FL.over);
   fig.push(xw('torsoTop'));
   // hands hanging at the sides come over the clothes
   if (!backX) fig.push(back.hand);
