@@ -46,7 +46,7 @@ const isVec = () => !!(VEC_MODES[ST.mode] || GAR_MODES[ST.mode] || (ST.mode === 
 // What the game already has (ids a custom item may not take).
 registerCustomPack(null);
 const BUILTIN = {};
-for (const [s] of COS_SLOTS) BUILTIN[s] = new Set(COSMETICS[s].map((c) => c.id));
+for (const s of Object.keys(COSMETICS)) BUILTIN[s] = new Set(COSMETICS[s].map((c) => c.id));
 BUILTIN.aura.add('glimmer');
 const BUILTIN_POSES = Object.keys(POSES);
 const BUILTIN_HAIR = Object.keys(HAIR), BUILTIN_TOPS = Object.keys(TOPS), BUILTIN_BOTTOMS = Object.keys(BOTTOMS), BUILTIN_HATS = Object.keys(HATS);
