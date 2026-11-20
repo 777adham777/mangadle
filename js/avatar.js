@@ -35,6 +35,7 @@ const KILLS = (z, n) => ({ need: () => kzOf(z) >= n, hint: `Defeat ${n} foes in 
 // wear: drawn garment pieces by 'top:id' / 'bottom:id', called for each body part (see drawAvatar).
 const AV_EXT = { face: {}, back: {}, aura: {}, skill: {}, attacks: [], wear: {} };
 const C = (id, name, w, r, req, extra) => Object.assign({ id, name, w, r }, req, extra || {});
+const PIC_COS = () => (typeof OUTFIT_PICS !== 'undefined' ? Object.keys(OUTFIT_PICS).map((id) => C('pic_' + id, OUTFIT_PICS[id].name, OUTFIT_PICS[id].world, 4, { need: () => false, hint: 'Not obtainable yet' })) : []);
 // One body for everyone (no builds): the base character sheet. Its proportions live in solve()
 // and drawAvatar(); these factors stay at 1 for the code that still takes a body argument.
 const BODY = { w: 1, h: 1, head: 1 };
@@ -100,6 +101,8 @@ const COSMETICS = {
     C('wilds',    'Wilds Tunic',       'hunter',  3, KILLS('cliffs', 50)),
     C('longcoat', 'Chained Longcoat',  'echo',    4, KILLS('museum', 50)),
     C('riftwear', 'Rift Raiment',      'rift',    5, KILLS('tear', 25)),
+    // picture outfits (js/outfits.js): how they are earned is not decided yet, only the dev tool unlocks them
+    ...PIC_COS(),
   ],
   bottom: [
     { id: 'tee', name: 'Traveler Trousers', r: 1, need: FREE },
@@ -112,6 +115,7 @@ const COSMETICS = {
     C('wilds',    'Wilds Shorts',      'hunter',  3, KILLS('ruins', 50)),
     C('longcoat', 'Longcoat Trousers', 'echo',    4, KILLS('pillars', 50)),
     C('riftwear', 'Rift Leggings',     'rift',    5, KILLS('tear', 40)),
+    ...PIC_COS(),
   ],
   hat: [
     { id: 'none', name: 'No hat', r: 1, need: FREE },
@@ -1086,6 +1090,38 @@ function bolts(cx, t, col) {
   return lineP(d, col, 5, 0.4) + lineP(d, '#fff', 2);
 }
 
+/* ---------------------------------------------------------------- picture outfits */
+// A picture outfit (js/outfits.js) is cut into pieces, each drawn along one bone of the rig: the piece's
+// bone a -> b (straight down in its atlas tile) is laid along the rig's bone from A towards B. Across the
+// bone it keeps the outfit's scale (k). Along it, the picture's body is shorter than ours, so the cutter
+// stretched only the plain rows (and the hidden ones), never prints, cuffs, hems or the joints:
+// p.g = [[y in the tile, units from the joint]...], straight between the points.
+// o.foot: the sole lands 5 below the ankle; o.uniform: the outfit's scale both ways.
+const picOf = (id) => (typeof OUTFIT_PICS !== 'undefined' && /^pic_/.test(id || '') ? OUTFIT_PICS[id.slice(4)] || null : null);
+function picPiece(id, name, A, B, o) {
+  const F = OUTFIT_PICS[id], p = F && F.p[name];
+  if (!p) return '';
+  o = o || {};
+  const [rx, ry, rw, rh] = p.r, k = F.k * (o.w || 1), a = p.a[1], b = p.b[1];
+  let f, cuts = [0, rh];
+  if (o.foot) f = (y) => 5 + (y - b) * k;
+  else if (o.uniform || !p.g) f = (y) => (y - a) * k;
+  else {
+    const g = p.g;
+    f = (y) => { let i = 0; while (i < g.length - 2 && y > g[i + 1][0]) i++; const [y0, t0] = g[i], [y1, t1] = g[i + 1]; return t0 + ((t1 - t0) * (y - y0)) / (y1 - y0 || 1); };
+    cuts = g.map((q) => q[0]);
+  }
+  const src = 'assets/outfits/' + id + '.png', x = r1(-p.a[0] * k), w = r1(rw * k);
+  let g = '';
+  for (let i = 0; i < cuts.length - 1; i++) {
+    const y0 = cuts[i], y1 = Math.min(rh, cuts[i + 1] + (i < cuts.length - 2 ? 0.8 : 0)), t0 = f(y0), t1 = f(y1);
+    if (y1 - y0 < 0.5) continue;
+    g += `<svg x="${x}" y="${r1(t0)}" width="${w}" height="${Math.round((t1 - t0) * 100) / 100}" viewBox="${rx} ${Math.round((ry + y0) * 10) / 10} ${rw} ${Math.round((y1 - y0) * 10) / 10}" preserveAspectRatio="none"><image href="${src}" width="${F.W}" height="${F.H}"/></svg>`;
+  }
+  const ang = Math.atan2(-(B[0] - A[0]), B[1] - A[1]) / D2R;
+  return `<g transform="translate(${pt(A)}) rotate(${r1(ang)})">${g}</g>`;
+}
+
 /* ---------------------------------------------------------------- the figure */
 // Built like the concept art: a homogeneous body read as one silhouette. Arms hanging at the
 // sides sit behind the torso, so the shoulder covers where they join; the trousers are one "Π"
@@ -1103,6 +1139,7 @@ function drawAvatar(A, P, t, opt) {
   LINE = St.line;
   const J = solve(P, B), W = B.w, M = torsoMap(J, W), out = [];
   const O = outfitOf(A), T = O && O.top, Bt = O && O.bot;
+  const pT = picOf(A.top) && A.top.slice(4), pB = picOf(A.bottom) && A.bottom.slice(4), tw0 = P.tw || 0;
   const sway = Math.sin(t * 2.1), air = P.air || 0;
   const col = (v, far) => (v === 'skin' ? (far ? St.far : St.body) : far ? shade(v, -0.1) : v);
   const shd = (v, far) => (v === 'skin' ? (far ? shade(St.sh, -0.08) : St.sh) : lum(v) < 0.2 ? shade(v, 0.16) : shade(v, far ? -0.32 : -0.24));
@@ -1162,6 +1199,7 @@ function drawAvatar(A, P, t, opt) {
       if (T.sl > 0.55) s += crease(Cs, Math.round(n * 0.55), hw[4]);
       if (T.cuff) s += piece(tube(bez(Ar, T.sl - 0.08, T.sl, 2), [w1 + 0.2, w1 + 0.35, w1 + 0.5], { flatStart: 1, flatEnd: 1 }), T.cuff, far, 0.6);
     }
+    if (pT) { const sd = far ? 'B' : 'F'; s += picPiece(pT, 'fa' + sd, Ar[1], Ar[2]) + picPiece(pT, 'ua' + sd, Ar[0], Ar[1]); }
     s += xw(far ? 'armB' : 'armF', { L: Ar, far });
     if (O && O.wrist) s += piece(tube(bez(Ar, 0.78, 0.93, 2), [5.4 * W, 5.3 * W, 5.2 * W], { flatStart: 1, flatEnd: 1 }), O.wrist, far, 0.6);
     const hp = add(Ar[2], fa, 4.2 * W), r = rotTo(fa);
@@ -1277,7 +1315,28 @@ function drawAvatar(A, P, t, opt) {
   const neckC = [add(J.neckBase, J.neckA, -6), J.neck, add(J.neck, J.neckA, 9)], neckW = [3.9 * W, 3.7 * W, 3.7 * W];
   fig.push(cel(union(tube(neckC, neckW), torsoOutline(M, -0.3, 1, 0), tube(skinC[0], skinW), tube(skinC[1], skinW)), St.body, St.sh) + legEdge(skinC[1], skinW)
     + fillP(spline(tube([add(J.neckBase, J.neckA, 1), add(J.neck, J.neckA, 9)], [neckW[1], neckW[2]], { flatStart: 1 }), true), St.sh, 0.7));
-  fig.push(shoe(J.lB, true), shoe(J.lF, false));
+  const pFeet = pB && OUTFIT_PICS[pB].p.ftF;
+  if (!pFeet) fig.push(shoe(J.lB, true), shoe(J.lF, false));
+  if (pB) {
+    const F = OUTFIT_PICS[pB];
+    for (const [sd, L, far] of [['B', J.lB, true], ['F', J.lF, false]]) {
+      // under a long coat the thighs are not in the picture: trousers of the colour seen below the hem
+      if (!F.p['th' + sd] && F.leg) fig.push(piece(tube(bez(L, -0.04, 0.62, 6), lerpW(6, 8.2 * W, 7.4 * W), { flatEnd: 1 }), F.leg, far, 0.6));
+      // a foot on the floor stays flat; a raised one follows its shin
+      const up = 1 - Math.max(0, Math.min(1, (L[2][1] + 5 - (GROUND - 7)) / 5));
+      const sa = Math.atan2(L[2][0] - L[1][0], L[2][1] - L[1][1]) / D2R;
+      fig.push(picPiece(pB, 'sh' + sd, L[1], L[2]) + picPiece(pB, 'th' + sd, L[0], L[1]) + picPiece(pB, 'ft' + sd, L[2], add(L[2], sa * up, 5), { foot: 1 }));
+    }
+    fig.push(picPiece(pB, 'pelvis', J.pelvis, add(J.pelvis, P.t1 - 180, 10), { uniform: 1 }));
+  }
+  if (pT && OUTFIT_PICS[pT].p.skB) {
+    // a long coat: each half hangs from the hips and swings a little with its leg
+    const down = P.t1 - 180, legA = (L) => Math.atan2(L[1][0] - L[0][0], L[1][1] - L[0][1]) / D2R;
+    for (const [sd, L] of [['B', J.lB], ['F', J.lF]]) {
+      const da = ((legA(L) - down + 540) % 360) - 180;
+      fig.push(picPiece(pT, 'sk' + sd, J.pelvis, add(J.pelvis, down + da * 0.4, 72 * B.h)));
+    }
+  }
   if (Bt) {
     const pc = [bez(J.lB, -0.06, Bt.len, 8), bez(J.lF, -0.06, Bt.len, 8)], pw = pantW(8);
     fig.push(cel(union(torsoOutline(M, -0.32, 0.22, 1.6), tube(pc[0], pw, { flatEnd: 1 }), tube(pc[1], pw, { flatEnd: 1 })), Bt.c, shd(Bt.c)) + legEdge(pc[1], pw));
@@ -1286,6 +1345,7 @@ function drawAvatar(A, P, t, opt) {
   fig.push(tails());
   // the torso: bare (a plain rounded box) or dressed
   if (T) fig.push(top());
+  if (pT) fig.push(picPiece(pT, 'torso', J.neckBase, J.pelvis, { w: 1 - 0.14 * tw0 }));
   fig.push(xw('torso'));
   if (O) fig.push(sash());
   fig.push(xw('torsoTop'));
