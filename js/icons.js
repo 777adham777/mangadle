@@ -994,13 +994,11 @@ const ICON_MARK = {};
   };
   for (const id in ITEMS) {
     const it = ITEMS[id];
+    // Illustrated art (item-art.js) already shows the family, so only schematics keep a badge and tools / traps their tier.
     if (it.type === 'schematic') set(id, ICONS.item[it.teaches], 'scroll-unfurled');
-    else if (it.type === 'scroll' && it.pool) set(id, null, ICONS.realm[it.pool]);
-    else if (it.type === 'scroll') set(id, ICONS.technique[it.tech], 'tied-scroll');
-    else if (it.type === 'tool') set(id, null, ICONS.skill[it.toolFor], ROMAN[it.tier]);
-    else if (it.type === 'seed') set(id, null, ICONS.item[id.slice(5)]);
-    else if (it.type === 'trap') set(id, null, 'knapsack', ROMAN[it.tier]);
-    else if (id.startsWith('ancient_')) set(id, null, 'hourglass');
+    else if (it.type === 'scroll' && !(typeof ART !== 'undefined' && ART[id])) set(id, it.pool ? null : ICONS.technique[it.tech], it.pool ? ICONS.realm[it.pool] : 'tied-scroll');
+    else if (it.type === 'tool' || it.type === 'trap') set(id, null, null, ROMAN[it.tier]);
+    else if (id.startsWith('ancient_') && !(typeof ART !== 'undefined' && ART[id])) set(id, null, 'hourglass');
   }
 })();
 

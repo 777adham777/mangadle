@@ -31,15 +31,18 @@ function icName(kind, id) {
   return n && GI[n] ? n : (ICONS.ui && GI[ICONS.ui.info] ? ICONS.ui.info : null);
 }
 // Technique icons carry data-ttip: hovering one anywhere shows the technique's tooltip (tooltips.js).
-const ic = (kind, id, cls) => gi(icName(kind, id), cls, kind === 'technique' ? `data-ttip="${id}"` : '');
+const ic = (kind, id, cls) => (kind === 'item' ? itemIc(id, cls) : gi(icName(kind, id), cls, kind === 'technique' ? `data-ttip="${id}"` : ''));
 const ui = (k, cls) => ic('ui', k, cls);
 // Item art: the item's own glyph in its own colour (ICON_COLOR, icons.js); schematics are drawn as blueprints.
 function itemIc(id, cls) {
   if (id === 'FRUIT') return ui('fruit', cls);
   if (id === 'GEM') return ui('gem', cls);
+  const bp = ITEMS[id] && ITEMS[id].type === 'schematic';
+  // Illustrated art (item-art.js, js/art/*.js) first; the old one-colour glyph only as a fallback.
+  const a = typeof artId === 'function' ? artId(id) : null;
+  if (a) return `<svg class="gi ic ia${bp ? ' bp' : ''}${cls ? ' ' + cls : ''}" data-tip="${id}" aria-hidden="true"><use href="#ia-${a}"/></svg>`;
   const n = icName('item', id);
   if (!n) return '';
-  const bp = ITEMS[id] && ITEMS[id].type === 'schematic';
   const c = typeof itemColor === 'function' ? itemColor(id) : null;
   return `<svg class="gi ic${bp ? ' bp' : ''}${cls ? ' ' + cls : ''}"${c ? ` style="--ic:${c}"` : ''} data-tip="${id}" aria-hidden="true"><use href="#gi-${n}"/></svg>`;
 }
@@ -58,7 +61,9 @@ function installSprite() {
   // Item-art shading: a light-to-tinted fill per rarity (tiles reference these from CSS).
   const TINT = ['#c9cfdc', '#e4e7ee', '#d3f5e1', '#d6e6ff', '#eadcff', '#fff0cf'];
   const grads = TINT.map((c, r) => `<linearGradient id="gi-g${r}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff"/><stop offset=".55" stop-color="#fff"/><stop offset="1" stop-color="${c}"/></linearGradient>`).join('');
-  document.body.insertAdjacentHTML('afterbegin', `<svg id="gi-sprite" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${grads}</defs>${syms}</svg>`);
+  const art = typeof artSymbols === 'function' ? artSymbols() : '';
+  const adefs = typeof artDefs === 'function' ? artDefs() : '';
+  document.body.insertAdjacentHTML('afterbegin', `<svg id="gi-sprite" width="0" height="0" style="position:absolute" aria-hidden="true"><defs>${grads}${adefs}</defs>${syms}${art}</svg>`);
 }
 
 /* =============================================================== rarity + tiles */
