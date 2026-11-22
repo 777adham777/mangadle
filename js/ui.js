@@ -964,7 +964,7 @@ on('rare', (d) => {
   setTimeout(() => rareThisTick.delete(d.id), 0);
   const it = ITEMS[d.id];
   toast(`Rare find: ${it.name} (${d.source})`, 'rare');
-  if (rarity(d.id) >= 5) burst('Rare drop', it.name, itemIc(d.id), 'var(--gold)');
+  if (!(typeof dropReveal === 'function' && dropReveal(d.id, d.source)) && rarity(d.id) >= 5) burst('Rare drop', it.name, itemIc(d.id), 'var(--gold)');
   sideDirty = true;
 });
 on('pet', (pet) => {
