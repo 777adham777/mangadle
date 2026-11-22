@@ -650,6 +650,8 @@ function cbFam(id) {
   return af === 'short' ? 'quick' : 'blade';
 }
 const cbStance = (id) => 'st_' + cbFam(id);
+// a foe winding up a telegraphed move holds its family's charge pose (with the red glow and the "!")
+const CB_CHARGE = { blade: 'windup', quick: 'qCoil', heavy: 'hvRaise', spear: 'spCoil', bow: 'bowDraw', gun: 'gunAim', fist: 'powerUp' };
 let cbKoT = 0;   // until when your fighter lies knocked out (arena.js sets it on a defeat)
 {
   const ST = {
@@ -2005,7 +2007,8 @@ function basePose(el) {
   const A = avState(), ctx = el.dataset.av;
   if (ctx === 'preview') return el.dataset.pose || A.stance;
   if (ctx === 'battle') return performance.now() < cbKoT ? 'ko' : S.combat.zone != null ? cbStance(S.equip && S.equip.weapon) : A.stance;
-  if (ctx === 'enemy') return cbStance(el.dataset.weapon);
+  if (ctx === 'ko') return 'ko';   // a defeated foe (arena.js)
+  if (ctx === 'enemy') return typeof foeWinding === 'function' && foeWinding() ? CB_CHARGE[cbFam(el.dataset.weapon)] : cbStance(el.dataset.weapon);
   if (S.action && AV_EXT.skill[S.action.skill] && POSE_DRIVE[AV_EXT.skill[S.action.skill]]) return AV_EXT.skill[S.action.skill];
   if (S.action) return S.action.skill === 'fishing' ? 'fish' : S.action.skill === 'cooking' ? 'cook' : S.action.skill === 'woodcutting' ? 'wood' : A.stance;
   return A.stance;
@@ -2037,7 +2040,10 @@ function avFrame(now) {
     const base = basePose(el), drv = POSE_DRIVE[base];
     if (st.cut || now - st.t0 >= st.dur) {
       const nx = st.seq.shift();
-      if (nx) Object.assign(st, { from: st.cur, to: POSES[nx[0]], t0: now, dur: nx[1], easing: nx[2] || 'io', drive: null });
+      // a step that follows another starts where the last one ended (not at this frame), so sequences keep their timing
+      const chain = !st.cut && st.seqOn;
+      st.seqOn = !!nx;
+      if (nx) Object.assign(st, { from: st.cur, to: POSES[nx[0]], t0: chain ? Math.max(now - 40, st.t0 + st.dur) : now, dur: nx[1], easing: nx[2] || 'io', drive: null });
       else if (drv) { if (st.drive !== base) Object.assign(st, { from: st.cur, to: null, t0: now, dur: 420, easing: 'io', drive: base }); }
       else {
         const want = POSES[base] || POSES.relaxed;

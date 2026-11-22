@@ -85,7 +85,7 @@ on('techup', (d) => {
 on('tech', (d) => {
   if (!inBattleView()) return;
   const el = $('[data-portrait="player"]');
-  floatAt(el, d.heal ? `+${fmt(d.heal)}${ui('hp')}` : `<small>${esc(TECHNIQUES[d.id].name)}</small>`, d.heal ? 'heal' : 'xp', 0, -30);
+  floatAt(el, d.heal ? `+${fmt(d.heal)}${ui('hp')}` : `<small>${esc(TECHNIQUES[d.id].name)}</small>`, d.heal ? 'heal' : 'xp techcall', 0, -30);
 });
 
 document.addEventListener('click', (ev) => {

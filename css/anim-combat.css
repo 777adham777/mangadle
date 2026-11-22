@@ -1,1 +1,136 @@
-/* Animations — combat (2026-11-22 animation pass). */
+/* Animations — combat (2026-11-22 animation pass). js/arena.js choreographs; poses in js/avatar.js. */
+
+/* ui.js flashes the whole fighter the instant damage is dealt; arena.js now does it on the contact frame instead. */
+@keyframes hitFlash { from { opacity: 1; } to { opacity: 1; } }
+@keyframes hitFlashL { from { opacity: 1; } to { opacity: 1; } }
+
+/* ---------------------------------------------------------------- idle life */
+.ar-floor .cb-amb { position: absolute; inset: 0; overflow: hidden; pointer-events: none; z-index: 0; }
+.ar-floor .cb-amb i { position: absolute; bottom: 14%; width: 4px; height: 4px; border-radius: 50%; opacity: 0;
+  background: color-mix(in srgb, var(--rc) 55%, #fff); box-shadow: 0 0 6px color-mix(in srgb, var(--rc) 80%, transparent);
+  animation: cbMote var(--d, 7s) linear infinite; }
+@keyframes cbMote { 0% { opacity: 0; transform: translate(0, 0) scale(0.6); } 15% { opacity: 0.7; } 70% { opacity: 0.45; } 100% { opacity: 0; transform: translate(var(--sx, 10px), -190px) scale(1.1); } }
+.ar-floor .cb-amb .cb-dust { position: absolute; bottom: 15%; width: 120px; height: 16px; margin-left: -60px; border-radius: 50%;
+  background: radial-gradient(ellipse, color-mix(in srgb, var(--rc) 22%, rgba(255, 255, 255, 0.12)), transparent 70%); animation: cbHaze 3.4s ease-in-out infinite; }
+.ar-floor .cb-amb .cb-dust.me { left: calc(12% + 100px); }
+.ar-floor .cb-amb .cb-dust.foe { right: calc(12% + 100px); margin: 0 -60px 0 0; animation-delay: -1.7s; }
+@keyframes cbHaze { 50% { transform: scaleX(1.25); opacity: 0.55; } }
+.ar-floor .fighter { z-index: 1; }
+
+/* a foe arrives in a puff of dust */
+.ar-floor .fighter.enemy.enter::after { content: ''; position: absolute; left: 50%; bottom: 2%; width: 160px; height: 40px; margin-left: -80px; border-radius: 50%; pointer-events: none;
+  background: radial-gradient(ellipse, rgba(220, 210, 195, 0.55), transparent 70%); animation: cbPuff 0.6s ease-out forwards; }
+@keyframes cbPuff { from { transform: scale(0.4); opacity: 1; } to { transform: scale(1.6, 1.3); opacity: 0; } }
+
+/* a beast rears back before it lunges (arena.js adds .cb-coil during its wind-up) */
+.cr { transition: transform 0.16s cubic-bezier(.3, 0, .6, 1); }
+.cr.cb-coil { transform: translateX(10px) scale(1.04, 0.95); transform-origin: 70% 95%; }
+
+/* ---------------------------------------------------------------- impacts */
+.cbfx { position: absolute; width: 120px; height: 120px; margin: -60px 0 0 -60px; pointer-events: none; z-index: 4;
+  transform: scaleX(var(--s, 1)) rotate(var(--rot, 0deg)); }
+.cbfx.big { width: 180px; height: 180px; margin: -90px 0 0 -90px; }
+.cbfx svg { position: absolute; inset: 0; width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 6px var(--c));
+  animation: cbPop 0.34s cubic-bezier(.2, .9, .3, 1) forwards; }
+@keyframes cbPop { 0% { transform: scale(0.35); opacity: 1; } 28% { transform: scale(1.08); opacity: 1; } 100% { transform: scale(1.22); opacity: 0; } }
+/* blades swipe open along their arc */
+.cbfx.k-slash svg, .cbfx.k-rise svg, .cbfx.k-x svg, .cbfx.k-pierce svg, .cbfx.k-claw svg, .cbfx.k-whiff svg { animation-name: cbSwipe; animation-duration: 0.3s; }
+@keyframes cbSwipe { 0% { transform: scaleX(0.15) scaleY(0.6); opacity: 1; } 35% { transform: scaleX(1.06) scaleY(1); opacity: 1; } 100% { transform: scaleX(1.12) scaleY(0.75); opacity: 0; } }
+.cbfx.k-x svg { animation-duration: 0.36s; }
+.cbfx .cb-ring { transform-box: fill-box; transform-origin: center; animation: cbRingOut 0.42s ease-out forwards; }
+@keyframes cbRingOut { from { transform: scale(0.4); } to { transform: scale(1.5); opacity: 0; } }
+.cbfx.k-smash svg, .cbfx.big svg { animation-duration: 0.44s; }
+
+/* particles: sparks fly with the blow, debris arcs and falls, dust and embers rise */
+.cbp { position: absolute; left: 50%; top: 50%; pointer-events: none; }
+.cbp.p-spark { width: 3px; height: 11px; margin: -6px 0 0 -1.5px; border-radius: 2px; background: #fff; box-shadow: 0 0 6px var(--c), 0 0 2px var(--c);
+  animation: cbSpark var(--d, 420ms) cubic-bezier(.15, .8, .3, 1) forwards; }
+@keyframes cbSpark { 0% { transform: rotate(var(--a)) translateY(-8px) scaleY(1.6); opacity: 1; } 100% { transform: rotate(var(--a)) translateY(var(--r)) scaleY(0.3); opacity: 0; } }
+.cbp.p-debris { width: 7px; height: 6px; margin: -3px; background: #6a5d50; border: 1.5px solid #15161c; border-radius: 1px;
+  animation: cbDebris calc(var(--d, 420ms) + 200ms) cubic-bezier(.25, .6, .5, 1) forwards; }
+@keyframes cbDebris { 0% { transform: translate(0, 0) rotate(0); } 40% { transform: translate(calc(var(--x) * 0.6), var(--y)) rotate(160deg); } 100% { transform: translate(var(--x), calc(var(--y) + 54px)) rotate(400deg); opacity: 0; } }
+.cbp.p-dust { width: 16px; height: 16px; margin: -8px; border-radius: 50%; background: rgba(210, 200, 185, 0.5);
+  animation: cbDust calc(var(--d, 420ms) + 180ms) ease-out forwards; }
+@keyframes cbDust { from { transform: scale(0.4); opacity: 0.85; } to { transform: translate(var(--x), calc(var(--y) * 0.5)) scale(2); opacity: 0; } }
+.cbp.p-ember { width: 5px; height: 5px; margin: -2.5px; border-radius: 50%; background: #ffd27a; box-shadow: 0 0 6px #ff7a2b;
+  animation: cbEmber calc(var(--d, 420ms) + 300ms) ease-out forwards; }
+@keyframes cbEmber { from { transform: translate(0, 0); } to { transform: translate(var(--x), calc(var(--y) - 40px)); opacity: 0; } }
+
+/* the flash of a crit or a big hit */
+.cbflash { position: absolute; width: 260px; height: 260px; margin: -130px 0 0 -130px; border-radius: 50%; pointer-events: none; z-index: 3;
+  background: radial-gradient(circle, rgba(255, 255, 255, 0.9), rgba(255, 245, 210, 0.35) 35%, transparent 68%); mix-blend-mode: screen; animation: cbFlash 0.24s ease-out forwards; }
+@keyframes cbFlash { from { transform: scale(0.5); opacity: 1; } to { transform: scale(1.3); opacity: 0; } }
+
+/* ---------------------------------------------------------------- projectiles */
+.cbproj { position: absolute; left: 0; top: 0; width: 48px; height: 18px; margin: -9px 0 0 -24px; pointer-events: none; z-index: 4; }
+.cbproj svg { width: 100%; height: 100%; overflow: visible; }
+.cbproj::before { content: ''; position: absolute; right: 70%; top: 50%; width: 70px; height: 2px; margin-top: -1px; background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.75)); }
+.cbproj.j-ki, .cbproj.j-orb, .cbproj.j-ball { height: 28px; margin-top: -14px; }
+.cbproj.j-ki::before { height: 10px; margin-top: -5px; border-radius: 5px; background: linear-gradient(90deg, transparent, rgba(125, 249, 255, 0.7)); }
+.cbproj.j-ball::before { height: 6px; margin-top: -3px; background: linear-gradient(90deg, transparent, rgba(255, 154, 58, 0.7)); }
+.cbproj.j-orb::before { height: 5px; margin-top: -2.5px; background: linear-gradient(90deg, transparent, rgba(155, 225, 93, 0.7)); }
+.cbproj.j-bullet::before { width: 90px; background: linear-gradient(90deg, transparent, rgba(255, 220, 150, 0.85)); }
+.cbproj.j-kunai svg, .cbproj.j-talisman svg { animation: cbSpin 0.18s linear infinite; }
+@keyframes cbSpin { to { transform: rotate(360deg); } }
+
+/* ---------------------------------------------------------------- techniques */
+.cbring { position: absolute; width: 0; height: 0; pointer-events: none; z-index: 3; }
+.cbring i { position: absolute; left: -70px; top: -26px; width: 140px; height: 52px; border-radius: 50%; border: 3px solid var(--c);
+  box-shadow: 0 0 14px var(--c), inset 0 0 12px var(--c); animation: cbRingUp 0.8s ease-out forwards; }
+.cbring i + i { animation-delay: 0.14s; opacity: 0; }
+@keyframes cbRingUp { 0% { transform: translateY(40px) scale(0.5); opacity: 0; } 25% { opacity: 1; } 100% { transform: translateY(-80px) scale(1.15); opacity: 0; } }
+.cbring b { position: absolute; left: -22px; top: -150px; width: 44px; height: 44px; display: grid; place-items: center; border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--c) 45%, #0b0d14) 0 55%, transparent 72%); color: #fff; animation: cbGlyph 0.95s cubic-bezier(.2, 1.4, .4, 1) forwards; }
+.cbring b .gi { width: 28px; height: 28px; fill: #fff; filter: drop-shadow(0 0 6px var(--c)); }
+@keyframes cbGlyph { 0% { transform: scale(0); } 25% { transform: scale(1.15); } 40% { transform: scale(1); opacity: 1; } 100% { transform: translateY(-14px); opacity: 0; } }
+.cbdomain { position: absolute; inset: 0; pointer-events: none; z-index: 0;
+  background: radial-gradient(ellipse 60% 90% at 30% 85%, color-mix(in srgb, var(--c) 45%, transparent), color-mix(in srgb, var(--c) 18%, rgba(0, 0, 0, 0.5)) 55%, rgba(0, 0, 0, 0.55));
+  animation: cbDomain 1.5s ease-out forwards; }
+@keyframes cbDomain { 0% { clip-path: circle(0% at 30% 80%); opacity: 1; } 35% { clip-path: circle(120% at 30% 80%); opacity: 1; } 75% { opacity: 0.8; } 100% { clip-path: circle(120% at 30% 80%); opacity: 0; } }
+.float.techcall { padding: 2px 10px; border-radius: 2px; font: italic 700 15px var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: #fff;
+  background: linear-gradient(90deg, transparent, rgba(30, 60, 120, 0.85) 15%, rgba(30, 60, 120, 0.85) 85%, transparent); box-shadow: none; text-shadow: 0 0 8px #7db4ff, 0 1px 2px #000; }
+.float.techcall small { font-size: inherit; letter-spacing: inherit; }
+
+/* ---------------------------------------------------------------- damage numbers with weight */
+#fx .float.dmg, #fx .float.hurt { font-weight: 800; font-style: italic; letter-spacing: -0.01em;
+  text-shadow: 0 2px 0 #000, 2px 0 0 #000, -2px 0 0 #000, 0 -2px 0 #000, 1.5px 1.5px 0 #000, -1.5px 1.5px 0 #000, 0 4px 8px rgba(0, 0, 0, 0.8); }
+#fx .float.dmg.cb-small, #fx .float.hurt.cb-small { font-size: 19px; opacity: 0.9; }
+#fx .float.dmg.cb-big { font-size: 32px; }
+#fx .float.dmg.cb-huge { font-size: 40px; }
+#fx .float.dmg.crit.cb-big { font-size: 40px; }
+#fx .float.dmg.crit.cb-huge { font-size: 48px; }
+#fx .float.dmg.crit { color: #ffe27a; text-shadow: 0 2px 0 #7a1a10, 2px 0 0 #7a1a10, -2px 0 0 #7a1a10, 0 -2px 0 #7a1a10, 0 0 16px rgba(255, 140, 40, 0.85), 0 4px 8px rgba(0, 0, 0, 0.8); }
+#fx .float.hurt.cb-big, #fx .float.hurt.cb-huge { font-size: 31px; color: #ff5a6a; }
+#fx .float.cb-heavy { animation-name: cbNumHeavy; }
+@keyframes cbNumHeavy {
+  0% { opacity: 0; transform: translate(-50%, -6px) scale(2.4); }
+  9% { opacity: 1; transform: translate(-50%, 4px) scale(0.86); }
+  18% { transform: translate(-50%, -4px) scale(1.1); }
+  28% { transform: translate(-50%, -8px) scale(1); }
+  75% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -52px) scale(0.96); }
+}
+
+/* ---------------------------------------------------------------- KO */
+/* a stick foe collapses (its pose), then fades and sinks; beasts keep their squash (foes.css), a moment later */
+.ar-floor .fighter.enemy.foe-stick.down .f-art { animation: cbStickDown 1.1s ease-in forwards; transform-origin: 50% 92%; }
+@keyframes cbStickDown { 0%, 55% { opacity: 1; filter: none; transform: none; } 70% { filter: brightness(1.8) saturate(0.4); } 100% { opacity: 0; transform: translateY(8px); filter: brightness(2.2) saturate(0); } }
+.ar-floor .ko { animation-delay: 0.3s; }
+.cbko { position: absolute; width: 0; height: 0; pointer-events: none; z-index: 3; }
+.cbko s { position: absolute; left: -90px; top: -18px; width: 180px; height: 36px; border-radius: 50%; text-decoration: none;
+  background: radial-gradient(ellipse, rgba(225, 215, 200, 0.6), transparent 70%); animation: cbPuff 0.8s 0.35s ease-out both; }
+.cbko.boss s { left: -150px; width: 300px; top: -30px; height: 60px; }
+.cbko i { position: absolute; left: -3px; top: -3px; width: 6px; height: 6px; border-radius: 50%; background: #fff; box-shadow: 0 0 8px var(--rc, #ffd27a), 0 0 3px #fff; opacity: 0;
+  animation: cbSoul var(--d, 900ms) ease-out both; }
+@keyframes cbSoul { 0% { opacity: 0; transform: translate(0, 0) scale(0.5); } 20% { opacity: 1; } 100% { opacity: 0; transform: translate(var(--x), var(--y)) scale(1.2); } }
+
+/* ---------------------------------------------------------------- calm */
+@media (prefers-reduced-motion: reduce) {
+  .ar-floor .cb-amb, .cbflash, .cbproj, .cbko i, .cbko s, .ar-floor .fighter.enemy.enter::after { display: none; }
+  .cr, .cr.cb-coil { transition: none; transform: none; }
+  .cbfx svg, .cbfx .cb-ring, .cbring i, .cbring b, .cbdomain { animation: cbCalmFade 0.4s ease-out forwards !important; }
+  .cbring i + i { display: none; }
+  .ar-floor .fighter.enemy.foe-stick.down .f-art { animation: cbCalmFade 1.1s ease-in forwards; }
+  #fx .float.cb-heavy { animation: none !important; transform: translate(-50%, -30px); }
+}
+@keyframes cbCalmFade { 0%, 40% { opacity: 1; } 100% { opacity: 0; } }
