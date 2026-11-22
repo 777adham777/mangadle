@@ -551,11 +551,11 @@ const ECHOES = [
   defItem('ancient_gravity_bracer', 'Ancient Gravity Bracer', '⭕', 130000, eq('accessory', { atk: 230, def: 100, hp: 1100 }));
 
   SKILLS.archaeology = { name: 'Archaeology', realm: 'echo', icon: '⛏️', type: 'gather',
-    desc: 'Dig one site in every world. Fragments, that world\'s materials, and rare Stand Arrow Shards.' };
+    desc: 'Dig one site in every world. Each site is an 8×8 excavation grid: every dig opens a square, and a grid hides caches, relics, a Stand Arrow Shard and one Intact find. Clear it for Echo Dust and a fresh grid.' };
   SKILLS.restoration = { name: 'Restoration', realm: 'echo', icon: '🏺', type: 'craft',
-    desc: 'Restore artifacts for permanent museum bonuses, and rebuild ancient versions of iconic gear.' };
+    desc: 'Restore artifacts for permanent museum bonuses (a Flawless one counts ×1.5, and you can retry until it is), and rebuild ancient versions of iconic gear.' };
   SKILLS.bonding = { name: 'Echo Bonding', realm: 'echo', icon: '👤', type: 'bond',
-    desc: 'Awaken an Echo, a spirit that stands beside you. It runs a second activity in parallel and grows as your bond deepens.' };
+    desc: 'Awaken an Echo, a spirit that stands beside you. It runs a second activity in parallel and grows as your bond deepens. Communing builds resonance: at 100% your Echo works three times as fast for a minute.' };
   const D = (item, level, time, name, extra) => Object.assign(gather(item, level, time), { name, extra });
   SKILLS.archaeology.actions = [
     D('clay_fragment', 1, 3.5, 'Dig: Sunken Wreck', [['tide_pearl', 0.03, [1, 1]], ['reef_bass', 0.3, [1, 2]], ['awakening_shard', 0.01, [1, 1]]]),

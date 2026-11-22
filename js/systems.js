@@ -512,8 +512,8 @@ hook('action', (skill, act) => {
   removeItem(o, count(o));
   if (!S.museum[o]) { S.museum[o] = 1; emit('artifact', o); dirty = true; }
 });
-hook('block', (skill, act) => { const o = act.out && Object.keys(act.out)[0]; return o && ARTIFACTS[o] && S.museum[o] ? 'In the museum. Already restored.' : ''; });
-const museumFx = (kind, realm) => Object.keys(S.museum).reduce((a, id) => { const A = ARTIFACTS[id]; return a + (A && A.kind === kind && (kind !== 'speed' || A.realm === realm) ? A.val : 0); }, 0);
+hook('block', (skill, act) => { const o = act.out && Object.keys(act.out)[0]; return o && ARTIFACTS[o] && S.museum[o] >= 2 ? 'In the museum, Flawless.' : ''; });
+const museumFx = (kind, realm) => Object.keys(S.museum).reduce((a, id) => { const A = ARTIFACTS[id]; return a + (A && A.kind === kind && (kind !== 'speed' || A.realm === realm) ? A.val * (S.museum[id] >= 2 ? 1.5 : 1) : 0); }, 0);   // Flawless (echo.js) counts x1.5
 hook('speed', (skill) => 1 + museumFx('speed', SKILLS[skill].realm));
 for (const k of ['dmg', 'hp', 'gold']) hook(k, () => 1 + museumFx(k));
 hook('xp', () => 1 + museumFx('xp'));

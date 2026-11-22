@@ -110,7 +110,8 @@ const qChance = (skill, act) => (qKind(skill) === 'shiny' ? shinyChance(skill, a
 // ready (owned but not logged yet: a claim log can take it), pay (the version handed in) }.
 function qEntries(skill) {
   const code = Q_CODE[qKind(skill)], claim = QUALITY[skill].claim, C = S.quality.claim;
-  return SKILLS[skill].actions.filter((a) => a.out).map((a) => {
+  const only = QUALITY[skill].only;
+  return SKILLS[skill].actions.filter((a) => a.out && (!only || only(Object.keys(a.out)[0]))).map((a) => {
     const base = Object.keys(a.out)[0], vid = variantId(base, code), n = S.quality.log[vid] || 0;
     const got = claim ? !!C[vid] : n > 0, pay = claim && !got ? qPay(base, vid) : null;
     return { act: a, base, vid, n, got, ready: !!pay, pay };
@@ -189,7 +190,7 @@ function toVariant(base, vid, n, gains) {
 hook('action', (skill, act, mult, gains) => {
   const out = act.out && Object.keys(act.out)[0];
   if (!out || !gains[out]) return;
-  const kind = qKind(skill);
+  const kind = QUALITY[skill] && QUALITY[skill].only && !QUALITY[skill].only(out) ? null : qKind(skill);
   const spice = typeof spiceFor === 'function' ? spiceFor(skill, out) : null;
   if (!kind && !spice) return;
   if (kind === 'shiny') {

@@ -297,3 +297,25 @@
 @media (prefers-reduced-motion: reduce) { .spot.sp-hunt .hn-far, .spot.sp-hunt .hn-near, .spot.sp-hunt .hn-prints, .hn-beast { animation: none !important; } }
 /* an icon inside a scene tag stays small */
 .spop.tag > .gi { width: 16px; height: 16px; display: block; fill: currentColor; margin-bottom: 2px; }
+
+
+/* ==========================================================================
+   Echo Quarter: the dig, the workshop, the Echo (echo-ui.js)
+   ========================================================================== */
+.dg-grid { position: absolute; z-index: 6; right: 12px; bottom: 10px; padding: 6px 8px; background: rgba(8, 10, 16, 0.7); border: 1px solid rgba(255, 255, 255, 0.16); pointer-events: none; }
+.dg-grid small { display: block; margin-bottom: 4px; font: 700 10px var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
+.dg-cells { display: grid; grid-template-columns: repeat(8, 12px); gap: 2px; }
+.dg-cells i { width: 12px; height: 12px; display: grid; place-items: center; background: #8a6a44; box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.35); }
+.dg-cells i.o { background: #3a2a1c; }
+.dg-cells i .gi { width: 10px; height: 10px; fill: #ffd75e; }
+.dg-cells i.o.relic .gi { fill: #9fd8ff; } .dg-cells i.o.shard .gi { fill: #f08cff; }
+.dg-cells i.o.intact { background: #6a4a10; box-shadow: 0 0 8px #ffd75e; }
+.dg-cells i.pop { animation: dgPop 0.5s ease-out; }
+@keyframes dgPop { 0% { transform: scale(1.8); filter: brightness(2); } 100% { transform: scale(1); } }
+.ec-slot { position: absolute; z-index: 1; width: 22%; aspect-ratio: 156 / 218; pointer-events: none; }
+.ec-ghost { width: 100%; height: 100%; opacity: var(--solid); animation: ecFloat 3s ease-in-out infinite alternate; filter: drop-shadow(0 0 10px var(--ec)) drop-shadow(0 0 24px var(--ec)) saturate(0.4) brightness(1.4); mix-blend-mode: screen; }
+.ec-ghost svg.avatar { width: 100%; height: 100%; }
+.spot.sp-bond.rush .ec-ghost { opacity: 1; animation: ecFloat 0.6s ease-in-out infinite alternate; filter: drop-shadow(0 0 14px var(--ec)) drop-shadow(0 0 40px var(--ec)) brightness(1.7); }
+@keyframes ecFloat { from { transform: translate(0, 0); } to { transform: translate(-4px, -10px); } }
+.spot .ec-pulse { animation: spFlicker 2s ease-in-out infinite alternate; }
+@media (prefers-reduced-motion: reduce) { .ec-ghost, .spot .ec-pulse { animation: none !important; } }
