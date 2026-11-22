@@ -986,7 +986,7 @@ on('renown', (d) => {
   if (d.level % 25 === 0) burst('Ascension unlocked', `${REALMS[d.realm].name} · ${ASC[d.level / 25].name} stages`, ic('realm', d.realm), rc(d.realm));
   else if (d.level % 10 === 0) toast(`${REALMS[d.realm].name} Renown ${d.level}: +3% speed, damage and defense there.`, 'rare');
 });
-on('goal', (g) => { burst('Objective complete', `${g.text} · +${fmt(g.reward)} gold`, ic('goal', GOALS.indexOf(g)), 'var(--gold)'); });
+on('goal', (g) => { burst('Quest complete', `${g.text} · +${fmt(g.reward)} gold`, ic('goal', GOALS.indexOf(g)), 'var(--gold)'); });
 
 /* =============================================================== unlock announcements */
 // New worlds get a full reveal; skills and menus get a banner. Waits for any open modal to close.
