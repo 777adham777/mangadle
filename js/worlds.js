@@ -233,9 +233,9 @@ const EXTRA_USES = [];
   for (const c of CROPS) EXTRA_SOURCES.push([c.id, 'skill', 'farming', `Farming · plant ${c.name} Seed (${c.mins} min)`, null]);
 
   SKILLS.gravity = { name: 'Gravity Training', realm: 'ki', icon: '💪', type: 'gather',
-    desc: 'Train under crushing gravity. Each level trains your energy disciplines 2% faster, grows your stamina, unlocks transformations and enlarges the Time Chamber.' };
+    desc: 'Train under crushing gravity. Every session strains your body; at 100% you break through your limit for good (+0.3% damage and max HP each). Levels train your disciplines faster, grow your stamina, unlock transformations and enlarge the Time Chamber.' };
   SKILLS.farming = { name: 'Farming', realm: 'ki', icon: '🌱', type: 'farm',
-    desc: 'Plant seeds on plots that grow in real time, even while you do something else. Crops feed buff meals and Senzu Beans.' };
+    desc: 'Plant seeds on plots that grow in real time, even while you do something else. Crops feed buff meals and Senzu Beans. A harvest can come up Giant (×3), and mutations leave seeds of the next crop.' };
   SKILLS.gravity.actions = [
     gather('ki_dust', 1, 3), gather('ki_spark', 10, 3.5), gather('ki_orb', 22, 4), gather('ki_core', 35, 4.5),
     gather('ki_flare', 50, 5), gather('ki_nova', 65, 5.5), gather('ki_star', 80, 6.5),
