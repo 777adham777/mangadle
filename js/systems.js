@@ -104,7 +104,7 @@ const reforgeCost = (id) => {
     if (!v || !gearOn()) return v;
     let m = 1 + 0.12 * g.tier;
     if (k === 'atk' && ITEMS[id].slot === 'weapon' && g.rel) m *= 1 + RELEASE[g.rel].atk;
-    return k === 'gold' ? v * m : Math.round(v * m);
+    return Number.isInteger(v) ? Math.round(v * m) : v * m;   // perks and other fractional stats keep their decimals
   };
 }
 function gemSum(k) {

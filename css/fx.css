@@ -112,3 +112,25 @@
 .rv-wrap.out { animation: rvOut 0.26s ease-in forwards; }
 @keyframes rvOut { to { opacity: 0; transform: scale(1.04); } }
 @media (prefers-reduced-motion: reduce) { .rv-wrap *, .rv-wrap *::before { animation-duration: 0.01s !important; animation-delay: 0s !important; } .rv-rays { opacity: 0.6; } }
+
+/* ==========================================================================
+   Combat builds (builds-ui.js)
+   ========================================================================== */
+.build-id { display: flex; align-items: center; gap: 10px; margin: 2px 0 8px; padding: 8px 10px; background: linear-gradient(90deg, rgba(255, 190, 70, 0.16), transparent); border-left: 3px solid var(--gold, #ffc04a); }
+.build-id > .gi { width: 30px; height: 30px; fill: var(--gold, #ffc04a); flex-shrink: 0; }
+.build-id b { display: block; font: 800 16px var(--display); }
+.build-id small { color: var(--dim); font-size: 12px; }
+.bsets { display: grid; gap: 8px; margin-top: 8px; }
+.bset { padding: 7px 9px; background: rgba(0, 0, 0, 0.22); border: 1px solid var(--line); }
+.bset.on { border-color: rgba(120, 230, 160, 0.5); }
+.bset-h { display: flex; justify-content: space-between; align-items: baseline; }
+.bset-h b { font: 700 13.5px var(--display); }
+.bset-h em { font-style: normal; font: 700 12px var(--display); color: var(--dim); }
+.bset.on .bset-h em { color: #7fe0a0; }
+.bset-p { display: flex; gap: 4px; margin: 5px 0; }
+.bset-p .tile.dim { opacity: 0.35; filter: grayscale(0.8); }
+.bset-b { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; font-size: 12px; color: var(--dim); }
+.bset-b li { display: flex; gap: 7px; }
+.bset-b li b { flex-shrink: 0; width: 16px; height: 16px; display: grid; place-items: center; font: 700 11px var(--display); background: rgba(255, 255, 255, 0.08); }
+.bset-b li.on { color: #d8ffe4; }
+.bset-b li.on b { background: #3fae6a; color: #06140b; }

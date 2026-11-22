@@ -624,7 +624,7 @@ VIEWS.hero = (tab) => {
   const slot = (s, label, icn) => {
     const id = S.equip[s];
     if (!id) return `<div class="eslot empty"><span class="tile r0"><span class="tile-art">${ui(icn)}</span></span><span class="es-t"><small>${label}</small><b class="muted">Empty</b></span></div>`;
-    if (s === 'weapon' && curArm()) return `<div class="eslot">${armTile(curArm())}<span class="es-t"><small>${label} · ${armTag(curArm())}</small><b>${ITEMS[id].name}</b><span class="es-st">${statInline({ atk: armAtk(curArm()) })}</span></span><button class="mini-btn" data-unequip="${s}" title="Unequip">${ui('close')}</button></div>`;
+    if (s === 'weapon' && curArm()) return `<div class="eslot">${armTile(curArm())}<span class="es-t"><small>${label} · ${armTag(curArm())}</small><b>${ITEMS[id].name}</b><span class="es-st">${statInline(Object.assign({}, ITEMS[id].stats, { atk: armAtk(curArm()) }))}</span></span><button class="mini-btn" data-unequip="${s}" title="Unequip">${ui('close')}</button></div>`;
     return `<div class="eslot">${tile(id, null, { tag: 'button', attrs: `data-sel="${id}"` })}<span class="es-t"><small>${label}</small><b>${ITEMS[id].name}</b><span class="es-st">${statInline(ITEMS[id].stats)}</span></span><button class="mini-btn" data-unequip="${s}" title="Unequip">${ui('close')}</button></div>`;
   };
   return `
@@ -636,6 +636,7 @@ VIEWS.hero = (tab) => {
         ${S.fruit ? `<div class="eslot fruit">${tile(S.fruit, null)}<span class="es-t"><small>Devil Fruit · rank ${fruitRank()}</small><b>${ITEMS[S.fruit].name}</b></span></div>` : ''}</div>
       ${hdr('Attributes')}
       ${attrList([['atk', 'Max hit', fmt(pMaxHit())], ['def', 'Defense', fmt(pDef())], ['hp', 'Max HP', fmt(pMaxHp())], ['spd', 'Attack speed', pSpeed().toFixed(1) + 's'], ['gold', 'Gold bonus', '×' + goldMult().toFixed(2)], ['xp', 'XP bonus', '×' + xpMult().toFixed(2)]])}
+      ${UIX.equipBottom ? uix('equipBottom') : ''}
     </section>
     <section class="win bag-win">
       <nav class="bag-tabs">${BAG_TABS.map(([k, icn, l]) => `<button class="${S.ui.bank === k ? 'on' : ''}${KINDS[k] ? ' k-' + k : ''}" data-bankf="${k}" title="${l}">${ui(icn)}<span>${l}</span></button>`).join('')}</nav>
