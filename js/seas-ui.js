@@ -471,6 +471,13 @@ UPD.push(() => {
       by = sp.bob[1] + Math.sin(t * 2.3) * 1.6 + (bite ? 3 + Math.sin(t * 28) * 2.4 * bite : 0) + (under ? 7 : 0);
     }
     if (prevU != null && prevU < 0.32 && u >= 0.32 && u < 0.5) spotPop('', sp.bob[0], sp.bob[1] + 2, 'splash', 700);
+    // a fish on the line (catch-fx.js): the line runs taut from the rod tip to its mouth, no bobber
+    const hk = typeof catchHook === 'function' ? catchHook() : null;
+    if (hk) {
+      g.innerHTML = `<path d="M${tx.toFixed(1)} ${ty.toFixed(1)} L${hk.x.toFixed(1)} ${hk.y.toFixed(1)}" fill="none" stroke="#eef4ff" stroke-width="1.5" opacity=".95"/>`
+        + (hk.under ? `<ellipse cx="${hk.x.toFixed(1)}" cy="${(sp.bob[1] + 4).toFixed(1)}" rx="${(10 + Math.sin(t * 20) * 3).toFixed(1)}" ry="3" fill="none" stroke="#fff" stroke-width="2" opacity=".8"/>` : '');
+      return;
+    }
     const sag = flying || under ? 4 : 26 - bite * 22;
     let s = `<path d="M${tx.toFixed(1)} ${ty.toFixed(1)} Q${((tx + bx) / 2 + (flying ? 0 : 10)).toFixed(1)} ${(Math.max(ty, by) + sag).toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}" fill="none" stroke="#eef4ff" stroke-width="1.2" opacity=".85"/>`;
     if (!flying) for (let i = 0; i < 3; i++) {
@@ -558,6 +565,7 @@ on('catch', (d) => {
   setLast('fishing', `<i class="sh-ic ${d.shiny ? 'shiny' : ''}">${itemIc(id)}</i><small>${d.record ? 'New record' : d.trophy ? 'Trophy catch' : 'Last catch'}</small><b>${esc(it.name)}</b><em>${fmtKg(d.kg)}</em>`);
   const el = spotNow();
   if (!el || el.dataset.spot !== 'fishing') return;
+  if (typeof catchShow === 'function' && catchShow(d)) return;   // the drawn catch (catch-fx.js)
   const sp = SPOT.fish || FISH_SPOTS[0], m = spotPx();
   const leap = spotPop(`<span class="tile-art">${itemIc(id)}</span>`, sp.bob[0], sp.bob[1] - 8, 'leap' + (d.shiny ? ' shiny' : ''), 1300);
   if (leap) { leap.style.setProperty('--tx', Math.round((214 - sp.bob[0]) * m) + 'px'); leap.style.setProperty('--ty', Math.round(-30 * m) + 'px'); leap.style.setProperty('--jy', Math.round(-120 * m) + 'px'); }

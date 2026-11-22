@@ -1,0 +1,56 @@
+/* ==========================================================================
+   TRI-REALM IDLE — big moments: the drawn catch and its showcase (catch-fx.js)
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- the drawn fish */
+.fs-fish { position: absolute; z-index: 3; aspect-ratio: 160 / 96; pointer-events: none; transform: translate(-50%, -50%); will-change: transform, left, top; }
+.fs-fish .fart { position: relative; z-index: 1; width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.45)); }
+.fs-fish.shiny .fart { filter: drop-shadow(0 0 6px #ffe27a) drop-shadow(0 0 14px rgba(255, 210, 63, 0.8)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.4)); }
+.fs-fish.big.hold .fart { filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 22px rgba(160, 230, 255, 0.85)); }
+.fs-fish.shiny.hold .fart { filter: drop-shadow(0 0 10px #fff6c8) drop-shadow(0 0 26px #ffd23f) drop-shadow(0 0 40px rgba(255, 150, 240, 0.6)); }
+.fs-fish.out { animation: fsOut 0.28s ease-in forwards; }
+@keyframes fsOut { to { opacity: 0; filter: brightness(2); } }
+.fs-fish .fa-lure { animation: fsLure 0.6s ease-in-out infinite alternate; }
+@keyframes fsLure { to { opacity: 0.5; } }
+
+/* light behind the fish at the top of its leap */
+.fs-rays { position: absolute; z-index: 0; left: 50%; top: 50%; width: 330%; aspect-ratio: 1; transform: translate(-50%, -50%) scale(0); opacity: 0; border-radius: 50%;
+  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.55) 0 7deg, rgba(255, 255, 255, 0) 7deg 20deg);
+  -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%); mask: radial-gradient(circle, #000 18%, transparent 68%); }
+.fs-fish.shiny .fs-rays { background: repeating-conic-gradient(from 0deg, rgba(255, 226, 122, 0.75) 0 6deg, rgba(159, 243, 255, 0.25) 6deg 11deg, rgba(255, 154, 240, 0) 11deg 20deg); }
+.fs-fish.hold .fs-rays { animation: fsRays 0.8s ease-out forwards; }
+@keyframes fsRays { 0% { transform: translate(-50%, -50%) scale(0.2) rotate(0); opacity: 0; } 25% { opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1) rotate(40deg); opacity: 0.9; } }
+
+/* ---------------------------------------------------------------- the fight */
+.spot.fs-fight > .spot-bg, .spot.fs-fight > .spot-av { animation: fsShake 0.09s linear infinite alternate; }
+@keyframes fsShake { from { transform: translate(-1.2px, 0.6px); } to { transform: translate(1.2px, -0.6px); } }
+.spot.fs-hold::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(ellipse at 42% 32%, transparent 20%, rgba(0, 0, 0, 0.42) 80%); animation: spFadeIn 0.2s; }
+.spot .spot-hud, .spot .fc-hud { transition: opacity 0.25s; }
+.spot.fs-hold .spot-hud, .spot.fs-hold .fc-hud { opacity: 0; }
+.spop.fs-glow { width: 16%; aspect-ratio: 3 / 1; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 255, 255, 0.7), rgba(160, 230, 255, 0.25) 45%, transparent 70%); animation: fsGlow 0.35s ease-in-out infinite alternate; }
+.spop.fs-glow.gold { background: radial-gradient(ellipse, rgba(255, 246, 200, 0.95), rgba(255, 210, 63, 0.5) 40%, transparent 70%); }
+@keyframes fsGlow { from { transform: translate(-50%, -50%) scale(0.8); opacity: 0.6; } to { transform: translate(-50%, -50%) scale(1.25); opacity: 1; } }
+.spop.fs-bang { font: 900 clamp(20px, 3.6vw, 38px) var(--display); color: #ffe14d; text-shadow: 0 0 2px #000, 0 3px 0 #6a4200, 0 0 18px rgba(255, 210, 63, 0.8); animation: fsBang 0.35s ease-in-out infinite alternate; }
+@keyframes fsBang { from { transform: translate(-50%, -50%) scale(0.9) rotate(-6deg); } to { transform: translate(-50%, -60%) scale(1.15) rotate(6deg); } }
+
+/* the burst: a column of water */
+.spop.fs-geyser { width: 9%; height: 52%; transform-origin: 50% 100%; translate: 0 -40%;
+  background: linear-gradient(to top, rgba(255, 255, 255, 0.95), rgba(220, 245, 255, 0.75) 40%, rgba(255, 255, 255, 0) 100%);
+  clip-path: polygon(30% 100%, 0 40%, 14% 30%, 22% 8%, 38% 22%, 50% 0, 62% 20%, 78% 6%, 86% 30%, 100% 42%, 70% 100%);
+  animation: fsGeyser 0.95s ease-out forwards; }
+.spop.fs-geyser.gold { background: linear-gradient(to top, rgba(255, 255, 255, 0.95), rgba(255, 226, 122, 0.8) 40%, rgba(255, 210, 63, 0) 100%); }
+@keyframes fsGeyser { 0% { transform: translate(-50%, -50%) scaleY(0.1) scaleX(0.6); opacity: 1; } 30% { transform: translate(-50%, -50%) scaleY(1) scaleX(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scaleY(0.7) scaleX(1.5); opacity: 0; } }
+
+/* the banner: what you caught and how heavy it is */
+.spop.fs-banner { display: flex; flex-direction: column; align-items: center; gap: 2px; animation: spBanner 2.6s ease-out forwards; z-index: 4; }
+.fs-banner .fsb-t { display: inline-flex; align-items: center; gap: 8px; font: 900 clamp(20px, 3.8vw, 40px) var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: #fff;
+  text-shadow: 0 0 2px #000, 0 3px 0 #1a3a5a, 0 0 22px rgba(160, 230, 255, 0.9); }
+.fs-banner .fsb-t .gi { width: 0.9em; height: 0.9em; fill: currentColor; display: inline-block; }
+.fs-banner.shiny .fsb-t { color: #ffe27a; text-shadow: 0 0 2px #3a2400, 0 3px 0 #6a4200, 0 0 24px rgba(255, 210, 63, 0.95); }
+.fs-banner .fsb-n { font: 700 clamp(12px, 1.6vw, 16px) var(--display); color: #fff; padding: 2px 10px; background: rgba(8, 10, 16, 0.62); border: 1px solid rgba(255, 255, 255, 0.2); }
+.fs-banner.shiny .fsb-n { border-color: #ffd75e; color: #ffe8a0; }
+.fs-banner .fsb-sub { display: flex; align-items: center; gap: 8px; }
+.fs-banner .fsb-sub > b { font: 800 clamp(15px, 2.4vw, 24px) var(--display); color: #fff; text-shadow: 0 2px 0 #000, 0 0 10px rgba(0, 0, 0, 0.6); font-variant-numeric: tabular-nums; }
+.fs-banner .fsb-sub small { font: 700 clamp(10px, 1.3vw, 13px) var(--display); color: #9fe6c8; text-shadow: 0 1px 0 #000; }
+
+@media (prefers-reduced-motion: reduce) { .spot.fs-fight > *, .fs-rays, .spop.fs-glow, .spop.fs-bang { animation: none !important; } }

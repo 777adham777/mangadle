@@ -109,6 +109,8 @@ hook('action', (skill, act, mult, gains) => {
 // Typical weight (kg) of each fish. Every catch rolls a size around it; mastery grows the fish a little.
 const FISH_KG = { minnow: 0.06, reef_bass: 1.4, sea_crab: 0.9, blue_marlin: 95, tidal_eel: 7, giant_octopus: 48, abyss_angler: 14, sea_king: 680 };
 function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
+// A catch this many times the usual weight is a trophy.
+const TROPHY_KG = 1.6;
 const fmtKg = (kg) => (kg >= 100 ? Math.round(kg) : kg >= 10 ? kg.toFixed(1) : kg >= 1 ? kg.toFixed(2) : kg.toFixed(3)) + ' kg';
 hook('action', (skill, act, mult, gains) => {
   if (skill !== 'fishing' || !act.out) return;
@@ -116,7 +118,9 @@ hook('action', (skill, act, mult, gains) => {
   if (!kg0) return;
   const shiny = !!gains[variantId(fish, 's')];
   const kg = kg0 * Math.exp(gauss() * 0.25 + masteryLv(skill, act.id) / 400) * (shiny ? 1.25 : 1);
-  const R = S.quality.rec, best = R[fish] || 0;
+  const R = S.quality.rec, best = R[fish] || 0, trophy = kg >= kg0 * TROPHY_KG;
   if (kg > best) R[fish] = Math.round(kg * 1000) / 1000;
-  emit('catch', { fish, kg, shiny, record: kg > best && best > 0, trophy: kg >= kg0 * 1.6 });
+  // A trophy is worth landing: it brings a second fish up with it and triple XP.
+  if (trophy) { addItem(fish, 1); gains[fish] = (gains[fish] || 0) + 1; addXp('fishing', act.xp * 2); S.stats.trophies = (S.stats.trophies || 0) + 1; }
+  emit('catch', { fish, kg, shiny, record: kg > best && best > 0, trophy });
 });
