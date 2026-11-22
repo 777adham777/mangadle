@@ -231,8 +231,8 @@ const GEM_TABLE = [['jade', 60], ['sapphire', 25], ['ruby', 12], ['void_diamond'
 const SKILLS = {
   woodcutting: { name: 'Woodcutting', realm: 'shinobi', icon: '🪓', type: 'gather', desc: 'Fell the trees around the hidden village. Logs become weapons and hafts, the undergrowth gives healing herbs, and wood patches the hulls of Orange Town ships.' },
   arts:      { name: 'Crafting',      realm: 'shinobi', icon: '🔨', type: 'craft',  desc: 'Turn wood, herbs and battle spoils into weapons, armor, healing pills and technique scrolls.' },
-  mining:    { name: 'Reishi Mining', realm: 'soul',    icon: '⛏️', type: 'gather', desc: 'Mine ore crystallized from pure spiritual particles. Gems hide in the rock.' },
-  smithing:  { name: 'Smelting',      realm: 'soul',    icon: '🔥', type: 'craft',  desc: 'Smelt Soul City ore over a wood fire into ingots. Crafting forges weapons and jewelry from them, and they refine your weapons.' },
+  mining:    { name: 'Reishi Mining', realm: 'soul',    icon: '⛏️', type: 'gather', desc: 'Mine ore crystallized from pure spiritual particles. Stay on a vein to dig deeper (more ore, more gems); a Mother Lode triples the next ores. Gems and Radiant ores hide in the rock.' },
+  smithing:  { name: 'Smelting',      realm: 'soul',    icon: '🔥', type: 'craft',  desc: 'Smelt Soul City ore over a wood fire into ingots for weapons and refinement. Keep the forge hot for speed and Pure ingots (half-cost refinement); at White Heat every smelt doubles.' },
   fishing:   { name: 'Fishing',       realm: 'seas',    icon: '🎣', type: 'gather', desc: 'Cast your line into the endless blue. Fruit eaters fish 40% slower.' },
   cooking:   { name: 'Cooking',       realm: 'seas',    icon: '🍳', type: 'craft',  desc: 'A good cook keeps the crew alive. Food heals in combat, and packed as provisions it brings back more from expeditions.' },
   voyaging:  { name: 'Voyaging',      realm: 'seas',    icon: '⛵', type: 'voyage', desc: 'Send ships on expeditions of 10 minutes to 8 hours. They sail while you do anything else and come back with gold, spices, relics and treasure.' },

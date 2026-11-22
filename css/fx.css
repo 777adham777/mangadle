@@ -198,3 +198,30 @@
 .sl-q li b { display: block; font-size: 13px; }
 .sl-q li span { color: var(--dim); font-style: italic; }
 .sc-txt.end { color: #ffe8a0; }
+
+
+/* ==========================================================================
+   Soul City: the mine and the forge (soul-ui.js)
+   ========================================================================== */
+.spot .mn-rock.hit { animation: wcShake 0.22s; }
+.spot .sx-flick { animation: spFlicker 0.9s ease-in-out infinite alternate; }
+.sx-meter { position: absolute; z-index: 6; left: 12px; bottom: 10px; display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(8, 10, 16, 0.66); border: 1px solid rgba(255, 255, 255, 0.14); pointer-events: none; }
+.sx-meter small { font: 700 10px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.62); }
+.sx-meter .sx-bar { width: clamp(70px, 12vw, 130px); height: 7px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
+.sx-meter .sx-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #6fb8ff, #bfe8ff); transition: width 0.25s; }
+.sp-forge .sx-meter .sx-bar i { background: linear-gradient(90deg, #c8341a, #ff8a2a, #ffd75e); }
+.sx-meter b { font: 700 12.5px var(--display); color: #fff; min-width: 34px; }
+.sx-meter.hot { border-color: #ffd75e; box-shadow: 0 0 14px rgba(255, 215, 94, 0.5); }
+.sx-meter.hot .sx-bar i { background: linear-gradient(90deg, #ffd75e, #fff6c8); }
+.sx-meter.hot b { color: #ffe08a; }
+.spot.sp-forge .fg-mouth { animation: spFlicker 0.5s ease-in-out infinite alternate; }
+.spot.sp-forge .fg-glowc { animation: spFlicker 1.3s ease-in-out infinite alternate; }
+.spot.sp-forge.white .fg-mouth { fill: #fff; filter: drop-shadow(0 0 12px #fff); }
+.spot.sp-forge.white .fg-glowc { fill: url(#fg-white); opacity: 0.8; }
+.spot.sp-forge.white::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: radial-gradient(ellipse at 78% 62%, rgba(255, 255, 255, 0.28), transparent 60%); animation: spFlicker 0.4s ease-in-out infinite alternate; }
+.spop.sx-raybox { width: 46%; aspect-ratio: 1; }
+.spop.sx-raybox .sx-rays { position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.6) 0 6deg, transparent 6deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 12%, transparent 66%); mask: radial-gradient(circle, #000 12%, transparent 66%); animation: sxRays 1.8s ease-out forwards; }
+.spop.sx-raybox.gold .sx-rays { background: repeating-conic-gradient(from 0deg, rgba(255, 226, 122, 0.8) 0 6deg, rgba(159, 243, 255, 0.3) 6deg 11deg, transparent 11deg 18deg); }
+@keyframes sxRays { 0% { transform: scale(0.2) rotate(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: scale(1) rotate(50deg); opacity: 0; } }
+@media (prefers-reduced-motion: reduce) { .spot .mn-rock.hit, .spot .sx-flick, .spot.sp-forge .fg-mouth, .spot.sp-forge .fg-glowc, .spop.sx-raybox .sx-rays { animation: none; } }

@@ -1565,6 +1565,7 @@ function drawAvatar(A, P, t, opt) {
   if (prop === 'rod' && backX) fig.push(back.hand);
   if (prop === 'axe') fig.push(axeSVG(grip, fa + P.g, t, P));
   if (prop === 'axe' && backX) fig.push(back.hand);   // the sliding hand wraps the haft
+  if (PROP_DRAW[prop]) { fig.push(PROP_DRAW[prop](grip, fa + P.g, t, P)); if (backX) fig.push(back.hand); }
   if (frontX || weapon || prop || P.tool) fig.push(front.hand);
   fig.push(G.over);
   let figS = fig.join('');
@@ -1766,6 +1767,9 @@ function axeSVG(hand, a, t, P) {
     + `<path d="M${pt(at(38, 2))} L${pt(at(54, 2))} Q${pt(at(60, 12))} ${pt(at(60, 24))} Q${pt(at(46, 30))} ${pt(at(30, 24))} Q${pt(at(32, 12))} ${pt(at(38, 2))}Z" fill="#cfd6e4" stroke="${OL}" stroke-width="2" stroke-linejoin="round"/>`
     + `<path d="M${pt(at(32, 22))} Q${pt(at(46, 27))} ${pt(at(59, 22))}" fill="none" stroke="#fff" stroke-width="1.6" opacity=".7"/>`;
 }
+// Other tools swung with both hands like the axe (pickaxe, smith's hammer...): prop id -> drawer(hand, angle, t, P).
+// Skill scenes register them (soul-ui.js).
+const PROP_DRAW = {};
 // A frying pan held by its handle: a shallow dish seen from above, tilted when it is flicked.
 // The food sits in it, or flies and spins above it (P.fd: [x, height, spin]).
 function panSVG(hand, a, t, P, food) {

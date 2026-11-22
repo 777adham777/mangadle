@@ -40,7 +40,7 @@ const Q_TIERS = {
     [1,    { hp: 0.1 },      '+10% max HP'],
   ],
 };
-const Q_OWN = { speed: 1, double: 1, xp: 1 };
+const Q_OWN = { speed: 1, double: 1, xp: 1, rare: 1 };
 
 /* ------------------------------------------------------------- variants */
 const variantId = (base, q, spice) => base + '~' + (q || 'n') + (spice ? '~' + spice : '');
@@ -146,6 +146,7 @@ const qOwn = (skill, k) => ((qBonus().own[skill] || {})[k] || 0);
 hook('speed', (skill) => 1 + qOwn(skill, 'speed'));
 hook('double', (skill) => qOwn(skill, 'double'));
 hook('xp', (skill) => 1 + qOwn(skill, 'xp'));
+hook('rare', (skill) => 1 + (skill ? qOwn(skill, 'rare') : 0));
 hook('hp', () => 1 + qFx('hp'));
 hook('heal', () => 1 + qFx('heal'));
 
