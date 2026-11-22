@@ -249,14 +249,15 @@ UIX.realmTop.push((realm, skill) => {
       const B = BEASTS[id], own = S.beasts[id], on = isCompanion(id), lv = beastLv(id);
       if (!own) return `<div class="beast unknown">${ic('beast', id)}<span><b>${B.name}</b><small>${REALMS[B.realm].name} · hunt at Hunting ${B.level} with a ${ITEMS[B.trap].name}</small></span><em>+${pct(B.base)} ${B.desc}</em></div>`;
       const nxt = lv < 20 ? 40 * lv * lv : 0, prog = lv < 20 ? (S.beasts[id].xp - 40 * (lv - 1) ** 2) / (nxt - 40 * (lv - 1) ** 2) : 1;
-      return `<div class="beast ${on ? 'on' : ''}" style="--rc:${rc(B.realm)}">${ic('beast', id)}<span><b>${B.name} · Lv ${lv}</b><small>+${pct(beastVal(id))} ${B.desc}</small>
+      const shiny = own.shiny, val = beastVal(id) * (shiny && typeof SHINY_BEAST_FX !== 'undefined' ? SHINY_BEAST_FX : 1);
+      return `<div class="beast ${on ? 'on' : ''} ${shiny ? 'shiny' : ''}" style="--rc:${rc(B.realm)}">${ic('beast', id)}<span><b>${shiny ? `${ui('shiny')}Shiny ` : ''}${B.name} · Lv ${lv}</b><small>+${pct(val)} ${B.desc}</small>
         <span class="pbar"><i style="width:${prog * 100}%"></i></span></span>
         <span class="bt-cta">${on ? gbtn('Active · rest', 'check', `data-companion="${id}"`, 'sm glow') : gbtn(companions().length >= n ? 'Swap in' : 'Make active', 'play', `data-companion="${id}"`, 'sm')}
         ${lv < 20 && count('beast_essence') ? gbtn(`Feed ×${Math.min(10, count('beast_essence'))}`, 'eat', `data-feed="${id}"`, 'dark sm') : ''}</span></div>`;
     }).join('')}</div>`;
 });
 UIX.actLines.push((skill, a) => {
-  if (a.beast) return `<div class="ac-note"><span>${ic('beast', a.beast)}${S.beasts[a.beast] ? 'Tamed · gives Beast Essence' : `Capture chance ${pct(captureChance(a))}`}</span></div>`;
+  if (a.beast) return `<div class="ac-note"><span>${ic('beast', a.beast)}${S.beasts[a.beast] ? (S.beasts[a.beast].shiny ? 'Shiny · gives Beast Essence' : 'Tamed · gives Beast Essence · its Shiny form 1/250') : `Capture chance ${pct(captureChance(a))} · Shiny 1/40`}</span></div>`;
   const it = a.out && ITEMS[Object.keys(a.out)[0]];
   if (it && it.type === 'trap') return `<div class="ac-note"><span>${ui('beast')}For: ${Object.values(BEASTS).filter((b) => b.trap === it.id || b.trap === Object.keys(a.out)[0]).map((b) => b.name).join(', ')}</span></div>`;
   if (it && it.type === 'bait') return `<div class="ac-note"><span>${ui('bait')}${SKILLS[it.baitFor].name}: +50% rare finds, +10% double</span></div>`;

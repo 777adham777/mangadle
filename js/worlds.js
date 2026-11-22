@@ -429,7 +429,7 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
   defItem('schem_star_badge', 'Schematic: Star Hunter Badge', '📜', 40000, schem('star_badge'));
 
   SKILLS.tracking = { name: 'Hunting', realm: 'hunter', icon: '🐾', type: 'gather',
-    desc: 'Follow the trails of beast families for their materials, wild seeds and game meat for Cooking, and hunt the beasts of every world with a trap to make them your companions.' };
+    desc: 'Follow the trails of beast families for their materials, wild seeds and game meat for Cooking: the scent builds with every run until you sight Prime Prey (×3, a Prime material). Hunt the beasts of every world with a trap to make them companions; a Shiny one gives 50% more.' };
   const TR = (item, level, time, name, extra) => Object.assign(gather(item, level, time), { name, extra: extra.concat([['game_meat', 0.25, [1, 2]]]) });
   SKILLS.tracking.actions = [
     TR('wild_fur', 1, 3, 'Rabbit Trails', [['seed_vital_bean', 0.03, [1, 1]], ['seed_sun_wheat', 0.02, [1, 1]]]),
