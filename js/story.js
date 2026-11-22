@@ -162,6 +162,12 @@ const questNpc = (i) => NPCS[chapterAt(i).cast[questOf(i).w] || chapterAt(i).cas
 function storyState() { if (!S.story) S.story = { seen: {}, done: {} }; return S.story; }
 
 // Claiming a quest also gives its items; the last quest of a chapter gives the chapter's reward.
+// Scrolls are read at once (they never sit in the bank); everything else goes to the bank.
+function storyGive(k, n) {
+  const it = ITEMS[k];
+  if (it && it.type === 'scroll') { for (let i = 0; i < n; i++) (it.tech ? gainTech(it.tech, 'Quest') : readScroll(it.pool, 'Quest')); return; }
+  addItem(k, n);
+}
 {
   const base = claimGoal;
   claimGoal = function () {
@@ -170,10 +176,10 @@ function storyState() { if (!S.story) S.story = { seen: {}, done: {} }; return S
     const i = S.goal, q = questOf(i), ch = chapterAt(i);
     base();
     if (S.goal === i) return;
-    for (const k in q.i) addItem(k, q.i[k]);
+    for (const k in q.i) storyGive(k, q.i[k]);
     if (i === chapterEnd(ch)) {
       const R = ch.reward;
-      for (const k in R.items) addItem(k, R.items[k]);
+      for (const k in R.items) storyGive(k, R.items[k]);
       const A = typeof avState === 'function' ? avState() : null;
       if (A) for (const [slot, id] of R.cos) A.got[slot + ':' + id] = 1;
       storyState().done[ch.id] = 1;

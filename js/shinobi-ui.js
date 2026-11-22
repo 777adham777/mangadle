@@ -190,3 +190,11 @@ on('action', (d) => {
   const pile = el.querySelector('[data-pile]');
   if (pile) pile.innerHTML = logPile(id);
 });
+// A Golden log (Shiny, leaf.js): the tree flashes gold.
+on('quality', (d) => {
+  if (d.skill !== 'woodcutting' || d.q !== 's') return;
+  const el = spotNow();
+  if (el && el.dataset.spot === 'woodcutting' && SPOT.wood && typeof sxBurst === 'function') sxBurst(el, SPOT.wood.hit[0] + 30, SPOT.wood.hit[1] - 30, true, 'Golden log!', ITEMS[d.item].name);
+});
+// Carvings sold abroad by a returning ship (leaf.js).
+on('tradesold', (d) => toast(`Your ship sold its carvings abroad: +${fmt(d.gold)} gold.`, 'good'));

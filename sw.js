@@ -1,6 +1,6 @@
 /* Service worker: makes the game installable and playable offline.
    Bump VERSION on every deploy so players get the new files. */
-const VERSION = 'tri-realm-v105';
+const VERSION = 'tri-realm-v106';
 const SHELL = [
   './',
   './index.html',
@@ -32,6 +32,7 @@ const SHELL = [
   './js/hex.js',
   './js/hunt.js',
   './js/echo.js',
+  './js/leaf.js',
   './js/foes.js',
   './js/builds.js',
   './js/story.js',

@@ -151,7 +151,7 @@ hook('kill', (e) => {
 const REF_INGOT = [[30, 'reishi_ingot'], [100, 'silver_ingot'], [300, 'frost_ingot'], [700, 'void_ingot'], [1500, 'black_ingot'], [4000, 'star_ingot'], [15000, 'sun_ingot'], [Infinity, 'rift_ingot']];
 const REF_GEM = { 4: 'jade', 7: 'ruby', 10: 'void_diamond' };
 function refCost(a) {
-  const next = a.ref + 1, ing = REF_INGOT.find((x) => ITEMS[a.id].value < x[0])[1], c = { [ing]: 2 + 2 * a.ref };
+  const next = a.ref + 1, ing = REF_INGOT.find((x) => ITEMS[baseOf(a.id)].value < x[0])[1], c = { [ing]: 2 + 2 * a.ref };
   if (REF_GEM[next]) c[REF_GEM[next]] = 1;
   return c;
 }
@@ -177,7 +177,7 @@ function refine(u) {
 const AWK = [null, { lv: 25, ref: 5, name: 'Awakening I' }, { lv: 50, ref: 10, name: 'Awakening II' }];
 const AWK_RELIC = 'husk_heart';
 function awkCost(a) {
-  const next = a.awk + 1, tier = RELEASE_COST.find((c) => ITEMS[a.id].value < c[0]), c = Object.assign({}, tier[next]);
+  const next = a.awk + 1, tier = RELEASE_COST.find((c) => ITEMS[baseOf(a.id)].value < c[0]), c = Object.assign({}, tier[next]);
   if (next === 2) c[AWK_RELIC] = (c[AWK_RELIC] || 0) + 3;
   return c;
 }

@@ -339,7 +339,7 @@ const CARVINGS = [
 ];
 for (const [id, name, log] of CARVINGS) {
   const tree = SKILLS.woodcutting.actions.find((a) => a.id === log);
-  defItem(id, name, '🪵', Math.round(ITEMS[log].value * 1.6), { type: 'trade', desc: `Carved from ${ITEMS[log].name}. A trade good: sell it at the Bank.` });
+  defItem(id, name, '🪵', Math.round(ITEMS[log].value * 1.6), { type: 'trade', desc: `Carved from ${ITEMS[log].name}. A trade good: ships take it as cargo and sell it abroad for 3× its value.` });
   SKILLS.arts.actions.push(craft(id, tree.level, tree.time, { [log]: 1 }));
 }
 SKILLS.arts.actions.sort((a, b) => a.level - b.level);

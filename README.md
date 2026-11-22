@@ -25,7 +25,11 @@ One character and one progression cross every world; each world adds activities 
 - **Foes with kits**: every enemy has a role, an element it is weak to (some resist one), a passive trait and signature moves (stuns, poison, bleed, burns, shields, heals, life steal); big moves are telegraphed and trigger your defensive techniques; bosses change phase at 66% and 33% HP; Elites and Alphas roll random affixes. Non-human foes are drawn creatures, humans are dressed stick figures
 - **Elites and mini-bosses** in every stage; **daily and weekly objectives** from every open world
 - **Collection Log** with items, pets, techniques, a bestiary and companions
-- **Shiny & Perfect** collection logs (Fishing, Cooking so far); offline progress (12 h, the rest fills the Time Chamber), autosave, installable PWA
+- **Story**: the objectives are quests in eight chapters (one per world, then the Rift), each with a guide drawn with the avatar rig; quests pay items, chapters pay gear, an outfit and a haircut
+- **Builds**: every piece of gear has a perk (criticals, wounds, life steal, thorns, execute, berserk, counters, opening strike, giant slayer, element techniques...), 12 sets of 2-3 pieces, and the Equipment window names your archetype
+- **Every skill has a scene and its own mechanic**: the woodcutting clearing, the fishing spots (drawn catches; shiny and big ones are fought and shown off), the galley, the Reishi mine (veins, Mother Lode), the soul forge (forge heat, White Heat, Pure ingots), the gravity chamber (strain, Breakthroughs), the living farm (Giant crops, mutations), the neon alley (graded curses up to Special Grade), the forest trail (scent, Prime Prey, Shiny beasts), the dig site (excavation grids), the museum workshop (Flawless restorations) and the Echo (resonance)
+- **Shiny & Perfect** collection logs on every skill that makes something; Epic and Legendary drops are revealed like a gacha pull and say what they are for
+- Offline progress (12 h, the rest fills the Time Chamber), autosave, installable PWA
 
 ## Run locally
 
@@ -80,6 +84,12 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `js/tasks.js`, `js/tasks-ui.js` | Daily / weekly objectives; extra Collection Log sections |
 | `js/weapons.js`, `js/weapons-ui.js` | Weapon copies: level, refinement, awakening, elements and families; weapon rack and forge panel |
 | `css/gdd.css` | Styles for the GDD rework (stats, techniques, disciplines, harbour, weapons) |
+| `js/builds.js`, `js/builds-ui.js` | Gear perks, sets, the build archetype; foe wounds and burns |
+| `js/story.js`, `js/story-ui.js` | Chapters, guides, quest lines and rewards; the quest tracker, chapter cards, story log |
+| `js/catch-fx.js`, `js/reveal.js` | Drawn fish and the big-catch showcase; the rare drop reveal |
+| `js/soul.js`, `js/kaio.js`, `js/hex.js`, `js/hunt.js`, `js/echo.js`, `js/leaf.js` | Each world's skill mechanics (DOM-free) |
+| `js/soul-ui.js`, `js/kaio-ui.js`, `js/hex-ui.js`, `js/hunt-ui.js`, `js/echo-ui.js` | Each world's skill scenes |
+| `css/fx.css` | Styles for the scenes, showcases, reveals, builds and story |
 | `docs/` | Game Design Document, audit, design decisions |
 | `js/quality.js` | Shiny & Perfect: variant items (shiny / perfect / seasoned, created on demand), quality rolls, logs and their set bonuses |
 | `js/seas.js` | Orange Town overhaul: seasonings and their battle buffs, where they drop, catch weights and records |
