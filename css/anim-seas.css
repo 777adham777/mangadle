@@ -1,0 +1,177 @@
+/* Animations — seas (2026-11-22 animation pass): Orange Town fishing, cooking, voyaging.
+   Loaded after every other stylesheet. Scene code: js/seas-ui.js (motion block), js/catch-fx.js. */
+
+/* ---------------------------------------------------------------- shared ambient */
+/* clouds drift, gulls glide and beat their wings */
+.spot .sp-clouds { animation: spCloudDrift 46s ease-in-out infinite alternate; }
+.spot .sp-clouds.storm { animation-duration: 14s; }
+@keyframes spCloudDrift { to { transform: translateX(46px); } }
+.spot .sp-gull { animation: spGullDrift 17s ease-in-out infinite alternate; }
+.spot .sp-gull path, .voy-birds svg path { transform-box: fill-box; transform-origin: 50% 100%; animation: spGullFlap 0.42s ease-in-out infinite alternate; }
+@keyframes spGullDrift { 0% { transform: translate(-26px, 4px); } 50% { transform: translate(8px, -7px); } 100% { transform: translate(30px, 2px); } }
+@keyframes spGullFlap { from { transform: scaleY(1); } to { transform: scaleY(-0.35); } }
+.spop.splash.sm { width: 5%; border-width: 1.5px; }
+
+/* ---------------------------------------------------------------- fishing */
+/* fish shadows cruising under the surface */
+.sp-shoal { position: absolute; z-index: 1; left: 30%; right: 0; top: 64%; height: 26%; pointer-events: none; overflow: hidden; }
+.sp-shoal i { position: absolute; left: 0; width: 100%; height: 22%; animation: spShoal 30s linear infinite; }
+.sp-shoal i::before { content: ''; position: absolute; left: 0; top: 0; width: 7%; height: 100%; border-radius: 50% 60% 60% 50% / 50%; background: radial-gradient(ellipse at 60% 50%, rgba(4, 20, 40, 0.34), rgba(4, 20, 40, 0.12) 70%, transparent 72%);
+  clip-path: polygon(0 10%, 22% 50%, 0 90%, 12% 50%, 0 10%, 30% 18%, 100% 30%, 100% 70%, 30% 82%); animation: spShoalTail 0.7s ease-in-out infinite alternate; }
+.sp-shoal i:nth-child(1) { top: 18%; }
+.sp-shoal i:nth-child(2) { top: 52%; animation-duration: 42s; animation-delay: -17s; }
+.sp-shoal i:nth-child(3) { top: 74%; animation-duration: 36s; animation-delay: -9s; animation-direction: reverse; }
+.sp-shoal i:nth-child(3)::before { transform: scaleX(-1); }
+.sp-shoal i:nth-child(2)::before { width: 5%; }
+.sp-shoal.abyss i::before { background: radial-gradient(ellipse at 60% 50%, rgba(111, 243, 255, 0.5), rgba(111, 243, 255, 0.12) 60%, transparent 72%); }
+@keyframes spShoal { 0% { transform: translate(-10%, 0); } 50% { transform: translate(45%, 8px); } 100% { transform: translate(100%, 0); } }
+@keyframes spShoalTail { to { clip-path: polygon(0 0, 22% 50%, 0 100%, 12% 50%, 0 0, 30% 18%, 100% 30%, 100% 70%, 30% 82%); } }
+/* a fish jumps far out (rare) */
+.spop.sp-jump { width: 2.2%; aspect-ratio: 2 / 1; --d: 1; animation: spJump 1.3s cubic-bezier(.3, .6, .6, 1) forwards; }
+.spop.sp-jump.flip { --d: -1; }
+.spop.sp-jump i { display: block; width: 100%; height: 100%; background: rgba(10, 30, 50, 0.7); clip-path: polygon(0 15%, 20% 50%, 0 85%, 30% 60%, 100% 50%, 30% 30%); transform: scaleX(calc(-1 * var(--d))); }
+@keyframes spJump {
+  0% { transform: translate(-50%, 0) rotate(calc(var(--d) * -55deg)); opacity: 0; }
+  12% { opacity: 0.85; }
+  50% { transform: translate(calc(-50% + var(--d) * 22px), -34px) rotate(0deg); }
+  88% { opacity: 0.85; }
+  100% { transform: translate(calc(-50% + var(--d) * 44px), 4px) rotate(calc(var(--d) * 60deg)); opacity: 0; }
+}
+.spot .bite-mark { font-size: 24px; }
+/* the catch flops on the boards before it is bagged */
+.fs-fish.out { animation: fsOut 0.28s ease-in forwards; }
+
+/* ---------------------------------------------------------------- cooking */
+.spot .sp-lantern { transform-box: view-box; transform-origin: 372px 30px; animation: spSway 3.6s ease-in-out infinite alternate; }
+.spot .sp-hang { transform-box: view-box; animation: spSway 4.4s ease-in-out infinite alternate; }
+@keyframes spSway { from { transform: rotate(-3.5deg); } to { transform: rotate(3.5deg); } }
+.spot .sp-flame { animation: spLampFl 0.6s ease-in-out infinite alternate; }
+@keyframes spLampFl { from { opacity: 0.8; } to { opacity: 1; } }
+.spot .sp-portsea { animation: spPortSea 3.5s linear infinite; }
+@keyframes spPortSea { from { transform: translate(0, 0); } 50% { transform: translate(-28px, 3px); } to { transform: translate(-56px, 0); } }
+.spot.on .steam { opacity: var(--steam, 1); }
+.steam i { animation-name: spSteam2; }
+@keyframes spSteam2 { from { transform: translate(0, 0) scale(0.5); opacity: 0; } 20% { opacity: 0.9; } 60% { transform: translate(8px, -100%) scale(1.15); } to { transform: translate(-6px, -170%) scale(1.6); opacity: 0; } }
+
+/* plating: the dish arcs from the pan to a plate on the counter */
+.spop.plate-arc { width: 6%; aspect-ratio: 1; animation: plX 0.56s linear forwards; }
+.spop.plate-arc > i { display: block; width: 100%; height: 100%; animation: plY 0.56s forwards; }
+@keyframes plX { from { transform: translate(-50%, -50%); } to { transform: translate(calc(-50% + var(--dx)), -50%); } }
+@keyframes plY {
+  0% { transform: translateY(0) rotate(0) scale(0.6); animation-timing-function: cubic-bezier(.2, .7, .4, 1); }
+  42% { transform: translateY(var(--jy)) rotate(200deg) scale(1); animation-timing-function: cubic-bezier(.6, 0, .9, .5); }
+  100% { transform: translateY(var(--dy)) rotate(360deg) scale(1); }
+}
+.spop.plated { width: 8%; aspect-ratio: 1; animation: plOut 2.1s forwards; }
+.spop.plated .pl-plate { position: absolute; left: -18%; right: -18%; bottom: -6%; height: 34%; border-radius: 50%; background: radial-gradient(ellipse at 50% 40%, #ffffff, #e4e8ee 55%, #a9b2c0 72%, #6b7484 74%); box-shadow: 0 3px 0 rgba(0, 0, 0, 0.35); animation: plPlate 0.3s cubic-bezier(.3, 1.6, .5, 1) both; }
+.spop.plated .tile-art { position: absolute; left: 12%; top: 0; width: 76%; height: 76%; animation: plLand 0.32s ease-out both; }
+.spop.plated.arc .tile-art { animation-delay: 0.52s; }
+.spop.plated.perfect .tile-art > .gi { fill: url(#gi-g5); filter: drop-shadow(0 0 8px #ffe27a); }
+.spop.plated.perfect::before { content: ''; position: absolute; left: 50%; top: 45%; width: 260%; aspect-ratio: 1; border-radius: 50%; transform: translate(-50%, -50%) scale(0); opacity: 0;
+  background: repeating-conic-gradient(rgba(255, 226, 122, 0.7) 0 8deg, rgba(255, 226, 122, 0) 8deg 22deg); -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%); mask: radial-gradient(circle, #000 20%, transparent 68%);
+  animation: plRays 1.5s ease-out 0.5s forwards; }
+.spop.plated:not(.arc).perfect::before { animation-delay: 0s; }
+.spop.plated .pl-steam { position: absolute; left: 20%; right: 20%; top: -40%; height: 60%; }
+.spop.plated .pl-steam b { position: absolute; bottom: 0; width: 30%; aspect-ratio: 1; border-radius: 50%; background: rgba(255, 255, 255, 0.5); filter: blur(3px); opacity: 0; animation: plSteam 1.1s ease-out 0.75s 2; }
+.spop.plated .pl-steam b:nth-child(1) { left: 0; } .spop.plated .pl-steam b:nth-child(2) { left: 35%; animation-delay: 0.95s; } .spop.plated .pl-steam b:nth-child(3) { left: 70%; animation-delay: 1.15s; }
+@keyframes plPlate { from { transform: scale(0.2); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes plLand { 0% { transform: translateY(-40%) scale(0.8); opacity: 0; } 1% { opacity: 1; } 55% { transform: translateY(6%) scale(1.25, 0.72); } 80% { transform: translateY(-4%) scale(0.92, 1.08); } 100% { transform: none; opacity: 1; } }
+@keyframes plSteam { from { transform: translateY(0) scale(0.5); opacity: 0; } 25% { opacity: 0.9; } to { transform: translate(4px, -150%) scale(1.5); opacity: 0; } }
+@keyframes plRays { 0% { transform: translate(-50%, -50%) scale(0.2) rotate(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1) rotate(90deg); opacity: 0; } }
+@keyframes plOut {
+  0%, 74% { transform: translate(-50%, -50%); opacity: 1; animation-timing-function: cubic-bezier(.5, 0, .8, .4); }
+  100% { transform: translate(calc(-50% + var(--hx, 0px)), calc(-50% + var(--hy, -60px))) scale(0.3); opacity: 0; }
+}
+
+/* ---------------------------------------------------------------- voyaging */
+/* the ship: rocked by js (roll + heave), billowing sails, a fluttering pennant */
+.sp-voy .ship { width: 16%; transition: none; z-index: 2; }
+.sp-voy .ship-bob { animation: none; transform-origin: 50% 82%; will-change: transform; }
+.sp-voy .ship .wake { display: none; }
+.ship .sl-main, .ship .sl-fore, .ship .sl-flag { transform-box: fill-box; }
+.ship .sl-main { transform-origin: 0% 60%; transform: scaleX(0.8) skewY(2deg); transition: transform 0.9s; }
+.ship .sl-fore { transform-origin: 100% 60%; transform: scaleX(0.82); transition: transform 0.9s; }
+.ship .sl-flag { transform-origin: 0% 50%; animation: vFlag 0.9s ease-in-out infinite alternate; }
+.spot.on .ship .sl-main { animation: vBillow 2.3s ease-in-out infinite alternate; }
+.spot.on .ship .sl-fore { animation: vBillowF 2.3s ease-in-out -0.6s infinite alternate; }
+.spot.on .ship .sl-flag { animation-duration: 0.28s; }
+@keyframes vBillow { from { transform: scaleX(0.97) skewY(-1deg); } to { transform: scaleX(1.07) skewY(1.5deg); } }
+@keyframes vBillowF { from { transform: scaleX(0.96); } to { transform: scaleX(1.06); } }
+@keyframes vFlag { from { transform: skewY(-12deg) scaleX(0.92); } to { transform: skewY(10deg) scaleX(1.04); } }
+.spot.voy-stormbelt.on .ship .sl-flag { animation-duration: 0.16s; }
+
+/* scenery sliding past while sailing: far islands, things on the water */
+.voy-far, .voy-mid { position: absolute; left: 0; width: 200%; z-index: 1; pointer-events: none; animation: vScroll 90s linear infinite paused; }
+/* the far strip fades out over the home port and the landfall, so the islands pass behind them */
+.voy-farw { position: absolute; z-index: 1; left: 0; right: 0; top: 36.25%; height: 18.75%; overflow: hidden; pointer-events: none;
+  -webkit-mask: linear-gradient(90deg, transparent 12%, #000 22%, #000 72%, transparent 80%); mask: linear-gradient(90deg, transparent 12%, #000 22%, #000 72%, transparent 80%); }
+.voy-far { top: 0; height: 100%; }
+.voy-mid { top: 59.4%; height: 15.6%; animation-duration: 30s; }
+.voy-far svg, .voy-mid svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.spot.on .voy-far, .spot.on .voy-mid { animation-play-state: running; }
+@keyframes vScroll { to { transform: translateX(-50%); } }
+.voy-mid .vb { transform-box: fill-box; transform-origin: 50% 100%; animation: vBob 2.4s ease-in-out infinite alternate; }
+@keyframes vBob { from { transform: translateY(-1.5px) rotate(-5deg); } to { transform: translateY(1.5px) rotate(5deg); } }
+.sp-voy.on .spot-wave.front { animation-duration: 6s; }
+.sp-voy.on .spot-wave.mid { animation-duration: 10s; }
+.spot.voy-stormbelt .spot-wave.front { animation-duration: 4s; }
+.spot .sp-whirl { animation: vWhirl 2s linear infinite; }
+@keyframes vWhirl { to { stroke-dashoffset: -120; } }
+
+/* weather */
+.voy-birds { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+.voy-birds i { position: absolute; left: 0; width: 100%; height: 5%; animation: vGullFly 19s linear infinite; }
+.voy-birds b { display: block; width: 3%; height: 100%; animation: vGullBob 2.6s ease-in-out infinite alternate; }
+.voy-birds svg { display: block; width: 100%; height: 100%; overflow: visible; }
+@keyframes vGullFly { from { transform: translateX(104%); } to { transform: translateX(-6%); } }
+@keyframes vGullBob { from { transform: translateY(-40%); } to { transform: translateY(60%); } }
+.voy-rain { position: absolute; inset: 0; z-index: 5; pointer-events: none; opacity: 0.55; background-size: 90px 90px; animation: vRain 0.42s linear infinite;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='90'%3E%3Cpath d='M20 0 l-5 16 M62 28 l-5 16 M38 56 l-5 16 M82 66 l-5 16 M6 42 l-5 16' stroke='%23cfe0ff' stroke-width='1.4' stroke-linecap='round'/%3E%3C/svg%3E"); }
+.voy-rain.far { opacity: 0.3; background-size: 50px 50px; animation-name: vRainF; animation-duration: 0.6s; }
+@keyframes vRain { to { background-position: -27px 90px; } }
+@keyframes vRainF { to { background-position: -15px 50px; } }
+.voy-flash { position: absolute; inset: 0; z-index: 5; pointer-events: none; background: #e6f0ff; opacity: 0; animation: vFlash 7s infinite; }
+@keyframes vFlash { 0%, 88%, 92.5%, 100% { opacity: 0; } 89%, 91% { opacity: 0.32; } 90% { opacity: 0.06; } }
+.voy-wisps { position: absolute; inset: 0; z-index: 3; pointer-events: none; }
+.voy-wisps i { position: absolute; width: 1.1%; aspect-ratio: 1; border-radius: 50%; background: #d4ffe8; box-shadow: 0 0 10px 4px rgba(158, 255, 208, 0.55); animation: vWisp 9s ease-in-out infinite alternate; }
+.voy-wisps i:nth-child(1) { left: 32%; top: 48%; } .voy-wisps i:nth-child(2) { left: 55%; top: 40%; animation-delay: -3s; animation-duration: 11s; }
+.voy-wisps i:nth-child(3) { left: 74%; top: 52%; animation-delay: -6s; } .voy-wisps i:nth-child(4) { left: 88%; top: 44%; animation-delay: -1.5s; animation-duration: 13s; }
+@keyframes vWisp { 0% { transform: translate(0, 0); opacity: 0.2; } 30% { opacity: 0.9; } 50% { transform: translate(-30px, -14px); opacity: 0.5; } 75% { opacity: 1; } 100% { transform: translate(18px, -26px); opacity: 0.15; } }
+.voy-shoot { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.voy-shoot i { position: absolute; width: 9%; height: 2px; background: linear-gradient(90deg, #fff, rgba(255, 184, 255, 0.6) 30%, transparent); border-radius: 2px; transform: rotate(-24deg); opacity: 0; animation: vShoot 7s ease-out infinite; }
+.voy-shoot i:nth-child(1) { left: 30%; top: 8%; } .voy-shoot i:nth-child(2) { left: 62%; top: 4%; animation-delay: -2.4s; animation-duration: 9s; } .voy-shoot i:nth-child(3) { left: 46%; top: 20%; animation-delay: -5s; animation-duration: 11s; }
+@keyframes vShoot { 0%, 80% { opacity: 0; transform: rotate(-24deg) translate(0, 0); } 82% { opacity: 1; } 92%, 100% { opacity: 0; transform: rotate(-24deg) translate(-160%, 0); } }
+.fogband.two { inset: 58% -20% 6%; animation-duration: 21s; animation-direction: alternate-reverse; opacity: 0.8; }
+
+/* landfall: a chest drops on the deck and bursts open, the cargo fans up out of it */
+.spop.voy-chest { width: 5.5%; aspect-ratio: 40 / 30; z-index: 3; animation: vChest 1.9s forwards; filter: drop-shadow(0 0 6px rgba(255, 210, 63, 0.6)) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
+.spop.voy-chest svg { display: block; width: 100%; height: 100%; overflow: visible; }
+.spop.voy-chest .vc-lid { transform-box: fill-box; transform-origin: 0% 100%; animation: vChestLid 1.9s forwards; }
+@keyframes vChest {
+  0% { transform: translate(-50%, -320%); opacity: 0; animation-timing-function: cubic-bezier(.5, 0, 1, .6); }
+  6% { opacity: 1; }
+  20% { transform: translate(-50%, -50%) scale(1.25, 0.75); animation-timing-function: ease-out; }
+  30% { transform: translate(-50%, -62%) scale(0.92, 1.1); }
+  38% { transform: translate(-50%, -50%) scale(1); }
+  84% { opacity: 1; transform: translate(-50%, -50%); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.8); }
+}
+@keyframes vChestLid { 0%, 26% { transform: none; } 34% { transform: rotate(-95deg); } 42%, 100% { transform: rotate(-70deg); } }
+.spop.voy-loot { width: 4.6%; aspect-ratio: 1; animation: vLoot 1.4s cubic-bezier(.2, .8, .3, 1) both; }
+@keyframes vLoot {
+  0% { transform: translate(-50%, -50%) scale(0.2); opacity: 0; }
+  30% { transform: translate(calc(-50% + var(--lx)), calc(-50% + var(--ly))) scale(1.15); opacity: 1; }
+  45% { transform: translate(calc(-50% + var(--lx)), calc(-50% + var(--ly))) scale(1); }
+  80% { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--lx)), calc(-50% + var(--ly) - 26px)) scale(0.9); opacity: 0; }
+}
+
+/* ---------------------------------------------------------------- calm */
+@media (prefers-reduced-motion: reduce) {
+  .spot .sp-clouds, .spot .sp-gull, .spot .sp-gull path, .voy-birds svg path, .voy-birds i, .voy-birds b, .sp-shoal i, .sp-shoal i::before,
+  .spot .sp-lantern, .spot .sp-hang, .spot .sp-flame, .spot .sp-portsea, .steam i,
+  .ship .sl-main, .ship .sl-fore, .ship .sl-flag, .voy-far, .voy-mid, .voy-mid .vb, .spot .sp-whirl, .voy-rain, .voy-flash, .voy-wisps i, .voy-shoot i,
+  .spop.plated, .spop.plated *, .spop.plated::before, .spop.voy-chest, .spop.voy-chest .vc-lid, .spop.voy-loot { animation: none !important; }
+  .voy-flash, .voy-shoot i, .voy-birds { display: none; }
+  .spop.voy-loot { transform: translate(calc(-50% + var(--lx)), calc(-50% + var(--ly))); }
+}

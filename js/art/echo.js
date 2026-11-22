@@ -5,8 +5,23 @@ const { S, F, L, H, SP, AURA, T, G, GL, lt, dk, mix, circ, ell, rect, poly, star
 const VERD = '#4fae96', GOLD = '#f0c040', BRONZE = '#b87a3a', CRACK = '#2a1c18';
 // Verdigris patches (list of [x,y,r])
 const verd = (pts) => pts.map(([x, y, r]) => F(ell(x, y, r, r * 0.7), VERD, 0.9)).join('');
-// "Menacing" katakana, the JoJo sound effect
-const GO = (x, y, s, c) => T(x, y, s, 'ゴ', c || '#c040e0', { stroke: '#1c1424', sw: 1.6 });
+const n = (v) => +v.toFixed(2);
+// "Menacing" katakana ゴ, the JoJo sound effect, drawn as an ink-edged stroke mark
+const GO = (x, y, s, c) => { const d = `M${n(x - s * 0.45)} ${n(y - s * 0.35)}H${n(x + s * 0.3)}V${n(y + s * 0.4)}H${n(x - s * 0.45)}M${n(x + s * 0.4)} ${n(y - s * 0.66)}l${n(s * 0.1)} ${n(s * 0.22)}M${n(x + s * 0.62)} ${n(y - s * 0.7)}l${n(s * 0.1)} ${n(s * 0.22)}`;
+  return L(d, ART_INK, n(s * 0.16 + 2.6)) + L(d, c || '#c040e0', n(s * 0.16)); };
+// 重 (weight) drawn as strokes, centred at x,y, size s
+const JU = (x, y, s, c, w) => L(`M${n(x - s * 0.42)} ${n(y - s * 0.4)}H${n(x + s * 0.42)}M${n(x - s * 0.3)} ${n(y - s * 0.2)}H${n(x + s * 0.3)}V${n(y + s * 0.2)}H${n(x - s * 0.3)}ZM${n(x - s * 0.3)} ${y}H${n(x + s * 0.3)}M${x} ${n(y - s * 0.52)}V${n(y + s * 0.4)}M${n(x - s * 0.48)} ${n(y + s * 0.4)}H${n(x + s * 0.48)}`, c, w);
+// Brush & Pick family: the pick runs bottom-left -> top-right, the brush (o.back) crosses behind it; tiers differ by material.
+const pickTool = (o) => ROT(-45, 32, 32, o.back)
+  + ROT(45, 32, 32,
+    S(rect(29, 18, 6, 42, 2), o.haft, { w: 2 }) + F(rect(32.6, 20, 1.8, 38), dk(o.haft, 0.3)) + (o.wrap || '')
+    + S('M12 17Q32 6 52 17L52 20.5Q42 16.5 37 21H27Q22 16.5 12 20.5Z', o.head)
+    + F('M37 21Q42 16.5 52 20.5V17Q46 13.5 40 12.5Z', dk(o.head, 0.3))
+    + S(rect(27, 11, 10, 12, 2), o.sock, { w: 1.8 }) + (o.gem || '')
+    + H('M15 17Q24 11.5 30 11Q23 14 16 18.5Z', 0.6));
+const brush = (handle, ferrule, hair) => S(rect(29.5, 30, 5, 26, 2), handle, { w: 2 }) + F(rect(32.4, 32, 1.6, 22), dk(handle, 0.3))
+  + S('M27 27L25 13Q32 10 39 13L37 27Z', hair, { w: 2 }) + L('M29.5 15V25M32 14V26M34.5 15V25', dk(hair, 0.4), 1.2)
+  + S(rect(27, 26, 10, 6, 1.5), ferrule, { w: 1.8 });
 Object.assign(ART, {
   // Clay Fragment: a curved terracotta sherd with a painted zigzag band.
   clay_fragment: S('M7 32Q20 17 40 15L56 22L51 33L43 47L30 51L13 45Z', '#c8744a')
@@ -19,6 +34,7 @@ Object.assign(ART, {
   bronze_fragment: S('M8 42A24 24 0 0 1 56 36L48 40L43 33L36 42L28 37L19 46Z', BRONZE)
     + L('M15 40A17 17 0 0 1 49 34', dk(BRONZE, 0.45), 1.6) + L('M22 38A10 10 0 0 1 42 34', dk(BRONZE, 0.45), 1.6)
     + [[18, 26], [26, 20], [36, 19], [45, 24]].map(([x, y]) => F(circ(x, y, 1.6), dk(BRONZE, 0.5))).join('')
+    + F('M49 22A24 24 0 0 1 56 36L48 40Q49 30 44 25Z', dk(BRONZE, 0.3))
     + verd([[14, 32, 4], [44, 30, 3.4], [30, 16, 2.6]])
     + H('M12 34Q16 22 28 17Q20 24 15 36Z', 0.5),
   // Jade Fragment: half of a carved jade ring disc, broken across.
@@ -34,7 +50,7 @@ Object.assign(ART, {
     + L(circ(31, 32, 15), dk('#f0c030', 0.35), 1.4)
     + S(star(31, 32, 10, 7, 10), '#e09a20', { w: 1.4 })
     + F(circ(28, 30, 1.4), '#7a4a10') + F(circ(34, 30, 1.4), '#7a4a10') + L('M28 35Q31 37 34 35', '#7a4a10', 1.3)
-    + S(circ(53, 11, 5), '#f0c030', { w: 1.8 })
+    + S('M50 7L57 8.5L55.5 15L50.5 13Z', '#f0c030', { w: 1.8 })
     + H('M16 24Q20 14 30 12Q22 18 19 28Z', 0.6),
   // Obsidian Fragment: a knapped black glass blade, flake scars and a violet sheen.
   obsidian_fragment: ROT(28, 32, 32,
@@ -49,7 +65,7 @@ Object.assign(ART, {
     + F('M44 14Q56 18 54 32Q58 44 46 52Q38 56 30 55Q46 44 44 14Z', dk('#5a5670', 0.35))
     + F(circ(26, 40, 3), dk('#5a5670', 0.4)) + F(circ(42, 22, 2.4), dk('#5a5670', 0.4))
     + S('M26 22L36 20L42 30L38 42L30 44L24 34Z', '#b8c8f0', { w: 1.8 })
-    + L('M26 22L38 42M36 20L28 36M42 30L24 34', '#ffffff', 1.1, 0.8)
+    + L('M26 22L38 42M36 20L28 36M42 30L24 34', '#ffffff', 1.2, 0.8)
     + H('M20 24Q22 18 28 16Q23 20 22 26Z', 0.45) + SP(38, 26, 4) + SP(50, 46, 2.6, '#c8d8ff'),
   // Pillar Fragment: a broken fluted column with a carved Aztec band.
   pillar_fragment: S(ell(32, 52, 22, 6), '#9a8c74', { w: 2 })
@@ -58,7 +74,7 @@ Object.assign(ART, {
     + L('M22 22V50M28 21V52M34 19V53M40 20V52', dk('#dccfb0', 0.3), 1.6)
     + S('M16 38Q32 43 48 38V45Q32 50 16 45Z', '#c86a3a', { w: 1.8 })
     + L('M19 41L22 44L25 42L28 45L31 43L34 46L37 43L40 45L43 42L46 43', '#3fb0a0', 1.4)
-    + L('M30 26L33 31L31 35', CRACK, 1.4) + H('M18 21L21 17V36H18Z', 0.45),
+    + L('M29 23L32 27L30 30L33 35', CRACK, 1.4) + H('M18 21L21 17V36H18Z', 0.45),
   // Stand Arrow Shard: the golden beetle-headed arrowhead, broken off its shaft.
   awakening_shard: AURA(32, 32, 30, '#ffd86a')
     + ROT(45, 32, 32,
@@ -74,7 +90,7 @@ Object.assign(ART, {
     + S('M6 54Q10 42 22 40Q30 34 40 38Q54 40 58 54Z', '#e88ad0')
     + F('M40 38Q54 40 58 54H44Q48 46 40 38Z', dk('#e88ad0', 0.25))
     + [[18, 48], [28, 44], [36, 50], [46, 46], [24, 52]].map(([x, y]) => F(circ(x, y, 1.4), '#fff4fc')).join('')
-    + GO(18, 22, 15) + GO(42, 15, 12) + GO(34, 30, 9, '#e060ff')
+    + GO(18, 22, 14) + GO(42, 14, 11) + GO(33, 30, 8, '#e060ff')
     + H('M12 50Q18 44 26 42Q18 47 15 52Z', 0.5) + SP(54, 30, 3),
   // Pillar Glyph: a square temple stone carved with a stepped spiral glyph.
   pillar_glyph: S('M11 9H50L55 15V54H16L9 48V11Z', '#b8a684')
@@ -111,7 +127,7 @@ Object.assign(ART, {
     + L('M18 19H46', '#a87a40', 1.2)
     + S(rect(6, 10, 8, 46, 3), '#7a4a2a') + S(rect(50, 10, 8, 46, 3), '#7a4a2a')
     + F(rect(6, 14, 8, 3), GOLD) + F(rect(6, 49, 8, 3), GOLD) + F(rect(50, 14, 8, 3), GOLD) + F(rect(50, 49, 8, 3), GOLD)
-    + L('M50 30Q56 36 54 44', '#c0392b', 2.2) + H('M15 16H44V18H15Z', 0.45),
+    + F(rect(40, 38, 6, 6, 1), '#c0392b', 0.85) + H('M15 16H44V18H15Z', 0.45),
   // Reaper's Hourglass: a lacquered hourglass of pale spirit sand, a hell butterfly resting.
   reaper_hourglass: S(rect(12, 6, 40, 7, 2), '#6a2a2a') + S(rect(12, 51, 40, 7, 2), '#6a2a2a')
     + L('M14 9.5H50M14 54.5H50', GOLD, 1.4)
@@ -119,14 +135,13 @@ Object.assign(ART, {
     + F('M23 18H41Q40 25 32 30Q24 25 23 18Z', '#8ad8ff') + F('M21 50Q22 42 32 40Q42 42 43 50Z', '#8ad8ff')
     + L('M32 31V42', '#8ad8ff', 1.4)
     + S(rect(13, 13, 4, 38, 1), '#4a1e1e', { w: 1.8 }) + S(rect(47, 13, 4, 38, 1), '#4a1e1e', { w: 1.8 })
-    + L('M48 20L50 26L48 30', '#e8c8a0', 1.2)
-    + S('M50 8Q44 2 42 8Q44 12 50 9Q56 4 58 8Q56 13 50 9Z', '#1e1426', { w: 1.4 }) + F(circ(45, 7, 1), '#c03a5a') + F(circ(55, 7, 1), '#c03a5a')
-    + H('M22 15H28Q26 22 30 27Q22 22 22 15Z', 0.6),
+    + H('M22 15H28Q26 22 30 27Q22 22 22 15Z', 0.6)
+    + S('M49 30Q42 22 40 27Q40 33 49 31.5ZM49 30Q56 22 58 27Q58 33 49 31.5Z', '#2a1e36', { w: 1.8 }) + F(circ(44, 27.5, 1.3) + circ(54, 27.5, 1.3), '#e03a5a'),
   // Ancient Gravity Seal: a mossy stone disc carved with 重 and ringed in gold.
   gravity_seal: S(circ(32, 32, 24), '#8e8c7c')
     + F('M44 12Q58 22 56 36Q52 52 36 56Q52 40 44 12Z', dk('#8e8c7c', 0.3))
     + L(circ(32, 32, 19), GOLD, 2)
-    + T(32, 33, 20, '重', '#2e2a24')
+    + JU(32, 33, 20, '#2e2a24', 2.4) + L('M27 18.5L37 16.5', '#2e2a24', 2.4)
     + L('M14 22L20 28L18 34M46 46L42 50', CRACK, 1.6)
     + F(ell(18, 46, 6, 3.5), '#5a9a4a', 0.9) + F(ell(46, 14, 4, 2.4), '#5a9a4a', 0.9)
     + H('M14 26Q18 14 30 10Q20 18 17 28Z', 0.4),
@@ -139,7 +154,7 @@ Object.assign(ART, {
     + S(ell(29, 31, 3, 2), '#d8203a', { w: 1.2 }) + S(ell(35, 31, 3, 2), '#d8203a', { w: 1.2 })
     + F(circ(27, 24, 1), '#140c14') + F(circ(37, 24, 1), '#140c14')
     + S(rect(8, 38, 48, 7, 1), '#9aa0ac', { w: 1.8 }) + L('M14 38V45M20 38V45M26 38V45M38 38V45M44 38V45M50 38V45', '#5a606c', 1.3)
-    + S(rect(27, 34, 10, 22, 1), '#f2e8cc', { w: 1.8 }) + T(32, 46, 8, '封', '#c0392b')
+    + S(rect(27, 34, 10, 22, 1), '#f2e8cc', { w: 1.8 }) + L('M32 37V53M29 41H35M29 47H35', '#c0392b', 1.5)
     + L('M20 16L18 22M46 30L42 34', '#c8b8e0', 1.2) + H('M15 12H40V14H15Z', 0.35),
   // The First Licence: the very first Hunter Licence, yellowed and cracked.
   first_licence: ROT(-10, 32, 32,
@@ -147,7 +162,6 @@ Object.assign(ART, {
     + F('M44 16H52Q56 16 56 20V44Q56 48 52 48H44Z', dk('#e2d098', 0.2))
     + S(circ(21, 32, 9), '#2a2a3a', { w: 2 })
     + L('M21 24V40M13 32H29', '#e2c060', 1.8) + L(circ(21, 32, 5), '#e2c060', 1.6)
-    + T(21, 32, 6, 'H', '#ffffff')
     + L('M34 24H50M34 30H48M34 36H50M34 42H44', '#8a7a50', 2)
     + F(ell(46, 22, 4, 2.4), '#a88a40', 0.5)
     + L('M40 16L37 24L42 30L38 38', CRACK, 1.4)
@@ -160,7 +174,7 @@ Object.assign(ART, {
     + L('M32 16V48M19 32H45', '#ff8a9a', 1.1, 0.8)
     + H(ell(26, 24, 4, 2.6), 0.8) + SP(46, 18, 3.6) + SP(16, 48, 2.6),
   // Ancient Fog Cleaver: the Mist's great blade, green with age, gold inlaid down the spine.
-  ancient_fog_cleaver: ROT(-40, 32, 32,
+  ancient_fog_cleaver: ROT(40, 32, 32,
     S('M24 4H46V40Q46 44 42 44H24Z', '#7aa898')
     + F('M40 4H46V40Q46 44 42 44H40Z', dk('#7aa898', 0.3))
     + verd([[30, 30, 3.4], [41, 37, 2.6], [28, 8, 2.4]])
@@ -175,25 +189,25 @@ Object.assign(ART, {
     + L('M23 8L32 30M41 8L32 30', '#1c1a22', 1.8) + L('M24 9L32 27M40 9L32 27', GOLD, 1.3)
     + S(rect(18, 32, 28, 6, 1), '#a8a4b4', { w: 1.8 })
     + F(ell(24, 46, 3.5, 2.2), '#6a6878') + F(ell(13, 20, 2.6, 1.8), '#6a6878')
-    + L('M10 13L4 31M54 13L60 31', GOLD, 1.2) + H('M12 16L20 11L17 24Z', 0.25),
+    + L('M10 13L4 31M54 13L60 31', GOLD, 1.2) + H('M12 16L20 11L17 24Z', 0.45),
   // Ancient Stormcaller: a Clima-Tact of green bronze, its three weather orbs cracked and faded.
   ancient_stormcaller: TR('translate(3 -3)', ROT(45, 32, 32,
     S(rect(28, 6, 8, 54, 4), '#6aa08a')
     + verd([[32, 10, 2.4], [32, 56, 2.4]])
     + [[6, '#c86a4a'], [24, '#5a9ac8'], [42, '#d8c060']].map(([y, c]) => S(rect(25, y + 2, 14, 3.4, 1.2), GOLD, { w: 1.6 }) + S(circ(32, y + 10, 6.6), c, { w: 2 }) + H(ell(30, y + 8, 2, 1.3), 0.7)).join('')
     + L('M35 13L31 18M35 31L30 36M34 49L31 53', CRACK, 1.4)))
-    + L('M12 8L8 16L14 17L9 26', '#ffe46a', 2.4) + L('M12 8L8 16L14 17L9 26', '#ffffff', 1),
+    + L('M12 8L8 16L14 17L9 26', ART_INK, 4.6) + L('M12 8L8 16L14 17L9 26', '#ffe46a', 2.2),
   // Ancient Gravity Bracer: a weighted wristband of verdigris bronze, gold-inlaid, cracked.
   ancient_gravity_bracer: S('M10 24V42Q32 54 54 42V24Z', BRONZE)
     + F('M42 26H54V42Q49 46 42 48Z', dk(BRONZE, 0.3))
     + S(ell(32, 24, 22, 8), '#9a6a34', { w: 2.2 }) + S(ell(32, 24, 15, 4.6), '#3a2418', { w: 1.6 })
     + L('M10 34Q32 46 54 34', GOLD, 2) + L('M10 39Q32 51 54 39', GOLD, 1.2)
-    + S(rect(26, 31, 12, 12, 1.5), '#e8dcc0', { w: 1.6 }) + T(32, 37, 9, '重', '#2a1a10')
+    + S(rect(25.5, 30.5, 13, 13, 1.5), '#e8dcc0', { w: 1.8 }) + JU(32, 37, 9, '#2a1a10', 1.2)
     + verd([[16, 32, 3], [48, 30, 2.6], [20, 44, 2.4]])
     + L('M44 30L42 37L45 42', CRACK, 1.4)
     + H('M13 28Q18 34 24 36Q16 36 13 32Z', 0.45),
   // Stone Mask: the Aztec stone mask, fanged and staring, bone spikes ready to spring.
-  stone_mask: [[-60, 20], [-32, 14], [0, 11], [32, 14], [60, 20]].map(([a, h]) => ROT(a, 32, 34, S(`M29 ${34 - 20}L32 ${34 - 20 - h}L35 ${34 - 20}Z`, '#e8e0cc', { w: 1.6 }))).join('')
+  stone_mask: [[-62, 9], [-31, 10], [0, 10], [31, 10], [62, 9]].map(([a, h]) => ROT(a, 32, 34, S(`M29 ${34 - 20}L32 ${34 - 20 - h}L35 ${34 - 20}Z`, '#e8e0cc', { w: 1.6 }))).join('')
     + S('M14 28Q14 12 32 12Q50 12 50 28Q50 44 42 52Q36 58 32 58Q28 58 22 52Q14 44 14 28Z', '#b8b0a0')
     + F('M42 14Q50 20 50 28Q50 44 42 52Q36 58 32 58Q44 42 42 14Z', dk('#b8b0a0', 0.25))
     + S('M17 26Q24 21 30 26Q24 30 17 26Z', '#1c1424', { w: 1.6 }) + S('M34 26Q40 21 47 26Q40 30 34 26Z', '#1c1424', { w: 1.6 })
@@ -209,7 +223,7 @@ Object.assign(ART, {
     + F('M42 12Q50 10 56 16L54 28L46 26V54Q42 56 38 57Q46 40 42 12Z', dk('#f0c860', 0.3))
     + S('M8 16Q14 10 22 12L20 24L10 28Z', '#3fb4a4', { w: 1.8 }) + S('M56 16Q50 10 42 12L44 24L54 28Z', '#3fb4a4', { w: 1.8 })
     + S(star(32, 34, 12, 8, 12), '#e8862a', { w: 1.6 }) + S(circ(32, 34, 6), '#ffe07a', { w: 1.6 })
-    + F(circ(30, 33, 1), '#7a3a10') + F(circ(34, 33, 1), '#7a3a10') + L('M30 36.5Q32 37.6 34 36.5', '#7a3a10', 1)
+    + F(circ(30, 33, 1), '#7a3a10') + F(circ(34, 33, 1), '#7a3a10') + L('M30 36.5Q32 37.6 34 36.5', '#7a3a10', 1.2)
     + L('M20 50Q32 55 44 50', '#3fb4a4', 2.2)
     + H('M20 18L26 17L22 34Z', 0.4) + SP(52, 46, 3),
   // Ripple Gloves: a leather glove crackling with golden Ripple (Hamon) waves.
@@ -230,26 +244,24 @@ Object.assign(ART, {
     + L('M14 43L18 39L22 43L26 39L30 43L34 39L38 43L42 39L46 43L50 39', '#3fb4a4', 1.8)
     + S(ell(32, 21, 4.5, 5), '#e01e3c', { w: 1.8 }) + H(ell(30.6, 19.4, 1.4, 1.2), 0.8)
     + H('M12 32H40V34H12Z', 0.4),
-  // Brush & Pick Mk I: a simple wooden trowel and a stubby brush.
-  tool_archaeology_1: ROT(-40, 32, 32, S(rect(29, 6, 6, 28, 2), '#c89a5a', { w: 2 }) + S('M27 34H37L36 44H28Z', '#e8dcc0', { w: 1.8 }) + L('M30 37V42M32 37V43M34 37V42', '#a8946a', 1.2))
-    + ROT(35, 32, 32, S(rect(29.5, 34, 5, 22, 2), '#9a6a3a', { w: 2 }) + S('M32 6L44 22L32 34L20 22Z', '#a8b0bc') + F('M32 6L44 22L32 34Z', dk('#a8b0bc', 0.25)) + H('M31 10L23 21L27 21Z', 0.5)),
+  // Brush & Pick Mk I: a plain iron pick on an ash haft, a stubby wooden brush.
+  tool_archaeology_1: pickTool({ haft: '#b88a52', head: '#a8b0bc', sock: '#8a929e', back: brush('#c89a5a', '#a8b0bc', '#e8dcc0') }),
   // Brush & Pick Mk II: a steel rock pick with a leather grip and a broad horsehair brush.
-  tool_archaeology_2: ROT(-38, 32, 32, S(rect(29, 6, 6, 26, 2), '#d8c8a0', { w: 2 }) + S(rect(27, 28, 10, 4, 1), '#c8a050', { w: 1.6 }) + S('M25 32H39L37 46H27Z', '#5a3a28', { w: 1.8 }) + L('M29 35V44M32 35V45M35 35V44', '#8a6a4a', 1.2))
-    + ROT(40, 32, 32,
-      S(rect(29.5, 16, 5, 42, 2), '#6a4a30', { w: 2 }) + L('M29.5 44L34.5 47M29.5 49L34.5 52M29.5 54L34.5 57', '#2a1a10', 1.4)
-      + S('M8 14Q32 6 56 14L56 16Q46 14 36 18H28Q18 14 6 18Z', '#c0c8d4')
-      + F('M36 18Q46 14 56 16V14Q48 11 40 11Z', dk('#c0c8d4', 0.3))
-      + S(rect(27, 10, 10, 10, 2), '#8a929e', { w: 1.8 }) + H('M10 14Q22 10 30 10Q22 12 12 15Z', 0.6)),
-  // Brush & Pick Mk III: a gold-inlaid expedition pick, a turquoise stone, and a brass magnifier.
-  tool_archaeology_3: AURA(32, 32, 30, '#ffd86a')
-    + ROT(40, 32, 32,
-      S(rect(29, 16, 6, 42, 2), '#3a2a3a', { w: 2 }) + L('M29 26H35M29 36H35M29 46H35', GOLD, 1.8)
-      + S('M6 15Q32 4 58 15L58 18Q46 14 37 19H27Q18 14 6 19Z', '#f0c850')
-      + F('M37 19Q46 14 58 18V15Q50 10 42 10Z', dk('#f0c850', 0.3))
-      + S(rect(26, 9, 12, 12, 2.5), '#e0a830', { w: 2 }) + S(circ(32, 15, 3), '#3fd0c0', { w: 1.4 })
-      + H('M9 15Q22 9 30 9Q22 12 11 16Z', 0.6))
-    + L('M11 31L4 40', '#1c1424', 5.5) + L('M11 31L4 40', '#c89a50', 2.6)
-    + F(circ(16, 24, 8), '#bfe8f4', 0.9) + L(circ(16, 24, 8), '#1c1424', 5.5) + L(circ(16, 24, 8), GOLD, 2.6)
-    + H(ell(13.5, 21.5, 2.6, 1.6), 0.8) + SP(54, 50, 3.5) + SP(52, 6, 2.6),
+  tool_archaeology_2: pickTool({ haft: '#6a4a30', head: '#c6ced8', sock: '#8a929e', back: brush('#8a5a3a', '#c8a050', '#7a5a40'),
+    wrap: L('M29 45L35 48M29 50L35 53M29 55L35 58', '#2a1a10', 1.4) }),
+  // Brush & Pick Mk III: a gold-inlaid expedition pick with a turquoise stone, and a brass magnifier.
+  tool_archaeology_3: AURA(32, 32, 30, '#ffd86a') + pickTool({ haft: '#3a2a3a', head: '#f0c850', sock: '#e0a830',
+    wrap: L('M29 31H35M29 41H35M29 51H35', GOLD, 1.8), gem: S(circ(32, 17, 3), '#3fd0c0', { w: 1.8 }) + H(ell(31, 16, 1.2, 0.8), 0.8),
+    back: S(rect(29.5, 30, 5, 26, 2), '#3a2a3a', { w: 2 }) + L('M29.5 41H34.5M29.5 49H34.5', GOLD, 1.6) + S(rect(29.5, 27, 5, 5, 1), GOLD, { w: 1.8 })
+      + S(circ(32, 18, 10), GOLD, { w: 2 }) + S(circ(32, 18, 7), '#bfe8f4', { w: 1.8 }) + F('M37 14A7 7 0 0 1 34 25A6 6 0 0 0 37 14Z', dk('#bfe8f4', 0.25)) + H(ell(29.5, 15.5, 2.6, 1.6), 0.75) })
+    + SP(12, 34, 3) + SP(42, 54, 2.2),
 });
+// size & placement pass: [scale, dx, dy], bounds checked by render
+const FIT = {
+  clay_fragment: [1, 0, -2.5], jade_fragment: [1, 0, 2], pillar_fragment: [1, 0, -2], awakening_shard: [1.12, 0, 1], echo_dust: [1, 0, 2],
+  lord_visage: [1, 0, 1], reaper_hourglass: [1, -2.5, 0], sealed_grimoire: [1, 0, -1.5], ancient_fog_cleaver: [0.95, -3.5, 1],
+  ancient_ferryman_robe: [0.93, 0, 0], ancient_stormcaller: [1, 0, 2.5], ancient_gravity_bracer: [1.1, 0, 0], sunlit_armor: [1, 0, -2],
+  echo_reliquary: [1, 0, -2], tool_archaeology_1: [1.06, -1.8, 1.8], tool_archaeology_2: [1.06, -1.8, 1.8], tool_archaeology_3: [1.06, -1.8, 1.8],
+};
+for (const [id, [k, dx, dy]] of Object.entries(FIT)) ART[id] = TR(`translate(${32 + dx} ${32 + dy}) scale(${k}) translate(-32 -32)`, ART[id]);
 })();

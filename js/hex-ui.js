@@ -1,10 +1,11 @@
 'use strict';
 /* ==========================================================================
    TRI-REALM IDLE — Shinjuku: the exorcism (hex.js is the engine)
-   A rainy neon alley at night. Your avatar gathers cursed energy, then throws a talisman
-   at the curse floating inside a sealing circle. Its grade hangs over it before the
+   A rainy neon alley at night. Your avatar gathers cursed energy, joins its hands in a seal,
+   then strikes the writhing curse in its sealing circle: a talisman, a palm of cursed energy
+   or a fan of three talismans (strong grades take a Black Flash and shake the alley). Its grade hangs over it before the
    fight (a Grade 1 is bigger and darker, a Special Grade burns red); when it falls it
-   dissolves into smoke and the next one rises.
+   is torn apart into rising smoke and the next one rises.
    Loaded after kaio-ui.js.
    ========================================================================== */
 
@@ -21,7 +22,28 @@ const CURSE_LOOK = {
 for (const k in CURSE_LOOK) CREATURES['Curse:' + k] = CURSE_LOOK[k];
 const HEX_BOX = { x: 110, y: 58, h: 194 };
 const CURSE_AT = [490, 186];
-POSE_DRIVE.exorcise = (u, t, B, calm) => keyPose([[0, POSES.meditate], [0.5, POSES.meditate], [0.62, POSES.windup], [0.72, POSES.strike, 'out'], [0.86, POSES.guard], [1, POSES.meditate]], u);
+// Three techniques, one per curse: a thrown talisman, a palm of cursed energy, a fan of three
+// talismans. Each starts the same way: energy gathered in meditation, then hands joined in a seal.
+const HXP = {
+  seal: { sh: 1, tw: 0.8, t1: 178, t2: 0, n: 2, h: 4, ht: 0, st: 0, aF: [40, 100], aB: [30, 110], lF: [22, -28], lB: [-20, 10], fF: 10, fB: -16, g: -150, dy: 8, bf: 1 },
+  wind: Object.assign({}, POSES.windup, { sh: 1 }),
+  throw: Object.assign({}, POSES.strike, { sh: 1, fx: '' }),
+  after: Object.assign({}, POSES.guard, { sh: 1, t1: 170, dy: 12 }),
+  charge: Object.assign({}, GP.charge, { sh: 1 }),
+  palm: Object.assign({}, GP.palms, { sh: 1 }),
+  fan: Object.assign({}, POSES.strike, { sh: 1, fx: '', aF: [118, -6], t1: 170 }),
+};
+const HEX_TECH = [
+  [[0, POSES.meditate], [0.45, POSES.meditate], [0.55, HXP.seal, 'out'], [0.64, HXP.wind], [0.72, HXP.throw, 'out'], [0.8, HXP.throw], [0.9, HXP.after], [1, POSES.meditate]],
+  [[0, POSES.meditate], [0.45, POSES.meditate], [0.55, HXP.seal, 'out'], [0.64, HXP.charge], [0.72, HXP.palm, 'out'], [0.84, HXP.palm], [0.92, HXP.after], [1, POSES.meditate]],
+  [[0, POSES.meditate], [0.45, POSES.meditate], [0.55, HXP.seal, 'out'], [0.64, HXP.wind], [0.72, HXP.fan, 'out'], [0.8, HXP.fan], [0.9, HXP.after], [1, POSES.meditate]],
+];
+const HXS = { n: 0, v: null };
+POSE_DRIVE.exorcise = (u, t, B, calm) => {
+  if (HXS.v != null && u < HXS.v - 0.5) HXS.n++;
+  HXS.v = u;
+  return keyPose(HEX_TECH[HXS.n % 3], u);
+};
 DRIVE_SKILL.exorcise = ['exorcism', 3.5];
 POSES.exorcise = POSE_DRIVE.exorcise(0, 0, BODY, true);
 const HEX_THROW = 0.72;
@@ -80,46 +102,95 @@ UIX.realmScene.push((realm, skill) => (skill === 'exorcism' ? hexHTML() : ''));
     return base(skill);
   };
 }
-// The talisman in flight: from the hand to the curse.
-function talisSVG(k) {
-  const x0 = HEX_BOX.x + HEX_BOX.h * 0.62, y0 = HEX_BOX.y + HEX_BOX.h * 0.36, [x1, y1] = CURSE_AT;
-  const x = x0 + (x1 - x0) * k, y = y0 + (y1 - 20 - y0) * k - Math.sin(Math.PI * k) * 30, rot = k * 720;
+// The talisman in flight: from the hand to the curse (dy: a fanned one's offset).
+const talisAt = (k, dy) => {
+  const x0 = HEX_BOX.x + HEX_BOX.h * 0.62, y0 = HEX_BOX.y + HEX_BOX.h * 0.36, [x1, y1] = CURSE_AT, e = ease.out(k);
+  return [x0 + (x1 - x0) * e, y0 + (y1 - 20 - y0) * e - Math.sin(Math.PI * k) * (30 + (dy || 0)) + (dy || 0) * Math.sin(Math.PI * k) * 0.4];
+};
+function talisSVG(k, dy) {
+  const [x, y] = talisAt(k, dy), rot = k * 720;
   return `<g transform="translate(${x.toFixed(1)} ${y.toFixed(1)}) rotate(${rot.toFixed(0)})"><rect x="-6" y="-10" width="12" height="20" fill="#f4ecd0" stroke="#0a0c11" stroke-width="1.5"/><path d="M-3 -6 h6 M-3 -1 h6 M-2 4 h4" stroke="#c8341a" stroke-width="1.6"/></g>`
     + `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="14" fill="#c48cff" opacity=".35" filter="url(#sp-soft)"/>`;
 }
+const hexGi = () => ['g4', 'g3', 'g2', 'g1', 'sp'].indexOf(HEX().grade);
 UPD.push(() => {
   const el = spotNow();
   if (!el || el.dataset.spot !== 'exorcism') return;
-  const k = actFrac('exorcism'), av = el.querySelector('.spot-av svg.avatar'), g = el.querySelector('[data-spotfx]');
+  const k = actFrac('exorcism'), av = el.querySelector('.spot-av svg.avatar'), g = el.querySelector('[data-spotfx]'), r = Math.random;
   el.classList.toggle('on', k >= 0);
   setPose(av, k >= 0 ? 'exorcise' : '');
   if (!g) return;
+  const gi = Math.max(0, hexGi());
+  // the curse bleeds cursed smoke, more the stronger it is
+  if (r() < 0.08 + gi * 0.05) partAdd({ kind: 'wisp', x: CURSE_AT[0] + (r() - 0.5) * 70, y: CURSE_AT[1] + 10 + (r() - 0.5) * 40, vx: (r() - 0.5) * 14, vy: -26 - r() * 20, g: 0, life: 1.3, size: 4 + gi * 1.5, col: gi >= 4 ? '#5a0a14' : '#2a0f45', op: 0.5 });
   if (k < 0) { if (g.innerHTML) g.innerHTML = ''; SPOT.hexV = null; return; }
-  const u = driveU('exorcise', performance.now() / 1000), prev = SPOT.hexV;
+  const u = driveU('exorcise', performance.now() / 1000), prev = SPOT.hexV, tech = HXS.n % 3;
   SPOT.hexV = u;
-  // gathering energy: motes drift into the hands while meditating
-  if (u < 0.5 && Math.random() < 0.3) partAdd({ kind: 'star', x: HEX_BOX.x + 70 + (Math.random() - 0.5) * 120, y: HEX_BOX.y + 120 + (Math.random() - 0.5) * 60, vx: 0, vy: -20, g: 0, life: 0.8, size: 2.5, vr: 200, col: '#c48cff' });
-  // the talisman flies for the last part of the cycle
-  g.innerHTML = u >= HEX_THROW && u < 0.95 ? talisSVG((u - HEX_THROW) / (0.95 - HEX_THROW)) : '';
-  if (prev != null && prev < 0.95 && u >= 0.95) {
-    const c = el.querySelector('.hx-curse');
-    retrigger(c, 'hit');
-    partAdd({ kind: 'flash', x: CURSE_AT[0], y: CURSE_AT[1] - 20, life: 0.18, g: 0 });
-    for (let i = 0; i < 8; i++) partAdd({ kind: 'star', x: CURSE_AT[0], y: CURSE_AT[1] - 20, vx: (Math.random() - 0.5) * 220, vy: (Math.random() - 0.5) * 160, g: 0, life: 0.6, size: 3, vr: 300, col: '#e8d4ff' });
+  // gathering: cursed energy curls up around the meditating body, then flares in the joined hands
+  if (u < 0.5 && r() < 0.35) partAdd({ kind: 'wisp', x: HEX_BOX.x + 70 + (r() - 0.5) * 100, y: HEX_BOX.y + 160 + (r() - 0.5) * 30, vx: (r() - 0.5) * 10, vy: -40 - r() * 30, g: 0, life: 0.9, size: 4 + r() * 3, col: r() < 0.5 ? '#7a3cff' : '#3a1a8a', op: 0.6 });
+  if (u >= 0.5 && u < 0.72 && r() < 0.6) {
+    const hp = avPoint(av, HEX_BOX, 'aF');
+    if (hp) partAdd({ kind: 'wisp', x: hp[0] + (r() - 0.5) * 14, y: hp[1], vx: (r() - 0.5) * 20, vy: -60 - r() * 40, g: 0, life: 0.5, size: 5 + r() * 3, col: r() < 0.6 ? '#9a5cff' : '#e8d4ff', op: 0.8 });
   }
+  // the technique in flight for the last part of the cycle
+  const fly = u >= HEX_THROW && u < 0.95, kf = (u - HEX_THROW) / (0.95 - HEX_THROW);
+  if (!fly) g.innerHTML = '';
+  else if (tech === 1) {   // a palm of cursed energy: an orb that grows as it flies
+    const [x, y] = talisAt(kf, -30), rr = 9 + kf * 8;
+    g.innerHTML = `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${(rr * 1.9).toFixed(1)}" fill="#7a3cff" opacity=".35" filter="url(#sp-soft)"/><circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${rr.toFixed(1)}" fill="#1a0630" stroke="#c48cff" stroke-width="3"/><circle cx="${(x - 2).toFixed(1)}" cy="${(y - 2).toFixed(1)}" r="${(rr * 0.4).toFixed(1)}" fill="#e8d4ff" opacity=".8"/>`;
+    if (r() < 0.8) partAdd({ kind: 'wisp', x: x - 6, y, vx: -40, vy: (r() - 0.5) * 30, g: 0, life: 0.4, size: 4, col: '#7a3cff', op: 0.7 });
+  } else {
+    const fan = tech === 2 ? [-26, 0, 26] : [0];
+    g.innerHTML = fan.map((dy) => talisSVG(kf, dy)).join('');
+    if (r() < 0.7) { const [x, y] = talisAt(kf, 0); partAdd({ kind: 'wisp', x, y, vx: -30, vy: -10, g: 0, life: 0.35, size: 3.5, col: '#c48cff', op: 0.6 }); }
+  }
+  if (prev != null && prev < HEX_THROW && u >= HEX_THROW) { const hp = avPoint(av, HEX_BOX, 'aF'); if (hp) spotPop('', hp[0], hp[1], 'hx-ring', 500); }
+  if (prev != null && prev < 0.95 && u >= 0.95) hexImpact(el, gi, tech);
 });
+// The technique lands: a flash and a violet shock on the curse, cursed energy torn out of it;
+// stronger curses take a bigger, redder blow (and shake the alley). Now and then: a Black Flash.
+function hexImpact(el, gi, tech) {
+  const r = Math.random, [x, y] = [CURSE_AT[0], CURSE_AT[1] - 20], black = gi >= 3 || r() < 0.12;
+  retrigger(el.querySelector('.hx-curse'), 'hit');
+  partAdd({ kind: 'flash', x, y, life: 0.18 + gi * 0.03, g: 0 });
+  spotPop('', x, y, 'hx-shock' + (gi >= 4 ? ' sp' : ''), 650);
+  if (black) spotPop(crackleSVG(), x, y, 'hx-crackle', 520);
+  const n = 6 + gi * 3 + (tech === 2 ? 4 : 0);
+  for (let i = 0; i < n; i++) {
+    const a = r() * Math.PI * 2, v = 80 + r() * (120 + gi * 40);
+    partAdd({ kind: i % 2 ? 'wisp' : 'star', x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v * 0.7, g: 0, life: 0.5 + r() * 0.3, size: i % 2 ? 5 : 3, vr: 300, col: i % 2 ? (gi >= 4 ? '#8a0a1a' : '#2a0f45') : black ? '#ff4a5a' : '#e8d4ff', op: 0.8 });
+  }
+  if (gi >= 2) retrigger(el, 'thud');
+}
+// Red-and-black lightning around the point of impact (100 x 100 box).
+function crackleSVG() {
+  const r = Math.random;
+  let d = '';
+  for (let i = 0; i < 6; i++) {
+    const a = (i / 6) * Math.PI * 2 + r() * 0.5;
+    let x = 50, y = 50;
+    d += `M${x} ${y}`;
+    for (let k = 1; k <= 4; k++) { const rr = k * 11; x = 50 + Math.cos(a) * rr + (r() - 0.5) * 12; y = 50 + Math.sin(a) * rr + (r() - 0.5) * 12; d += ` L${x.toFixed(1)} ${y.toFixed(1)}`; }
+  }
+  return `<svg viewBox="0 0 100 100"><path d="${d}" fill="none" stroke="#0a0008" stroke-width="6" stroke-linejoin="round"/><path d="${d}" fill="none" stroke="#ff3a4a" stroke-width="2.6" stroke-linejoin="round"/><circle cx="50" cy="50" r="10" fill="#0a0008"/></svg>`;
+}
 // The curse falls: smoke, its loot, and the next one rises with its own grade.
 on('exorcised', (d) => {
   const id = Object.keys(d.act.out)[0], it = ITEMS[id], G = GRADE_BY[d.grade];
   setLast('exorcism', `<small>${esc(G.name)} exorcised</small><b>${esc(it.name)}</b><em>${fmt(familyCount(id))} owned</em>`);
   const el = spotNow();
   if (!el || el.dataset.spot !== 'exorcism') return;
-  const r = Math.random;
-  for (let i = 0; i < 10; i++) partAdd({ kind: 'puff', x: CURSE_AT[0] + (r() - 0.5) * 60, y: CURSE_AT[1] - 10 + (r() - 0.5) * 40, vx: (r() - 0.5) * 40, vy: -30 - r() * 30, g: 0, size: 6 + r() * 6, life: 1.2 });
+  const r = Math.random, gi = ['g4', 'g3', 'g2', 'g1', 'sp'].indexOf(d.grade);
+  // banishment: the curse is pulled apart into rising smoke, the seal under it flares
+  const c = el.querySelector('.hx-curse');
+  if (c) retrigger(c, 'banish');
+  spotPop('', CURSE_AT[0], 262, 'hx-sealflash' + (gi >= 4 ? ' sp' : ''), 800);
+  for (let i = 0; i < 8 + gi * 3; i++) partAdd({ kind: 'wisp', x: CURSE_AT[0] + (r() - 0.5) * 80, y: CURSE_AT[1] + (r() - 0.5) * 50, vx: (r() - 0.5) * 30, vy: -60 - r() * 60, g: 0, size: 5 + r() * 5, life: 0.9 + r() * 0.4, col: gi >= 4 ? '#5a0a14' : '#1a0a2a', op: 0.7 });
+  for (let i = 0; i < 6; i++) partAdd({ kind: 'puff', x: CURSE_AT[0] + (r() - 0.5) * 60, y: CURSE_AT[1] - 10 + (r() - 0.5) * 40, vx: (r() - 0.5) * 40, vy: -30 - r() * 30, g: 0, size: 6 + r() * 6, life: 1.2 });
   spotPop(`<span class="tile-art">${itemIc(id)}</span>`, CURSE_AT[0], CURSE_AT[1] - 30, 'dish', 1300);
   if (G.m > 1) spotPop(`<b>${esc(G.name)} · ×${G.m}</b>`, CURSE_AT[0], CURSE_AT[1] - 100, 'tag' + (G.m >= 3 ? ' gold' : ''), 1500);
   const slot = el.querySelector('.hx-slot');
-  if (slot) setTimeout(() => { if (slot.isConnected) { slot.innerHTML = curseHTML(d.act); retrigger(slot.firstElementChild, 'rise'); } }, 450);
+  if (slot) setTimeout(() => { if (slot.isConnected) { slot.innerHTML = curseHTML(d.act); retrigger(slot.firstElementChild, 'rise'); } }, 480);
 });
 on('gradeahead', (d) => {
   const el = spotNow();

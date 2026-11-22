@@ -2,211 +2,198 @@
 /* Item art — shared families: tools, scrolls, gems, chests, traps. See js/item-art.js for the helpers and style rules. */
 (() => {
 const { S, F, L, H, SP, AURA, T, G, GL, lt, dk, mix, circ, ell, rect, poly, star, ROT, TR } = ARTK;
+const n = (v) => +v.toFixed(2);
+// rotate every "x y" pair of an absolute M/L/Q/C path by a degrees around (cx,cy)
+const rd = (d, a, cx, cy) => { const c = Math.cos(a * Math.PI / 180), s = Math.sin(a * Math.PI / 180);
+  return d.replace(/(-?[\d.]+) (-?[\d.]+)/g, (_, x, y) => { x -= cx; y -= cy; return `${n(cx + x * c - y * s)} ${n(cy + x * s + y * c)}`; }); };
 
-/* ---- Technique scrolls: each world has its own support, drawn behind the technique's picture.
-   Leaf = unrolled jutsu scroll, Orange Town = wanted-poster parchment, Soul City = open black Kido book,
-   Kaio = Hoi-Poi capsule, Green Island = Nen card, Shinjuku = ofuda talisman. */
-const rollN = (x) => S(rect(x, 11, 8, 42, 3.5), '#b8402f', { w: 2 }) + F(rect(x + 1.4, 13, 2.2, 38, 1), '#ffffff', 0.35)
-  + S(rect(x + 1.5, 6.5, 5, 5, 1.6), '#5a3a22', { w: 1.6 }) + S(rect(x + 1.5, 52.5, 5, 5, 1.6), '#5a3a22', { w: 1.6 });
-const SUP = {
-  shinobi: () => S(rect(10, 15, 44, 34, 1), '#f3e3b8', { w: 2 }) + L('M16 20V44M48 20V44', '#a3824f', 1.4, 0.6) + rollN(4) + rollN(52),
-  seas: () => ROT(-5, 32, 32, S('M12 9H52V52H12Z', '#e8c98a', { w: 2 }) + F(rect(17, 13, 30, 3.5), '#6b4a2a', 0.75)
-    + S(rect(9, 49, 46, 8, 4), '#d4ad6a', { w: 2 }) + L('M14 53H50', dk('#d4ad6a', 0.3), 1.2) + S(rect(9, 4, 46, 7, 3.5), '#d4ad6a', { w: 2 })),
-  soul: () => ROT(-8, 32, 32, S(rect(14, 6, 42, 52, 2), '#f2eee6', { w: 2 }) + S(rect(9, 4, 42, 56, 3), '#2a2433')
-    + F(rect(12, 4, 4, 56), '#4a4060') + F('M40 6H49V15Z', '#c9b37a') + F('M40 58H49V49Z', '#c9b37a') + L(rect(19, 9, 28, 46, 1), '#6a5a8a', 1.2, 0.8)),
-  ki: () => ROT(-35, 32, 32, S(rect(2, 21, 60, 22, 11), '#f2f4f8') + S('M36 21H51A11 11 0 0 1 51 43H36Z', '#ff8a2a')
-    + F(rect(33, 21, 3, 22), '#9aa4b4') + H('M8 24H32V27H8Z', 0.6) + H('M38 24H52V27H38Z', 0.5)),
-  hunter: () => ROT(10, 32, 32, S(rect(13, 5, 38, 54, 4), '#f7f2e6', { w: 2 }) + L(rect(16.5, 8.5, 31, 47, 2.5), '#c0392b', 1.4)
-    + F('M20 10Q24 14 24 16Q24 19 20.6 18L21.5 21H18.5L19.4 18Q16 19 16 16Q16 14 20 10Z', ART_INK)
-    + F('M44 54Q40 51 40 48.5Q40 46.5 42 46.5Q43.5 46.5 44 48Q44.5 46.5 46 46.5Q48 46.5 48 48.5Q48 51 44 54Z', '#c0392b')),
-  hex: () => ROT(-18, 32, 32, S(rect(22, 3, 20, 58, 1), '#f4ecd6', { w: 2 }) + L(rect(24.5, 5.5, 15, 53, 0.5), '#c0392b', 1.2)
-    + S(circ(32, 10, 3.4), '#c0392b', { w: 1.4 }) + L('M28 48H36M32 46V57M28.5 52L35.5 55', '#c0392b', 1.8)),
-};
-const fist = (c, sh) => S('M13 26H52V44Q52 54 40 54H25Q13 54 13 44Z', c)
-  + S(rect(14, 16, 10, 16, 5), c) + S(rect(23, 14, 10, 17, 5), c) + S(rect(32, 14, 10, 17, 5), c) + S(rect(41, 16, 10, 16, 5), c)
-  + S('M14 35Q14 30 20 31H38Q43 33 39 38H22Q15 41 14 35Z', c, { w: 2 }) + L('M20 44Q32 48 46 42', sh, 1.4);
-const petal = (len, wd) => `M32 50Q${32 - wd} ${50 - len * 0.45} 32 ${50 - len}Q${32 + wd} ${50 - len * 0.45} 32 50Z`;
-const kunai = S('M32 6Q38 17 35.5 27H28.5Q26 17 32 6Z', '#d7dee8', { w: 2 }) + L('M32 10V24', '#ffffff', 1.2, 0.8)
-  + S(rect(27, 26, 10, 3.4, 1), '#3b4255', { w: 1.6 }) + S(rect(29.6, 29.4, 4.8, 13, 1), '#2b2f45', { w: 1.6 })
-  + L('M29.6 33L34.4 35M29.6 37L34.4 39', '#5b6080', 1.2) + S(circ(32, 45.5, 3.4), '#ffcf3f', { w: 1.8 }) + F(circ(32, 45.5, 1.5), '#2b2f45');
-const LEAF = 'M24 33Q28 26 34 28Q41 30 38 36Q35 41 30 37Q27 34 31 32M38 36L44 40';
-const chainRing = [0, 45, 90, 135, 180, 225, 270, 315].map((a, i) => ROT(a, 32, 25, i % 2
-  ? S(rect(28, 8.6, 8, 2.8, 1.4), '#e8b83a', { w: 1.6 })
-  : S(ell(32, 10, 6, 3.6), '#ffd45a', { w: 1.8 }) + F(ell(32, 10, 3, 1.2), '#5a3a10'))).join('');
-const chainDiag = [0, 1, 2, 3, 4, 5].map((i) => { const x = 13 + i * 6, y = 51 - i * 6; return ROT(-45, x, y, i % 2
-  ? S(rect(x - 4.5, y - 1.5, 9, 3, 1.5), '#9aa4b4', { w: 1.6 })
-  : S(ell(x, y, 5.4, 3.4), '#d7dee8', { w: 1.8 }) + F(ell(x, y, 2.8, 1.1), '#2b2f45')); }).join('');
-const trigram = [0, 45, 90, 135, 180, 225, 270, 315].map((a) => ROT(a, 32, 32, F(rect(28.5, 9, 7, 1.8), ART_INK) + F(rect(28.5, 11.8, 7, 1.8), ART_INK))).join('');
+/* ---- Technique scrolls: one base for all 33, an unrolled handscroll with rollers left and right.
+   The world shows in the paper, roller and border colours [paper, roller, border]; the technique is painted on the paper. */
+const W = {
+    shinobi: ['#f3e3b8', '#b8402f', '#a3824f'], seas: ['#ecd39a', '#8a5a32', '#8a5a32'], soul: ['#eeeaf4', '#2e2840', '#6a5a8a'],
+    ki: ['#e6eefa', '#ff8a2a', '#7a9cc8'], hunter: ['#eef5e4', '#2a8a5a', '#d4a03a'], hex: ['#f4ecd6', '#4a2a5a', '#c0392b'] };
+const B = (w) => { const [p, r, b] = W[w];
+  return S(rect(9, 13, 46, 38, 1), p, { w: 2 }) + F('M47 14H54V50H10V46.5H47Z', dk(p, 0.1)) + L(rect(14, 17, 36, 30, 1), b, 1.3, 0.6)
+    + S(circ(8, 7.5, 2.8) + circ(8, 56.5, 2.8) + circ(56, 7.5, 2.8) + circ(56, 56.5, 2.8), '#e0b04a', { w: 1.8 })
+    + S(rect(4, 9, 8, 46, 3.5) + rect(52, 9, 8, 46, 3.5), r, { w: 2 }) + H('M6 13H8V44H6ZM12 15H42V16.4H12Z', 0.45); };
+// a fist seen from the knuckles (Haki fist, Jajanken rock)
+const fist = (c) => S('M18 33H48V42Q48 50 39 50H27Q18 50 18 42Z', c) + F('M43 34H48V42Q48 50 39 50Q43 45 43 34Z', dk(c, 0.3))
+  + S(rect(18, 18, 8, 18, 4) + rect(25.5, 16, 8, 19, 4) + rect(33, 16, 8, 19, 4) + rect(40.5, 18, 7.5, 18, 3.7), c, { w: 1.8 })
+  + L('M19.5 27H24.5M27 26H32M34.5 26H39.5M42 27H46.5', dk(c, 0.35), 1.3)
+  + S('M18 43Q17 35 23 35L36 37Q40 39 37 42L27 44Q19 47 18 43Z', c, { w: 1.8 })
+  + H(ell(22, 20.5, 2, 1.1) + ell(29.5, 18.5, 2, 1.1) + ell(37, 18.5, 2, 1.1) + ell(44, 20.5, 2, 1.1), 0.6);
+// kunai pointing up from the ring at (32,45)
+const KB = 'M32 14Q36.5 22 34.6 30L29.4 30Q27.5 22 32 14Z', KG = 'M28 30L36 30L36 33L28 33ZM30.4 33L33.6 33L33.6 42L30.4 42Z';
+const petal = (len, wd) => `M32 47Q${32 - wd} ${n(47 - len * 0.45)} 32 ${47 - len}Q${32 + wd} ${n(47 - len * 0.45)} 32 47Z`;
 
 Object.assign(ART, {
-  /* --- random-technique scrolls: the support itself is the picture, with its world's emblem */
-  // Leaf Jutsu Scroll: the unrolled ninja scroll, Leaf symbol and a red seal stamp.
-  scroll_shinobi: SUP.shinobi() + L(LEAF, '#3b2a1a', 3.2) + H('M12 17H52V19H12Z', 0.4)
-    + S(rect(40, 38, 9, 8, 1), '#c0392b', { w: 1.4 }) + T(44.5, 42, 6, '忍', '#f3e3b8'),
-  // Grand Line Chart: a rolled sea map, rope tie, dotted route to a red X.
-  scroll_seas: ROT(-30, 32, 32, S(rect(6, 23, 52, 18, 9), '#e8c98a') + S(ell(52, 32, 5, 9), '#f4dca8', { w: 2 }) + L(ell(52, 32, 2.4, 4.5), '#b08a4a', 1.4)
-    + L('M10 36Q18 30 24 34', '#c0392b', 1.8) + L('M14 28L18 32M18 28L14 32', '#c0392b', 2.2)
-    + S(rect(30, 21, 7, 22, 2), '#a8683a', { w: 2 }) + H('M10 26H46V28H10Z', 0.45))
-    + S('M30 38Q24 46 20 50L25 51Q30 46 33 40Z', '#a8683a', { w: 1.6 }) + S('M34 40Q38 48 44 50L40 53Q34 48 32 41Z', '#a8683a', { w: 1.6 }),
-  // Kido Primer: the black spellbook of the Kido Corps with a Hell Butterfly on its cover.
-  scroll_soul: ROT(-10, 32, 32, S(rect(16, 9, 38, 46, 2), '#f2eee6', { w: 2 }) + S(rect(11, 7, 38, 50, 3), '#2a2433')
-    + F(rect(14, 7, 4, 50), '#4a4060') + F('M38 9H47V18Z', '#c9b37a') + F('M38 55H47V46Z', '#c9b37a')
-    + S('M32 30Q22 16 19 25Q19 31 31 32Q22 36 24 42Q28 44 32 34Q36 44 40 42Q42 36 33 32Q45 31 45 25Q42 16 32 30Z', '#9a5ae8', { w: 1.6 })
-    + F('M31 26H33V40H31Z', ART_INK) + H('M20 10H40V12H20Z', 0.3)),
-  // Hoi-Poi Capsule: a Capsule Corp capsule popping open in a puff of smoke.
-  scroll_ki: F(circ(48, 14, 8), '#e8eef5', 0.9) + F(circ(56, 22, 6), '#e8eef5', 0.9) + F(circ(42, 8, 5), '#e8eef5', 0.9)
-    + ROT(-35, 32, 34, S(rect(8, 24, 48, 20, 10), '#f2f4f8') + S('M34 24H46A10 10 0 0 1 46 44H34Z', '#ff8a2a')
-    + F(rect(31, 24, 3, 20), '#9aa4b4') + S(circ(18, 34, 3.6), '#ff8a2a', { w: 1.6 }) + T(26, 34.5, 10, '5', ART_INK) + H('M14 27H40V30H14Z', 0.6))
-    + SP(54, 8, 4) + SP(12, 52, 3),
-  // Greed Island Card: a spell card with its gem and the island in its picture window.
-  scroll_hunter: ROT(-14, 32, 32, S(rect(14, 7, 34, 50, 4), '#2a8a5a', { w: 2 }))
-    + ROT(8, 32, 32, S(rect(15, 5, 36, 52, 4), '#f7f2e6') + L(rect(18, 8, 30, 46, 2.5), '#d4a03a', 2)
-    + S(rect(21, 16, 24, 22, 2), '#5ab8ff', { w: 1.6 }) + S('M24 34Q26 26 33 25Q41 25 42 34Z', '#3f9a4a', { w: 1.6 })
-    + S(star(33, 22, 3, 1.4, 5), '#3f9a4a', { w: 1 }) + S(poly([33, 9], [36, 12], [33, 15], [30, 12]), '#d8402f', { w: 1.4 })
-    + T(26, 46, 8, 'SS', '#2a8a5a') + L('M34 44H44M34 48H42', '#a3824f', 1.4)) + SP(54, 10, 4),
-  // Cursed Ofuda: a talisman soaked in cursed energy, black nail marks across it.
-  scroll_hex: AURA(32, 32, 30, '#8a3ad8') + ROT(-10, 32, 32, S(rect(19, 4, 26, 56, 1.5), '#f4ecd6') + L(rect(22, 7, 20, 50, 0.5), '#c0392b', 1.4)
-    + S(circ(32, 13, 4), '#c0392b', { w: 1.4 }) + T(32, 33, 16, '呪', '#c0392b') + L('M28 48H36M32 46V55', '#c0392b', 2))
-    + F('M10 24L54 38L53 40.5L9 26.5Z', '#1c1424') + F('M12 32L52 46L51 48.5L11 34.5Z', '#1c1424'),
+  /* --- random-technique scrolls: the world's emblem painted on its scroll */
+  // Leaf Jutsu Scroll: the Leaf symbol brushed in ink and a red seal stamp.
+  scroll_shinobi: B('shinobi') + L('M21 33Q26 23 34 25Q44 27 41 36Q37 43 30 38Q26 34 31 31M41 36L48 42', '#3b2a1a', 3.4)
+    + S(rect(15, 38, 8, 8, 1), '#c0392b', { w: 1.8 }) + L('M17.5 40.5H20.5M19 40.5V44', '#f3e3b8', 1.3),
+  // Grand Line Chart: an island and a dotted route to a red X.
+  scroll_seas: B('seas') + S('M17 27Q19 19 27 21Q33 15 39 21Q45 23 43 29Q41 35 33 33Q25 37 19 33Q15 31 17 27Z', '#8cc060', { w: 1.8 })
+    + F('M39 21Q45 23 43 29Q41 35 33 33Q40 29 39 21Z', dk('#8cc060', 0.3)) + H(ell(24, 24.5, 3.5, 1.6), 0.5)
+    + L('M30 35Q30 42 37 42', '#8a3a1a', 1.8).replace('/>', ' stroke-dasharray="2 2.6"/>') + L('M40 37L46 43M46 37L40 43', '#c0392b', 2.6),
+  // Kido Primer: a Hell Butterfly, messenger of the Soul Society.
+  scroll_soul: B('soul') + S('M32 30Q22 16 19 25Q19 31 31 32Q22 36 24 42Q28 44 32 34Q36 44 40 42Q42 36 33 32Q45 31 45 25Q42 16 32 30Z', '#7a44d0', { w: 1.8 })
+    + F('M33 32Q42 36 40 42Q36 44 32 34ZM34 28Q42 18 45 25Q45 31 33 32Z', dk('#7a44d0', 0.3)) + F(ell(25, 25, 2.4, 1.8) + ell(39, 25, 2.4, 1.8), '#d0a8ff')
+    + F(rect(31, 24, 2, 16, 1), '#1c1424') + H(ell(23, 22.5, 2.4, 1.2), 0.5),
+  // Hoi-Poi Capsule: a Capsule Corp capsule.
+  scroll_ki: B('ki') + ROT(-35, 32, 32, S(rect(13, 25, 38, 14, 7), '#f6f8fb') + S('M37 25H44A7 7 0 0 1 44 39H37Z', '#ff8a2a')
+    + F(rect(35, 25, 2, 14), '#9aa4b4') + F('M14 35H35V38.5H18Q15 38 14 35Z', dk('#f6f8fb', 0.15)) + S(circ(21, 32, 2.6), '#ff8a2a', { w: 1.8 }) + H('M17 27.5H33V29.5H17Z', 0.6))
+    + SP(47, 19, 3, '#ffffff'),
+  // Greed Island Card: a spell card, its gem and the island in its picture window.
+  scroll_hunter: B('hunter') + ROT(8, 32, 32, S(rect(22, 15, 20, 34, 2.5), '#fbf6ea', { w: 2 }) + L(rect(24.5, 17.5, 15, 29, 1.5), '#d4a03a', 1.4)
+    + S(rect(26, 22, 12, 11, 1), '#5ab8ff', { w: 1.8 }) + S('M27 33Q28 27 32 27Q37 27 37 33Z', '#3f9a4a', { w: 1.8 })
+    + L('M26 38H38M26 42H35', '#a3824f', 1.4) + S('M32 15L35 18L32 21L29 18Z', '#d8402f', { w: 1.8 }) + H(rect(23.5, 22, 1.6, 14, 0.8), 0.5)),
+  // Cursed Ofuda: the seal mark torn by black claw slashes, cursed energy seeping out.
+  scroll_hex: B('hex') + L(circ(32, 30, 8) + 'M32 18V46M25 42H39', '#c0392b', 2.2)
+    + F('M15 20Q33 27 50 33Q33 30 15 20ZM14 27Q32 34 50 40Q32 37 14 27ZM15 34Q32 41 48 47Q32 44 15 34Z', '#2a1438'),
 
-  /* --- Leaf Village techniques: unrolled scroll + the jutsu */
-  // Shadow Clone Scroll: a ninja and his purple shadow clone, a slash behind them.
-  scroll_shadow_strike: SUP.shinobi() + L('M6 40Q28 6 58 12', '#ffffff', 3.4) + L('M6 40Q28 6 58 12', '#b06bff', 1.6)
-    + F(circ(24, 26, 9), '#8a5ae8', 0.5) + F('M8 56Q10 40 24 38Q38 40 40 56Z', '#8a5ae8', 0.5)
-    + S('M20 57Q21 41 36 39Q51 41 52 57Z', '#2a2c48') + S(circ(36, 27, 10), '#2a2c48')
-    + S(rect(25.5, 19, 21, 6, 1.5), '#c9d3df', { w: 1.6 }) + L('M46 22L55 17M46 23L54 28', '#2f4fb8', 2.4)
-    + F('M30 29.5H42L41 32H31Z', '#ffffff') + F(circ(33.5, 30.6, 1), '#d8402f') + F(circ(38.5, 30.6, 1), '#d8402f') + H(ell(28, 45, 4, 1.6), 0.3),
-  // Kunai Volley Scroll: three kunai fanned out with wind streaks.
-  scroll_kunai_volley: SUP.shinobi() + L('M10 30Q20 24 26 14M54 30Q44 24 38 14', '#bfe6ff', 2, 0.9)
-    + ROT(-32, 32, 52, kunai) + ROT(32, 32, 52, kunai) + kunai,
+  /* --- Leaf Village techniques */
+  // Shadow Clone Scroll: a ninja and his purple shadow clone.
+  scroll_shadow_strike: B('shinobi') + F(circ(25, 27, 7.5) + 'M13 49Q14 39 25 38Q36 39 37 49Z', '#8a5ae8', 0.5)
+    + S('M24 49Q25 38 37 37Q49 38 50 49Z', '#2a2c48') + F('M42 38Q49 39 50 49H45Q45 42 42 38Z', '#454a70') + S(circ(37, 27, 8.5), '#2a2c48')
+    + S(rect(27.5, 21, 19, 5, 1.5), '#c9d3df', { w: 1.8 }) + L('M46.5 23L52 19M46.5 24L51 28', '#2f4fb8', 2)
+    + F('M31 28.5H43L42 31H32Z', '#f2e8d8') + F(circ(34.5, 29.6, 0.9) + circ(39.5, 29.6, 0.9), '#d8402f') + H(ell(30, 42, 3.5, 1.4), 0.45),
+  // Kunai Barrage Scroll: three kunai fanned from one ring.
+  scroll_kunai_volley: B('shinobi') + L('M14 30Q19 25 21 19M50 30Q45 25 43 19', '#7ab8e8', 1.8)
+    + S(rd(KB, -30, 32, 45) + rd(KB, 30, 32, 45), '#d7dee8', { w: 2 }) + S(rd(KG, -30, 32, 45) + rd(KG, 30, 32, 45), '#2b2f45', { w: 1.8 })
+    + S(KB, '#d7dee8', { w: 2 }) + F('M32.6 17Q35 23 34 29H32.6Z', dk('#d7dee8', 0.2)) + S(KG, '#2b2f45', { w: 1.8 })
+    + S(circ(32, 45, 3.4), '#ffcf3f', { w: 1.8 }) + F(circ(32, 45, 1.4), '#2b2f45') + H('M31 19L30.4 27H31.6Z', 0.6),
   // Phoenix Flower Scroll: a lotus of fire.
-  scroll_fire_lotus: SUP.shinobi() + AURA(32, 34, 28, '#ff8a3a')
-    + ROT(-62, 32, 50, S(petal(28, 9), '#d8402f', { w: 2 })) + ROT(62, 32, 50, S(petal(28, 9), '#d8402f', { w: 2 }))
-    + ROT(-30, 32, 50, S(petal(36, 10), '#ff6a2a', { w: 2 })) + ROT(30, 32, 50, S(petal(36, 10), '#ff6a2a', { w: 2 }))
-    + S(petal(42, 11), '#ff9a2a', { w: 2 }) + F(petal(26, 5), '#ffe066') + S(ell(32, 51, 12, 4), '#8a2a1c', { w: 2 }) + SP(51, 13, 3.5),
+  scroll_fire_lotus: B('shinobi')
+    + S(rd(petal(24, 8), -62, 32, 47) + rd(petal(24, 8), 62, 32, 47), '#d8402f', { w: 2 })
+    + S(rd(petal(29, 9), -30, 32, 47) + rd(petal(29, 9), 30, 32, 47), '#ff6a2a', { w: 2 })
+    + S(petal(33, 10), '#ff9a2a', { w: 2 }) + F('M32 14Q42 32 32 47Q37 32 32 14Z', dk('#ff9a2a', 0.15)) + F(petal(20, 4.5), '#ffe066')
+    + S(ell(32, 47, 11, 3.4), '#8a2a1c', { w: 2 }) + H(ell(28.5, 28, 1.4, 4), 0.5),
   // Mystical Palm Scroll: a medical ninja's open hand glowing green.
-  scroll_healing_palm: SUP.shinobi() + AURA(32, 34, 28, '#7dff9a')
-    + S(rect(19.5, 16, 6, 20, 3), '#f2c39a', { w: 2 }) + S(rect(25.5, 10, 6.4, 24, 3.2), '#f2c39a', { w: 2 })
-    + S(rect(32, 11, 6.4, 24, 3.2), '#f2c39a', { w: 2 }) + S(rect(38.5, 15, 6, 22, 3), '#f2c39a', { w: 2 })
-    + ROT(-40, 20, 40, S(rect(15, 30, 6.5, 16, 3.2), '#f2c39a', { w: 2 }))
-    + S('M19 30H45V44Q45 52 34 52H30Q19 52 19 44Z', '#f2c39a') + S(rect(23, 50, 18, 8, 2), '#2f4fb8', { w: 2 })
-    + F(circ(32, 40, 7), '#7dff9a', 0.85) + L(circ(32, 40, 9.5), '#2f9f4a', 1.6) + SP(32, 40, 4.5) + SP(51, 13, 3),
-  // Hidden Mist Scroll: a mist cloud with fading ninja footsteps.
-  scroll_mist_step: SUP.shinobi()
-    + S('M8 46Q3 36 13 33Q13 21 25 23Q31 12 42 18Q54 15 55 28Q62 32 59 42Q57 50 46 50H16Q8 52 8 46Z', '#c9dbe8')
-    + F('M10 46Q14 41 22 43Q30 39 38 43Q46 39 57 43Q55 50 46 50H16Q10 50 10 46Z', dk('#c9dbe8', 0.22))
-    + L('M18 32Q24 26 30 30Q34 33 38 27', '#ffffff', 2, 0.85) + L('M34 40Q42 34 50 38', '#ffffff', 1.6, 0.7)
-    + L('M6 20Q14 12 22 18M44 10Q52 6 58 12', '#e8f2fa', 2.2, 0.9) + T(33, 36, 15, '霧', '#3a5a78', { stroke: '#e8f2fa', sw: 2 }),
+  scroll_healing_palm: B('shinobi')
+    + S(rect(21, 24, 5, 14, 2.5) + rect(26.5, 18, 5.4, 19, 2.7) + rect(32.3, 19, 5.4, 18, 2.7) + rect(38, 24, 5, 14, 2.5), '#f2c39a', { w: 1.8 })
+    + S('M23 41Q16 38 15 32Q15.5 29 18.5 30.5L24 36Z', '#f2c39a', { w: 1.8 }) + S('M21 34H43V42Q43 50 34 50H30Q21 50 21 42Z', '#f2c39a')
+    + F('M39 35H43V42Q43 50 34 50Q39 46 39 35Z', dk('#f2c39a', 0.25)) + H(rect(27.8, 20.5, 1.6, 9, 0.8), 0.5)
+    + F(circ(32, 41, 5.5), '#7dff9a', 0.85) + L(circ(32, 41, 8), '#2f9f4a', 1.6) + SP(32, 41, 3.6),
+  // Hidden Mist Scroll: a mist cloud swallowing a trail of ninja footsteps.
+  scroll_mist_step: B('shinobi') + F(ell(18, 46.5, 2, 2.8) + circ(18, 42.6, 0.9), '#2a4058', 0.85) + F(ell(24.5, 43.5, 2, 2.8) + circ(24.5, 39.6, 0.9), '#2a4058', 0.6)
+    + F(ell(31, 46.5, 2, 2.8) + circ(31, 42.6, 0.9), '#2a4058', 0.35)
+    + S('M14 37Q10 29 18 27Q18 19 27 20Q32 13 40 18Q49 16 49 25Q55 28 52 35Q50 39 44 39H19Q14 40 14 37Z', '#c9dbe8')
+    + F('M15 37Q19 33 25 35Q31 32 37 35Q43 32 51 35Q50 39 44 39H19Q15 39 15 37Z', dk('#c9dbe8', 0.2))
+    + L('M20 28Q25 23 30 26Q34 29 38 24', '#ffffff', 1.8, 0.85) + H(ell(24, 23, 3.5, 1.6), 0.55) + L('M36 43Q43 40 50 43', '#a8c4d8', 1.6),
   // Earth Armor Scroll: skin hardened into a shield of stone plates.
-  scroll_iron_skin: SUP.shinobi() + S('M32 6L52 14V32Q52 48 32 58Q12 48 12 32V14Z', '#8b8f9c')
-    + F('M32 6L52 14V32Q52 48 32 58Z', '#6b6f7c', 0.45)
-    + L('M22 10L20 24L28 33L23 48M42 10L44 24L36 33L41 48M20 24H12M44 24H52M28 33H36', '#4a4e5a', 1.8)
-    + H('M15 16L29 10V14L16 20Z', 0.5) + SP(46, 18, 4) + SP(18, 40, 2.6),
-  // Eight Trigrams Scroll: the spiral seal formula, crackling with blue lightning.
-  scroll_sealing_mark: SUP.shinobi() + AURA(32, 32, 28, '#7ab8ff') + trigram
-    + S(circ(32, 32, 15), '#f6ecc8', { w: 2 }) + L(circ(32, 32, 11.5), ART_INK, 1.6)
-    + L('M32 32Q35 31 35 34Q35 38 30 38Q25 37 25 32Q25 25 32 25Q40 25 40 33', ART_INK, 2.2)
-    + L('M50 44L54 48L51 49L56 54M10 12L14 16L11 17L15 21', '#5ab8ff', 1.8),
+  scroll_iron_skin: B('shinobi') + S('M32 15L47 20V31Q47 43 32 50Q17 43 17 31V20Z', '#8b8f9c') + F('M32 15L47 20V31Q47 43 32 50Z', dk('#8b8f9c', 0.2))
+    + L('M24 17.5L23 27L28 33L25 43M40 17.5L41 27L36 33L39 43M23 27H17M41 27H47M28 33H36', '#4a4e5a', 1.6)
+    + H('M19 21L30 17V20L20 24Z', 0.5) + SP(44, 19, 3),
+  // Eight Trigrams Scroll: the spiral seal formula ringed by the eight trigrams, crackling blue.
+  scroll_sealing_mark: B('shinobi')
+    + F([0, 45, 90, 135, 180, 225, 270, 315].map((a) => rd('M28.5 15L35.5 15L35.5 16.6L28.5 16.6ZM28.5 17.8L35.5 17.8L35.5 19.4L28.5 19.4Z', a, 32, 32)).join(''), '#3b2a1a')
+    + L(circ(32, 32, 10.5), '#3b2a1a', 1.8) + L('M32 32Q35 31 35 34Q35 37.5 30.5 37.5Q26 37 26 32Q26 26 32 26Q38.5 26 38.5 33', '#3b2a1a', 2)
+    + L('M45 40L49 43L46.5 44L50 48M19 15.5L15 19L17.5 20L14 24', '#3a8ae8', 1.8),
 
-  /* --- Orange Town techniques: wanted-poster parchment + the move */
+  /* --- Orange Town techniques */
   // Armament Haki Manual: a fist coated in glossy black Haki, purple sparks.
-  scroll_iron_fist: SUP.seas() + AURA(32, 34, 26, '#b06bff') + fist('#2a2438', '#6a5a8a')
-    + H(ell(18, 19, 2.4, 1.3), 0.7) + H(ell(27, 17, 2.4, 1.3), 0.7) + H(ell(36, 17, 2.4, 1.3), 0.7) + H(ell(45, 19, 2.4, 1.3), 0.7)
-    + S(rect(20, 52, 26, 6, 2), '#c0392b', { w: 2 }) + L('M6 22L11 18L10 24L15 20M50 50L55 46L54 52L59 48', '#b06bff', 1.8),
+  scroll_iron_fist: B('seas') + fist('#3a3050') + L('M13 20L16.5 17L16 21L19.5 18M47 46L50.5 43L50 47L53 44', '#9a5ae8', 1.8),
   // Kenbunshoku Manual: a brass spyglass that sees what comes next, sensing ripples ahead.
-  scroll_foresight: SUP.seas() + L('M46 12Q52 10 56 16M44 6Q54 2 60 12', '#4fb6ff', 2.2)
-    + ROT(-35, 32, 34, S(rect(6, 29, 16, 10, 2), '#6a4a2a') + S(rect(20, 27, 15, 14, 2), '#d4a03a') + S(rect(33, 25, 18, 18, 2), '#e0b04a')
-    + F(rect(30, 27, 3, 14), '#8a5a1a') + S(ell(52, 34, 3.4, 9), '#bfe6ff', { w: 2 }) + H('M22 29H33V31H22Z', 0.6) + H('M35 27H49V29.5H35Z', 0.6))
-    + SP(54, 24, 3.5),
-  // Gaon Cannon Manual: a ship's cannon firing, flash and smoke.
-  scroll_cannon_volley: SUP.seas() + F(circ(54, 26, 5), '#e8eef5', 0.85) + F(circ(46, 14, 4), '#e8eef5', 0.85)
-    + S(star(52, 20, 9, 4.5, 8), '#ffb43a', { w: 1.8 }) + F(star(52, 20, 4.5, 2.4, 8), '#fff3a0')
-    + ROT(-30, 30, 38, S('M10 31H46V43H10Q5 43 5 37Q5 31 10 31Z', '#3a3d4a') + S(rect(44, 29, 7, 16, 2), '#2a2c38', { w: 2 })
-    + F(rect(18, 31, 3, 12), '#d4a03a') + F(rect(32, 31, 3, 12), '#d4a03a') + H('M10 33H42V35H10Z', 0.4))
-    + S(circ(22, 48, 7.5), '#8a5a2a', { w: 2 }) + F(circ(22, 48, 2.4), ART_INK) + L('M22 41V55M15 48H29', dk('#8a5a2a', 0.4), 1.4),
+  scroll_foresight: B('seas') + ROT(-30, 32, 32, S(rect(12, 29, 12, 8, 2), '#6a4a2a', { w: 1.8 }) + S(rect(22, 27.5, 12, 11, 2), '#d4a03a')
+    + S(rect(32, 26, 14, 14, 2), '#e0b04a') + F(rect(33.5, 35, 11, 3.5, 1), dk('#e0b04a', 0.25)) + S(ell(46.5, 33, 2.8, 7.5), '#bfe6ff', { w: 1.8 })
+    + H('M23.5 29.5H32V31H23.5Z', 0.6) + H('M34 28H44V29.6H34Z', 0.6))
+    + L('M48 19Q51.5 21.5 51 25.5M50.5 15.5Q55 19 54 25', '#2f8ad8', 1.8),
+  // Gaon Cannon Manual: a ship's cannon firing, a muzzle flash.
+  scroll_cannon_volley: B('seas') + S(star(47, 21, 7, 3.5, 8), '#ffb43a', { w: 1.8 }) + F(star(47, 21, 3.5, 2, 8), '#fff3a0')
+    + ROT(-25, 30, 36, S('M14 31H44V41H14Q10 41 10 36Q10 31 14 31Z', '#3a3d4a') + F('M14 38H44V41H14Z', dk('#3a3d4a', 0.3)) + S(rect(42, 29, 6, 14, 2), '#2a2c38', { w: 2 })
+    + F(rect(20, 31, 2.5, 10) + rect(32, 31, 2.5, 10), '#d4a03a') + H('M14 32.6H40V34.2H14Z', 0.45))
+    + S(circ(24, 43, 6), '#8a5a2a', { w: 2 }) + F(circ(24, 43, 2), '#2a1a10') + L('M24 38.6V40.6M24 45.4V47.4M19.6 43H21.6M26.4 43H28.4', dk('#8a5a2a', 0.4), 1.3),
 
-  /* --- Soul City techniques: open black Kido book + the spell rising from it */
+  /* --- Soul City techniques */
   // Getsuga Tensho Primer: the blue-white crescent of a zanpakuto's slash.
-  scroll_reaper_slash: SUP.soul() + AURA(32, 26, 24, '#7ab8ff')
-    + S('M8 44Q12 10 54 5Q30 16 28 45Z', '#bfe6ff') + F('M14 40Q18 16 44 9Q28 18 26 42Z', '#4f8fe8', 0.55)
-    + L('M10 41Q15 14 50 7', '#ffffff', 1.6) + SP(50, 22, 3.5) + SP(18, 14, 2.6),
+  scroll_reaper_slash: B('soul')
+    + S('M13 46Q16 16 50 13Q31 22 29 47Z', '#bfe6ff') + F('M18 42Q22 20 43 16Q30 24 28 44Z', '#4f8fe8', 0.55)
+    + L('M15 43Q19 18 46 14.5', '#ffffff', 1.6) + SP(45, 39, 3, '#7ab8ff'),
   // Danku Primer: the hexagonal Bakudo wall.
-  scroll_soul_ward: SUP.soul()
-    + S(poly([32, 4], [50, 14], [50, 35], [32, 45], [14, 35], [14, 14]), '#7fd8ff')
-    + L(poly([32, 12], [43, 18], [43, 31], [32, 37], [21, 31], [21, 18]), '#ffffff', 1.6, 0.85)
-    + L('M32 4V12M50 14L43 18M50 35L43 31M32 45V37M14 35L21 31M14 14L21 18', '#3a8fc8', 1.4)
-    + H('M17 15L31 7V10L18 17Z', 0.55) + SP(32, 24.5, 4.5),
+  scroll_soul_ward: B('soul') + S('M32 16L46 24V40L32 48L18 40V24Z', '#7fd8ff') + F('M32 32L46 24V40L32 48Z', dk('#7fd8ff', 0.2))
+    + L('M32 22L41 27V37L32 42L23 37V27Z', '#ffffff', 1.5, 0.85) + L('M32 16V22M46 24L41 27M46 40L41 37M32 48V42M18 40L23 37M18 24L23 27', '#3a8fc8', 1.3)
+    + H('M20 25L31 18.5V21L21 27Z', 0.55) + SP(32, 32, 4),
   // Sajo Sabaku Primer: Bakudo #63, a ring of golden binding chain.
-  scroll_spirit_chain: SUP.soul() + AURA(32, 25, 22, '#ffd45a') + chainRing + SP(32, 25, 5, '#fff3b0'),
+  scroll_spirit_chain: B('soul')
+    + S(circ(40.5, 23.5, 2.6) + circ(40.5, 40.5, 2.6) + circ(23.5, 40.5, 2.6) + circ(23.5, 23.5, 2.6), '#e8b83a', { w: 1.8 })
+    + S(ell(32, 20, 5.5, 3.4) + ell(44, 32, 3.4, 5.5) + ell(32, 44, 5.5, 3.4) + ell(20, 32, 3.4, 5.5), '#ffd45a', { w: 1.8 })
+    + F(ell(32, 20, 2.8, 1.1) + ell(44, 32, 1.1, 2.8) + ell(32, 44, 2.8, 1.1) + ell(20, 32, 1.1, 2.8), '#5a3a10')
+    + H(ell(29.5, 18.4, 1.6, 0.8) + ell(18.6, 29.5, 0.8, 1.6), 0.6) + SP(32, 32, 4.5, '#fff3b0'),
 
-  /* --- Kaio Planet techniques: Hoi-Poi capsule + the move */
+  /* --- Kaio Planet techniques */
   // Kamehameha Capsule: a crackling blue ki ball streaking off.
-  scroll_ki_blast: SUP.ki() + AURA(28, 24, 24, '#5ab8ff') + L('M42 16L58 10M44 24H60M42 32L56 38', '#bfe6ff', 2.4)
-    + S(circ(28, 24, 14), '#4fb6ff') + F(circ(28, 24, 8), '#dff3ff') + L('M18 14L22 18L19 20L24 24M36 30L33 34L37 35L34 40', '#ffe066', 1.6)
-    + H(ell(22, 18, 4, 2.4), 0.7),
-  // Saiyan Pride Capsule: golden Super Saiyan hair in a flaring aura.
-  scroll_battle_instinct: SUP.ki()
-    + S('M32 3Q38 13 44 7Q46 17 54 15Q50 27 56 33Q48 35 50 45H14Q16 35 8 33Q14 27 10 15Q18 17 20 7Q26 13 32 3Z', '#ffd23a', { w: 2 })
-    + S('M20 34Q14 22 17 11L24 20Q23 9 32 5Q35 12 36 18Q40 9 47 8Q45 17 44 22Q50 19 53 23Q47 28 44 34Z', '#ffe066')
-    + S(ell(32, 35, 9, 9.5), '#f2c39a', { w: 2 }) + L('M26 32L30 33.5M38 32L34 33.5', ART_INK, 1.8)
-    + F(circ(29, 36, 1.3), '#2a9a8a') + F(circ(35, 36, 1.3), '#2a9a8a') + L('M30 40.5H34', ART_INK, 1.4),
+  scroll_ki_blast: B('ki') + L('M38 22L50 18M40 30.5H51M38 39L49 43', '#4fb6ff', 2.2)
+    + S(circ(28, 31, 11), '#4fb6ff') + F('M35 23A11 11 0 0 1 28 42Q35 37 35 23Z', dk('#4fb6ff', 0.25)) + F(circ(28, 31, 6), '#dff3ff')
+    + L('M19 22L22 25L20 26.5L23.5 29.5M33 34L31 37.5L34 38L32 41.5', '#ffd23a', 1.5) + H(ell(23, 25, 3, 1.8), 0.7),
+  // Saiyan Pride Capsule: golden Super Saiyan hair over a fierce face.
+  scroll_battle_instinct: B('ki')
+    + S('M32 13Q36 19 40 15Q42 21 48 19Q46 26 50 30Q44 31 45 38H19Q20 31 14 30Q18 26 16 19Q22 21 24 15Q28 19 32 13Z', '#ffd23a', { w: 2 })
+    + F('M40 15Q42 21 48 19Q46 26 50 30Q44 31 45 38H40Q42 26 40 15Z', dk('#ffd23a', 0.2)) + S(ell(32, 39, 8.5, 9), '#f2c39a', { w: 2 })
+    + S('M23.5 34Q25 25 29.5 29Q32 22 34.5 29Q39 25 40.5 34Q32 30 23.5 34Z', '#ffe066', { w: 1.8 })
+    + L('M26.5 36L30 37.5M37.5 36L34 37.5', '#1c1424', 1.6) + F(circ(29, 40, 1.1) + circ(35, 40, 1.1), '#2a9a8a') + L('M30 44.5H34', '#1c1424', 1.3)
+    + H('M20 26Q22 20 26 19Q23 23 22 28Z', 0.55),
   // Turtle Shell Capsule: Master Roshi's weighted training shell.
-  scroll_iron_body: SUP.ki() + S(ell(32, 26, 23, 20), '#e8c060') + S(ell(32, 25, 19, 16.5), '#3f9a4a')
-    + L(poly([32, 17], [40, 21], [40, 30], [32, 34], [24, 30], [24, 21]), '#255a2c', 1.8)
-    + L('M32 17V9M40 21L48 16M40 30L49 34M32 34V41M24 30L15 34M24 21L16 16', '#255a2c', 1.8)
-    + S('M14 14Q12 6 20 8L22 12Q18 11 18 16Z', '#8a5a2a', { w: 1.6 }) + S('M50 14Q52 6 44 8L42 12Q46 11 46 16Z', '#8a5a2a', { w: 1.6 })
-    + H(ell(24, 15, 5, 2.2), 0.5),
+  scroll_iron_body: B('ki') + S('M16 22Q14 14 21 15L23 19Q19 18 19 22ZM48 22Q50 14 43 15L41 19Q45 18 45 22Z', '#8a5a2a', { w: 1.8 })
+    + S(ell(32, 32.5, 18, 15), '#e8c060') + S(ell(32, 31.5, 14.5, 12), '#3f9a4a') + F('M43.1 23.8A14.5 12 0 0 1 32 43.5Q41 39 43.1 23.8Z', dk('#3f9a4a', 0.3))
+    + L('M32 25L38 28.5V34.5L32 38L26 34.5V28.5ZM32 25V19.5M38 28.5L44 25.5M38 34.5L44 37.5M32 38V43.5M26 34.5L20 37.5M26 28.5L20 25.5', '#255a2c', 1.6)
+    + H(ell(25, 23, 4, 1.8), 0.5),
   // King Kai Capsule: the Kai's antennae and round sunglasses — meditate, then train.
-  scroll_zen_focus: SUP.ki() + L('M26 16Q22 10 20 4M38 16Q42 10 44 4', ART_INK, 2.2) + S(circ(20, 5, 2.6), '#1c1424', { w: 1.4 }) + S(circ(44, 5, 2.6), '#1c1424', { w: 1.4 })
-    + S(ell(32, 29, 17, 14.5), '#4f8fe8') + S(ell(26, 27, 5.2, 4.2), '#1c1424', { w: 1.6 }) + S(ell(38, 27, 5.2, 4.2), '#1c1424', { w: 1.6 })
-    + L('M31 27H33', ART_INK, 1.6) + H(ell(24.5, 25.5, 2, 1.1), 0.7) + H(ell(36.5, 25.5, 2, 1.1), 0.7)
-    + L('M26 36Q32 40 38 36', ART_INK, 1.8) + L('M14 31L20 32M14 35L20 34M50 31L44 32M50 35L44 34', ART_INK, 1.3) + H(ell(24, 19, 5, 2.2), 0.4),
+  scroll_zen_focus: B('ki') + L('M27 23L24 16M37 23L40 16', '#1c1424', 2) + S(circ(24, 15.5, 2.2) + circ(40, 15.5, 2.2), '#2a2440', { w: 1.8 })
+    + S(ell(32, 34, 14, 12.5), '#4f8fe8') + F('M42 25.5A14 12.5 0 0 1 32 46.5Q41 41 42 25.5Z', dk('#4f8fe8', 0.25))
+    + S(ell(27, 32, 4.4, 3.6) + ell(37, 32, 4.4, 3.6), '#2a2440', { w: 1.8 }) + L('M31.4 32H32.6', '#1c1424', 1.6)
+    + H(ell(25.6, 30.8, 1.6, 0.9) + ell(35.6, 30.8, 1.6, 0.9), 0.7) + L('M27 39Q32 42.5 37 39', '#1c1424', 1.6)
+    + L('M15 34L19.5 35M15 37.5L19.5 37M49 34L44.5 35M49 37.5L44.5 37', '#1c1424', 1.3) + H(ell(25, 25, 4, 1.8), 0.45),
 
-  /* --- Green Island techniques: Nen card + the category's power */
+  /* --- Green Island techniques */
   // Jajanken Rock Card: Gon's fist charged with a burst of aura.
-  scroll_nen_enhance: SUP.hunter() + S(star(32, 31, 26, 15, 12), '#ffd23a', { w: 2 }) + F(star(32, 31, 15, 9, 12), '#fff3a0')
-    + ROT(-18, 32, 34, TR('translate(5 4) scale(0.84)', fist('#f2c39a', dk('#f2c39a', 0.4)) + S(rect(20, 52, 26, 7, 2), '#3f9a4a', { w: 2 }))),
+  scroll_nen_enhance: B('hunter') + S(star(32, 33, 19.5, 12, 10), '#ffd23a', { w: 2 }) + F(star(32, 33, 12, 8, 10), '#fff3a0') + fist('#f2c39a'),
   // Aura Bullet Card: a spray of Nen bullets streaking out.
-  scroll_nen_emit: SUP.hunter() + L('M12 52L30 32M10 40L26 28M22 54L38 40M16 30L28 22M34 50L44 42', '#7ae0ff', 2.4, 0.8)
-    + [[32, 30, 6], [26, 20, 4.8], [44, 40, 5], [40, 18, 5.4], [50, 28, 4.6]].map(([x, y, r]) => AURA(x, y, r + 5, '#5ad8ff') + S(circ(x, y, r), '#7ae0ff', { w: 1.8 }) + H(ell(x - r * 0.35, y - r * 0.35, r * 0.4, r * 0.25), 0.8)).join(''),
-  // Holy Chain Card: Kurapika's conjured chain with its judgment blade.
-  scroll_nen_conjure: SUP.hunter() + AURA(32, 32, 26, '#9fdcff') + S(circ(9, 55, 4.2), '#d7dee8', { w: 1.8 }) + F(circ(9, 55, 1.8), '#2b2f45') + chainDiag
-    + ROT(45, 49, 15, S('M49 3L53 13L49 25L45 13Z', '#e8edf3', { w: 2 }) + L('M49 6V21', '#9aa4b4', 1.2)) + SP(54, 32, 3.5),
+  scroll_nen_emit: B('hunter') + L('M14 48L26 37M14 39L19 33M22 49L36 41M30 21L22 26', '#3ab8e0', 1.8, 0.8)
+    + S(circ(30, 34, 6) + circ(22, 24, 4.5) + circ(42, 22, 5) + circ(43, 40, 4.5), '#7ae0ff', { w: 1.8 })
+    + F('M34.5 30A6 6 0 0 1 30 40Q34 37 34.5 30Z', dk('#7ae0ff', 0.25))
+    + H(ell(27.8, 31.8, 2.2, 1.4) + ell(20.4, 22.4, 1.6, 1) + ell(40.2, 20.2, 1.8, 1.1) + ell(41.4, 38.4, 1.6, 1), 0.75),
+  // Holy Chain Card: Kurapika's conjured chain ending in its judgment blade.
+  scroll_nen_conjure: B('hunter')
+    + S(circ(20.5, 41.5, 2.2) + circ(29.5, 32.5, 2.2), '#9aa4b4', { w: 1.8 })
+    + S(circ(16, 46, 3.6) + circ(25, 37, 3.6) + circ(34, 28, 3.6), '#d7dee8', { w: 1.8 }) + F(circ(16, 46, 1.5) + circ(25, 37, 1.5) + circ(34, 28, 1.5), '#2b2f45')
+    + S('M36.5 27.5L42 19L50 14L45 22Z', '#e8edf3', { w: 1.8 }) + F('M50 14L45 22L36.5 27.5Z', dk('#e8edf3', 0.2)) + H(ell(14.6, 44.6, 1.2, 0.7), 0.7) + SP(46, 36, 3),
   // Marionette Card: a puppeteer's control cross, Nen threads ending in needles.
-  scroll_nen_manip: SUP.hunter() + L('M16 12L13 44M48 12L51 44M32 22V48M24 12L23 40M40 12L41 40', '#8a5ae8', 1.6)
-    + S(rect(12, 8, 40, 6, 2), '#a86a3a', { w: 2 }) + S(rect(29, 4, 6, 20, 2), '#a86a3a', { w: 2 }) + H('M14 9H50V10.5H14Z', 0.4)
-    + [[13, 44], [51, 44], [32, 48], [23, 40], [41, 40]].map(([x, y]) => S(rect(x - 1.3, y, 2.6, 12, 1.2), '#c9d1dc', { w: 1.4 }) + S(circ(x, y, 2.6), '#8a5ae8', { w: 1.4 })).join(''),
+  scroll_nen_manip: B('hunter') + L('M18 19L16 38M46 19L48 38M32 28V42M24 19L24 35M40 19L40 35', '#8a5ae8', 1.3)
+    + S(rect(15, 15, 34, 5, 2), '#a86a3a', { w: 2 }) + S(rect(29.5, 12.5, 5, 17, 2), '#a86a3a', { w: 2 }) + H('M17 16H33V17.3H17Z', 0.5)
+    + S(rect(14.8, 38, 2.4, 10, 1.2) + rect(46.8, 38, 2.4, 10, 1.2) + rect(30.8, 42, 2.4, 8, 1.2) + rect(22.8, 35, 2.4, 10, 1.2) + rect(38.8, 35, 2.4, 10, 1.2), '#c9d1dc', { w: 1.8 })
+    + S(circ(16, 38, 2.2) + circ(48, 38, 2.2) + circ(32, 42, 2.2) + circ(24, 35, 2.2) + circ(40, 35, 2.2), '#8a5ae8', { w: 1.8 }),
   // Bungee Gum Card: Hisoka's pink aura, stretchy and sticky.
-  scroll_nen_trans: SUP.hunter()
-    + S('M14 40Q26 34 30 29Q34 24 41 13L49 19Q39 26 35 32Q31 39 24 49Z', '#ff7ab8')
-    + S('M38 14Q40 4 50 6Q58 8 56 17Q54 24 46 22Q38 22 38 14Z', '#ff7ab8') + S('M10 44Q8 36 16 36Q24 37 24 45Q24 54 16 53Q10 52 10 44Z', '#ff7ab8')
-    + F('M20 52Q21 57 19 59Q17 57 18 52Z', '#ff7ab8') + H(ell(46, 10, 4, 2), 0.7) + H(ell(14, 40, 3, 1.6), 0.7) + L('M26 38Q32 30 40 20', '#ffd0e6', 1.4),
+  scroll_nen_trans: B('hunter') + S('M17 42Q26 37 30 32Q34 27 39 19L45 23Q38 29 35 34Q31 40 23 47Z', '#ff7ab8')
+    + S('M37 19Q38 12 45 13Q51 14 50 20Q49 26 43 25Q37 25 37 19Z', '#ff7ab8') + S('M14 44Q13 38 19 38Q25 39 25 45Q25 50 19 50Q14 49 14 44Z', '#ff7ab8')
+    + F('M48 16Q51 20 48 24Q45 26 41 25Q48 22 48 16Z', dk('#ff7ab8', 0.25)) + L('M27 37Q32 31 39 22', '#ffd0e6', 1.4)
+    + H(ell(42, 16.5, 2.6, 1.4) + ell(17, 41, 2, 1.2), 0.65),
   // Emperor Time Card: Kurapika's Scarlet Eye.
-  scroll_nen_special: SUP.hunter() + AURA(32, 32, 30, '#ff3a4a')
-    + S('M6 32Q32 8 58 32Q32 56 6 32Z', '#f7f2e6') + S(circ(32, 32, 11.5), '#e0202f') + F(circ(32, 32, 5), '#5a0a10')
-    + L('M10 26L6 22M18 19L15 14M27 15L26 10M37 15L38 10M46 19L49 14M54 26L58 22', ART_INK, 1.8) + H(ell(28, 27, 3.4, 2), 0.85) + SP(52, 46, 3.5, '#ffb0b0'),
+  scroll_nen_special: B('hunter')
+    + S('M12 32Q32 14 52 32Q32 50 12 32Z', '#fbf6ea') + F('M14 33Q32 47 50 33Q32 44 14 33Z', dk('#fbf6ea', 0.15))
+    + S(circ(32, 32, 9), '#e0202f', { w: 2 }) + F(circ(32, 32, 4), '#5a0a10')
+    + L('M16 27.5L13 24.5M22 22.5L20 19M29 20L28.5 16.5M35 20L35.5 16.5M42 22.5L44 19M48 27.5L51 24.5', '#1c1424', 1.6) + H(ell(28.5, 28.5, 2.6, 1.6), 0.8),
 
-  /* --- Shinjuku techniques: ofuda talisman + the Domain */
+  /* --- Shinjuku techniques */
   // Iron Mountain Ofuda: Jogo's Coffin of the Iron Mountain, a volcano erupting.
-  scroll_domain_blaze: SUP.hex() + AURA(32, 30, 26, '#ff7a2a')
-    + S('M24 28Q20 14 27 16Q27 6 33 11Q39 4 40 16Q46 14 41 28Z', '#ff7a2a', { w: 2 }) + F('M28 28Q26 20 30 20Q31 13 34 17Q38 13 37 28Z', '#ffe066')
-    + S('M6 54L22 28Q32 24 42 28L58 54Z', '#5a3e34') + F('M32 26L42 28L58 54H40Z', '#3e2a24', 0.6)
-    + S('M22 28Q32 24 42 28L38 33Q32 30 26 33Z', '#ff5a1a', { w: 1.6 }) + L('M28 33L24 44M37 33L40 42', '#ff7a2a', 2.2) + SP(14, 18, 3.5),
+  scroll_domain_blaze: B('hex')
+    + S('M26 29Q22 19 28 20Q28 12 33 16Q38 10 39 20Q44 19 39 29Z', '#ff7a2a', { w: 2 }) + F('M29 29Q27 23 30.5 23Q31 17 34 20Q37 17 36 29Z', '#ffe066')
+    + S('M12 50L24 30Q32 26 40 30L52 50Z', '#5a3e34') + F('M32 28L40 30L52 50H40Z', dk('#5a3e34', 0.3))
+    + S('M24 30Q32 26 40 30L37 34Q32 31 27 34Z', '#ff5a1a', { w: 1.8 }) + L('M28 34L25 43M37 34L39.5 41', '#ff7a2a', 2) + H('M22 35L25 30L27 31L19 44Z', 0.4),
   // Thunder Domain Ofuda: a storm dome split by lightning, wind wrapping it.
-  scroll_domain_storm: SUP.hex() + S(rect(6, 48, 52, 6, 2.5), '#3a2a6a', { w: 2 }) + S('M9 49Q9 16 32 14Q55 16 55 49Z', '#5a4ad0')
-    + L('M16 49Q16 24 32 21Q48 24 48 49M24 49Q24 30 32 28Q40 30 40 49', lt('#5a4ad0', 0.35), 1.4, 0.7)
-    + S(poly([36, 8], [24, 32], [32, 32], [26, 52], [42, 26], [34, 26], [40, 8]), '#ffe066', { w: 2 })
-    + L('M4 30Q16 22 26 26M60 38Q50 30 42 36', '#bfe6ff', 2) + H('M14 36Q16 22 28 18Q20 26 18 38Z', 0.35),
+  scroll_domain_storm: B('hex') + S('M13 46Q13 20 32 18Q51 20 51 46Z', '#5a4ad0') + F('M40 20Q51 24 51 46H44Q45 30 40 20Z', dk('#5a4ad0', 0.3))
+    + L('M19 46Q19 27 32 24Q45 27 45 46', lt('#5a4ad0', 0.35), 1.3, 0.7) + S(rect(11, 45, 42, 5, 2.5), '#3a2a6a', { w: 2 })
+    + S('M36 15L26 32L32.5 32L27 48L41 27L34.5 27L40 15Z', '#ffe066', { w: 1.8 }) + L('M14 30Q20 25 26 27M50 37Q46 33 41 35', '#bfe6ff', 1.8)
+    + H('M17 37Q18 26 26 22Q21 29 20 38Z', 0.4),
   // Crimson Garden Ofuda: a blood-red bloom crossed by cursed slashes.
-  scroll_domain_garden: SUP.hex() + S('M30 42Q26 52 22 58L25 59Q30 52 33 43Z', '#3f7a3a', { w: 1.6 })
-    + S('M28 50Q16 50 12 42Q22 40 28 48Z', '#3f9a4a', { w: 1.6 }) + S('M32 50Q44 52 50 44Q40 40 32 48Z', '#3f9a4a', { w: 1.6 })
-    + S(circ(32, 28, 16), '#c81e3a') + L('M32 28Q36 27 35 31Q32 34 28 31Q26 25 32 23Q40 22 41 30Q41 39 32 40Q22 40 21 30', dk('#c81e3a', 0.45), 2)
-    + H(ell(25, 19, 5, 2.4), 0.45) + F('M8 14L56 34L55 36.5L7 16.5Z', '#1c1424') + F('M10 22L54 40L53 42.5L9 24.5Z', '#1c1424'),
+  scroll_domain_garden: B('hex') + S('M31 39Q29 45 26 50L28.5 50.5Q31.5 45 33.5 39.5Z', '#3f7a3a', { w: 1.8 })
+    + S('M29 45Q20 46 17 40Q24 37 29 43ZM31 45Q40 47 45 41Q38 37 31 43Z', '#3f9a4a', { w: 1.8 })
+    + S(circ(32, 28, 12), '#c81e3a') + F('M40 19A12 12 0 0 1 32 40Q40 34 40 19Z', dk('#c81e3a', 0.25))
+    + L('M32 28Q35 27 34.5 30Q32 33 29 30.5Q27.5 26 32 24Q38 23 38.5 29Q38.5 36 32 36.5Q25 36.5 24.5 29', dk('#c81e3a', 0.45), 1.6)
+    + H(ell(26.5, 21, 3.5, 1.8), 0.5) + F('M13 18Q33 26 52 30Q33 28 13 18ZM13 25Q33 33 51 38Q33 35 13 25Z', '#2a1438'),
   // Sanctuary Ofuda: a red torii gate glowing with healing light.
-  scroll_domain_shrine: SUP.hex() + AURA(32, 38, 22, '#7dff9a')
-    + S(rect(17, 20, 6, 36, 1), '#d8402f') + S(rect(41, 20, 6, 36, 1), '#d8402f') + S(rect(15.5, 52, 9, 5, 1), '#2a2030', { w: 1.8 }) + S(rect(39.5, 52, 9, 5, 1), '#2a2030', { w: 1.8 })
-    + S(rect(11, 29, 42, 4.5, 1), '#d8402f', { w: 2 }) + S(rect(10, 18, 44, 5, 1), '#d8402f', { w: 2 })
-    + S('M5 11Q32 18 59 11L57 18Q32 23 7 18Z', '#2a2030') + S(rect(29, 21, 6, 9, 1), '#f4ecd6', { w: 1.6 })
-    + SP(32, 43, 7, '#c8ffd4') + SP(50, 8, 3),
+  scroll_domain_shrine: B('hex') + SP(32, 40, 6, '#c8ffd4')
+    + S(rect(20, 24, 5, 23, 1) + rect(39, 24, 5, 23, 1), '#d8402f', { w: 1.8 }) + S(rect(18.5, 45, 8, 4, 1) + rect(37.5, 45, 8, 4, 1), '#2a2030', { w: 1.8 })
+    + S(rect(15, 30, 34, 4, 1), '#d8402f', { w: 1.8 }) + S(rect(14, 21, 36, 4.5, 1), '#d8402f', { w: 2 })
+    + S('M10 15Q32 21 54 15L52 21Q32 25 12 21Z', '#2a2030') + S(rect(29.5, 23, 5, 7, 1), '#f4ecd6', { w: 1.8 }) + H(rect(21, 26, 1.4, 16, 0.7), 0.5),
 });
 })();

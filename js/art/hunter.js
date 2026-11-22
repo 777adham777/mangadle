@@ -6,6 +6,8 @@
 const { S, F, L, H, SP, AURA, T, G, GL, lt, dk, mix, circ, ell, rect, poly, star, ROT, TR } = ARTK;
 // RL: outlined rope/stick line (ink under, colour over)
 const RL = (d, c, w) => L(d, ART_INK, w + 2.6) + L(d, c, w);
+// ROD: shared fishing-rod body (tiers I-III): line to y=ly, bent rod handle bottom-left -> tip top-right, gloss, grip
+const ROD = (rod, hi, grip, line, ly) => L(`M52 8V${ly}`, line, 1.4) + RL('M16 48Q24 16 52 8', rod, 4.4) + L('M18.2 41Q25 18 48 10', hi, 1.3, 0.85) + RL('M16 47L11 59', grip, 5.5);
 Object.assign(ART, {
   /* ---------------------------------------------------------------- raw trail materials */
   // Wild Fur: a shaggy brown hide bundle tied with twine.
@@ -27,7 +29,7 @@ Object.assign(ART, {
   // Stag Antler: a branched antler with a burr at the base.
   stag_antler: RL('M16 58Q18 42 30 32Q40 24 44 8', '#cba777', 5.5)
     + RL('M23 44Q12 38 9 26M30 32Q23 22 25 10M39 22Q48 20 56 12M33 30Q44 32 54 27', '#cba777', 4.2)
-    + L('M18 54Q20 42 30 33', lt('#cba777', 0.5), 1.6) + L('M33 29Q41 22 43 10', dk('#cba777', 0.3), 1.6)
+    + L('M17.5 52Q19.5 42 28 34.5', lt('#cba777', 0.55), 1.4) + H(ell(14, 55.5, 3, 1.2), 0.5) + F('M17 60Q22 60 23 57Q20 59.5 13 59.5Z', dk('#7a5a3a', 0.35))
     + S(ell(16, 57, 7, 3.6), '#7a5a3a', { w: 2 }),
   // Lynx Pelt: a spread spotted pelt with tufted ears and stubby tail.
   lynx_pelt: S('M24 11L22 3L28 8Q32 7 36 8L42 3L40 11Q44 14 42 19L54 16L59 24L48 27Q50 38 48 44L58 50L52 57L42 51Q36 55 32 61Q28 55 22 51L12 57L6 50L16 44Q14 38 16 27L5 24L10 16L22 19Q20 14 24 11Z', '#d8ae6c')
@@ -119,8 +121,7 @@ Object.assign(ART, {
     + L('M14 26Q32 22 50 26M13 40Q32 36 51 40', '#c8b48a', 1.6) + S('M22 52H42V58H22Z', '#3a2a36', { w: 2 })
     + S('M44 44H52V60H44Z', '#f6ecc8', { w: 1.6 }) + L('M46 48H50M46 52H50M46 56H49', '#c0392b', 1.4),
   // Wyrm Trap: a barbed iron hook on a heavy chain, runes glowing teal.
-  wyrm_trap: L('M30 4V20', ART_INK, 1)
-    + S(ell(30, 8, 4.5, 6), '#6a7080', { w: 2 }) + S(ell(30, 18, 6, 4.5), '#6a7080', { w: 2 })
+  wyrm_trap: S(ell(30, 8, 4.5, 6), '#6a7080', { w: 2 }) + S(ell(30, 18, 6, 4.5), '#6a7080', { w: 2 })
     + F(ell(30, 8, 1.6, 3) + ell(30, 18, 3, 1.6), ART_INK)
     + S('M26 22H34V40Q34 50 42 50Q50 50 50 42V38L44 42L46 30L56 38V42Q56 58 42 58Q26 58 26 42Z', '#8a92a2')
     + F('M26 40Q26 56 42 56Q30 54 30 40V22H26Z', dk('#8a92a2', 0.35))
@@ -197,12 +198,13 @@ Object.assign(ART, {
     + S('M40 40L54 44L51 56L37 52Z', '#f2f2ea', { w: 1.6 }) + F('M42 44L50 46L49 50L41 48Z', '#3a3a4a') + L('M41 52L48 54', '#d0402f', 1.4)
     + H('M16 26Q20 22 26 22Q18 26 18 34Z', 0.4),
   /* ---------------------------------------------------------------- tools: Tracking (HxH) */
-  // Examinee's Compass: a simple wooden compass on a leather cord.
-  tool_tracking_1: RL('M32 14Q28 6 32 3Q36 6 32 14', '#8a5a3a', 1.8)
-    + S(circ(32, 34, 20), '#a8743a') + S(circ(32, 34, 14.5), '#f2e6c8', { w: 2 })
-    + L('M32 22V25M32 43V46M20 34H23M41 34H44', '#8a6a4a', 1.6)
-    + S('M32 23L35 34H29Z', '#d0402f', { w: 1.4 }) + S('M32 45L35 34H29Z', '#4a5a8a', { w: 1.4 })
-    + F(circ(32, 34, 1.8), ART_INK) + H('M18 26Q22 18 30 16Q22 22 20 30Z', 0.45),
+  // Examinee's Compass: a simple wooden clamshell compass, a trail arrow carved in its lid.
+  tool_tracking_1: S('M16 26Q14 6 32 4Q50 6 48 26Z', '#a8743a') + F('M42 8Q50 12 48 26H44Q46 14 42 8Z', dk('#a8743a', 0.3))
+    + L('M32 21V10M27 15L32 10L37 15', dk('#a8743a', 0.45), 2) + H('M20 20Q22 12 28 9Q24 14 22 20Z', 0.45)
+    + S(circ(32, 41, 18), '#a8743a') + S(circ(32, 41, 13.5), '#f2e6c8', { w: 2 }) + S('M28 23H36V27H28Z', '#6a7080', { w: 1.8 })
+    + L('M32 30V33M32 49V52M21 41H24M40 41H43', '#8a6a4a', 1.6)
+    + S('M32 29L35.5 41H28.5Z', '#d0402f', { w: 1.8 }) + S('M32 53L35.5 41H28.5Z', '#4a5a8a', { w: 1.8 })
+    + F(circ(32, 41, 1.8), ART_INK) + F('M45 35Q48 48 36 54Q46 46 43 35Z', dk('#f2e6c8', 0.2)) + H('M18 36Q20 28 28 25Q22 32 21 38Z', 0.55),
   // Licensed Compass: a steel clamshell compass, paw print on its open lid.
   tool_tracking_2: S('M16 26Q14 6 32 4Q50 6 48 26Z', '#9aa4b4') + F('M42 8Q50 12 48 26H44Q46 14 42 8Z', dk('#9aa4b4', 0.3))
     + F(ell(32, 18, 4.5, 3.6) + circ(25.5, 12.5, 2.2) + circ(30, 9.5, 2.2) + circ(34, 9.5, 2.2) + circ(38.5, 12.5, 2.2), '#4a5262')
@@ -221,36 +223,33 @@ Object.assign(ART, {
     + H('M17 38Q19 29 27 26Q21 33 20 40Z', 0.55) + SP(54, 32, 4) + SP(10, 44, 3),
   /* ---------------------------------------------------------------- tools: Fishing (One Piece) */
   // Merry Bamboo Rod: a bent bamboo rod with a cork grip, string line and a red-and-white bobber.
-  tool_fishing_1: TR('translate(5 -1)', L('M44 9Q50 20 48 30', '#f0f0f0', 1.4)
-    + RL('M26 46Q24 20 44 8', '#d8c068', 4.4) + L('M24.5 38H28.5M25 29H29M29 20.5L32.5 22.5M36 13.5L38.5 16', dk('#d8c068', 0.55), 1.8)
-    + S(rect(22, 44, 8, 16, 3), '#c8945a', { w: 2 }) + L('M22 50H30M22 55H30', dk('#c8945a', 0.4), 1.4)
-    + S(circ(48, 37, 7), '#ffffff', { w: 2 }) + F('M41 37A7 7 0 0 1 55 37Z', '#d0402f') + L('M41 37H55', ART_INK, 1.6)
-    + H(ell(45, 33, 2, 1.2), 0.7)),
-  // Sniper Island Rod: a lacquered steel rod with a brass reel, the line ending in an orange fish lure.
-  tool_fishing_2: TR('translate(5 -1)', L('M46 7Q54 20 50 30', '#f0f0f0', 1.4)
-    + RL('M26 46Q24 18 46 6', '#3a5aa8', 4) + L('M27 40Q26 22 42 10', lt('#3a5aa8', 0.5), 1.2)
-    + S(circ(27.5, 30, 2.6) + circ(35, 15.5, 2.4), '#d8dee8', { w: 1.6 })
-    + S(rect(22, 44, 8, 17, 2.5), '#8a2a2a', { w: 2 }) + L('M22 49L30 52M22 54L30 57', '#c85a4a', 1.4)
-    + S(circ(35, 46, 7), '#e8c050') + S(circ(35, 46, 2.8), '#8a6a2a', { w: 1.6 }) + RL('M35 46L41 52', '#5a6272', 1.6)
-    + S('M42 34Q49 28 56 33Q52 37 56 41Q49 44 42 38Z', '#ff8a2a', { w: 1.8 }) + F(circ(46, 34.5, 1.4), ART_INK)
-    + L('M49 31V40', dk('#ff8a2a', 0.35), 1.4) + RL('M42 37Q38 40 40 45', '#c0c8d4', 1.4)),
+  tool_fishing_1: ROD('#d8c068', '#f4e6a8', '#c8945a', '#eef2f6', 30)
+    + L('M18.9 32.3L23.6 34.7M27.1 20.3L30.9 23.7M37.9 11.3L40.6 15.7', dk('#d8c068', 0.55), 1.8) + L('M12.3 49.7L16.7 51.5M10.3 54.5L14.7 56.3', dk('#c8945a', 0.45), 1.4)
+    + S(circ(52, 36, 6.5), '#f2efe8', { w: 2 }) + F('M45.5 36A6.5 6.5 0 0 1 58.5 36Z', '#d0402f') + F('M58 37.5A6 6 0 0 1 52 42Q56 40 57 37.5Z', dk('#f2efe8', 0.3))
+    + L('M45.5 36H58.5', ART_INK, 1.6) + H(ell(49.5, 32.5, 2, 1.2), 0.7),
+  // Sniper Island Rod: a lacquered steel-guided rod with a brass reel, the line ending in an orange fish lure.
+  tool_fishing_2: ROD('#3a5aa8', lt('#3a5aa8', 0.5), '#8a2a2a', '#eef2f6', 33.5)
+    + S(circ(29, 22, 2.2) + circ(39.3, 13.5, 2), '#d8dee8', { w: 1.8 }) + L('M12.3 49.7L16.7 51.5M10.3 54.5L14.7 56.3', '#c85a4a', 1.4)
+    + S(circ(24, 45, 5.5), '#e8c050', { w: 2 }) + S(circ(24, 45, 2.2), '#8a6a2a', { w: 1.8 }) + RL('M24 45L29 50', '#5a6272', 1.6) + H(ell(22, 42, 1.6, 1), 0.6)
+    + S('M41 36Q48 30 54 35L58 31.5V40.5L54 37Q48 42 41 36Z', '#ff8a2a', { w: 2 }) + F('M42 36.6Q48 41 54 37Q48 39 42 36.6Z', dk('#ff8a2a', 0.35))
+    + F(circ(45.5, 35, 1.3), ART_INK) + RL('M47 39.5Q46 44 49 45', '#c0c8d4', 1.4) + H(ell(48, 33.5, 2.4, 0.9), 0.6),
   // Den Den Mushi Rod: a gold rod whose reel is a snail-phone, a straw-hat lure on sea-blue line.
-  tool_fishing_3: AURA(36, 32, 30, '#5ad8ff')
-    + TR('translate(4 -1)', L('M46 6Q56 20 48 30', '#5ad8ff', 1.8)
-    + RL('M24 46Q22 16 46 5', '#f2c230', 4.6) + L('M25.5 40Q25 20 42 9', '#fff4b0', 1.4)
-    + S(rect(20, 44, 8, 17, 2.5), '#2a3a8a', { w: 2 }) + S(rect(19, 43, 10, 3, 1), '#f2c230', { w: 1.6 })
-    + S('M30 54Q28 46 36 46H44Q48 50 44 56H32Z', '#8ad06a', { w: 1.8 }) + RL('M42 47L44 39M45 49L49 42', '#8ad06a', 1.4)
-    + S(circ(36, 46, 7), '#f2a2a8') + L('M36 46m-3.6 0a3.6 3.6 0 1 1 3.6 3.6a1.8 1.8 0 1 1 -1.8 -1.8', '#b8565e', 1.6)
-    + S(ell(48, 34, 9, 3), '#f2d060', { w: 1.8 }) + S('M43 33Q43 25 48 25Q53 25 53 33Z', '#f2d060', { w: 1.8 }) + F('M43 30H53V32.5H43Z', '#d0402f')
-    + SP(14, 24, 4) + SP(56, 50, 3)),
+  tool_fishing_3: AURA(34, 32, 30, '#5ad8ff')
+    + ROD('#f2c230', '#fff4b0', '#2a3a8a', '#5ad8ff', 30) + L('M12.3 49.7L16.7 51.5M10.3 54.5L14.7 56.3', '#f2c230', 1.4)
+    + S('M18 54Q19 50 25 50H32Q36 52 33 55H20Q18 55 18 54Z', '#8ad06a', { w: 1.8 }) + RL('M31 51L33 45.5M33.5 52L37.5 47', '#8ad06a', 1.4)
+    + S(circ(24, 45, 6), '#f2a2a8') + L('M24 45m-3 0a3 3 0 1 1 3 3a1.5 1.5 0 1 1 -1.5 -1.5', '#b8565e', 1.6) + H(ell(21.5, 41.5, 1.8, 1.1), 0.6)
+    + S(ell(52, 37, 8, 2.8), '#f2d060', { w: 1.8 }) + S('M47.5 36Q47.5 28.5 52 28.5Q56.5 28.5 56.5 36Z', '#f2d060', { w: 1.8 })
+    + F('M47.6 32.6H56.4V34.6H47.6Z', '#d0402f') + F('M56.4 36Q56.4 30 53 28.8Q55 32 54.5 36Z', dk('#f2d060', 0.3)) + H(ell(50, 30.8, 1.3, 0.9), 0.6)
+    + SP(12, 24, 3.5) + SP(44, 52, 3),
   /* ---------------------------------------------------------------- tools: Woodcutting (Naruto) */
-  // Academy Saw: a short pruning saw with a plain wooden handle.
+  // Academy Saw: a short pruning saw with a plain wooden handle and an iron ferrule.
   tool_woodcutting_1: ROT(45, 32, 32,
-    S('M28 10Q32 6 36 10V40H28Z', '#b8c0cc', { w: 2 })
-    + L('M28 13L26 15L28 17L26 19L28 21L26 23L28 25L26 27L28 29L26 31L28 33L26 35L28 37', ART_INK, 1.6)
-    + F('M32 9V40H35V10Z', dk('#b8c0cc', 0.2))
-    + S('M27 40H37V60Q32 62 27 60Z', '#a8743a') + L('M27 46H37M27 52H37', dk('#a8743a', 0.45), 1.4)
-    + F(circ(32, 56, 1.6), ART_INK)),
+    S('M27 6Q32 2 37 6V42H27Z', '#b8c0cc')
+    + L('M27 9L24.5 11L27 13L24.5 15L27 17L24.5 19L27 21L24.5 23L27 25L24.5 27L27 29L24.5 31L27 33L24.5 35L27 37L24.5 39L27 41', ART_INK, 1.8)
+    + F('M33 5Q35 4.5 37 6V42H33Z', dk('#b8c0cc', 0.25)) + H('M28.5 8H30.5V40H28.5Z', 0.45)
+    + S('M25 41H39V45H25Z', '#7a8090', { w: 2 })
+    + S('M27 45H37V60Q32 62 27 60Z', '#a8743a') + F('M33.5 45H37V60Q35 61 33.5 61Z', dk('#a8743a', 0.3), 0.8)
+    + L('M27 50H37M27 55H37', dk('#a8743a', 0.45), 1.4) + F(circ(32, 57.5, 1.4), ART_INK)),
   // Leaf Lumber Saw: a long steel saw, the Leaf mark on the blade, a shinobi-wrapped grip.
   tool_woodcutting_2: ROT(45, 32, 32,
     S('M25 4H39V42H25Z', '#c8d0dc')
@@ -271,11 +270,12 @@ Object.assign(ART, {
     + L('M14 38Q10 28 18 22M48 50Q58 46 58 36', '#bfeaff', 2, 0.8) + SP(54, 14, 4),
   /* ---------------------------------------------------------------- tools: Mining (Bleach) */
   // Rukon Hand Auger: a wooden T-handle auger with a plain iron screw bit.
-  tool_mining_1: RL('M30 38L50 18', '#8a92a2', 3.8) + L('M36 28L40 32M41 23L45 27', ART_INK, 1.8)
-    + S('M48 16L57 7L54 19Z', '#9aa2b0', { w: 1.8 })
-    + S('M19 31L24 26L41 43L36 48Z', '#a8743a') + F('M22 33L38 49L36 48L19 31Z', dk('#a8743a', 0.4))
-    + S(circ(30, 37, 4.4), '#6a4a2a', { w: 2 }) + F(circ(30, 37, 1.7), '#c0c8d4')
-    + H('M21 30L23 28L31 36L29 38Z', 0.4),
+  tool_mining_1: ROT(45, 32, 32,
+    S('M32 3L37 30H27Z', '#9aa2b0') + L('M28 26L36 23M29 19L35 16M30 12L34 10', dk('#9aa2b0', 0.45), 1.8) + F('M32 4L34.5 30H32Z', '#ffffff', 0.35)
+    + S('M24 30H40V35H24Z', '#6a7080', { w: 2 })
+    + S('M28 35H36V51H28Z', '#a8743a') + F('M33 35H36V51H33Z', dk('#a8743a', 0.35), 0.7) + L('M28 41H36M28 46H36', dk('#a8743a', 0.45), 1.4)
+    + S(rect(19, 51, 26, 7.5, 3), '#a8743a') + F('M20 55H44Q44 58.5 41 58.5H23Q20 58.5 20 55Z', dk('#a8743a', 0.35), 0.8)
+    + H('M22 52.6H32V54.2H22Z', 0.5) + H('M29 36H30.5V50H29Z', 0.4)),
   // Squad 12 Drill: a steel power drill with a spiral cone bit and a lab-striped body.
   tool_mining_2: ROT(45, 32, 32,
     S('M32 2L40 30H24Z', '#b8c2d0') + L('M26 26L39 22M28 19L37 16M30 12L35 10', dk('#b8c2d0', 0.45), 1.8)
@@ -294,4 +294,16 @@ Object.assign(ART, {
     + RL('M14 50Q6 54 8 60', '#d0402f', 1.8)
     + L('M10 34Q8 24 14 18M50 52Q58 48 60 40', '#bfe0ff', 2, 0.8) + SP(56, 10, 4) + SP(14, 12, 2.6),
 });
+// size & placement pass: [scale, dx, dy] so every icon sits at the same visual size in a grid
+const FIT = {
+    wild_fur: [1.04, 0, -3], swift_feather: [1, 4, 0], boar_tusk: [1, -1.5, 0], stag_antler: [0.96, 0, -1], lynx_pelt: [0.94, 0, 0],
+    beastlord_claw: [0.95, 0, -1.5], trail_stone: [1, 0, -2.5], game_meat: [1.08, 0, -1.3], hunters_stew: [1, 0, 2.5], snare: [1, 1.4, -1],
+    cage_trap: [0.95, 0, 2], spirit_trap: [0.93, -0.5, 1.5], wyrm_trap: [0.94, -8, 1.5], chimera_trap: [1.05, 1.5, -7], scent_lure: [1, 0, 1.5],
+    hunter_glaive: [1, -3, 2], star_badge: [1, 0, 1.5], wyvern_bow: [1.03, -1.8, 1.8], beastlord_mantle: [0.94, -2.5, 2], chimera_fang: [0.97, 0, -0.5],
+    tool_tracking_1: [0.97, 0, 0.5], tool_tracking_2: [0.97, 0, 0.5], tool_tracking_3: [0.93, -0.5, 0.5],
+    tool_fishing_1: [0.93, -1, -2], tool_fishing_2: [0.93, -1, -2], tool_fishing_3: [0.93, -1, -2],
+    tool_woodcutting_1: [1.07, 0.5, -0.5], tool_woodcutting_2: [1.04, -0.7, 0.7], tool_woodcutting_3: [1, -1, -1.5],
+    tool_mining_1: [1.05, 4, -4.8], tool_mining_2: [1.08, 1.4, -1.4], tool_mining_3: [0.97, -1.2, -2.2],
+};
+for (const [id, [s, dx, dy]] of Object.entries(FIT)) ART[id] = TR(`translate(${32 + dx} ${32 + dy}) scale(${s}) translate(-32 -32)`, ART[id]);
 })();

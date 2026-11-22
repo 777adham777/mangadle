@@ -142,8 +142,9 @@ const fishSize = (fish, kg) => {
 /* ================================================================ the show */
 // FS: the catch on screen. { d, t0, big (showcase), fish, shiny, kg, from, apex, land, size, el, phase }
 let FS = null;
-const FS_T = { fight: 1.0, burst: 1.12, apex: 1.62, hold: 2.42, land: 2.92, end: 3.2 };
-const FS_QUICK = { apex: 0.42, land: 0.95, end: 1.15 };
+// flop: after landing, the fish flops on the boards for a moment before it is bagged (out: fades)
+const FS_T = { fight: 1.0, burst: 1.12, apex: 1.62, hold: 2.42, land: 2.92, out: 3.4, end: 3.68 };
+const FS_QUICK = { apex: 0.42, land: 0.95, out: 1.2, end: 1.45 };
 const fsNow = () => performance.now() / 1000;
 const fsK = () => (FS ? fsNow() - FS.t0 : 0);
 // A showcase for a shiny fish, a trophy, or a record well above the usual size.
@@ -221,6 +222,10 @@ function fsPath(k) {
   if (k < hold) {
     const f = (k - T.apex) / (hold - T.apex);
     return { x: xa - 14 * f, y: ya - 6 * Math.sin(Math.PI * f), rot: 8 + Math.sin(k * 7) * 9, s: (FS.big ? FS.zoom : 1) + 0.08 * Math.sin(Math.PI * f) };
+  }
+  if (k > T.land) {   // flopping on the boards: little hops and a wriggle, dying out
+    const q = k - T.land, damp = Math.max(0, 1 - q / (T.out - T.land)), s = FS.big ? 0.9 : 0.9;
+    return { x: xl + Math.sin(q * 23) * 2 * damp, y: yl - Math.abs(Math.sin(q * 17)) * 9 * damp, rot: -52 + Math.sin(q * 31) * 22 * damp, s: FS.big ? s : 0.9 };
   }
   const f = Math.min(1, (k - hold) / (T.land - hold)), e = fsEase.in(f);
   return { x: xa - (FS.big ? 14 : 0) + (xl - xa + (FS.big ? 14 : 0)) * fsEase.out(f), y: ya + (yl - ya) * e, rot: 8 - 60 * e, s: FS.big ? FS.zoom - (FS.zoom - 0.9) * fsEase.out(f) : 1 - 0.1 * f };
@@ -300,6 +305,6 @@ UPD.push(() => {
     for (let i = 0; i < (FS.big ? 10 : 4); i++) partAdd({ kind: 'spray', x: lx, y: ly, vx: (r() - 0.5) * 200, vy: -80 - r() * 120, g: 700, life: 0.7, size: 1.5 + r() * 1.5, floor: ly + 8 });
     const id = FS.shiny ? variantId(FS.fish, 's') : FS.fish;
     spotPop(`<b>+1 ${esc(ITEMS[id].name)}</b><small>${fmtKg(FS.kg)}</small>`, lx + 40, ly - 60, 'tag' + (FS.shiny ? ' gold' : ''), 1500);
-    FS.el.classList.add('out');
   }
+  if (k >= T.out && FS.phase < 6) { FS.phase = 6; FS.el.classList.add('out'); }
 });

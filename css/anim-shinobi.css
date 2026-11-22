@@ -1,0 +1,149 @@
+/* Animations — shinobi (2026-11-22 animation pass): woodcutting + crafting scenes (js/shinobi-ui.js). */
+
+/* ---------------------------------------------------------------- woodcutting: the tree */
+/* the trunk barely moves on a blow (the notch overlay stays on it); the crown answers a beat later */
+.spot .wc-tree.hit { animation: wcTrunk 0.3s ease-out; }
+@keyframes wcTrunk { 0% { transform: none; } 30% { transform: translateX(1.5px); } 65% { transform: translateX(-1px); } 100% { transform: none; } }
+.spot .wc-crown, .spot .wc-crown-in { transform-box: fill-box; transform-origin: 50% 100%; }
+.spot .wc-crown { animation: wcSway 5.5s ease-in-out infinite alternate; }
+@keyframes wcSway { from { transform: rotate(-0.6deg); } to { transform: rotate(0.7deg) translateX(2px); } }
+.spot .wc-tree.hit .wc-crown-in { animation: wcCrownHit 0.75s cubic-bezier(.3, .6, .4, 1) 0.05s; }
+@keyframes wcCrownHit { 0% { transform: none; } 18% { transform: rotate(1.6deg) translateX(5px); } 40% { transform: rotate(-1.1deg) translateX(-3px); } 62% { transform: rotate(0.6deg); } 82% { transform: rotate(-0.25deg); } 100% { transform: none; } }
+/* bamboo: the whole stalk sways, and whips on a blow */
+.spot .wc-tree.bamboo { transform-box: fill-box; transform-origin: 50% 100%; animation: wcBamboo 4s ease-in-out infinite alternate; }
+@keyframes wcBamboo { from { transform: rotate(-0.35deg); } to { transform: rotate(0.45deg); } }
+.spot .wc-tree.bamboo.hit { animation: wcBambooHit 0.9s cubic-bezier(.3, .6, .4, 1); }
+@keyframes wcBambooHit { 0% { transform: none; } 15% { transform: rotate(0.9deg); } 38% { transform: rotate(-0.7deg); } 60% { transform: rotate(0.35deg); } 100% { transform: none; } }
+/* a golden log: the tree flashes gold */
+.spot .wc-tree.gold { animation: wcGold 1.2s ease-out; }
+@keyframes wcGold { 0% { filter: none; } 20% { filter: brightness(1.6) sepia(1) saturate(3) hue-rotate(-12deg); } 100% { filter: none; } }
+
+/* a power blow (every third log): a bigger jolt */
+.spot.thud-big > .spot-bg, .spot.thud-big > .spot-av, .spot.thud-big > .spot-fx { animation: wcThudBig 0.3s linear; }
+@keyframes wcThudBig { 0% { transform: translate(5px, 3px); } 25% { transform: translate(-4px, -2px); } 50% { transform: translate(2px, 1px); } 75% { transform: translate(-1px, 0); } 100% { transform: none; } }
+
+/* ambient: grass leaning, clouds drifting, the watch-fire flickering */
+.spot .wc-grass { transform-box: fill-box; transform-origin: 50% 100%; animation: wcGrass 3.8s ease-in-out infinite alternate; }
+@keyframes wcGrass { from { transform: skewX(-1.5deg); } to { transform: skewX(2deg); } }
+.spot .wc-clouds { animation: wcClouds 60s linear infinite alternate; }
+@keyframes wcClouds { to { transform: translateX(40px); } }
+.spot .wc-fire { transform-box: fill-box; transform-origin: 50% 100%; animation: wcFire 0.9s ease-in-out infinite alternate; }
+@keyframes wcFire { from { transform: scale(0.85); opacity: 0.8; } to { transform: scale(1.2, 1.3); opacity: 1; } }
+.spot [data-pile].bump { transform-box: fill-box; transform-origin: 50% 100%; animation: wcPile 0.35s ease-out; }
+@keyframes wcPile { 40% { transform: scale(1.04, 0.95); } 100% { transform: none; } }
+
+/* birds crossing the sky now and then */
+.wc-birds { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.wc-birds i { position: absolute; left: -4%; top: 14%; width: 1.6%; aspect-ratio: 2 / 1; animation: wcBird 22s linear infinite; }
+.wc-birds i::before, .wc-birds i::after { content: ''; position: absolute; top: 0; width: 55%; height: 100%; border-top: 2px solid #2a3440; border-radius: 50% 50% 0 0; animation: wcFlap 0.5s ease-in-out infinite alternate; }
+.wc-birds i::before { left: 0; transform-origin: 100% 100%; } .wc-birds i::after { right: 0; transform-origin: 0 100%; }
+.wc-birds i:nth-child(2) { top: 18%; animation-delay: -0.6s; width: 1.3%; } .wc-birds i:nth-child(3) { top: 11%; animation-delay: -1.1s; width: 1.1%; }
+@keyframes wcBird { 0% { transform: translate(0, 0); } 30% { transform: translate(110vw, -20px); } 100% { transform: translate(110vw, -20px); } }
+@keyframes wcFlap { from { transform: scaleY(1); } to { transform: scaleY(-0.4); } }
+/* mistwood: two bands of mist drifting */
+.wc-mist { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+.wc-mist i { position: absolute; left: -30%; width: 90%; height: 22%; top: 48%; border-radius: 50%; background: radial-gradient(ellipse, rgba(230, 242, 240, 0.55), rgba(230, 242, 240, 0) 70%); animation: wcMist 26s ease-in-out infinite alternate; }
+.wc-mist i:nth-child(2) { top: 66%; left: 30%; animation-duration: 34s; animation-direction: alternate-reverse; }
+@keyframes wcMist { to { transform: translateX(45%); } }
+/* spirit trees: drifting motes of light */
+.wc-motes { position: absolute; inset: 0; z-index: 3; pointer-events: none; overflow: hidden; }
+.wc-motes i { position: absolute; width: 0.7%; aspect-ratio: 1; border-radius: 50%; background: var(--mc); box-shadow: 0 0 8px var(--mc); opacity: 0; animation: wcMote 6s ease-in-out infinite; }
+.wc-motes i:nth-child(1) { left: 36%; top: 60%; } .wc-motes i:nth-child(2) { left: 48%; top: 40%; animation-delay: -1s; } .wc-motes i:nth-child(3) { left: 58%; top: 70%; animation-delay: -2.2s; }
+.wc-motes i:nth-child(4) { left: 42%; top: 25%; animation-delay: -3.1s; } .wc-motes i:nth-child(5) { left: 66%; top: 50%; animation-delay: -4s; } .wc-motes i:nth-child(6) { left: 30%; top: 35%; animation-delay: -4.8s; }
+.wc-motes i:nth-child(7) { left: 52%; top: 80%; animation-delay: -5.4s; }
+@keyframes wcMote { 0% { opacity: 0; transform: translate(0, 0); } 30% { opacity: 0.9; } 70% { opacity: 0.6; } 100% { opacity: 0; transform: translate(14px, -40px); } }
+
+/* pops: bamboo's hollow ring, dust where the log lands, the rare nest, the startled bird */
+.spop.wc-ring { width: 5%; aspect-ratio: 1; border: 2px solid rgba(240, 255, 210, 0.9); border-radius: 50%; animation: wcRing 0.5s ease-out forwards; }
+@keyframes wcRing { from { transform: translate(-50%, -50%) scale(0.3); opacity: 1; } to { transform: translate(-50%, -50%) scale(1.8); opacity: 0; } }
+.spop.wc-dust { width: 6%; aspect-ratio: 3 / 1; border-radius: 50%; background: radial-gradient(ellipse, rgba(210, 190, 150, 0.7), rgba(210, 190, 150, 0) 70%); animation: wcDust 0.6s ease-out forwards; }
+@keyframes wcDust { from { transform: translate(-50%, -50%) scale(0.4); opacity: 1; } to { transform: translate(-50%, -70%) scale(1.6, 1.2); opacity: 0; } }
+.spop.wc-nest { width: 6%; aspect-ratio: 1; z-index: 2; filter: drop-shadow(0 0 8px rgba(255, 226, 122, 0.9)); animation: wcNest 2.6s forwards; }
+@keyframes wcNest {
+  0% { transform: translate(-50%, -50%) scale(0.6); opacity: 0; animation-timing-function: ease-in; }
+  8% { transform: translate(-50%, -50%) scale(1); opacity: 1; animation-timing-function: ease-in; }
+  38% { transform: translate(-50%, calc(-50% + var(--fy))) rotate(160deg); animation-timing-function: ease-out; }
+  48% { transform: translate(-50%, calc(-50% + var(--fy) - 18px)) rotate(200deg); animation-timing-function: ease-in; }
+  56% { transform: translate(-50%, calc(-50% + var(--fy))) rotate(220deg) scale(1.1, 0.9); }
+  62% { transform: translate(-50%, calc(-50% + var(--fy))) rotate(220deg); opacity: 1; }
+  100% { transform: translate(-50%, calc(-50% + var(--fy))) rotate(220deg); opacity: 0; } }
+.spop.wc-bolt { width: 2.4%; aspect-ratio: 2 / 1; animation: wcBolt 1.6s ease-in forwards; }
+.spop.wc-bolt i { position: absolute; inset: 0; }
+.spop.wc-bolt i::before, .spop.wc-bolt i::after { content: ''; position: absolute; top: 0; width: 55%; height: 100%; border-top: 3px solid #2a3440; border-radius: 50% 50% 0 0; animation: wcFlap 0.18s ease-in-out infinite alternate; }
+.spop.wc-bolt i::before { left: 0; transform-origin: 100% 100%; } .spop.wc-bolt i::after { right: 0; transform-origin: 0 100%; }
+@keyframes wcBolt { from { transform: translate(-50%, -50%); opacity: 1; } 85% { opacity: 1; } to { transform: translate(calc(-50% + var(--bx)), calc(-50% + var(--by))) scale(0.6); opacity: 0; } }
+
+/* ---------------------------------------------------------------- crafting: the workshop */
+.sp-craft .cs-lantern, .sp-craft .cs-hang, .sp-craft .cs-branch { transform-box: fill-box; transform-origin: 50% 0; }
+.sp-craft .cs-lantern { animation: csSwing 4.5s ease-in-out infinite alternate; }
+.sp-craft .cs-lampglow { animation: csFlicker 2.3s ease-in-out infinite alternate; }
+@keyframes csFlicker { 0% { opacity: 0.75; } 40% { opacity: 0.95; } 55% { opacity: 0.82; } 100% { opacity: 1; } }
+.sp-craft .cs-hang { animation: csSwing 3.6s ease-in-out infinite alternate; }
+.sp-craft .cs-hang.b { animation-duration: 4.2s; animation-delay: -1.2s; } .sp-craft .cs-hang.c { animation-duration: 5s; animation-delay: -2.4s; }
+@keyframes csSwing { from { transform: rotate(-1.6deg); } to { transform: rotate(1.6deg); } }
+.sp-craft .cs-branch { transform-origin: 100% 50%; animation: csBranch 5s ease-in-out infinite alternate; }
+@keyframes csBranch { from { transform: rotate(-2deg); } to { transform: rotate(2deg); } }
+.sp-craft .cs-beam { animation: csBeam 7s ease-in-out infinite alternate; }
+@keyframes csBeam { from { opacity: 0.7; } to { opacity: 1; } }
+.cs-work { z-index: 1; }
+/* dust motes floating in the window light */
+.cs-motes { position: absolute; inset: 0; z-index: 1; pointer-events: none; overflow: hidden; }
+.cs-motes i { position: absolute; width: 0.45%; aspect-ratio: 1; border-radius: 50%; background: #fff4d6; opacity: 0; animation: csMote 9s ease-in-out infinite; }
+.cs-motes i:nth-child(1) { left: 20%; top: 55%; } .cs-motes i:nth-child(2) { left: 28%; top: 40%; animation-delay: -1.5s; } .cs-motes i:nth-child(3) { left: 35%; top: 66%; animation-delay: -3s; }
+.cs-motes i:nth-child(4) { left: 24%; top: 75%; animation-delay: -4.5s; } .cs-motes i:nth-child(5) { left: 42%; top: 80%; animation-delay: -6s; } .cs-motes i:nth-child(6) { left: 31%; top: 50%; animation-delay: -7.5s; }
+@keyframes csMote { 0% { opacity: 0; transform: translate(0, 0); } 30% { opacity: 0.7; } 70% { opacity: 0.5; } 100% { opacity: 0; transform: translate(22px, -26px); } }
+/* the scroll cat naps on the rack's lower shelf */
+.cs-cat { position: absolute; z-index: 2; width: 5%; pointer-events: none; transform: translate(-50%, 0); }
+.cs-cat svg { display: block; width: 100%; overflow: visible; }
+.cs-cat .cs-tail { transform-box: fill-box; transform-origin: 0 100%; animation: csTail 2.6s ease-in-out infinite alternate; }
+@keyframes csTail { from { transform: rotate(-8deg); } to { transform: rotate(14deg); } }
+
+/* the item taking shape above the bench: a faint outline that fills from the bottom with the work */
+.cs-ghost { position: absolute; z-index: 4; width: 8%; aspect-ratio: 1; transform: translate(-50%, -50%); pointer-events: none; animation: csFloat 2.4s ease-in-out infinite alternate; }
+.cs-ghost[hidden] { display: none; }
+.cs-ghost > * { position: absolute; inset: 0; display: block; width: 100%; height: 100%; background: none; box-shadow: none; }
+.cs-ghost .tile-art::before, .cs-ghost .tile-art::after { display: none; }
+.cs-ghost .gi { width: 100%; height: 100%; display: block; }
+.cs-ghost .cs-dim { opacity: 0.28; filter: grayscale(1) brightness(1.8); }
+.cs-ghost .cs-fill { clip-path: inset(calc((1 - var(--k, 0)) * 100%) 0 0 0); filter: drop-shadow(0 0 4px rgba(255, 240, 200, 0.8)); }
+.cs-ghost .cs-halo { inset: -40%; border-radius: 50%; background: radial-gradient(circle, rgba(255, 236, 180, 0.55), rgba(255, 236, 180, 0) 65%); opacity: calc(0.25 + var(--k, 0) * 0.75); transform: scale(calc(0.7 + var(--k, 0) * 0.4)); }
+@keyframes csFloat { from { translate: 0 -2px; } to { translate: 0 3px; } }
+/* finished: pops out, hangs a moment, arcs onto the rack (outer: across, inner: up then down) */
+.spop.cs-made { width: 7%; aspect-ratio: 1; z-index: 3; animation: csMadeX 1.5s both; }
+.spop.cs-made > i { display: block; width: 100%; height: 100%; animation: csMadeY 1.5s both; }
+.spop.cs-made .tile-art { filter: drop-shadow(0 0 6px rgba(255, 255, 255, 0.85)) drop-shadow(0 3px 3px rgba(0, 0, 0, 0.5)); }
+.spop.cs-made.gold .tile-art { filter: drop-shadow(0 0 8px #ffe27a) drop-shadow(0 0 16px #ffd23f); }
+@keyframes csMadeX {
+  0% { transform: translate(-50%, -50%) scale(0.3); opacity: 0; }
+  16% { transform: translate(-50%, -50%) scale(1.3); opacity: 1; }
+  28% { transform: translate(-50%, -50%) scale(1); }
+  46% { transform: translate(-50%, -50%) scale(1); animation-timing-function: cubic-bezier(.4, 0, .6, 1); }
+  94% { opacity: 1; }
+  100% { transform: translate(calc(-50% + var(--dx)), -50%) scale(0.5); opacity: 0; } }
+@keyframes csMadeY {
+  0%, 46% { transform: translateY(0); animation-timing-function: ease-out; }
+  66% { transform: translateY(-36px); animation-timing-function: ease-in; }
+  100% { transform: translateY(var(--dy)); } }
+.spop.cs-raybox { width: 28%; aspect-ratio: 1; }
+.spop.cs-raybox .cs-rays { position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255, 226, 122, 0.75) 0 6deg, transparent 6deg 18deg);
+  -webkit-mask: radial-gradient(circle, #000 15%, transparent 68%); mask: radial-gradient(circle, #000 15%, transparent 68%); animation: csRays 1.6s ease-out forwards; }
+@keyframes csRays { from { transform: rotate(0) scale(0.4); opacity: 0; } 20% { opacity: 1; } to { transform: rotate(60deg) scale(1.1); opacity: 0; } }
+/* the rack of finished goods */
+.cs-rack { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
+.cs-item { position: absolute; width: 4.2%; aspect-ratio: 1; transform: translate(-50%, -50%); filter: drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
+.cs-item .tile-art { display: block; width: 100%; height: 100%; background: none; box-shadow: none; }
+.cs-item .tile-art::before, .cs-item .tile-art::after { display: none; }
+.cs-item .gi { width: 100%; height: 100%; display: block; }
+.cs-item.gold { filter: drop-shadow(0 0 6px #ffd23f) drop-shadow(0 2px 2px rgba(0, 0, 0, 0.5)); }
+.cs-item.fresh { animation: csLand 0.45s ease-out; }
+@keyframes csLand { 0% { transform: translate(-50%, -50%) scale(1.25, 0.75); } 45% { transform: translate(-50%, -62%) scale(0.92, 1.08); } 100% { transform: translate(-50%, -50%); } }
+
+/* ---------------------------------------------------------------- reduced motion */
+@media (prefers-reduced-motion: reduce) {
+  .spot .wc-tree.hit, .spot .wc-tree.bamboo, .spot .wc-tree.gold, .spot .wc-crown, .spot .wc-tree.hit .wc-crown-in, .spot.thud-big > *,
+  .spot .wc-grass, .spot .wc-clouds, .spot .wc-fire, .spot [data-pile].bump, .wc-birds i, .wc-birds i::before, .wc-birds i::after, .wc-mist i,
+  .sp-craft .cs-lantern, .sp-craft .cs-lampglow, .sp-craft .cs-hang, .sp-craft .cs-branch, .sp-craft .cs-beam, .cs-motes i, .cs-cat .cs-tail,
+  .cs-ghost, .cs-item.fresh { animation: none !important; }
+  .wc-birds, .wc-motes, .cs-motes { display: none; }
+  .spop.wc-nest, .spop.wc-bolt, .spop.wc-ring, .spop.wc-dust, .spop.cs-raybox { display: none; }
+}

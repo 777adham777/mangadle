@@ -235,6 +235,53 @@ const POSES = {
   victory:  { tw: 0.6, t1: 184, t2: -5, n: -10, h: -12, ht: 6, st: 10, aF: [180, -8],  aB: [-130, 36], lF: [30, -86], lB: [-8, -26], fF: 20, fB: -40, g: 0,    dy: 0, air: 24, expr: 'happy' },
   // fish, cook: full motion cycles, see POSE_DRIVE (their still poses are set there)
 };
+// ---- combat (2026-11-22 animation pass): every weapon family has its own stance and its own attacks.
+// Families: blade (swords, katana, sickle) · quick (short blades) · heavy (hammer, cleaver) · spear · bow · gun · fist (bare, gauntlets, claws).
+{
+  const CP = (o) => Object.assign({}, POSES.guard, { bf: 1 }, o);
+  Object.assign(POSES, {
+    // stances (breathing / bouncing on top: see POSE_DRIVE.st_*)
+    st_blade: POSES.guard,
+    st_quick: CP({ t1: 168, t2: 8, n: -6, h: -6, aF: [64, 74], aB: [30, 118], lF: [34, -46], lB: [-30, 22], dy: 20, g: -72, fF: 16, fB: -22 }),
+    st_heavy: CP({ t1: 174, t2: 6, n: -4, h: -2, aF: [36, 34], aB: [44, 36], lF: [32, -30], lB: [-30, 12], dy: 14, g: -22 }),
+    st_spear: CP({ t1: 172, t2: 4, aF: [64, 30], aB: [36, 70], lF: [34, -34], lB: [-30, 16], dy: 14, g: -4 }),
+    st_bow:   CP({ t1: 178, t2: 2, n: -2, h: -2, aF: [62, 28], aB: [14, 30], bf: 0, lF: [24, -16], lB: [-22, 10], dy: 6, g: 0 }),
+    st_gun:   CP({ t1: 176, t2: 4, aF: [34, 56], aB: [44, 52], lF: [30, -28], lB: [-28, 14], dy: 12, g: 0 }),
+    st_fist:  CP({ t1: 172, t2: 6, n: -6, h: -8, aF: [58, 112], aB: [40, 128], lF: [30, -34], lB: [-28, 18], dy: 14, g: 0 }),
+    // blade: high arc (windup → strike → follow), rising cut, thrust
+    bladeFollow: CP({ t1: 160, t2: 10, n: -10, h: -4, ht: 6, st: -8, aF: [44, 6], aB: [-58, 24], bf: 0, lF: [44, -54], lB: [-40, 6], fF: 0, fB: -22, dy: 20, g: -14, fx: 'slashTail' }),
+    bladeLow: CP({ t1: 192, t2: -8, n: 4, h: -6, aF: [-30, 24], aB: [20, 90], lF: [34, -48], lB: [-30, 14], dy: 20, g: -64 }),
+    spCoil: CP({ t1: 186, t2: -4, n: 2, h: -4, aF: [20, 70], aB: [10, 80], lF: [32, -40], lB: [-30, 16], dx: -6, dy: 16, g: 0 }),
+    bladeRise: CP({ t1: 170, t2: 8, n: -10, h: -10, ht: 6, st: -8, aF: [148, 10], aB: [-50, 20], bf: 0, lF: [40, -40], lB: [-36, 4], fF: 4, fB: -20, dy: 8, g: 4, fx: 'rise' }),
+    // quick: two fast slashes (out, back)
+    qCoil: CP({ t1: 186, t2: -6, n: 4, h: -4, aF: [30, 120], aB: [10, 100], lF: [36, -52], lB: [-32, 22], dy: 24, g: -150 }),
+    qSlashA: CP({ t1: 162, t2: 8, n: -10, h: -6, ht: 6, st: -8, aF: [100, -6], aB: [-40, 50], bf: 0, lF: [46, -62], lB: [-44, 10], fF: -2, fB: -22, dy: 22, g: 0, fx: 'qslash' }),
+    qSlashB: CP({ t1: 166, t2: 8, n: -8, h: -8, aF: [118, 46], aB: [70, 20], lF: [44, -58], lB: [-42, 10], fF: -2, fB: -22, dy: 20, g: -90, fx: 'qslash2' }),
+    // heavy: raised behind the head, slammed into the floor
+    hvRaise: CP({ t1: 194, t2: -10, n: 8, h: -10, ht: -4, st: 8, aF: [196, -16], aB: [176, 2], lF: [32, -30], lB: [-30, 10], dy: 6, g: 40 }),
+    hvSlam: CP({ t1: 148, t2: 14, n: -8, h: 2, ht: 6, st: -8, aF: [112, -36], aB: [100, -24], lF: [50, -66], lB: [-42, 8], fF: -4, fB: -24, dy: 30, g: -22, fx: 'smash' }),
+    // bow: draw to the cheek, loose
+    bowDraw: CP({ t1: 180, t2: 0, n: -4, h: -2, aF: [90, 0], aB: [96, -168], bf: 1, lF: [26, -18], lB: [-26, 12], dy: 8, g: 0 }),
+    bowLoose: CP({ t1: 184, t2: -4, n: -6, h: -4, aF: [92, -2], aB: [-70, 36], bf: 0, lF: [26, -18], lB: [-26, 12], dy: 8, g: 0, fx: 'loose' }),
+    // gun: aim, recoil
+    gunAim: CP({ t1: 176, t2: 4, n: -4, h: -4, aF: [84, 6], aB: [76, 20], lF: [34, -34], lB: [-32, 16], dy: 14, g: 0 }),
+    gunKick: CP({ t1: 192, t2: -8, n: 6, h: -10, aF: [112, -4], aB: [96, 10], lF: [30, -26], lB: [-34, 20], dx: -8, dy: 12, g: -6, fx: 'muzzle' }),
+    // fist: jab, cross, uppercut
+    jab: CP({ t1: 166, t2: 8, n: -8, h: -8, aF: [94, -4], aB: [40, 128], lF: [38, -44], lB: [-34, 14], dy: 16, g: 0, fx: 'jab' }),
+    cross: CP({ t1: 158, t2: 10, n: -10, h: -8, ht: 6, st: -6, aF: [52, 118], aB: [90, 0], lF: [42, -52], lB: [-40, 6], fF: 0, fB: -24, dx: 6, dy: 18, g: 0, fx: 'cross' }),
+    upper: CP({ t1: 170, t2: 6, n: -12, h: -12, aF: [136, 30], aB: [30, 120], lF: [30, -20], lB: [-26, 4], dy: 2, air: 6, g: 0, fx: 'upper' }),
+    // reactions
+    hurtBig: { tw: 1, t1: 212, t2: -16, n: 22, h: 24, ht: -8, st: 12, aF: [-54, 34], aB: [-84, 20], lF: [22, -30], lB: [-28, 4], fF: 12, fB: -10, g: -150, dx: -10, dy: 12, expr: 'hurt', fx: 'hit' },
+    dodge: CP({ t1: 198, t2: -10, n: 6, h: -8, aF: [36, 96], aB: [-34, 64], bf: 0, lF: [36, -66], lB: [-26, 14], dx: -18, dy: 10, air: 6 }),
+    ko: { tw: 0.8, t1: 214, t2: -14, n: 26, h: 30, ht: -6, st: 10, aF: [-24, 14], aB: [-44, 10], lF: [44, -104], lB: [-6, -90], fF: 10, fB: -40, g: -150, dy: 46, expr: 'hurt' },
+    // techniques: a palm thrust (attacks), a hand seal (support, defense), a power-up (ultimates)
+    cast: CP({ t1: 168, t2: 6, n: -8, h: -6, aF: [40, 116], aB: [92, -2], bf: 1, lF: [40, -48], lB: [-36, 10], dy: 16, g: 20, fx: 'cast' }),
+    seal: CP({ t1: 180, t2: 2, n: 4, h: 6, aF: [24, 132], aB: [-12, 150], bf: 1, lF: [26, -22], lB: [-24, 12], dy: 8, g: -150 }),
+    powerUp: CP({ tw: 0.6, t1: 182, t2: -6, n: -10, h: -12, aF: [44, -64], aB: [-44, 64], bf: 0, lF: [34, -40], lB: [-32, 14], dy: 18, g: -150, fx: 'aura' }),
+    // victories
+    flourish: CP({ tw: 0.8, t1: 182, t2: -4, n: -8, h: -10, aF: [168, -6], aB: [-40, -30], bf: 0, lF: [16, -6], lB: [-10, 4], dy: 0, g: 10, expr: 'happy' }),
+  });
+}
 const POSE_KEYS = ['t1', 't2', 'n', 'h', 'ht', 'st', 'tw', 'fF', 'fB', 'g', 'dy', 'air', 'dx', 'rb', 'cr', 'pt', 'sa', 'fq', 'fl'];
 function lerpPose(a, b, k) {
   const o = {};
@@ -587,6 +634,60 @@ function driveU(name, t) {
   POSES.fish = POSE_DRIVE.fish(0.5, 0, B0, true);
   POSES.cook = POSE_DRIVE.cook(0.3, 0, B0, true);
   POSES.wood = POSE_DRIVE.wood(0.02, 0, B0, true);
+}
+
+// ---- combat stances: the weapon family (blade, quick, heavy, spear, bow, gun, fist) of what a fighter holds,
+// and a living guard for each: breathing, weight shifting from foot to foot over planted feet, fist and
+// knife fighters bouncing on the balls of their feet, and every ~7 s a small fidget (a blade twirl,
+// a knife flip, a gun spin, a shoulder roll, a shadow jab, a test of the bowstring).
+const CB_KIND = { katana: 'blade', cutlass: 'blade', sickle: 'blade', short: 'quick', hammer: 'heavy', cleaver: 'heavy', lance: 'spear', bow: 'bow', cannon: 'gun', fist: 'fist', claw: 'fist' };
+function cbFam(id) {
+  if (!id || !ITEMS[id]) return 'fist';
+  const k = weaponKind(id);
+  if (k !== 'cutlass') return CB_KIND[k] || 'blade';
+  // a plain sword shape: the item's own family (weapons.js, or it.fam behind a manga name) refines it
+  const af = ITEMS[id].fam || (typeof armFamily === 'function' ? armFamily(id) : '');
+  return af === 'short' ? 'quick' : 'blade';
+}
+const cbStance = (id) => 'st_' + cbFam(id);
+let cbKoT = 0;   // until when your fighter lies knocked out (arena.js sets it on a defeat)
+{
+  const ST = {
+    blade: { br: 2.2, bob: 0, sway: 3, fid: 'twirl' },
+    quick: { br: 2.7, bob: 5, bf: 1.15, sway: 6, fid: 'flip' },
+    heavy: { br: 1.6, bob: 0, sway: 1.5, fid: 'heft' },
+    spear: { br: 2, bob: 0, sway: 2.5, fid: 'twirl' },
+    bow:   { br: 1.8, bob: 0, sway: 1.5, fid: 'string' },
+    gun:   { br: 2, bob: 0, sway: 2, fid: 'spin' },
+    fist:  { br: 2.7, bob: 6, bf: 1.2, sway: 0, fid: 'jab' },
+  };
+  const mixA = (a, b, k) => [a[0] + (b[0] - a[0]) * k, a[1] + (b[1] - a[1]) * k];
+  const FID = {
+    twirl: (P, k, v) => { P.g += 360 * ease.io(v); P.h -= 3 * k; },
+    flip: (P, k, v) => { P.g += 720 * ease.io(v); P.aF = mixA(P.aF, [80, 70], k * 0.5); },
+    spin: (P, k, v) => { P.g += 720 * ease.out(v); P.aF = mixA(P.aF, [70, 40], k * 0.6); P.h -= 4 * k; },
+    heft: (P, k) => { P.aF = mixA(P.aF, [150, -40], k * 0.55); P.aB = mixA(P.aB, [120, -10], k * 0.4); P.t2 -= 4 * k; P.h -= 6 * k; },
+    string: (P, k) => { P.aB = mixA(P.aB, [96, -168], k * 0.7); P.h -= 3 * k; },
+    jab: (P, k, v) => { const j = Math.sin(Math.min(1, v * 2) * Math.PI) + 0.8 * Math.sin(Math.max(0, v * 2 - 1) * Math.PI); P.aF = mixA(P.aF, [94, -4], Math.min(1, j) * k); P.t1 -= 3 * j * k; },
+  };
+  const feetOf = (P0, B) => { const J = solve(P0, B), dx = P0.dx || 0; return [J.lF[2][0] - 100 - dx, J.lB[2][0] - 100 - dx]; };
+  for (const f in ST) {
+    const o = ST[f], name = 'st_' + f;
+    POSE_DRIVE[name] = (u, t, B, calm) => {
+      const P0 = POSES[name], P = Object.assign({}, P0, { aF: P0.aF.slice(), aB: P0.aB.slice() });
+      if (calm) return P;
+      const br = Math.sin(t * o.br), b = o.bob ? 0.5 - 0.5 * Math.cos(t * o.bf * 2 * Math.PI) : 0;
+      P.t2 += br * 1.6; P.n -= br * 1.2; P.h = (P.h || 0) + Math.sin(t * 0.9) * 1.5;
+      P.aF[0] += br * 1.4 - b * 3; P.aB[0] -= br * 1.4 + b * 2;
+      P.g = (P0.g || 0) + Math.sin(t * 1.3) * o.sway;
+      P.t1 += Math.sin(t * 0.8) * 1.4; P.dx = (P0.dx || 0) + Math.sin(t * 0.8) * 2;   // weight shift
+      P.dy = (P0.dy || 0) + 1.2 + br * 1.2 + b * o.bob;
+      const ph = (t % 7.3) / 7.3, k = win(ph, 0.8, 0.84, 0.93, 0.97);
+      if (k) FID[o.fid](P, k, Math.max(0, Math.min(1, (ph - 0.82) / 0.13)));
+      P.feet = feetOf(P0, B);
+      return plantPose(P, B);
+    };
+  }
 }
 
 /* ================================================================ drawing */
@@ -1367,7 +1468,7 @@ function drawAvatar(A, P, t, opt) {
   const sheathed = worn && !onHand && (P.sh || P.prop) ? worn : null;
   const G = gearSVG(A, J, P, t, B, M, { sheathed, O });
   if (G.fx) out.push(G.fx);
-  if (P.fx) out.push(fxSVG(P.fx, J, worn ? RCOL[Math.min(6, typeof rarity === 'function' ? rarity(worn) : 1)] : skin));
+  if (P.fx) out.push(fxSVG(P.fx, J, worn ? RCOL[Math.min(6, typeof rarity === 'function' ? rarity(worn) : 1)] : skin, P, B.w));
   const hs = J.headR / 19, ha = (P.h || 0) + (180 - J.neckA) * 0.6;
   const onHead = (inner) => `<g transform="translate(${pt(J.head)}) rotate(${r1(ha)}) scale(${r1(hs * 1000) / 1000})">${inner}</g>`;
   // hair: long locks hang behind the body, the rest sits on the head (shifted as the head turns)
@@ -1677,9 +1778,41 @@ function gearSVG(A, J, P, t, B, M, o) {
   return { back: back.join(''), under: under.join(''), over: over.join(''), fx: fx.join('') };
 }
 // Motion effects: slash trail, thrust speed lines, kick impact, hit recoil.
-function fxSVG(fx, J, col) {
+// Combat effects of the weapon-family attacks (drawn behind the figure).
+// A swept crescent (a weapon trail) around c, from angle a0 to a1: thick in the middle, thin at both ends.
+function trailArc(c, r, a0, a1, k, col, op) {
+  const sw = a1 < a0 ? 1 : 0, lg = Math.abs(a1 - a0) > 180 ? 1 : 0;
+  const p0 = add(c, a0, r), p1 = add(c, a1, r * 0.98), p2 = add(c, a0, r * 0.94), R = r1(r), Rk = r1(r * k);
+  return `<path d="M${pt(p0)} A${R},${R} 0 ${lg},${sw} ${pt(p1)} A${Rk},${Rk} 0 ${lg},${1 - sw} ${pt(p2)}Z" fill="${col}" opacity="${op}"/>`;
+}
+const speedLines = (x, y0, n, gap, len, col) => [...Array(n)].map((_, i) => `<path d="M${r1(x - len - (i % 2) * 12)},${r1(y0 + i * gap)} h${len}" stroke="${i % 2 ? col : '#fff'}" stroke-width="${2.4 - (i % 2) * 0.8}" stroke-linecap="round" opacity=".65"/>`).join('');
+const handAt = (J, k, W) => add(J[k][2], J.foreA[k], 4.2 * W);
+const tipAt = (J, P, W, len) => add(handAt(J, 'aF', W), J.foreA.aF + (P.g || 0), len);
+const FX2 = {
+  slashTail: (J, col) => trailArc(J.shoulder, 60, 150, 26, 1.5, col, 0.35) + trailArc(J.shoulder, 57, 140, 34, 1.7, '#fff', 0.35),
+  rise: (J, col) => trailArc(J.shoulder, 64, -6, 164, 1.35, col, 0.45) + trailArc(J.shoulder, 61, 4, 160, 1.5, '#fff', 0.55),
+  qslash: (J, col) => trailArc(J.shoulder, 56, 150, 58, 1.9, col, 0.5) + trailArc(J.shoulder, 54, 144, 64, 2.2, '#fff', 0.6),
+  qslash2: (J, col) => trailArc(J.shoulder, 50, 50, 150, 1.9, col, 0.5) + trailArc(J.shoulder, 48, 58, 146, 2.2, '#fff', 0.6),
+  smash: (J, col, P, W) => {
+    const t = tipAt(J, P, W, 40), x = t[0], g = GROUND;
+    let s = trailArc(J.shoulder, 70, 200, 96, 1.4, col, 0.4) + trailArc(J.shoulder, 67, 192, 100, 1.55, '#fff', 0.45);
+    s += `<ellipse cx="${r1(x)}" cy="${g}" rx="34" ry="7" fill="none" stroke="#fff" stroke-width="3" opacity=".7"/><ellipse cx="${r1(x)}" cy="${g}" rx="22" ry="4" fill="${col}" opacity=".5"/>`;
+    for (let i = 0; i < 5; i++) { const a = -60 + i * 30, d = add([x, g - 2], 180 + a, 18 + (i % 2) * 8); s += `<path d="M${pt(d)} l${r1(-2 + (i % 3))},-5 l5,1 l-1,5z" fill="#cfc4b4" stroke="${OL}" stroke-width="1.2"/>`; }
+    return s + burst([x, g - 6], 16, col);
+  },
+  loose: (J, col, P, W) => { const h = handAt(J, 'aF', W); return `<path d="M${r1(h[0] - 30)},${r1(h[1] - 4)} q-8,4 -2,10 M${r1(h[0] - 26)},${r1(h[1] + 6)} q-8,4 -2,10" stroke="#fff" stroke-width="2" fill="none" opacity=".7" stroke-linecap="round"/>` + speedLines(h[0] + 60, h[1] - 3, 2, 6, 34, col); },
+  muzzle: (J, col, P, W) => { const t = tipAt(J, P, W, 34); return `<circle cx="${r1(t[0] - 6)}" cy="${r1(t[1] - 10)}" r="7" fill="#d8d4cc" opacity=".55"/><circle cx="${r1(t[0] - 16)}" cy="${r1(t[1] - 4)}" r="5" fill="#d8d4cc" opacity=".45"/>` + burst(add(t, J.foreA.aF + (P.g || 0), 8), 15, '#ffb23a'); },
+  jab: (J, col, P, W) => { const h = handAt(J, 'aF', W); return speedLines(h[0] - 10, h[1] - 6, 3, 6, 26, col) + burst(add(h, 90, 12), 11, col); },
+  cross: (J, col, P, W) => { const h = handAt(J, 'aB', W); return speedLines(h[0] - 12, h[1] - 6, 3, 6, 32, col) + burst(add(h, 90, 12), 14, col); },
+  upper: (J, col, P, W) => { const h = handAt(J, 'aF', W); return trailArc([h[0] - 6, h[1] + 30], 34, 30, 170, 1.6, col, 0.45) + burst(add(h, 160, 10), 12, col); },
+  cast: (J, col, P, W) => { const h = handAt(J, 'aB', W), c = [h[0] + 8, h[1]]; return `<circle cx="${r1(c[0])}" cy="${r1(c[1])}" r="15" fill="#bff6ff" opacity=".35"/><circle cx="${r1(c[0])}" cy="${r1(c[1])}" r="8" fill="#fff" opacity=".85"/>` + [0, 45, 90, 135].map((a) => `<path d="M${pt(add(c, a, 11))}L${pt(add(c, a, 22))}M${pt(add(c, a + 180, 11))}L${pt(add(c, a + 180, 22))}" stroke="#bff6ff" stroke-width="2" stroke-linecap="round" opacity=".8"/>`).join(''); },
+  aura: (J) => { const c = J.pelvis; return `<ellipse cx="${r1(c[0])}" cy="${r1(c[1] - 22)}" rx="46" ry="74" fill="#fff0a8" opacity=".3"/>` + [-30, -14, 14, 30].map((dx, i) => `<path d="M${r1(c[0] + dx)},${GROUND - 4} q${i % 2 ? 6 : -6},-40 0,-${84 + (i % 2) * 22}" stroke="#fff3b0" stroke-width="2.4" fill="none" opacity=".6" stroke-linecap="round"/>`).join(''); },
+};
+function fxSVG(fx, J, col, Pz, W) {
+  if (Pz && FX2[fx]) return FX2[fx](J, col, Pz, W || 1);
   const sh = J.shoulder;
   const P = (a, r) => pt(add(sh, a, r));
+
   if (fx === 'slash') {
     const R = 66, a0 = 214, a1 = 74;
     const cres = (r, k) => `M${P(a0, r)} A${r},${r} 0 0,1 ${P(a1, r * 0.98)} A${r1(r * k)},${r1(r * k)} 0 0,0 ${P(a0, r * 0.94)}Z`;
@@ -1871,8 +2004,8 @@ let avUid = 0;
 function basePose(el) {
   const A = avState(), ctx = el.dataset.av;
   if (ctx === 'preview') return el.dataset.pose || A.stance;
-  if (ctx === 'battle') return S.combat.zone != null ? 'guard' : A.stance;
-  if (ctx === 'enemy') return 'guard';
+  if (ctx === 'battle') return performance.now() < cbKoT ? 'ko' : S.combat.zone != null ? cbStance(S.equip && S.equip.weapon) : A.stance;
+  if (ctx === 'enemy') return cbStance(el.dataset.weapon);
   if (S.action && AV_EXT.skill[S.action.skill] && POSE_DRIVE[AV_EXT.skill[S.action.skill]]) return AV_EXT.skill[S.action.skill];
   if (S.action) return S.action.skill === 'fishing' ? 'fish' : S.action.skill === 'cooking' ? 'cook' : S.action.skill === 'woodcutting' ? 'wood' : A.stance;
   return A.stance;
@@ -1959,11 +2092,7 @@ const nextAttack = () => {
   return x.length && n % 3 === 2 ? x[Math.floor(n / 3) % x.length] : ATTACKS[[0, 1, 0, 2][n % 4]];
 };
 const playerAv = () => document.querySelector('[data-portrait="player"] svg.avatar');
-on('hit', (d) => {
-  if (d.target === 'enemy') avPlay(playerAv(), nextAttack());
-  else if (!d.dodge) avPlay(playerAv(), [['hurt', 90, 'out'], ['hurt', 160], ['guard', 320]]);
-});
-on('kill', () => avPlay(playerAv(), [['victory', 240, 'back'], ['victory', 420], ['guard', 380, 'out']]));
+// The fight itself (each weapon family's swings, impacts, hurt, KO, victory) is choreographed in arena.js.
 
 /* ================================================================ view */
 let avSlot = 'style', avPreview = '';

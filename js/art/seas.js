@@ -11,6 +11,10 @@ const TL = (d, c, w) => L(d, ART_INK, w + 2.6) + L(d, c, w);
 // fish body facing right: tail joint at x, nose at x+l
 const fishD = (x, y, l, h) => `M${x} ${y}Q${n(x + l * 0.42)} ${y - h} ${x + l} ${y}Q${n(x + l * 0.42)} ${y + h} ${x} ${y}Z`;
 const tailD = (x, y, l, h) => `M${x + 2} ${y}L${n(x - l * 0.28)} ${n(y - h * 0.85)}Q${n(x - l * 0.18)} ${y} ${n(x - l * 0.28)} ${n(y + h * 0.85)}Z`;
+// cel-shadow crescent along the belly of a fishD body
+const fishSh = (x, y, l, h) => `M${x + l} ${y}Q${n(x + l * 0.42)} ${y + h} ${x} ${y}Q${n(x + l * 0.42)} ${n(y + h * 0.55)} ${x + l} ${y}Z`;
+// fit: scale s around the centre, then shift
+const Z = (s, dx, dy, m) => TR(`translate(${32 + dx} ${32 + dy}) scale(${s}) translate(-32 -32)`, m);
 // Devil Fruit curly stem + leaf
 const STEM = (x, y, flip) => TR(flip ? `translate(${2 * x} 0) scale(-1 1)` : '',
   TL(`M${x - 1} ${y + 2}Q${x - 2} ${y - 6} ${x + 3} ${y - 8}Q${x + 8} ${y - 9} ${x + 7} ${y - 4}Q${x + 6} ${y - 1} ${x + 3} ${y - 3}`, '#8ab83a', 2)
@@ -19,19 +23,19 @@ const STEM = (x, y, flip) => TR(flip ? `translate(${2 * x} 0) scale(-1 1)` : '',
 Object.assign(ART, {
   // ---------------------------------------------------------------- fish
   // Minnow: a pair of little silver fish.
-  minnow: TR('translate(32 32) scale(1.12) translate(-32 -32)', ROT(-12, 32, 32,
-    S(tailD(14, 22, 30, 9), '#7fb0b8', { w: 2 }) + S(fishD(14, 22, 32, 9), '#a9d2d6', { w: 2 })
-    + F('M18 24Q30 28 44 23Q30 30 18 24Z', '#eef8f6', 0.8) + F(circ(39, 20, 2.2), ART_INK) + H(ell(28, 17, 6, 1.8), 0.6)
+  minnow: ROT(-12, 32, 32,
+    S(tailD(16, 22, 32, 10), '#7fb0b8', { w: 2.2 }) + S(fishD(16, 22, 34, 10), '#a9d2d6', { w: 2.2 })
+    + F(fishSh(16, 22, 34, 10), dk('#a9d2d6', 0.3)) + F(circ(42, 20, 2.2), ART_INK) + H(ell(30, 17, 6, 1.8), 0.6)
     + TR('translate(64 0) scale(-1 1)',
-      S(tailD(14, 42, 30, 9), '#7fb0b8', { w: 2 }) + S(fishD(14, 42, 32, 9), '#a9d2d6', { w: 2 })
-      + F('M18 44Q30 48 44 43Q30 50 18 44Z', '#eef8f6', 0.8) + F(circ(39, 40, 2.2), ART_INK))
-    + H(ell(34, 37, 6, 1.8), 0.6))),
+      S(tailD(16, 42, 32, 10), '#7fb0b8', { w: 2.2 }) + S(fishD(16, 42, 34, 10), '#a9d2d6', { w: 2.2 })
+      + F(fishSh(16, 42, 34, 10), dk('#a9d2d6', 0.3)) + F(circ(42, 40, 2.2), ART_INK))
+    + H(ell(34, 37, 6, 1.8), 0.6)),
   // East Blue Bass: chunky green bass, orange spiny fin, big open mouth, stripes.
   reef_bass: S('M48 32L60 18Q57 32 60 46Z', '#e8743a') + S('M22 20L24 9L28 18L31 8L34 18L38 9L41 20Z', '#e8743a', { w: 2 })
     + S('M6 32Q10 16 30 17Q50 18 52 32Q50 46 30 48Q12 48 6 36Z', '#5f9a3a')
     + F('M10 38Q20 46 32 46Q46 44 50 34Q38 42 24 40Q16 40 10 38Z', '#e8e09a', 0.9)
     + F('M24 19Q22 32 26 44L30 45Q26 32 29 18Z', dk('#5f9a3a', 0.4), 0.7) + F('M36 19Q34 32 38 45L42 43Q38 32 41 20Z', dk('#5f9a3a', 0.4), 0.7)
-    + S('M5 31L15 33L6 38Z', '#7a1f2a', { w: 1.8 }) + S('M26 42L32 52L36 43Z', '#e8743a', { w: 1.8 })
+    + F('M52 32Q50 46 30 48Q46 43 48 32Z', dk('#5f9a3a', 0.35), 0.85) + S('M5 31L15 33L6 38Z', '#7a1f2a', { w: 1.8 }) + S('M26 42L32 52L36 43Z', '#e8743a', { w: 1.8 })
     + S(circ(17, 26, 3.6), '#ffffff', { w: 1.6, flat: true }) + F(circ(17.6, 26, 1.8), ART_INK)
     + H('M14 22Q24 18 36 20Q24 21 16 25Z', 0.5),
   // Sea Crab: red dock crab, two big pincers, eyes on stalks.
@@ -43,14 +47,14 @@ Object.assign(ART, {
     + S(ell(32, 41, 17, 11), '#e0442f') + F('M17 44Q32 56 47 44Q40 50 32 50Q24 50 17 44Z', dk('#e0442f', 0.4), 0.7)
     + L('M27 44Q32 47 37 44', ART_INK, 1.8) + H(ell(26, 36, 6, 2.5), 0.55) + H(ell(11, 15, 2, 3), 0.5),
   // Grand Line Marlin: long blue fish with a spear bill and a tall sail fin.
-  blue_marlin: TR('translate(32 33) scale(1.15) translate(-32 -33)', ROT(-32, 32, 34,
+  blue_marlin: ROT(-32, 32, 34,
     S('M14 32L4 20Q8 32 4 44Z', '#1f4f9a') + S('M18 30Q20 12 38 13Q36 22 38 29Z', '#2a62c0', { w: 2 })
     + L('M24 28L26 16M30 28L31 14', dk('#2a62c0', 0.4), 1.4)
     + S('M42 30L62 32L42 34Z', '#3a6fb0', { w: 2 })
     + S('M12 32Q26 21 44 28Q49 32 44 36Q26 43 12 32Z', '#2b6fd0')
     + F('M14 33Q28 38 44 34Q28 36 14 33Z', '#dfeef8', 0.95) + F(circ(39, 30.5, 1.8), ART_INK)
     + F(circ(22, 31, 1.3), '#9fdcff') + F(circ(27, 31, 1.3), '#9fdcff') + F(circ(32, 31, 1.3), '#9fdcff')
-    + H('M18 30Q28 27 38 28Q28 29 20 31Z', 0.6))),
+    + F('M44 36Q26 43 12 32Q28 39 44 36Z', dk('#2b6fd0', 0.3)) + H('M18 30Q28 27 38 28Q28 29 20 31Z', 0.6)),
   // Calm Belt Eel: long S-curved violet eel with a yellow belly line.
   tidal_eel: L('M8 56Q4 38 22 38Q40 38 40 24Q40 12 50 12', ART_INK, 13) + L('M8 56Q4 38 22 38Q40 38 40 24Q40 12 50 12', '#6a4fc0', 10)
     + L('M10 54Q8 42 22 42Q42 42 44 26', '#f2d04a', 2.4) + L('M7 50Q6 36 20 35Q36 34 36 22', lt('#6a4fc0', 0.4), 2.4, 0.8)
@@ -74,7 +78,7 @@ Object.assign(ART, {
     + F('M36 18Q50 22 50 36Q48 48 36 50Q46 40 36 18Z', dk('#2e3a6a', 0.5), 0.7)
     + S(circ(32, 26, 3.6), '#c9f4ff', { w: 1.6, flat: true }) + F(circ(32.6, 26, 1.6), ART_INK)
     + F(circ(40, 38, 1.6), '#7ad8ff') + F(circ(44, 30, 1.4), '#7ad8ff') + F(circ(36, 44, 1.4), '#7ad8ff')
-    + S(circ(14, 10, 3.8), '#fff27a', { w: 1.8 }) + H(ell(18, 21, 6, 2.2), 0.35),
+    + S(circ(14, 10, 3.8), '#fff27a', { w: 1.8 }) + H(ell(18, 21, 6, 2.2), 0.5),
   // Sea King: a green Sea King rearing out of the waves, jaws open.
   sea_king: S('M34 30Q32 46 26 58H52Q48 44 54 24Z', '#3f9a5a')
     + L('M38 36H50M36 42H50M34 48H50M32 54H50', '#d8e08a', 2.2, 0.85)
@@ -104,7 +108,7 @@ Object.assign(ART, {
     + S('M24 44Q30 38 38 42L42 39V47L38 44Q30 49 24 44Z', '#f2c23a', { w: 1.6 }) + H('M12 34Q14 44 20 48Q14 44 13 36Z', 0.35),
   // Crab Dumplings: bamboo steamer of pleated dumplings, a crab claw on the side.
   crab_dumplings: S('M6 38H58V48Q58 55 51 55H13Q6 55 6 48Z', '#c4914e')
-    + L('M6 44H58M6 50H58', dk('#c4914e', 0.35), 1.6) + L('M18 40V54M32 40V55M46 40V54', dk('#c4914e', 0.3), 1.2)
+    + F('M46 39H58V48Q58 55 51 55H42Q48 50 46 39Z', dk('#c4914e', 0.3), 0.7) + L('M6 44H58M6 50H58', dk('#c4914e', 0.35), 1.6) + L('M18 40V54M32 40V55M46 40V54', dk('#c4914e', 0.3), 1.2)
     + S('M10 38Q10 24 21 24Q31 24 30 38Z', '#f6efe0', { w: 2 }) + S('M34 38Q33 24 43 24Q54 24 54 38Z', '#f6efe0', { w: 2 })
     + S('M20 38Q20 18 32 18Q44 18 44 38Z', '#fbf5ea', { w: 2 })
     + L('M28 22Q32 26 36 22M15 28Q20 31 25 28M38 28Q43 31 48 28', '#c9bca0', 1.6)
@@ -132,7 +136,7 @@ Object.assign(ART, {
     + S('M10 28Q10 18 22 18H44Q54 18 54 28Z', '#a8541e') + L('M16 26L22 20M24 27L31 20M33 27L40 20M42 27L48 21', '#5a2210', 2)
     + F('M14 24Q20 20 32 20Q24 22 16 26Z', '#ffd08a', 0.7) + S('M40 14Q48 6 52 12Q46 18 40 14Z', '#5fb83a', { w: 1.6 })
     + S(rect(5, 30, 54, 24, 4), '#2a2236') + F(rect(9, 34, 46, 3, 1.5), '#c8352e') + F(rect(9, 48, 46, 2, 1), '#c8352e', 0.7)
-    + F('M44 34H55V50Q55 54 51 54H44Z', '#000000', 0.25) + H('M10 38H30V40H10Z', 0.25)
+    + F('M44 34H55V50Q55 54 51 54H44Z', dk('#2a2236', 0.5), 0.8) + H('M10 38H30V40H10Z', 0.45)
     + L('M6 58L58 50', ART_INK, 3.6) + L('M6 58L58 50', '#e0b06a', 1.8),
   // Takoyaki: paper boat of octopus balls, sauce, mayo zigzag and a toothpick.
   takoyaki: S('M4 38H60L53 55H11Z', '#e8d3a0') + L('M10 42H54', dk('#e8d3a0', 0.25), 1.4)
@@ -153,29 +157,28 @@ Object.assign(ART, {
     + S('M38 50a8 8 0 0 1 16 0Z', '#ffe04a', { w: 1.8 }) + L('M46 50V44M42 50L44 45M50 50L48 45', '#f2b82a', 1.2)
     + S('M22 52Q24 46 30 48Q28 54 22 52Z', '#5fb83a', { w: 1.6 }) + H('M22 34Q30 30 38 32Q30 32 24 36Z', 0.55) + SP(36, 22, 3),
   // Sea King Curry: rice dome and orange curry with a chunk of green-skinned Sea King and a spoon.
-  sea_king_curry: L('M44 10L60 2', ART_INK, 4.4) + L('M44 10L60 2', '#c9d1dc', 2.4)
-    + S(ell(32, 42, 29, 14), '#f2f4f8') + F(ell(32, 42, 23, 10), '#d6dce6')
-    + S('M10 40Q10 22 26 22Q36 22 36 34Q30 46 10 40Z', '#ffffff', { w: 2.2 })
+  sea_king_curry: S(ell(32, 42, 29, 14), '#f2f4f8') + F(ell(32, 42, 23, 10), '#d6dce6')
+    + S('M10 40Q10 22 26 22Q36 22 36 34Q30 46 10 40Z', '#f4f1ea', { w: 2.2 })
     + S('M30 34Q40 28 52 34Q56 44 44 50Q30 52 26 44Z', '#d8862a')
     + S('M36 36L48 34L50 42L38 44Z', '#3f9a5a', { w: 2 }) + F('M38 40L49 39L50 42L38 44Z', '#f2d8b0')
     + S(ell(32, 46, 3, 2.2), '#e0703a', { w: 1.4 }) + S(ell(46, 46, 2.6, 2), '#f2c23a', { w: 1.4 })
-    + S(ell(40, 13, 6, 4), '#c9d1dc', { w: 2 }) + H('M14 30Q18 24 26 24Q18 27 16 32Z', 0.7),
+    + L('M51 43L58 20', ART_INK, 4.6) + L('M51 43L58 20', '#c9d1dc', 2.4) + H('M14 30Q18 24 26 24Q18 27 16 32Z', 0.7) + H(ell(38, 36, 4, 1.4), 0.45),
 
   // ---------------------------------------------------------------- spices
   // Sea Salt: a corked glass jar of white crystals with a wave label.
   sea_salt: S(rect(22, 6, 20, 9, 3), '#b07a44', { w: 2 }) + S(rect(18, 13, 28, 4, 2), '#8a9aa8', { w: 1.8 })
-    + S(rect(14, 16, 36, 42, 9), '#bfe2f0') + F('M17 30H47V50Q47 55 42 55H22Q17 55 17 50Z', '#ffffff', 0.95)
+    + S(rect(14, 16, 36, 42, 9), '#bfe2f0') + F('M17 30H47V50Q47 55 42 55H22Q17 55 17 50Z', '#f4f8fa', 0.95) + F('M40 17H48Q50 18 50 25V49Q50 58 41 58H38Q46 56 46 48V24Q46 18 40 17Z', dk('#bfe2f0', 0.3), 0.7)
     + F('M22 34h3v3h-3zM34 32h3v3h-3zM28 40h3v3h-3zM40 42h3v3h-3zM24 48h3v3h-3zM36 50h3v3h-3z', '#b8ccd8')
     + S(rect(18, 26, 28, 10, 2), '#2f6fc0', { w: 1.6 }) + L('M20 32Q24 28 28 32Q32 36 36 32Q40 28 44 32', '#ffffff', 1.8)
     + H('M18 20Q18 40 20 52Q16 40 17 22Z', 0.75) + SP(52, 12, 3),
   // Peppercorns: an open burlap sack spilling black peppercorns.
   peppercorns: S('M14 58Q6 42 14 28L20 20H44L50 28Q58 42 50 58Z', '#c9a46a')
-    + L('M14 34Q32 40 50 34M12 46Q32 52 52 46', dk('#c9a46a', 0.3), 1.4)
+    + F('M50 30Q57 42 50 57H44Q50 42 46 28Z', dk('#c9a46a', 0.3), 0.7) + L('M14 34Q32 40 50 34M12 46Q32 52 52 46', dk('#c9a46a', 0.3), 1.4)
     + S(ell(32, 21, 15, 5), '#3a2a24', { w: 2 }) + S('M18 21Q20 8 32 7Q44 8 46 21Z', '#3a2a2a', { w: 2 }) + L('M20 26Q32 30 44 26', '#7a4a2a', 3)
     + S(circ(26, 18, 3.4), '#3a2a2a', { w: 1.6 }) + S(circ(33, 16, 3.4), '#4a3428', { w: 1.6 }) + S(circ(39, 19, 3.4), '#3a2a2a', { w: 1.6 })
     + S(circ(30, 12, 3.4), '#2a1e1e', { w: 1.6 })
-    + S(circ(54, 56, 3.4), '#3a2a2a', { w: 1.6 }) + S(circ(59, 50, 3), '#4a3428', { w: 1.6 }) + S(circ(8, 58, 3), '#3a2a2a', { w: 1.6 })
-    + H(ell(18, 40, 2, 6), 0.35) + F(circ(25, 17, 1), '#ffffff', 0.6) + F(circ(32, 15, 1), '#ffffff', 0.6),
+    + S(circ(52, 56, 3.2), '#3a2a2a', { w: 1.8 }) + S(circ(56, 50, 3), '#4a3428', { w: 1.8 }) + S(circ(11, 57, 3), '#3a2a2a', { w: 1.8 })
+    + H(ell(18, 40, 2, 6), 0.5) + F(circ(25, 17, 1), '#ffffff', 0.6) + F(circ(32, 15, 1), '#ffffff', 0.6),
   // Coral Lemon: a coral-skinned lemon and a cut half with pink segments.
   coral_lemon: ROT(-25, 40, 24, S('M24 24Q26 12 40 12Q54 12 56 24Q54 36 40 36Q26 36 24 24Z', '#ff8a6a') + S('M54 22L60 24L54 26Z', '#ff8a6a', { w: 1.8 })
     + H(ell(34, 17, 6, 2.2), 0.55)) + S('M40 8Q42 2 48 4Q46 8 40 8Z', '#5fb83a', { w: 1.6 })
@@ -198,10 +201,10 @@ Object.assign(ART, {
     + S('M44 14Q50 12 54 18L50 24Q46 18 44 14Z', '#4a9a2a', { w: 2 }) + L('M52 16Q56 10 60 12Q62 6 56 6', '#4a9a2a', 2.6)
     + H('M22 40Q30 30 40 22Q32 28 26 38Z', 0.6),
   // Golden Saffron: a purple crocus flower with three glowing red-gold stigmas.
-  gold_saffron: SP(54, 12, 3.5, '#fff3a0')
+  gold_saffron: SP(14, 12, 3.5, '#fff3a0')
     + L('M32 58V40', '#4a9a2a', 3) + S('M30 58Q20 50 22 42Q28 48 32 58Z', '#5fb83a', { w: 1.6 }) + S('M34 58Q44 50 42 42Q36 48 34 58Z', '#5fb83a', { w: 1.6 })
     + S('M32 42Q18 40 14 22Q24 20 32 30Z', '#8a5ad8') + S('M32 42Q46 40 50 22Q40 20 32 30Z', '#8a5ad8')
-    + S('M32 42Q22 30 32 10Q42 30 32 42Z', '#a678f0')
+    + H('M17 24Q24 24 29 31Q22 28 17 24Z', 0.5) + F('M33 41Q45 38 49 24Q46 36 33 41Z', dk('#8a5ad8', 0.35)) + S('M32 42Q22 30 32 10Q42 30 32 42Z', '#a678f0')
     + L('M32 38L24 14M32 38L32 8M32 38L40 14', ART_INK, 4.2) + L('M32 38L24 14M32 38L32 8M32 38L40 14', '#ff5a1a', 2.4)
     + F(circ(24, 14, 2), '#ffc02a') + F(circ(32, 8, 2), '#ffc02a') + F(circ(40, 14, 2), '#ffc02a')
     + F('M32 42Q22 30 32 10Q26 30 32 42Z', '#ffffff', 0.25),
@@ -215,7 +218,7 @@ Object.assign(ART, {
   // Tremor-Tremor Fruit: pale three-lobed fruit with quake cracks around it.
   quake_fruit: L('M4 20L8 24L5 28M60 20L56 24L59 28M6 46L10 44L8 40M58 46L54 44L56 40', '#d8e4f8', 2.2)
     + S(circ(21, 38, 12), '#e6e2f6') + S(circ(43, 38, 12), '#e6e2f6') + S(circ(32, 24, 12), '#f0ecfa')
-    + S(circ(32, 46, 11), '#dcd6f2')
+    + F('M54 42Q50 50 42 50Q50 46 53 37Z', dk('#e6e2f6', 0.3)) + S(circ(32, 46, 11), '#dcd6f2') + F('M42 50Q38 57 30 57Q38 54 41 46Z', dk('#dcd6f2', 0.3))
     + SW([[16, 36, 6], [40, 38, 6], [28, 23, 6], [28, 46, 6]], '#8a7ab8', 1.8)
     + H(ell(27, 18, 4, 2.2), 0.7) + H(ell(15, 32, 2.6, 1.6), 0.6) + STEM(32, 13),
   // Smoke-Smoke Fruit: long grey-blue fruit wrapped in smoke wisps.
@@ -227,7 +230,7 @@ Object.assign(ART, {
     + STEM(39, 16),
   // Gold-Gold Fruit: a gleaming gold lemon-shaped fruit with brown swirls and sparkles.
   gilded_fruit: AURA(32, 36, 28, '#ffd84a')
-    + S('M4 38Q10 22 32 20Q54 22 60 38Q54 54 32 56Q10 54 4 38Z', '#f2c23a')
+    + S('M4 38Q10 22 32 20Q54 22 60 38Q54 54 32 56Q10 54 4 38Z', '#f2c23a') + F('M58 40Q52 54 32 55Q50 50 55 38Z', dk('#f2c23a', 0.35), 0.8)
     + SW([[14, 38, 6], [28, 32, 7], [30, 46, 6], [44, 40, 7]], '#a8641a', 2)
     + H('M12 32Q18 24 30 23Q20 27 15 35Z', 0.65) + SP(52, 14, 4) + SP(10, 52, 3) + STEM(32, 20),
   // Flower-Flower Fruit: a pink pear-shaped fruit with a flower crown of petals.
@@ -288,7 +291,7 @@ Object.assign(ART, {
     + S('M20 6H44L46 12H18Z', '#2a3a6a', { w: 2 })
     + S(ell(14, 13, 8, 4), '#f2c23a', { w: 2 }) + S(ell(50, 13, 8, 4), '#f2c23a', { w: 2 })
     + L('M8 16V22M11 17V23M14 17V24M17 17V23M47 17V23M50 17V24M53 17V23M56 16V22', '#e0a82a', 1.6)
-    + T(32, 38, 13, '正義', ART_INK, { font: 'serif' }) + H('M14 26Q12 42 10 54Q14 42 16 28Z', 0.5),
+    + T(32, 38, 13, '正義', ART_INK, { font: 'serif', stroke: '#f2f4f8', sw: 1.4 }) + H('M14 26Q12 42 10 54Q14 42 16 28Z', 0.5),
   // Sea King Scalemail: a teal breastplate of overlapping Sea King scales with gold trim.
   leviathan_mail: S('M16 10Q24 15 32 15Q40 15 48 10L58 18L50 30V54Q32 60 14 54V30L6 18Z', '#2f9a8a')
     + L('M16 24Q20 28 24 24Q28 28 32 24Q36 28 40 24Q44 28 48 24M16 32Q20 36 24 32Q28 36 32 32Q36 36 40 32Q44 36 48 32M16 40Q20 44 24 40Q28 44 32 40Q36 44 40 40Q44 44 48 40M16 48Q20 52 24 48Q28 52 32 48Q36 52 40 48Q44 52 48 48', dk('#2f9a8a', 0.45), 1.6)
@@ -300,9 +303,9 @@ Object.assign(ART, {
   tide_mantle: S('M20 8Q32 14 44 8L54 14Q60 36 60 58Q46 54 40 58L32 50L24 58Q18 54 4 58Q4 36 10 14Z', '#3a3050')
     + S('M24 14L32 20L40 14L42 56Q38 52 34 50L32 48L30 50Q26 52 22 56Z', '#c0283a', { w: 2 })
     + F('M36 18L40 16L41 54L37 50Z', dk('#c0283a', 0.35), 0.8)
-    + F('M48 14L54 16Q58 36 58 56L52 56Q54 36 48 14Z', '#000000', 0.3)
+    + F('M48 14L54 16Q58 36 58 56L52 56Q54 36 48 14Z', dk('#3a3050', 0.5), 0.7)
     + S(circ(23, 15, 3.2), '#f2c23a', { w: 1.6 }) + S(circ(41, 15, 3.2), '#f2c23a', { w: 1.6 }) + L('M26 16Q32 22 38 16', '#f2c23a', 2)
-    + L('M10 18Q8 36 8 54', '#6a5a8a', 1.8, 0.8) + H('M16 14Q12 30 10 46Q12 30 18 16Z', 0.25),
+    + L('M10 18Q8 36 8 54', '#6a5a8a', 1.8, 0.8) + H('M16 14Q12 30 10 46Q12 30 18 16Z', 0.45),
 
   // ---------------------------------------------------------------- accessories
   // Fish-Man Fang Necklace: one big serrated sawshark tooth on a cord with blue beads.
@@ -372,7 +375,7 @@ Object.assign(ART, {
   sunken_chest: S('M6 28H58V54Q58 58 54 58H10Q6 58 6 54Z', '#7a6440')
     + S('M6 28Q6 12 32 12Q58 12 58 28Z', '#8a7048')
     + S(rect(4, 24, 56, 6, 1), '#5a6470', { w: 2 })
-    + L('M14 13V58M50 13V58', '#5a6470', 3.4) + S(rect(27, 28, 10, 12, 2), '#f2c23a', { w: 1.8 }) + F(circ(32, 33, 1.6), ART_INK)
+    + L('M14 18.5V57M50 18.5V57', '#5a6470', 3.4) + S(rect(27, 28, 10, 12, 2), '#f2c23a', { w: 1.8 }) + F(circ(32, 33, 1.6), ART_INK)
     + S(circ(20, 22, 3), '#f2c23a', { w: 1.4 }) + S(circ(40, 21, 2.6), '#f2c23a', { w: 1.4 })
     + S(circ(44, 46, 2.6), '#c9c6b8', { w: 1.4 }) + S(circ(49, 50, 2), '#c9c6b8', { w: 1.4 }) + S(circ(20, 50, 2.2), '#c9c6b8', { w: 1.4 })
     + S(star(12, 42, 7, 3, 5), '#ff8a3a', { w: 1.6 })
@@ -385,7 +388,7 @@ Object.assign(ART, {
     + L('M20 46Q26 40 24 34Q22 28 30 26', '#8a3a1a', 2, 1).replace('stroke-linecap="round"', 'stroke-linecap="round" stroke-dasharray="2 3"')
     + L('M30 22L38 30M38 22L30 30', '#d8202a', 3.4)
     + S(circ(46, 44, 4.5), '#ffffff', { w: 1.4 }) + F('M40 42Q46 36 52 42Z', '#f2c23a') + F('M41 41H51V42.6H41Z', '#d8202a')
-    + F(circ(44.5, 45, 1), ART_INK) + F(circ(47.5, 45, 1), ART_INK),
+    + F(circ(44.5, 45, 1), ART_INK) + F(circ(47.5, 45, 1), ART_INK) + H(ell(9, 22, 1.4, 6), 0.55) + H(ell(26, 24, 4, 1.6), 0.45),
   // Sea Sapphire: a big faceted deep-blue gem.
   sapphire: SP(54, 10, 4) + SP(8, 48, 3)
     + S('M18 12H46L58 26L32 58L6 26Z', '#2a5fd8')
@@ -393,4 +396,16 @@ Object.assign(ART, {
     + L('M6 26H58M18 12L20 26L32 58L44 26L46 12M20 26L32 12L44 26', '#9ac8ff', 1.3, 0.7)
     + H('M20 14H30L24 24Z', 0.7) + SP(38, 34, 3),
 });
+// size & placement pass: [scale, dx, dy] so every icon sits at the same visual size in a grid
+const FIT = {
+    minnow: [0.95, 0, 0], reef_bass: [0.97, -0.6, 2], sea_crab: [0.98, 0, -0.8], blue_marlin: [0.98, 3.5, -3], tidal_eel: [0.9, 0, -1.5],
+    giant_octopus: [0.96, 0, -1.5], abyss_angler: [0.97, -1, 2.5], sea_king: [0.92, -1, 0], grilled_minnow: [0.95, 2.5, -5], bass_stew: [0.97, 0, 1],
+    spirit_ramen: [0.96, -1.5, 2.5], marlin_steak: [0.92, 0, -1], eel_bowl: [1, 0, -2], takoyaki: [0.96, 0, 1], angler_feast: [0.93, 0, 0],
+    sea_king_curry: [0.93, 0, -5], peppercorns: [0.98, -1.5, -1.5], coral_lemon: [0.95, 0, 0.2], sea_kelp: [0.97, -1.5, -1], fire_chili: [0.97, -1.8, 0],
+    ember_fruit: [0.96, 0, 1.5], quake_fruit: [0.94, 0, 1.5], mist_fruit: [0.97, -1, 0], gilded_fruit: [0.94, 0, -1], colossus_fruit: [1, 0, -2.8],
+    rusty_cutlass: [1.08, -1.7, -2.4], corsair_cutlass: [1.07, -0.5, 1], stormcaller: [0.97, -3.4, 2.7], hand_cannon: [0.95, -3, -0.4], marine_coat: [0.93, 0, -1.5],
+    admiral_coat: [0.95, 0, 0], leviathan_mail: [1, 0, -1], tide_mantle: [0.95, 0, -1], shark_tooth: [0.97, 0, -0.5], storm_crown: [0.98, 0, 0],
+    sea_charm: [1, 0, 2.8], kraken_compass: [0.95, 0, 0], sapphire_charm: [0.98, 0, 1], leviathan_scale: [0.98, 0, -1.5], sunken_chest: [1, 0, -3],
+};
+for (const [id, [s, dx, dy]] of Object.entries(FIT)) ART[id] = Z(s, dx, dy, ART[id]);
 })();

@@ -1,0 +1,49 @@
+/* Animations — soul (2026-11-22 animation pass): the Reishi mine and the Soul forge. */
+
+/* ---- the mine: idle life */
+.spot .mn-glint { transform: scale(0); transform-box: view-box; animation: sxGlint 6s ease-in-out infinite; }
+@keyframes sxGlint { 0%, 86%, 100% { transform: scale(0) rotate(0deg); opacity: 0; } 92% { transform: scale(1) rotate(45deg); opacity: 0.95; } }
+.spot .mn-dust { opacity: 0; animation: sxDust 9s linear infinite; }
+@keyframes sxDust { 0% { transform: translate(0, 0); opacity: 0; } 20% { opacity: 0.55; } 80% { opacity: 0.4; } 100% { transform: translate(38px, 26px); opacity: 0; } }
+
+/* ---- the mine: the blow and the ore */
+.spot .mn-rock.hit { animation: sxRockHit 0.24s ease-out; }
+@keyframes sxRockHit { 0% { transform: translate(3px, 1px); } 30% { transform: translate(-2px, 0); } 60% { transform: translate(1px, 0); } 100% { transform: none; } }
+.spot .mn-crack-glow { opacity: 0.35; }
+.spot .mn-crack.lit .mn-crack-glow { animation: sxCrackLit 0.5s ease-out; }
+@keyframes sxCrackLit { 0% { opacity: 1; filter: drop-shadow(0 0 3px #fff); } 100% { opacity: 0.35; } }
+.spot .mn-cart-body { transform-box: fill-box; transform-origin: 50% 100%; }
+.spot .mn-cart.jolt .mn-cart-body { animation: sxJolt 0.42s cubic-bezier(.3, 1.6, .5, 1); }
+@keyframes sxJolt { 0% { transform: translateY(0) scale(1, 1); } 25% { transform: translateY(4px) scale(1.03, 0.93); } 60% { transform: translateY(-2px) scale(0.99, 1.02); } 100% { transform: none; } }
+.spot.sx-quake > .spot-bg, .spot.sx-quake > .spot-av, .spot.sx-quake > .spot-fx { animation: sxQuake 0.6s linear; }
+@keyframes sxQuake { 0%, 100% { transform: none; } 10% { transform: translate(5px, 3px); } 25% { transform: translate(-5px, -2px); } 40% { transform: translate(4px, -2px); } 55% { transform: translate(-3px, 2px); } 75% { transform: translate(2px, -1px); } }
+.spop.sx-cartag { padding: 1px 7px; }
+.spop.sx-cartag b { font-size: 12px; color: #cfeeff; }
+
+/* ---- the forge: the bellows pump, the fire breathes with them and grows with the forge's heat */
+.sp-forge { --fg-heat: 0; }
+.spot .fg-bellows { transform-box: fill-box; transform-origin: 0% 50%; }
+.spot.sp-forge.on .fg-bellows { animation: sxBellows 1.4s ease-in-out infinite; }
+@keyframes sxBellows { 0%, 100% { transform: scale(1, 1); } 45% { transform: scale(0.86, 0.62); } }
+.spot.sp-forge .fg-glowc { transform-box: fill-box; transform-origin: 50% 50%; transform: scale(calc(0.8 + var(--fg-heat) * 0.35)); }
+.spot.sp-forge.on .fg-glowc { animation: sxBreath 1.4s ease-in-out infinite; }
+@keyframes sxBreath { 0%, 100% { opacity: calc(0.45 + var(--fg-heat) * 0.2); } 50% { opacity: calc(0.7 + var(--fg-heat) * 0.3); } }
+.spot .fg-furnace.flare .fg-mouth { animation: sxFlare 0.6s ease-out; }
+@keyframes sxFlare { 0% { filter: brightness(1); } 20% { filter: brightness(1.8) drop-shadow(0 0 14px #ffb347); } 100% { filter: brightness(1); } }
+.spot .fg-water { transform-box: fill-box; transform-origin: 50% 50%; }
+.spot .fg-water.splash { animation: sxRipple 0.7s ease-out; }
+@keyframes sxRipple { 0% { transform: scale(1); fill: #fff; } 25% { transform: scale(1.15, 1.6); fill: #bfefff; } 100% { transform: none; } }
+/* the quench: a burst of steam that billows up and thins out */
+.spop.sx-steam { width: 12%; aspect-ratio: 1; pointer-events: none; }
+.spop.sx-steam i { position: absolute; left: 50%; top: 60%; width: 46%; aspect-ratio: 1; border-radius: 50%; background: radial-gradient(circle, rgba(255, 255, 255, 0.85), rgba(255, 255, 255, 0) 70%); transform: translate(-50%, -50%) scale(0.3); opacity: 0; animation: sxSteam 1.3s ease-out forwards; }
+.spop.sx-steam i:nth-child(2) { left: 30%; animation-delay: 0.08s; }
+.spop.sx-steam i:nth-child(3) { left: 70%; animation-delay: 0.16s; }
+@keyframes sxSteam { 0% { opacity: 0; transform: translate(-50%, -30%) scale(0.3); } 15% { opacity: 0.95; } 100% { opacity: 0; transform: translate(-50%, -140%) scale(1.8); } }
+.spop.dish.sx-pop { animation-duration: 1.2s; }
+
+@media (prefers-reduced-motion: reduce) {
+  .spot .mn-glint, .spot .mn-dust { animation: none; opacity: 0; }
+  .spot .mn-rock.hit, .spot .mn-crack.lit .mn-crack-glow, .spot .mn-cart.jolt .mn-cart-body, .spot.sx-quake > *,
+  .spot.sp-forge.on .fg-bellows, .spot.sp-forge.on .fg-glowc, .spot .fg-furnace.flare .fg-mouth, .spot .fg-water.splash, .spop.sx-steam i { animation: none; }
+  .spop.sx-steam { display: none; }
+}

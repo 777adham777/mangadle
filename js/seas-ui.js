@@ -138,19 +138,21 @@ function spGlints(seed, n, y0, c, cx, spread) {
   }
   return s;
 }
-const spGulls = (pts, c) => pts.map(([x, y, s]) => `<path d="M${x - 9 * s} ${y} q${4.5 * s} ${-6 * s} ${9 * s} 0 q${4.5 * s} ${-6 * s} ${9 * s} 0" fill="none" stroke="${c}" stroke-width="${1.8 * s}" stroke-linecap="round"/>`).join('');
+// gulls glide about their spot and beat their wings (anim-seas.css), each on its own rhythm
+const spGulls = (pts, c) => pts.map(([x, y, s], i) => `<g class="sp-gull" style="animation-delay:${-i * 3.7}s"><path d="M${x - 9 * s} ${y} q${4.5 * s} ${-6 * s} ${9 * s} 0 q${4.5 * s} ${-6 * s} ${9 * s} 0" fill="none" stroke="${c}" stroke-width="${1.8 * s}" stroke-linecap="round" style="animation-delay:${-i * 0.23}s"/></g>`).join('');
 const spPalm = (x, y, s) => `<path d="M${x} ${y} q${-6 * s} ${-40 * s} ${8 * s} ${-78 * s}" fill="none" stroke="#5a3d22" stroke-width="${6 * s}" stroke-linecap="round"/>`
   + [[-46, -8], [-30, -26], [6, -34], [36, -18], [44, 6]].map(([dx, dy]) => `<path d="M${x + 8 * s} ${y - 78 * s} q${dx * 0.5 * s} ${(dy - 18) * s} ${dx * s} ${(dy + 14) * s}" fill="none" stroke="#2e8a4e" stroke-width="${7 * s}" stroke-linecap="round"/>`).join('');
 
 /* ---------------------------------------------------------------- fishing spots */
+// bob: where the float lands, kept above the cast bar the fishing page draws over the scene's lower part
 const FISH_SPOTS = [
-  { id: 'harbour', name: 'Harbour Pier', max: 19, horizon: 172, bob: [478, 262],
+  { id: 'harbour', name: 'Harbour Pier', max: 19, horizon: 172, bob: [488, 214],
     sky: ['#4fa8e6', '#9fd8f6', '#ffe8c6'], sea: ['#37bfe0', '#1a86b8', '#0b4f7d'], glint: '#ffffff', sun: [640, 66, 30, '#fff4cc'] },
-  { id: 'reef', name: 'Coral Reef', max: 44, horizon: 166, bob: [482, 258],
+  { id: 'reef', name: 'Coral Reef', max: 44, horizon: 166, bob: [492, 208],
     sky: ['#1fa6ec', '#7fdcff', '#e6fbff'], sea: ['#48e3d6', '#18acc4', '#0a6a8c'], glint: '#ffffff', sun: [130, 52, 26, '#ffffff'] },
-  { id: 'deep', name: 'Open Sea', max: 69, horizon: 176, bob: [490, 266],
+  { id: 'deep', name: 'Open Sea', max: 69, horizon: 176, bob: [500, 218],
     sky: ['#2a1f55', '#b4507a', '#ffad62'], sea: ['#4d5a9a', '#283a72', '#0e1a3e'], glint: '#ffc785', sun: [560, 176, 54, '#ffcf7a'] },
-  { id: 'abyss', name: 'Abyssal Trench', max: 99, horizon: 170, bob: [496, 268],
+  { id: 'abyss', name: 'Abyssal Trench', max: 99, horizon: 170, bob: [506, 212],
     sky: ['#02040c', '#0a1330', '#1c2754'], sea: ['#0f2b4c', '#06172e', '#020812'], glint: '#9fdcff', sun: [420, 58, 22, '#e9f1ff'] },
 ];
 const fishSpotFor = (lv) => FISH_SPOTS.find((s) => lv <= s.max) || FISH_SPOTS[FISH_SPOTS.length - 1];
@@ -207,7 +209,7 @@ function fishBg(sp) {
   s += `<rect width="800" height="${H + 2}" fill="url(#sp-sky)"/>`;
   s += `<circle cx="${sx}" cy="${sy}" r="${sr * 3.2}" fill="url(#sp-sun)"/><circle cx="${sx}" cy="${sy}" r="${sr}" fill="${sc}"/>`;
   if (sp.id === 'abyss') s += `<circle cx="${sx - 7}" cy="${sy - 5}" r="5" fill="#c9d3e6"/><circle cx="${sx + 8}" cy="${sy + 6}" r="3.4" fill="#c9d3e6"/>`;
-  s += sp.id === 'abyss' ? '' : spClouds(sp.id.length * 11, sp.id === 'deep' ? 5 : 6, 30, H - 50, sp.id === 'deep' ? '#ffd6c0' : '#ffffff', sp.id === 'deep' ? 0.35 : 0.8);
+  s += sp.id === 'abyss' ? '' : '<g class="sp-clouds">' + spClouds(sp.id.length * 11, sp.id === 'deep' ? 5 : 6, 30, H - 50, sp.id === 'deep' ? '#ffd6c0' : '#ffffff', sp.id === 'deep' ? 0.35 : 0.8) + '</g>';
   s += fishFar(sp);
   s += `<rect y="${H}" width="800" height="${320 - H}" fill="url(#sp-sea)"/><rect y="${H}" width="800" height="2" fill="#fff" opacity=".35"/>`;
   s += spGlints(sp.id.length * 7, 46, H + 4, sp.glint, sp.id === 'reef' ? null : sx, 220);
@@ -241,10 +243,12 @@ function galleyBg(pan) {
   for (let x = 0; x < 800; x += 44) s += `<rect x="${x}" y="0" width="2" height="250" fill="#2a190e" opacity=".55"/><rect x="${x + 2}" y="0" width="1" height="250" fill="#7a5236" opacity=".35"/>`;
   s += '<rect y="0" width="800" height="26" fill="#2b1a0f"/><rect y="26" width="800" height="4" fill="#6a4529"/>';
   // porthole with the sea outside
-  s += '<circle cx="120" cy="118" r="50" fill="#b88a3e"/><circle cx="120" cy="118" r="42" fill="url(#sp-port)"/><path d="M78 124 q14 -6 28 0 t28 0 t28 0" fill="none" stroke="#e8f8ff" stroke-width="2" opacity=".6"/><circle cx="120" cy="118" r="42" fill="none" stroke="#7a5a26" stroke-width="5"/>';
+  s += '<clipPath id="sp-portc"><circle cx="120" cy="118" r="42"/></clipPath>';
+  s += '<circle cx="120" cy="118" r="50" fill="#b88a3e"/><circle cx="120" cy="118" r="42" fill="url(#sp-port)"/><g clip-path="url(#sp-portc)"><g class="sp-portsea"><path d="M22 124 q14 -6 28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0" fill="none" stroke="#e8f8ff" stroke-width="2" opacity=".6"/><path d="M8 140 q14 -5 28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0 t28 0" fill="none" stroke="#e8f8ff" stroke-width="1.6" opacity=".35"/></g></g><circle cx="120" cy="118" r="42" fill="none" stroke="#7a5a26" stroke-width="5"/>';
   for (let i = 0; i < 8; i++) { const a = (i / 8) * Math.PI * 2; s += `<circle cx="${(120 + Math.cos(a) * 46).toFixed(1)}" cy="${(118 + Math.sin(a) * 46).toFixed(1)}" r="2.6" fill="#e8c27a"/>`; }
   // lantern
-  s += '<path d="M372 30 v16" stroke="#1a1008" stroke-width="2"/><rect x="362" y="46" width="20" height="26" rx="5" fill="#2a1a0e"/><rect x="366" y="50" width="12" height="18" rx="3" fill="#ffd27a"/><circle cx="372" cy="60" r="70" fill="url(#sp-lamp)" opacity=".7"/>';
+  // (it swings a little with the ship: anim-seas.css)
+  s += '<g class="sp-lantern"><path d="M372 30 v16" stroke="#1a1008" stroke-width="2"/><rect x="362" y="46" width="20" height="26" rx="5" fill="#2a1a0e"/><rect class="sp-flame" x="366" y="50" width="12" height="18" rx="3" fill="#ffd27a"/><circle cx="372" cy="60" r="70" fill="url(#sp-lamp)" opacity=".7"/></g>';
   // shelf with one jar per seasoning (lit once you have found it)
   s += '<rect x="500" y="118" width="270" height="8" fill="#7a4e2c"/><rect x="500" y="126" width="270" height="3" fill="#2a190e"/>';
   SPICE_ORDER.forEach((k, i) => {
@@ -252,7 +256,9 @@ function galleyBg(pan) {
     s += `<g class="jar ${on ? 'on' : ''}"><rect x="${x}" y="84" width="28" height="34" rx="6" fill="${got ? sp.col : '#2a2f3a'}" opacity="${got ? 0.95 : 0.6}" stroke="#1a1008" stroke-width="2"/><rect x="${x + 4}" y="78" width="20" height="8" rx="2" fill="#6a4529" stroke="#1a1008" stroke-width="2"/><rect x="${x + 5}" y="90" width="5" height="20" rx="2" fill="#fff" opacity=".35"/></g>`;
   });
   // hanging utensils
-  s += '<path d="M560 30 v26 M600 30 v20 M640 30 v30" stroke="#1a1008" stroke-width="2"/><circle cx="560" cy="66" r="11" fill="#3b3f4a" stroke="#1a1008" stroke-width="2"/><rect x="598" y="48" width="4" height="26" fill="#9aa3b5"/><ellipse cx="600" cy="76" rx="7" ry="5" fill="#9aa3b5"/><path d="M636 60 h8 l-2 24 h-4z" fill="#9aa3b5"/>';
+  s += '<g class="sp-hang" style="transform-origin:560px 30px"><path d="M560 30 v26" stroke="#1a1008" stroke-width="2"/><circle cx="560" cy="66" r="11" fill="#3b3f4a" stroke="#1a1008" stroke-width="2"/></g>'
+    + '<g class="sp-hang" style="transform-origin:600px 30px;animation-delay:-.7s"><path d="M600 30 v20" stroke="#1a1008" stroke-width="2"/><rect x="598" y="48" width="4" height="26" fill="#9aa3b5"/><ellipse cx="600" cy="76" rx="7" ry="5" fill="#9aa3b5"/></g>'
+    + '<g class="sp-hang" style="transform-origin:640px 30px;animation-delay:-1.3s"><path d="M640 30 v30" stroke="#1a1008" stroke-width="2"/><path d="M636 60 h8 l-2 24 h-4z" fill="#9aa3b5"/></g>';
   // floor, barrel
   s += '<rect y="250" width="800" height="70" fill="#2e1c10"/><rect y="250" width="800" height="3" fill="#6a4529"/>';
   for (let x = 30; x < 800; x += 90) s += `<rect x="${x}" y="253" width="2" height="67" fill="#1a1008" opacity=".6"/>`;
@@ -288,7 +294,7 @@ function voyLand(kind, H) {
     case 'palm': return `<path d="M650 ${H + 2} Q700 ${H - 26} 760 ${H - 22} Q790 ${H - 16} 800 ${H}Z" fill="#f2deb0"/>` + spPalm(715, H - 16, 0.85);
     case 'town': return `<path d="M620 ${H} V${H - 20} H800 V${H}Z" fill="#c9a074"/>` + [[630, 34, '#e86a4a'], [662, 46, '#f4f1ea'], [700, 30, '#4a8ac8'], [736, 54, '#f4f1ea'], [770, 38, '#e8b04a']].map(([x, h, c]) => `<rect x="${x}" y="${H - 20 - h}" width="28" height="${h}" fill="${c}"/><path d="M${x - 3} ${H - 20 - h} l17 -14 l17 14z" fill="#7a3a2a"/>`).join('');
     case 'skull': return `<path d="M640 ${H} Q646 ${H - 70} 720 ${H - 82} Q794 ${H - 70} 800 ${H}Z" fill="#3c3046"/><ellipse cx="704" cy="${H - 50}" rx="10" ry="12" fill="#120c18"/><ellipse cx="736" cy="${H - 50}" rx="10" ry="12" fill="#120c18"/><path d="M700 ${H} q20 -26 40 0z" fill="#120c18"/><rect x="760" y="${H - 120}" width="3" height="44" fill="#222"/><path d="M763 ${H - 120} h26 v16 h-26z" fill="#111"/><circle cx="776" cy="${H - 112}" r="4" fill="#eee"/>`;
-    case 'whirl': return [36, 26, 16, 7].map((r, i) => `<ellipse cx="700" cy="${H + 30}" rx="${r * 2.4}" ry="${r * 0.6}" fill="none" stroke="#cfe6f2" stroke-width="2.4" opacity="${0.25 + i * 0.15}"/>`).join('');
+    case 'whirl': return [36, 26, 16, 7].map((r, i) => `<ellipse class="sp-whirl" cx="700" cy="${H + 30}" rx="${r * 2.4}" ry="${r * 0.6}" fill="none" stroke="#cfe6f2" stroke-width="2.4" stroke-dasharray="${(r * 2.2).toFixed(0)} ${(r * 0.9).toFixed(0)}" style="animation-duration:${(2 + i * 0.8).toFixed(1)}s" opacity="${0.25 + i * 0.15}"/>`).join('');
     case 'spire': return `<path d="M670 ${H} L690 ${H - 110} L702 ${H - 60} L716 ${H - 140} L734 ${H} Z" fill="#1c2232"/><path d="M752 ${H} L766 ${H - 70} L782 ${H}Z" fill="#232a3c"/>`;
     case 'ghosts': return [[640, 1], [720, 0.8]].map(([x, s]) => `<g opacity=".55" fill="#9effd0"><path d="M${x} ${H} l${10 * s} ${-14 * s} h${60 * s} l${10 * s} ${14 * s}z"/><rect x="${x + 38 * s}" y="${H - 74 * s}" width="${3 * s}" height="${60 * s}"/><path d="M${x + 41 * s} ${H - 70 * s} q${26 * s} ${18 * s} 0 ${44 * s}z"/></g>`).join('');
     default: return `<rect x="700" y="${H - 4}" width="100" height="${320 - H}" fill="#120830"/><path d="M700 ${H} q10 60 0 150" stroke="#ffb8ff" stroke-width="3" fill="none" opacity=".6"/><circle cx="740" cy="${H - 70}" r="34" fill="#ff8ae6" opacity=".25"/>`;
@@ -298,8 +304,8 @@ function voyBg(id) {
   const L = VOY_LOOK[id] || VOY_LOOK.coastal, H = 176;
   let s = `<defs>${spGrad('sp-sky', L.sky)}${spGrad('sp-sea', L.sea)}</defs><rect width="800" height="${H + 2}" fill="url(#sp-sky)"/>`;
   if (L.stars) s += spStars(3, 90, H - 10);
-  if (!L.stars && !L.storm && !L.fog) s += spClouds(id.length * 13, 6, 30, H - 50, '#fff', 0.75);
-  if (L.storm) s += spClouds(17, 9, 20, 90, '#0a0e18', 0.9) + '<g class="sp-bolt"><path d="M420 40 l-16 40 h14 l-18 44" fill="none" stroke="#e6f0ff" stroke-width="3" stroke-linejoin="round"/></g>';
+  if (!L.stars && !L.storm && !L.fog) s += `<g class="sp-clouds">${spClouds(id.length * 13, 6, 30, H - 50, '#fff', 0.75)}</g>`;
+  if (L.storm) s += `<g class="sp-clouds storm">${spClouds(17, 9, 20, 90, '#0a0e18', 0.9)}</g>` + '<g class="sp-bolt"><path d="M420 40 l-16 40 h14 l-18 44" fill="none" stroke="#e6f0ff" stroke-width="3" stroke-linejoin="round"/></g>';
   s += voyLand(L.land, H);
   // home port on the left
   s += `<path d="M0 ${H + 2} Q40 ${H - 30} 110 ${H - 24} Q140 ${H - 16} 150 ${H}Z" fill="#7aa36a"/><rect x="40" y="${H - 44}" width="26" height="22" fill="#e9dcc0"/><path d="M36 ${H - 44} l17 -14 l17 14z" fill="#a84a3a"/><rect x="110" y="${H - 4}" width="60" height="5" fill="#8c5c34"/>`;
@@ -312,9 +318,60 @@ function shipSVG(sail) {
   return `<svg class="ship-svg" viewBox="0 0 120 110" aria-hidden="true">
     <path d="M12 74 H108 L96 98 Q60 106 24 98Z" fill="#5a3418" stroke="#1a0e06" stroke-width="3" stroke-linejoin="round"/><rect x="14" y="70" width="92" height="7" fill="#8c5c34" stroke="#1a0e06" stroke-width="2"/>
     <rect x="57" y="10" width="5" height="62" fill="#4a2c14" stroke="#1a0e06" stroke-width="1.5"/>
-    <path d="M62 14 Q92 30 88 62 L62 62Z" fill="#f2ead8" stroke="#1a0e06" stroke-width="2.4" stroke-linejoin="round"/><path d="M64 36 Q86 40 86 48 L64 48Z" fill="${sail}" opacity=".85"/>
-    <path d="M57 18 Q34 34 38 62 L57 62Z" fill="#e6dcc4" stroke="#1a0e06" stroke-width="2.4" stroke-linejoin="round"/>
-    <path d="M62 6 l14 4 l-14 4z" fill="${sail}" stroke="#1a0e06" stroke-width="1.5"/></svg>`;
+    <g class="sl-main"><path d="M62 14 Q92 30 88 62 L62 62Z" fill="#f2ead8" stroke="#1a0e06" stroke-width="2.4" stroke-linejoin="round"/><path d="M64 36 Q86 40 86 48 L64 48Z" fill="${sail}" opacity=".85"/><path d="M66 20 Q84 32 82 58" fill="none" stroke="#fff" stroke-width="2" opacity=".5"/></g>
+    <g class="sl-fore"><path d="M57 18 Q34 34 38 62 L57 62Z" fill="#e6dcc4" stroke="#1a0e06" stroke-width="2.4" stroke-linejoin="round"/></g>
+    <path d="M60 10 L18 72 M60 10 L104 72" stroke="#1a0e06" stroke-width=".9" opacity=".55"/>
+    <path class="sl-flag" d="M62 6 l14 4 l-14 4z" fill="${sail}" stroke="#1a0e06" stroke-width="1.5"/></svg>`;
+}
+// Scenery that slides past while sailing: far islands on the horizon and things on the water
+// (two copies side by side in a 1600-wide strip, scrolled by half its width: a seamless loop).
+function voyStrip(id, layer) {
+  const L = VOY_LOOK[id] || VOY_LOOK.coastal, r = spRng(id.length * 37 + (layer === 'far' ? 1 : 9)), out = [];
+  if (layer === 'far') {
+    const col = mixHex(L.sea[1], L.sky[2], 0.42), dark = mixHex(L.sea[2], L.sky[1], 0.35);
+    for (let i = 0; i < 4; i++) out.push([70 + i * 200 + r() * 90, 26 + r() * 30, 14 + r() * 22, r()]);
+    const isle = ([x, w, h, q]) => {
+      switch (L.land) {
+        case 'spire': return `<path d="M${x - w} 60 L${x - w * 0.4} ${60 - h * 1.6} L${x - w * 0.1} ${60 - h} L${x + w * 0.25} ${60 - h * 2.1} L${x + w} 60Z" fill="${dark}"/>`;
+        case 'ghosts': return `<path d="M${x - w} 60 Q${x} ${60 - h * 0.8} ${x + w} 60Z" fill="${dark}" opacity=".8"/><path d="M${x - 6} ${60 - h * 0.5} l-3 ${-h} M${x + 8} ${60 - h * 0.5} l4 ${-h * 0.7}" stroke="${dark}" stroke-width="2.4"/>`;
+        case 'edge': return `<path d="M${x - w * 0.5} 60 L${x - w * 0.2} ${60 - h * 1.8} L${x + w * 0.1} 60Z M${x + w * 0.1} 60 L${x + w * 0.35} ${60 - h * 1.1} L${x + w * 0.6} 60Z" fill="#ff8ae6" opacity=".35"/>`;
+        case 'whirl': return `<path d="M${x - w} 60 Q${x - w * 0.6} ${60 - h * 0.6} ${x - w * 0.1} ${60 - h * 0.7} Q${x + w * 0.5} ${60 - h * 0.5} ${x + w} 60Z" fill="${col}" opacity=".7"/>`;
+        default: {
+          let s = `<path d="M${x - w} 60 Q${x - w * 0.5} ${60 - h * 1.1} ${x} ${60 - h} Q${x + w * 0.6} ${60 - h * 0.9} ${x + w} 60Z" fill="${col}"/>`;
+          if (L.land === 'palm' && q < 0.6) s += `<path d="M${x + 4} ${60 - h + 2} q-2 -12 3 -20" stroke="${dark}" stroke-width="2" fill="none"/><path d="M${x + 7} ${60 - h - 18} q-8 -4 -12 2 M${x + 7} ${60 - h - 18} q8 -5 12 1 M${x + 7} ${60 - h - 18} q1 -7 -4 -9" stroke="${dark}" stroke-width="2.4" fill="none" stroke-linecap="round"/>`;
+          if (L.land === 'town' && q < 0.7) s += `<rect x="${x - 8}" y="${60 - h - 6}" width="7" height="8" fill="${dark}"/><rect x="${x + 2}" y="${60 - h - 9}" width="6" height="11" fill="${dark}"/>`;
+          return s;
+        }
+      }
+    };
+    return out.map((p) => isle(p) + isle([p[0] + 800, p[1], p[2], p[3]])).join('');
+  }
+  // the water: buoys, rocks with foam, barrels, a far sail (spooky / starry routes have their own)
+  const kinds = { stormbelt: ['rock', 'rock', 'buoy'], ghostfleet: ['wisp', 'mast', 'barrel'], worldsedge: ['shard', 'shard', 'rock'], cove: ['rock', 'barrel', 'buoy'] }[id] || ['buoy', 'rock', 'boat', 'barrel'];
+  for (let i = 0; i < 3; i++) out.push([120 + i * 260 + r() * 120, 18 + r() * 24, kinds[Math.floor(r() * kinds.length)], 0.7 + r() * 0.5, -r() * 3]);
+  const thing = ([x, y, k, s, dl]) => {
+    let d;
+    switch (k) {
+      case 'buoy': d = `<path d="M-6 0 L0 -20 L6 0Z" fill="#e8463a" stroke="#1a0e06" stroke-width="1.6"/><path d="M-3.6 -8 h7.2" stroke="#fff" stroke-width="3"/><path d="M0 -20 v-5" stroke="#1a0e06" stroke-width="1.6"/><circle cy="-27" r="2.4" fill="#ffd36a"/><ellipse rx="10" ry="2.4" fill="#fff" opacity=".55"/>`; break;
+      case 'rock': d = `<path d="M-16 2 Q-12 -14 -2 -16 Q10 -14 16 2Z" fill="${mixHex(L.sea[2], '#3a3a44', 0.5)}" stroke="#0a0c11" stroke-width="1.4"/><path d="M-9 -9 q5 -4 10 -3" stroke="#fff" stroke-width="1.4" opacity=".25" fill="none"/><ellipse rx="20" ry="3" fill="#fff" opacity=".5"/>`; break;
+      case 'barrel': d = `<g transform="rotate(-12)"><rect x="-7" y="-12" width="14" height="13" rx="3" fill="#8c5c34" stroke="#1a0e06" stroke-width="1.4"/><path d="M-7 -8 h14 M-7 -3 h14" stroke="#3d2615" stroke-width="1.4"/></g><ellipse rx="10" ry="2" fill="#fff" opacity=".45"/>`; break;
+      case 'boat': d = `<path d="M-12 -2 h24 l-4 5 h-16z" fill="#4a2c14"/><path d="M0 -3 v-20 l11 17z" fill="#f2ead8" opacity=".9"/>`; break;
+      case 'mast': d = `<path d="M-14 2 L-6 -6 L8 -4 L14 2Z" fill="#163a34"/><path d="M-2 -5 l-6 -26" stroke="#1d4a42" stroke-width="2.4"/><path d="M-8 -30 q10 6 4 16" fill="#9effd0" opacity=".35"/>`; break;
+      case 'wisp': d = `<circle cy="-14" r="9" fill="#9effd0" opacity=".18"/><circle cy="-14" r="3.4" fill="#d4ffe8"/>`; break;
+      default: d = `<path d="M0 -26 L6 -6 L0 2 L-6 -6Z" fill="#ff8ae6" opacity=".75" stroke="#ffd6f6" stroke-width="1"/><circle cy="-12" r="12" fill="#ff8ae6" opacity=".15"/>`;
+    }
+    return `<g transform="translate(${r1(x)},${r1(y)}) scale(${r1(s)})"><g class="vb" style="animation-delay:${dl.toFixed(1)}s">${d}</g></g>`;
+  };
+  return out.map((p) => thing(p) + thing([p[0] + 800, ...p.slice(1)])).join('');
+}
+// The deck crew's weather: gulls, rain, ghost lights, shooting stars (anim-seas.css draws and moves them).
+function voyWeather(id) {
+  const L = VOY_LOOK[id] || VOY_LOOK.coastal, gull = (c) => `<svg viewBox="-12 -8 24 10"><path d="M-10 0 q5 -7 10 0 q5 -7 10 0" fill="none" stroke="${c}" stroke-width="2" stroke-linecap="round"/></svg>`;
+  if (L.storm) return '<div class="voy-rain"></div><div class="voy-rain far"></div><div class="voy-flash"></div>';
+  if (L.fog) return `<div class="voy-wisps">${'<i></i>'.repeat(4)}</div>`;
+  if (L.stars) return `<div class="voy-shoot">${'<i></i>'.repeat(3)}</div>`;
+  const c = id === 'cove' ? '#2a1530' : id === 'current' ? '#3a4656' : '#2c4a66';
+  return `<div class="voy-birds">${[0, 1, 2].map((i) => `<i style="animation-delay:${-i * 5.3}s;top:${10 + i * 7}%"><b style="animation-delay:${-i * 0.9}s">${gull(c)}</b></i>`).join('')}</div>`;
 }
 
 /* ================================================================ scene block */
@@ -339,7 +396,8 @@ function spotHTML(skill, o) {
     const best = SKILLS.fishing.actions.filter((x) => x.level <= skillLv('fishing')).pop();
     const sp = fishSpotFor((a || (o && o.look) || best).level);
     cls = 'sp-' + sp.id; bg = fishBg(sp); name = sp.name; sub = a ? a.name : 'Waiting for a cast';
-    layers = `<div class="spot-wave mid">${waveStrip(sp.sea[1], 0.55, 4, 30)}</div>${spotAvatar(FISH_BOX, a ? 'fish' : '')}<div class="spot-wave front">${waveStrip(sp.sea[2], 0.8, 6, 26)}</div>`;
+    // fish shadows cruise under the surface (glowing ones in the trench)
+    layers = `<div class="sp-shoal ${sp.id}"><i></i><i></i><i></i></div><div class="spot-wave mid">${waveStrip(sp.sea[1], 0.55, 4, 30)}</div>${spotAvatar(FISH_BOX, a ? 'fish' : '')}<div class="spot-wave front">${waveStrip(sp.sea[2], 0.8, 6, 26)}</div>`;
     SPOT.fish = sp;
   } else if (skill === 'cooking') {
     const pan = panAt('cook');
@@ -350,12 +408,14 @@ function spotHTML(skill, o) {
       ${sk ? `<div class="shaker" style="--sc:${sk.col};left:${((pan[0] + 92) / 8).toFixed(2)}%;top:${((pan[1] - 6) / 3.2).toFixed(2)}%" title="${esc(sk.name)}: ${count(sk.item) ? 'goes into every dish' : 'none left'}">${gi(sk.icon)}<b>${fmt(count(sk.item))}</b></div>` : ''}`;
     SPOT.pan = pan;
   } else {
-    const look = (a || SKILLS.voyaging.actions[0]).id;
-    cls = 'sp-voy'; bg = voyBg(look); name = a ? a.name : 'Home port'; sub = a ? 'At sea' : 'Docked';
-    layers = `<div class="spot-wave mid">${waveStrip((VOY_LOOK[look] || VOY_LOOK.coastal).sea[1], 0.5, 4, 30)}</div>
-      <div class="ship ${a ? 'sailing' : ''}" style="left:14%"><div class="ship-bob">${shipSVG(rc('seas'))}<div class="ship-av">${avatarSVG(null, { ctx: 'preview', pose: 'swagger' })}</div></div><i class="wake"></i></div>
-      <div class="spot-wave front">${waveStrip((VOY_LOOK[look] || VOY_LOOK.coastal).sea[2], 0.8, 6, 26)}</div>`;
-    if (VOY_LOOK[look] && VOY_LOOK[look].fog) layers += '<div class="fogband"></div>';
+    const look = (a || SKILLS.voyaging.actions[0]).id, VL = VOY_LOOK[look] || VOY_LOOK.coastal, rough = VL.storm ? 1.9 : 1;
+    SPOT.voyLook = look;
+    cls = 'sp-voy voy-' + look; bg = voyBg(look); name = a ? a.name : 'Home port'; sub = a ? 'At sea' : 'Docked';
+    const strip = (k, h) => `<svg viewBox="0 0 1600 ${h}" preserveAspectRatio="none">${voyStrip(look, k)}</svg>`;
+    layers = `<div class="voy-farw"><div class="voy-far">${strip('far', 60)}</div></div><div class="spot-wave mid">${waveStrip(VL.sea[1], 0.5, 4 * rough, 30)}</div><div class="voy-mid">${strip('mid', 50)}</div>
+      <div class="ship ${a ? 'sailing' : ''}" style="left:${SPOT.voyLeft != null ? SPOT.voyLeft.toFixed(2) : 10}%"><div class="ship-bob">${shipSVG(rc('seas'))}<div class="ship-av">${avatarSVG(null, { ctx: 'preview', pose: a ? 'sail' : 'swagger' })}</div></div><i class="wake"></i></div>
+      <div class="spot-wave front">${waveStrip(VL.sea[2], 0.8, 6 * rough, 26)}</div>${voyWeather(look)}`;
+    if (VL.fog) layers += '<div class="fogband"></div><div class="fogband two"></div>';
   }
   const last = SPOT['last_' + skill];
   return `<section class="win spot-win" style="--rc:${rc('seas')}">
@@ -398,7 +458,8 @@ function partAdd(p) {
 }
 function partStep(p, dt) {
   if (p.kind === 'leaf') { p.vy = Math.min(p.vy + 90 * dt, 34); p.vx = p.vx * 0.97 + Math.sin(p.age * 2.6 + p.seed) * 70 * dt; }
-  else if (p.kind === 'puff') { p.vx *= 0.97; p.size += 9 * dt; }
+  else if (p.kind === 'puff') { p.vx *= 0.97; p.size += (p.grow || 9) * dt; }
+  else if (p.kind === 'fire') { p.vx *= 0.94; p.vy = p.vy * 0.96 + p.g * dt; }   // buoyant, slowed by the air
   else p.vy += p.g * dt;
   p.x += p.vx * dt; p.y += p.vy * dt; p.r += p.vr * dt;
   if (p.floor != null && p.y > p.floor && p.vy > 0) {
@@ -422,7 +483,19 @@ function partSVG(p) {
       return `<path d="M${f(tx)} ${f(ty)} L${f(p.x)} ${f(p.y)}" stroke="#fff6c8" stroke-width="2" stroke-linecap="round" opacity="${o.toFixed(2)}"/>`;
     }
     case 'spark': return `<circle cx="${f(p.x + Math.sin(p.age * 12 + p.seed) * 2)}" cy="${f(p.y)}" r="1.8" fill="#ffd36a" opacity="${o.toFixed(2)}"/>`;
-    case 'puff': return `<circle cx="${f(p.x)}" cy="${f(p.y)}" r="${f(p.size)}" fill="#fff" filter="url(#sp-soft)" opacity="${(o * 0.3).toFixed(2)}"/>`;
+    case 'puff': return `<circle cx="${f(p.x)}" cy="${f(p.y)}" r="${f(p.size)}" fill="${p.col || '#fff'}" filter="url(#sp-soft)" opacity="${(o * (p.op || 0.3)).toFixed(2)}"/>`;
+    case 'fire': {   // a tongue of flame: white-hot, then orange, red, and a wisp of smoke as it dies
+      const k = p.age / p.life, c = k < 0.35 ? mixHex('#fff4b0', '#ffa424', k / 0.35) : k < 0.7 ? mixHex('#ffa424', '#e8341a', (k - 0.35) / 0.35) : mixHex('#e8341a', '#4a3a36', (k - 0.7) / 0.3);
+      return `<ellipse cx="${f(p.x)}" cy="${f(p.y)}" rx="${f(p.size * (1 - k * 0.45))}" ry="${f(p.size * (1.35 - k * 0.5))}" fill="${c}" opacity="${((1 - k) * 0.95).toFixed(2)}"/>`;
+    }
+    case 'sizzle': {   // a hot spit of oil: a tiny white cross that pops
+      const k = p.age / p.life, s = 1.2 + k * 2.6;
+      return `<path d="M${f(p.x - s)} ${f(p.y)} h${f(2 * s)} M${f(p.x)} ${f(p.y - s)} v${f(2 * s)}" stroke="#fffbe6" stroke-width="1.3" stroke-linecap="round" opacity="${(1 - k).toFixed(2)}"/>`;
+    }
+    case 'coin': {   // a gold coin spinning edge-on and back
+      const w = Math.max(0.6, 4.2 * Math.abs(Math.cos(p.age * 13 + p.seed)));
+      return `<ellipse cx="${f(p.x)}" cy="${f(p.y)}" rx="${f(w)}" ry="4.2" fill="#ffd23f" stroke="#7a4a00" stroke-width="1.2" opacity="${o.toFixed(2)}"/>${w > 2.6 ? `<path d="M${f(p.x - w * 0.3)} ${f(p.y - 1.6)} v3" stroke="#fff6c8" stroke-width="1.1" opacity="${o.toFixed(2)}"/>` : ''}`;
+    }
     case 'flash': {   // the bite: a white star of short lines bursting out, and a ring
       const k = p.age / p.life, r0 = 4 + k * 10, r1 = 12 + k * 18;
       let s = `<circle cx="${f(p.x)}" cy="${f(p.y)}" r="${f(6 + k * 14)}" fill="none" stroke="#fff" stroke-width="${f(3 * (1 - k))}" opacity="${(1 - k).toFixed(2)}"/>`;
@@ -443,49 +516,168 @@ UPD.push(() => {
   g.innerHTML = PARTS.map(partSVG).join('');
 });
 function setPose(av, pose) { if (av && (av.dataset.pose || '') !== pose) { if (pose) av.dataset.pose = pose; else delete av.dataset.pose; } }
+/* ---------------------------------------------------------------- motion (animation pass) */
+// The bite, shared by the angler's drive and the float: 1 to 3 nibbles (the float dips, the rod tip
+// twitches), then the real pull (the float is dragged down, the line goes taut), then it goes under.
+function fishBiteAt(u) {
+  if (u < 0.8) return { dip: 0, taut: 0 };
+  if (u >= 0.95) return { dip: 1, taut: 1, under: 1 };
+  if (u >= 0.885) { const f = (u - 0.885) / 0.065; return { dip: 0.5 + 0.5 * f, taut: 0.7 + 0.3 * f, pull: 1, f }; }
+  const n = 1 + ((SPOT.fishCyc || 0) % 3), seg = 0.085 / n, i = Math.min(n - 1, Math.floor((u - 0.8) / seg)), f = (u - 0.8 - i * seg) / seg;
+  const nib = f < 0.4 ? Math.sin((f / 0.4) * Math.PI) : 0;
+  return { dip: nib * 0.42, taut: 0.2 + nib * 0.35, nib, i };
+}
+// The angler (same signature and props as avatar.js's drive): the bite now follows the float.
+POSE_DRIVE.fish = (u, t, B, calm) => {
+  const P = keyPose(FISH_KEYS, u), w = win(u, 0.3, 0.36, 0.76, 0.8), b = fishBiteAt(u);
+  // waiting: the rod tip bobs, the weight drifts from foot to foot, the line is reeled in a little
+  P.R += Math.sin(t * 1.3) * 2.2 * w; P.t1 += Math.sin(t * 0.7) * 1.4 * w; P.dx += Math.sin(t * 0.7) * 1.6 * w; P.h += Math.sin(t * 0.5) * 2 * w;
+  if (u > 0.5 && u < 0.7) P.cr = 40 + ((u - 0.5) / 0.2) * 1080;
+  // a nibble: the rod tip twitches down and springs back, the head snaps towards the float
+  if (b.nib) { P.R -= 6 * b.nib; P.rb += 0.12 * b.nib; P.n += 3 * b.nib; }
+  // the pull: the rod is dragged down and shudders, the angler braces and leans back on it
+  if (b.pull) {
+    const j = calm ? 0 : Math.sin(t * 26) * 0.5 + Math.sin(t * 17) * 0.5;
+    P.R -= 4 + 4 * b.f + 3 * j; P.rb += 0.14 + 0.12 * b.f + 0.06 * j; P.t1 += j * 1.2 + 2.5 * b.f; P.dx -= 2 * b.f;
+  }
+  const br = calm ? 0 : Math.sin(t * 2.2);
+  P.t2 += br * 1.5; P.n -= br * 1.1;
+  P.g = P.R - (P.aF[0] + P.aF[1]);
+  return plantPose(P, B, { B: (J) => knobAt(add(J.aF[2], J.foreA.aF, 4.2 * B.w), J.foreA.aF + P.g, P.cr) });
+};
+
+// ---- voyaging: the deck hand. Sea legs (feet wide, leaning against the roll), hands on hips, every
+// few seconds a hand shades the eyes to scan the horizon; pointing as the ship pushes off and when
+// the landfall comes into view; a jumping cheer when the voyage pays out.
+const SAIL_BASE = Object.assign({}, POSES.swagger, { lF: [15, -6], lB: [-17, 8], fF: 10, fB: -192, dy: 2, tw: 0.2 });
+const SAILK = (o) => Object.assign({}, SAIL_BASE, o);
+const SAIL_STAND = SAILK({ t1: 181, t2: -4, n: -2, h: -4 });
+const SAIL_LOOK = SAILK({ t1: 183, t2: -5, n: -6, h: -9, aF: [150, 75], aB: [-44, 100] });
+const SAIL_POINT = SAILK({ t1: 176, t2: 3, n: -4, h: -6, aF: [100, -6], aB: [-40, 80], tw: 0.5, lF: [24, -12], lB: [-14, 6] });
+const SAIL_CHEER = SAILK({ t1: 183, t2: -5, n: -10, h: -12, aF: [166, -12], aB: [-162, 12], lF: [12, -8], lB: [-12, 8], expr: 'happy' });
+POSE_DRIVE.sail = (u, t, B, calm) => {
+  const arr = performance.now() / 1000 - (SPOT.voyArr || -99);
+  const look = calm ? 0 : win((t / 9) % 1, 0.5, 0.58, 0.86, 0.94);
+  let P = mixPose(SAIL_STAND, SAIL_LOOK, look);
+  if (look) P.h += Math.sin(t * 1.1) * 3 * look;
+  const pt = u > 0.7 ? win(u, 0.7, 0.8, 1.01, 1.02) : u < 0.08 ? win(u, -1, 0, 0.04, 0.08) : 0;
+  if (pt) P = mixPose(P, SAIL_POINT, pt);
+  if (arr < 1.7) {   // the cheer: arms up, two little jumps, then back to the rail
+    const k = Math.min(1, arr / 0.2) * Math.min(1, (1.7 - arr) / 0.35);
+    P = mixPose(P, SAIL_CHEER, ease.io(k));
+    if (!calm) { P.air = Math.max(0, Math.sin(arr * 8)) * 9 * k; P.aF = [P.aF[0] + Math.sin(arr * 15) * 9 * k, P.aF[1]]; P.aB = [P.aB[0] - Math.sin(arr * 15 + 1) * 9 * k, P.aB[1]]; }
+  }
+  P.t1 += (SPOT.voyRoll || 0) * 0.7;
+  const br = calm ? 0 : Math.sin(t * 2.2);
+  P.t2 += br * 1.4; P.n -= br;
+  return P;
+};
+{
+  const base = driveU;
+  driveU = function (name, t) {
+    if (name !== 'sail') return base(name, t);
+    const k = voyK();
+    return k >= 0 ? Math.min(0.9999, k) : ((t / 6) % 1 + 1) % 1;
+  };
+}
+POSES.sail = POSE_DRIVE.sail(0.3, 0, BODY, true);
+
+// Voyages are expeditions (expeditions.js): the scene follows your first ship at sea.
+const voyK = () => { const sh = S.exped && S.exped.ships[0]; return sh ? Math.max(0, Math.min(1, 1 - sh.left / sh.dur)) : -1; };
+const SHIP_W = 0.16;   // the ship's width, share of the scene (anim-seas.css)
 UPD.push(() => {
   const el = spotNow();
   if (!el) return;
-  const kind = el.dataset.spot, k = actFrac(kind), t = performance.now() / 1000;
+  const kind = el.dataset.spot, k = kind === 'voyaging' ? voyK() : actFrac(kind), t = performance.now() / 1000, calm = avCalm(), r = Math.random, f1 = (v) => v.toFixed(1);
   el.classList.toggle('on', k >= 0);
   if (kind === 'fishing') {
     const av = el.querySelector('.spot-av svg.avatar'), rig = av && SPOT_RIG[av.dataset.uid], g = el.querySelector('[data-spotfx]');
     if (!rig || !g) return;
     setPose(av, k >= 0 ? 'fish' : '');
-    if (k < 0 || !rig.tip) { if (g.innerHTML) g.innerHTML = ''; SPOT.fishU = null; return; }
-    // the bobber follows the angler's cycle (POSE_DRIVE.fish): it hangs from the rod tip while the
-    // catch is lifted and the rod swings back, flies out on the cast, floats, bobs at the bite and
-    // is pulled under at the strike
+    if (k < 0 || !rig.tip) { if (g.innerHTML) g.innerHTML = ''; SPOT.fishU = null; SPOT.hang = null; return; }
     const u = driveU('fish', t), prevU = SPOT.fishU;
+    if (prevU != null && u < prevU - 0.5) SPOT.fishCyc = (SPOT.fishCyc || 0) + 1;
     SPOT.fishU = u;
-    const sp = SPOT.fish || FISH_SPOTS[0], [tx, ty] = rigToSpot(FISH_BOX, rig.tip);
-    const hang = [tx + Math.sin(t * 4.2) * 5, ty + 18];
-    const bite = u > 0.8 && u < 0.95 ? Math.min(1, (u - 0.8) / 0.05) : 0, under = u >= 0.95;
-    let bx, by, flying = false;
-    if (u < 0.18) { [bx, by] = hang; flying = true; }
-    else if (u < 0.32) {
-      const f = ease.out((u - 0.18) / 0.14);
-      bx = hang[0] + (sp.bob[0] - hang[0]) * f; by = hang[1] + (sp.bob[1] - hang[1]) * f - Math.sin(Math.PI * f) * 70; flying = true;
-    } else {
-      bx = sp.bob[0] + Math.sin(t * 0.7) * 3;
-      by = sp.bob[1] + Math.sin(t * 2.3) * 1.6 + (bite ? 3 + Math.sin(t * 28) * 2.4 * bite : 0) + (under ? 7 : 0);
+    const crossed = (x) => prevU != null && prevU < x && u >= x && u - prevU < 0.3;
+    const sp = SPOT.fish || FISH_SPOTS[0], [tx, ty] = rigToSpot(FISH_BOX, rig.tip), wy = sp.bob[1] + 3;
+    const dt = Math.min(0.05, Math.max(0.001, t - (SPOT.fishT || t - 0.016)));
+    SPOT.fishT = t;
+    // the float hanging under the rod tip swings like a pendulum, lagging behind the rod
+    let H = SPOT.hang;
+    if (!H) H = SPOT.hang = { x: tx, y: ty + 18, px: tx, py: ty + 18 };
+    if (calm) { H.x = H.px = tx; H.y = H.py = ty + 18; } else {
+      const nx = H.x + (H.x - H.px) * 0.93, ny = H.y + (H.y - H.py) * 0.93 + 1400 * dt * dt;
+      H.px = H.x; H.py = H.y;
+      const dx = nx - tx, dy = ny - ty, d = Math.hypot(dx, dy) || 1;
+      H.x = tx + (dx / d) * 18; H.y = ty + (dy / d) * 18;
     }
-    if (prevU != null && prevU < 0.32 && u >= 0.32 && u < 0.5) spotPop('', sp.bob[0], sp.bob[1] + 2, 'splash', 700);
-    // a fish on the line (catch-fx.js): the line runs taut from the rod tip to its mouth, no bobber
+    // ambient: now and then a fish jumps far out
+    if (!calm && r() < dt / 16) spotPop('<i></i>', 380 + r() * 380, sp.horizon + 16 + r() * 50, 'sp-jump' + (r() < 0.5 ? ' flip' : ''), 1400);
+    // a fish on the line (catch-fx.js): the line runs taut from the rod tip to its mouth, no float
     const hk = typeof catchHook === 'function' ? catchHook() : null;
     if (hk) {
-      g.innerHTML = `<path d="M${tx.toFixed(1)} ${ty.toFixed(1)} L${hk.x.toFixed(1)} ${hk.y.toFixed(1)}" fill="none" stroke="#eef4ff" stroke-width="1.5" opacity=".95"/>`
-        + (hk.under ? `<ellipse cx="${hk.x.toFixed(1)}" cy="${(sp.bob[1] + 4).toFixed(1)}" rx="${(10 + Math.sin(t * 20) * 3).toFixed(1)}" ry="3" fill="none" stroke="#fff" stroke-width="2" opacity=".8"/>` : '');
+      g.innerHTML = `<path d="M${f1(tx)} ${f1(ty)} L${f1(hk.x)} ${f1(hk.y)}" fill="none" stroke="#eef4ff" stroke-width="1.8" opacity=".95"/>`
+        + (hk.under ? `<ellipse cx="${f1(hk.x)}" cy="${f1(sp.bob[1] + 4)}" rx="${f1(10 + Math.sin(t * 20) * 3)}" ry="3" fill="none" stroke="#fff" stroke-width="2" opacity=".8"/>` : '');
       return;
     }
-    const sag = flying || under ? 4 : 26 - bite * 22;
-    let s = `<path d="M${tx.toFixed(1)} ${ty.toFixed(1)} Q${((tx + bx) / 2 + (flying ? 0 : 10)).toFixed(1)} ${(Math.max(ty, by) + sag).toFixed(1)} ${bx.toFixed(1)} ${by.toFixed(1)}" fill="none" stroke="#eef4ff" stroke-width="1.2" opacity=".85"/>`;
-    if (!flying) for (let i = 0; i < 3; i++) {
-      const ph = (t * (bite || under ? 1.6 : 0.6) + i / 3) % 1;
-      s += `<ellipse cx="${bx.toFixed(1)}" cy="${(sp.bob[1] + 3).toFixed(1)}" rx="${(6 + ph * 26).toFixed(1)}" ry="${(1.6 + ph * 5).toFixed(1)}" fill="none" stroke="#fff" stroke-width="1.4" opacity="${((1 - ph) * (bite || under ? 0.8 : 0.45)).toFixed(2)}"/>`;
+    const b = fishBiteAt(u), C0 = 0.18, C1 = 0.32;
+    let bx, by, phase, cx, cy, tilt;
+    if (u < C0) {   // hanging from the tip: lifted out with the catch, swung back over the shoulder
+      phase = 'hang'; bx = H.x; by = H.y; cx = (tx + bx) / 2; cy = (ty + by) / 2;
+      tilt = Math.atan2(tx - H.x, H.y - ty) * 57.3;
+      if (u < 0.12 && r() < 0.18) partAdd({ kind: 'spray', x: bx, y: by + 5, vy: 10, g: 600, life: 0.6, size: 1.1, col: '#dff4ff' });   // drips
+    } else if (u < C1) {   // the cast: the float flies out in an arc, the line pays out in a loop behind it
+      phase = 'fly';
+      const q = (u - C0) / (C1 - C0), fx = 1 - Math.pow(1 - q, 2);
+      bx = H.x + (sp.bob[0] - H.x) * fx; by = H.y + (sp.bob[1] - H.y) * q - 4 * 62 * q * (1 - q);
+      cx = tx + (bx - tx) * 0.35; cy = Math.min(ty, by) - 38 * (1 - q);
+      tilt = q * 540;
+    } else {   // floating: it bobs on the swell, dips at each nibble, is dragged under by the pull
+      phase = 'float';
+      const s = Math.min(1, (u - C1) / 0.05), land = Math.min(1, (u - C1) / 0.07);
+      bx = sp.bob[0] + Math.sin(t * 0.7) * 3;
+      by = sp.bob[1] + (calm ? 0 : Math.sin(t * 2.3) * 1.6) + Math.sin(s * Math.PI) * 6 * (1 - s * 0.4) + b.dip * 9;
+      const taut = b.taut, vib = b.pull && !calm ? Math.sin(t * 47) * 1.6 : 0;
+      cx = (tx + bx) / 2 + 10 * (1 - taut) + vib; cy = Math.max(ty, by) + (1 - taut) * 26 * land - (1 - land) * 18 + vib * 0.5;
+      tilt = (calm ? 0 : Math.sin(t * 1.7) * 8) + (b.pull && !calm ? Math.sin(t * 31) * 12 : 0) + (b.nib ? 14 * b.nib : 0);
     }
-    if (!under) s += `${flying ? '' : `<ellipse cx="${bx.toFixed(1)}" cy="${(by + 3).toFixed(1)}" rx="5.5" ry="2" fill="#000" opacity=".2"/>`}<circle cx="${bx.toFixed(1)}" cy="${by.toFixed(1)}" r="5" fill="#ff4d5e" stroke="#0a0c11" stroke-width="1.6"/><path d="M${(bx - 5).toFixed(1)} ${by.toFixed(1)} h10" stroke="#fff" stroke-width="2"/><path d="M${bx.toFixed(1)} ${(by - 5).toFixed(1)} v-5" stroke="#0a0c11" stroke-width="1.6"/>`;
-    if (bite > 0.4 || under) s += `<text x="${bx.toFixed(1)}" y="${(sp.bob[1] - 18).toFixed(1)}" class="bite-mark" text-anchor="middle">!</text>`;
+    // splashes: the float lands, each nibble, the pull, the strike
+    if (crossed(C1)) {
+      spotPop('', sp.bob[0], wy, 'splash', 700);
+      for (let i = 0; i < 7; i++) partAdd({ kind: 'spray', x: sp.bob[0] + (r() - 0.5) * 8, y: wy, vx: (r() - 0.5) * 110, vy: -70 - r() * 90, g: 700, life: 0.6, size: 1.3 + r() * 1.2, floor: wy + 4 });
+    }
+    const nibKey = b.nib > 0.5 ? (SPOT.fishCyc || 0) + ':' + b.i : null;
+    if (nibKey && nibKey !== SPOT.nibKey) {
+      spotPop('', bx, wy, 'splash sm', 500);
+      for (let i = 0; i < 2; i++) partAdd({ kind: 'spray', x: bx, y: wy, vx: (r() - 0.5) * 50, vy: -40 - r() * 40, g: 600, life: 0.45, size: 1.2, floor: wy + 3 });
+    }
+    if (nibKey) SPOT.nibKey = nibKey;
+    if (crossed(0.885)) for (let i = 0; i < 4; i++) partAdd({ kind: 'spray', x: bx, y: wy, vx: (r() - 0.5) * 90, vy: -60 - r() * 80, g: 700, life: 0.5, size: 1.4, floor: wy + 4 });
+    if (crossed(0.95)) {
+      spotPop('', bx, wy, 'splash', 700);
+      for (let i = 0; i < 8; i++) partAdd({ kind: 'spray', x: bx + (r() - 0.5) * 10, y: wy, vx: (r() - 0.5) * 140, vy: -90 - r() * 120, g: 750, life: 0.7, size: 1.4 + r() * 1.4, floor: wy + 4 });
+      partAdd({ kind: 'foam', x: bx, y: wy + 1, g: 0, life: 0.8, size: 9 });
+    }
+    if (b.under && !calm && r() < 0.35) partAdd({ kind: 'spray', x: bx + (r() - 0.5) * 12, y: wy, vx: (r() - 0.5) * 80, vy: -50 - r() * 70, g: 700, life: 0.45, size: 1.2, floor: wy + 3 });
+    // the line: slack and sagging while waiting, straight and humming when the fish pulls
+    const taut = phase === 'float' ? b.taut : phase === 'hang' ? 1 : 0.3;
+    const ex = b.under ? bx : bx, ey = b.under ? wy + 1 : by - 4;
+    let s = `<path d="M${f1(tx)} ${f1(ty)} Q${f1(cx)} ${f1(cy)} ${f1(ex)} ${f1(ey)}" fill="none" stroke="#eef4ff" stroke-width="${(1.1 + taut * 0.7).toFixed(2)}" opacity="${(0.8 + taut * 0.2).toFixed(2)}"/>`;
+    if (phase === 'float') {
+      const busy = b.nib || b.pull || b.under;
+      for (let i = 0; i < 3; i++) {
+        const ph = (t * (busy ? 1.6 : 0.6) + i / 3) % 1;
+        s += `<ellipse cx="${f1(bx)}" cy="${f1(wy)}" rx="${f1(6 + ph * 26)}" ry="${f1(1.6 + ph * 5)}" fill="none" stroke="#fff" stroke-width="1.4" opacity="${((1 - ph) * (busy ? 0.8 : 0.45)).toFixed(2)}"/>`;
+      }
+    }
+    if (!b.under) {
+      const fl = `<g transform="translate(${f1(bx)},${f1(by)}) rotate(${f1(tilt)})"><path d="M0 -5 v-6" stroke="#0a0c11" stroke-width="1.6"/><circle r="5" fill="#ff4d5e" stroke="#0a0c11" stroke-width="1.6"/><path d="M-5 0 a5 5 0 0 0 10 0z" fill="#fff" stroke="#0a0c11" stroke-width="1.6"/><circle cx="-1.8" cy="-2.2" r="1.3" fill="#fff" opacity=".75"/></g>`;
+      s += phase === 'float' ? `<clipPath id="sp-wl"><rect x="0" y="0" width="800" height="${f1(wy)}"/></clipPath><ellipse cx="${f1(bx)}" cy="${f1(wy + 1)}" rx="6" ry="1.8" fill="#000" opacity=".2"/><g clip-path="url(#sp-wl)">${fl}</g><ellipse cx="${f1(bx)}" cy="${f1(wy)}" rx="${f1(5 + b.dip * 3)}" ry="1.2" fill="none" stroke="#fff" stroke-width="1.2" opacity=".7"/>` : fl;
+    }
+    if (b.pull || b.under) {
+      const pop = 1 + 0.9 * Math.max(0, 1 - (u - 0.885) / 0.014);
+      s += `<text transform="translate(${f1(bx)},${f1(sp.bob[1] - 20)}) scale(${pop.toFixed(2)}) rotate(${calm ? 0 : f1(Math.sin(t * 24) * 6)})" class="bite-mark" text-anchor="middle" dy="8">!</text>`;
+    }
     g.innerHTML = s;
   } else if (kind === 'cooking') {
     const av = el.querySelector('.spot-av svg.avatar'), rig = av && SPOT_RIG[av.dataset.uid];
@@ -496,31 +688,87 @@ UPD.push(() => {
       // the food goes in pale and raw and takes its colour as it cooks
       rig.food = col ? mixHex('#f3e4d6', col, Math.min(1, k / 0.7)) : null;
     }
-    if (k < 0 || !rig || !rig.pan) { SPOT.cookU = null; return; }
-    const u = driveU('cook', t), prev = SPOT.cookU, [px, py] = rigToSpot(COOK_BOX, rig.pan), r = Math.random;
+    // the plated dish lands (queued by the 'action' handler): a puff of steam, sparkles if perfect
+    const pf = SPOT.plFx;
+    if (pf && performance.now() >= pf.t) {
+      SPOT.plFx = null;
+      for (let i = 0; i < 3; i++) partAdd({ kind: 'puff', x: pf.x + (i - 1) * 10, y: pf.y - 6, vx: (i - 1) * 14, vy: -30, g: 0, size: 4, life: 1.2, op: 0.4 });
+      if (pf.perfect) {
+        retrigger(el, 'thud');
+        for (let i = 0; i < 16; i++) { const a = (i / 16) * Math.PI * 2; partAdd({ kind: 'star', x: pf.x + Math.cos(a) * 10, y: pf.y - 8 + Math.sin(a) * 6, vx: Math.cos(a) * 130, vy: Math.sin(a) * 80 - 40, g: 60, life: 1.1, size: 4 + r() * 4, vr: 240, col: ['#ffe27a', '#fff6c8', '#ffb84a'][i % 3] }); }
+      }
+    }
+    if (k < 0 || !rig || !rig.pan) { SPOT.cookU = null; el.style.removeProperty('--steam'); return; }
+    const u = driveU('cook', t), prev = SPOT.cookU, [px, py] = rigToSpot(COOK_BOX, rig.pan);
     SPOT.cookU = u;
+    // the steam thickens as the dish cooks
+    el.style.setProperty('--steam', (0.3 + 0.7 * Math.min(1, k / 0.8)).toFixed(2));
     const drop = (n, up, life) => { for (let i = 0; i < n; i++) partAdd({ kind: 'drop', x: px + (r() - 0.5) * 20, y: py - 2, vx: (r() - 0.5) * 120, vy: -up * (0.5 + r() * 0.6), g: 700, life: life || 0.45 }); };
-    // sizzling: the oil spits a little the whole time the pan is on the fire
-    if (u < 0.5 && r() < 0.12) drop(1, 140, 0.35);
+    const fire = (n, x, y, up, size, life) => { for (let i = 0; i < n; i++) partAdd({ kind: 'fire', x: x + (r() - 0.5) * 18, y, vx: (r() - 0.5) * 60, vy: -up * (0.6 + r() * 0.6), g: -90, size: size * (0.7 + r() * 0.6), life: life * (0.7 + r() * 0.5) }); };
+    // sizzling: the oil spits and crackles the whole time the pan is on the fire, flames lick its sides
+    if (u < 0.5) {
+      if (r() < 0.1) drop(1, 140, 0.35);
+      if (r() < 0.25) partAdd({ kind: 'sizzle', x: px + (r() - 0.5) * 26, y: py - 2 - r() * 5, g: 0, life: 0.15 + r() * 0.12 });
+    }
+    if (r() < 0.1) { const side = r() < 0.5 ? -1 : 1; fire(1, px + side * 20, py + 6, 40, 3.2, 0.4); }
     const crossed = (x) => prev != null && prev < x && u >= x && u - prev < 0.3;
-    // the toss: the flames lick up the side as the pan is flicked (oil in the air catches), a spray of oil
+    // the toss: oil in the air catches, a burst of flame licks up the pan, sparks fly
     if (crossed(COOK_T.launch)) {
       retrigger(el.querySelector('.flames'), 'flare');
       drop(4, 200, 0.55);
-      for (let i = 0; i < 3; i++) partAdd({ kind: 'spark', x: px + 10 + (r() - 0.5) * 24, y: py + 4, vx: (r() - 0.5) * 50, vy: -90 - r() * 70, g: -40, life: 0.7 + r() * 0.4 });
+      fire(calm ? 0 : 7, px + 12, py - 2, 190, 5.5, 0.65);
+      for (let i = 0; i < 5; i++) partAdd({ kind: 'spark', x: px + 10 + (r() - 0.5) * 24, y: py + 4, vx: (r() - 0.5) * 70, vy: -90 - r() * 90, g: -40, life: 0.7 + r() * 0.4 });
     }
     // the catch: it lands with a sizzle and a puff of steam
     if (crossed(COOK_T.land)) {
       drop(6, 220, 0.5);
+      for (let i = 0; i < 5; i++) partAdd({ kind: 'sizzle', x: px + (r() - 0.5) * 24, y: py - 3 - r() * 4, g: 0, life: 0.2 + r() * 0.1 });
       for (let i = 0; i < 2; i++) partAdd({ kind: 'puff', x: px + (i - 0.5) * 14, y: py - 8, vx: (i - 0.5) * 20, vy: -26, g: 0, size: 4, life: 1.1 });
     }
   } else if (kind === 'voyaging') {
-    const ship = el.querySelector('.ship');
+    const ship = el.querySelector('.ship'), bob = ship && ship.firstElementChild, g = el.querySelector('[data-spotfx]');
     if (!ship) return;
-    const p = k < 0 ? 0 : k, left = 14 + p * 62;
+    const sailing = k >= 0, rough = (VOY_LOOK[SPOT.voyLook] || {}).storm ? 1.9 : 1;
+    // the ship crosses the scene with the voyage; it lies at the landfall while the loot comes up,
+    // then the next voyage sails in from the left (or it is back at the dock)
+    const hold = 1.6, since = t - (SPOT.voyArr || -99);
+    let left = sailing ? 10 + k * 58 : 10, op = 1;
+    if (since < hold && SPOT.voyEnd != null) left = SPOT.voyEnd;
+    else if (since < hold + 0.7) { const f = (since - hold) / 0.7; left -= (1 - ease.out(f)) * 9; op = f; }
+    SPOT.voyLeft = left;
     ship.style.left = left.toFixed(2) + '%';
-    if (SPOT.voyK != null && k >= 0 && k < SPOT.voyK - 0.5) retrigger(ship, 'reset');
-    SPOT.voyK = k;
+    ship.style.opacity = op < 1 ? op.toFixed(2) : '';
+    // rocking on the swell: roll and heave out of phase, heavier in a storm, gentle at the dock
+    const amp = (sailing ? 1 : 0.45) * rough, sw = Math.sin(t * 1.25 - 0.9);
+    const roll = calm ? 0 : (Math.sin(t * 1.25) * 2.4 + Math.sin(t * 0.53 + 1) * 1.3) * amp, heave = calm ? 0 : sw * 3 * amp;
+    SPOT.voyRoll = roll;
+    if (bob) bob.style.transform = `translateY(${heave.toFixed(2)}%) rotate(${roll.toFixed(2)}deg)`;
+    setPose(el.querySelector('.ship-av svg.avatar'), sailing || since < hold ? 'sail' : 'swagger');
+    // the loot comes up (queued by the 'action' handler): coins burst out of the chest
+    const vf = SPOT.voyFx;
+    if (vf && performance.now() >= vf.t) {
+      SPOT.voyFx = null;
+      for (let i = 0; i < 18; i++) partAdd({ kind: 'coin', x: vf.x + (r() - 0.5) * 10, y: vf.y, vx: (r() - 0.5) * 220, vy: -180 - r() * 220, g: 760, life: 1.1 + r() * 0.3, floor: 300 });
+      for (let i = 0; i < 8; i++) partAdd({ kind: 'star', x: vf.x, y: vf.y - 6, vx: (r() - 0.5) * 200, vy: -60 - r() * 140, g: 80, life: 0.9, size: 4 + r() * 3, vr: 260, col: i % 2 ? '#ffe27a' : '#fff6c8' });
+    }
+    if (!g) return;
+    if (!sailing || calm || op < 1 || since < hold) { if (g.innerHTML) g.innerHTML = ''; return; }
+    // the wake: two foam lines spreading behind the stern, rippling backwards; foam and bow spray
+    const W = SHIP_W * 800, sh = W * 110 / 120, x0 = left * 8, wl = 0.44 * 320 + sh * (90 / 110) + (heave / 100) * sh;
+    const stern = x0 + W * 0.16, bow = x0 + W * 0.86;
+    let d1 = `M${f1(stern)} ${f1(wl)}`, d2 = d1;
+    for (let i = 1; i <= 8; i++) {
+      const x = stern - i * 21, w = Math.sin(i * 1.3 - t * 6) * 1.3;
+      d1 += ` L${f1(x)} ${f1(wl - i * 0.7 + w)}`; d2 += ` L${f1(x)} ${f1(wl + i * 1.7 + w)}`;
+    }
+    g.innerHTML = `<defs><linearGradient id="sp-wake" gradientUnits="userSpaceOnUse" x1="${f1(stern)}" y1="0" x2="${f1(stern - 170)}" y2="0"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient></defs>`
+      + `<path d="${d1}" fill="none" stroke="url(#sp-wake)" stroke-width="2.2" stroke-linecap="round"/><path d="${d2}" fill="none" stroke="url(#sp-wake)" stroke-width="3" stroke-linecap="round"/>`
+      + `<ellipse cx="${f1(bow)}" cy="${f1(wl + 1)}" rx="${f1(9 + sw * 3)}" ry="2.4" fill="#fff" opacity=".55"/>`;
+    if (r() < 0.45) partAdd({ kind: 'foam', x: stern - r() * 8, y: wl + r() * 4, vx: -70 - r() * 30, g: 0, life: 0.9, size: 2.5 + r() * 3 });
+    // the bow slams into a swell: a burst of spray
+    const dip = sw < 0 && (SPOT.voySw || 0) >= 0;
+    SPOT.voySw = sw;
+    if (dip) for (let i = 0; i < 5 * rough; i++) partAdd({ kind: 'spray', x: bow + r() * 6, y: wl, vx: 30 + r() * 90, vy: -90 - r() * 110 * rough, g: 650, life: 0.7, size: 1.3 + r() * 1.4, floor: wl + 8 });
   }
 });
 
@@ -583,16 +831,39 @@ on('action', (d) => {
     const it = ITEMS[top];
     setLast('cooking', `<i class="sh-ic ${it.q === 'p' ? 'shiny' : ''}">${itemIc(top)}</i><small>${it.q === 'p' ? 'Perfect!' : 'Last dish'}</small><b>${esc(it.name)}</b>${it.type === 'food' ? `<em>${ui('hp')}${foodHeal(top)}</em>` : ''}`);
     if (!el || el.dataset.spot !== 'cooking') return;
-    const [px, py] = SPOT.pan || [400, 200];
-    spotPop(`<span class="tile-art">${itemIc(top)}</span>`, px, py - 30, 'dish' + (it.q === 'p' ? ' perfect' : ''), 1400);
-    spotPop(`<b>+${fmt(d.gains[top])} ${esc(it.name)}</b>${it.type === 'food' ? `<small>${ui('hp')}heals ${foodHeal(top)}</small>` : ''}`, px + 80, py - 70, 'tag' + (it.q === 'p' ? ' gold' : ''), 1700);
-    if (it.q === 'p') spotPop(`${ui('perfect')}Perfect!`, px, 64, 'banner perfect', 2200);
-    if (it.spice) { const p = spotPop('<i></i><i></i><i></i><i></i><i></i><i></i>', px + 6, py - 26, 'sprinkle', 900); if (p) p.style.setProperty('--sc', SPICES[it.spice].col); }
-  } else if (d.skill === 'voyaging') {
-    setLast('voyaging', `<small>Last voyage</small><b>${esc(d.act.name)}</b><em>${ui('gold')}${fmt(d.gold)}</em>`);
+    // plating: the dish leaves the pan in an arc and lands on a plate on the chopping board, steams,
+    // then flies up to the "last dish" panel (a perfect one lands in a burst of gold)
+    const [px, py] = SPOT.pan || [400, 200], perfect = it.q === 'p', PL = [644, 182], m = spotPx(), now = performance.now();
+    const full = actionTime('cooking', d.act) >= 1.5 && !avCalm() && now - (SPOT.plateT || 0) > 1100;
+    SPOT.plateT = now;
+    if (full) {
+      const arc = spotPop(`<i><span class="tile-art">${itemIc(top)}</span></i>`, px, py - 10, 'plate-arc' + (perfect ? ' perfect' : ''), 600);
+      if (arc) { arc.style.setProperty('--dx', Math.round((PL[0] - px) * m) + 'px'); arc.style.setProperty('--dy', Math.round((PL[1] - py + 10) * m) + 'px'); arc.style.setProperty('--jy', Math.round(-70 * m) + 'px'); }
+    }
+    const pl = spotPop(`<i class="pl-plate"></i><span class="tile-art">${itemIc(top)}</span><i class="pl-steam"><b></b><b></b><b></b></i>`, PL[0], PL[1], 'plated' + (full ? ' arc' : '') + (perfect ? ' perfect' : ''), 2100);
+    if (pl) { pl.style.setProperty('--hx', Math.round((744 - PL[0]) * m) + 'px'); pl.style.setProperty('--hy', Math.round((30 - PL[1]) * m) + 'px'); }
+    SPOT.plFx = { t: now + (full ? 560 : 60), x: PL[0], y: PL[1], perfect };
+    spotPop(`<b>+${fmt(d.gains[top])} ${esc(it.name)}</b>${it.type === 'food' ? `<small>${ui('hp')}heals ${foodHeal(top)}</small>` : ''}`, PL[0] - 20, PL[1] - 66, 'tag' + (perfect ? ' gold' : ''), 1700);
+    if (perfect) spotPop(`${ui('perfect')}Perfect!`, px, 64, 'banner perfect', 2200);
+    if (it.spice) { const p = spotPop('<i></i><i></i><i></i><i></i><i></i><i></i>', PL[0], PL[1] - 34, 'sprinkle', 900); if (p) { p.style.setProperty('--sc', SPICES[it.spice].col); p.style.animationDelay = full ? '.5s' : '0s'; } }
+  }
+});
+on('expedition', (d) => {
+  const el = spotNow();
+  {
     if (!el || el.dataset.spot !== 'voyaging') return;
-    spotPop(`<span class="tile-art">${ui('open')}</span>`, 660, 190, 'dish chest', 1500);
-    spotPop(`<b>+${fmt(d.gold)} gold</b><small>${Object.keys(d.gains).slice(0, 3).map((k) => esc(ITEMS[k].name)).join(' · ')}</small>`, 600, 120, 'tag gold', 2000);
+    // landfall: the hand cheers (POSE_DRIVE.sail), a chest drops onto the deck, bursts open with
+    // coins, and the cargo fans up out of it
+    const now = performance.now(), m = spotPx();
+    SPOT.voyArr = now / 1000; SPOT.voyEnd = SPOT.voyLeft != null ? SPOT.voyLeft : 68;
+    const W = SHIP_W * 800, cx = SPOT.voyEnd * 8 + W * 0.74, cy = 0.44 * 320 + W * (110 / 120) * (70 / 110) - 8;
+    spotPop(`<svg viewBox="-20 -24 40 30"><g class="vc-box"><rect x="-15" y="-10" width="30" height="16" rx="2" fill="#8c5c34" stroke="#1a0e06" stroke-width="2"/><path d="M-15 -4 h30" stroke="#5a381f" stroke-width="2"/><rect x="-3" y="-7" width="6" height="7" rx="1" fill="#ffd23f" stroke="#1a0e06" stroke-width="1.4"/></g><g class="vc-lid"><path d="M-15 -10 Q-15 -20 0 -20 Q15 -20 15 -10Z" fill="#a8703e" stroke="#1a0e06" stroke-width="2"/><path d="M-6 -19.5 v9 M6 -19.5 v9" stroke="#ffd23f" stroke-width="2"/></g></svg>`, cx, cy, 'voy-chest', 1900);
+    SPOT.voyFx = { t: now + (avCalm() ? 0 : 520), x: cx, y: cy - 8 };
+    Object.keys(d.gains).filter((k) => ITEMS[k]).slice(0, 3).forEach((k, i, all) => {
+      const p = spotPop(`<span class="tile-art">${itemIc(k)}</span>`, cx, cy - 10, 'voy-loot', 2000);
+      if (p) { p.style.setProperty('--lx', Math.round((i - (all.length - 1) / 2) * 46 * m) + 'px'); p.style.setProperty('--ly', Math.round(-78 * m) + 'px'); p.style.animationDelay = (0.5 + i * 0.12) + 's'; }
+    });
+    spotPop(`<b>${fmt(d.hauls)} hauls · +${fmt(d.gold)} gold</b><small>${Object.keys(d.gains).slice(0, 3).map((k) => esc(ITEMS[k].name)).join(' · ')}</small>`, Math.min(700, cx), 84, 'tag gold', 2000);
   }
 });
 

@@ -1,0 +1,93 @@
+/* Animations — ui (2026-11-22 animation pass). */
+
+/* ---------------------------------------------------------------- floats */
+/* a snappy pop (overshoot), a short hang, then a rise that eases out and fades */
+.float { animation: uiFloat 1.1s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+@keyframes uiFloat {
+  0% { opacity: 0; transform: translate(-50%, 10px) scale(0.5); }
+  12% { opacity: 1; transform: translate(-50%, -8px) scale(1.18); }
+  24% { transform: translate(-50%, -12px) scale(1); }
+  70% { opacity: 1; }
+  100% { opacity: 0; transform: translate(-50%, -58px) scale(0.94); }
+}
+.float.gain .gi { filter: drop-shadow(0 0 4px rgba(255, 255, 255, 0.35)); }
+.float.gain.r4, .float.gain.r5, .float.gain.r6 { color: #ffe08a; text-shadow: 0 1px 2px #000, 0 0 10px rgba(255, 215, 94, 0.8); }
+.float.xp { padding: 1px 7px; border-radius: 9px; background: rgba(40, 70, 130, 0.55); box-shadow: 0 0 10px rgba(120, 170, 255, 0.35); font-weight: 700; letter-spacing: 0.04em; }
+.float.double { font-size: 22px; animation-name: uiFloatBig; }
+@keyframes uiFloatBig {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(2) rotate(-12deg); }
+  15% { opacity: 1; transform: translate(-50%, -6px) scale(0.9) rotate(4deg); }
+  28% { transform: translate(-50%, -10px) scale(1.05) rotate(0); }
+  100% { opacity: 0; transform: translate(-50%, -54px) scale(1); }
+}
+/* combat numbers keep their weight: a heavier pop for crits */
+.float.dmg.crit { animation: uiCrit 1.1s cubic-bezier(0.2, 0.7, 0.3, 1) both; }
+@keyframes uiCrit {
+  0% { opacity: 0; transform: translate(-50%, 0) scale(2.2); }
+  10% { opacity: 1; transform: translate(-50%, -6px) scale(0.92); }
+  20% { transform: translate(-50%, -10px) scale(1.08); }
+  30% { transform: translate(-50%, -12px) scale(1); }
+  100% { opacity: 0; transform: translate(-50%, -64px); }
+}
+
+/* ---------------------------------------------------------------- obtained feed */
+.ob-row { animation: uiObIn 0.38s cubic-bezier(0.2, 1.2, 0.4, 1); }
+@keyframes uiObIn { 0% { opacity: 0; transform: translateX(40px) scale(0.92); } 60% { opacity: 1; transform: translateX(-4px) scale(1.02); } 100% { transform: none; } }
+.ob-row .ob-ic { animation: uiIcPop 0.42s 0.08s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes uiIcPop { 0% { transform: scale(0.3) rotate(-20deg); } 100% { transform: none; } }
+.ob-row.bump b { animation: uiBump 0.32s cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes uiBump { 0% { transform: scale(1); } 35% { transform: scale(1.35); color: #fff6c8; } 100% { transform: scale(1); } }
+.ob-row.bump .ob-ic { animation: uiIcBump 0.3s ease-out; }
+@keyframes uiIcBump { 40% { transform: scale(1.15); filter: brightness(1.4); } }
+/* rare rows shine once as they arrive */
+.ob-row.r4, .ob-row.r5, .ob-row.r6 { position: relative; overflow: hidden; }
+.ob-row.r4::after, .ob-row.r5::after, .ob-row.r6::after { content: ''; position: absolute; inset: 0; pointer-events: none;
+  background: linear-gradient(105deg, transparent 30%, rgba(255, 255, 255, 0.28) 48%, transparent 66%); transform: translateX(-110%); animation: uiShine 0.9s 0.2s ease-out forwards; }
+@keyframes uiShine { to { transform: translateX(110%); } }
+/* a brand-new item: a "New" tag and a gold glow */
+.ob-row.fresh { box-shadow: 0 0 0 1px rgba(255, 215, 94, 0.6), 0 0 18px rgba(255, 215, 94, 0.35), 0 6px 16px rgba(0, 0, 0, 0.4); }
+.ob-row.fresh .ob-name::before { content: 'New'; display: inline-block; margin-right: 6px; padding: 0 5px; border-radius: 3px; font: 700 10px/16px var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: #2a1a00; background: #ffd75e; vertical-align: 1px; animation: uiNew 0.5s cubic-bezier(0.2, 1.6, 0.4, 1); }
+@keyframes uiNew { from { transform: scale(0); } }
+
+/* ---------------------------------------------------------------- action cards */
+.acard.pop .tile, .ws-row.pop .tile, .ws-card.pop .tile { animation: uiTilePop 0.36s cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes uiTilePop { 0% { transform: scale(1); } 30% { transform: scale(0.9); } 60% { transform: scale(1.14); filter: brightness(1.3); } 100% { transform: scale(1); } }
+
+/* ---------------------------------------------------------------- banners */
+.burst-band { animation: uiBandIn 0.5s cubic-bezier(0.2, 1, 0.3, 1); }
+@keyframes uiBandIn { 0% { opacity: 0; transform: scaleY(0.1); } 40% { opacity: 1; transform: scaleY(1.12); } 100% { transform: none; } }
+.burst-ic { animation: uiBurstIc 0.6s 0.1s cubic-bezier(0.2, 1.5, 0.4, 1) both; }
+@keyframes uiBurstIc { 0% { transform: scale(0) rotate(-30deg); } 100% { transform: none; } }
+.burst-title { animation: uiBurstTitle 0.5s 0.15s cubic-bezier(0.2, 1.2, 0.4, 1) both; }
+@keyframes uiBurstTitle { 0% { opacity: 0; transform: translateX(-24px) skewX(-12deg); letter-spacing: 0.3em; } 100% { opacity: 1; transform: none; } }
+.burst-sub { animation: uiFadeUp 0.4s 0.3s ease-out both; }
+@keyframes uiFadeUp { from { opacity: 0; transform: translateY(6px); } }
+/* a light sweep across every banner */
+.burst-band > .burst-txt { position: relative; }
+.burst-band::after { animation: uiSweep 0.9s 0.25s ease-out both; }
+@keyframes uiSweep { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+/* level up: rays turning behind the icon, sparks rising, the title flashes gold */
+.burst.lvup .burst-ic { position: relative; overflow: visible; }
+.burst.lvup .burst-ic::before { content: ''; position: absolute; left: 50%; top: 50%; width: 220px; height: 220px; margin: -110px 0 0 -110px; z-index: -1; border-radius: 50%; pointer-events: none;
+  background: repeating-conic-gradient(from 0deg, color-mix(in srgb, var(--rc) 55%, transparent) 0 8deg, transparent 8deg 22deg);
+  -webkit-mask: radial-gradient(circle, #000 20%, transparent 68%); mask: radial-gradient(circle, #000 20%, transparent 68%);
+  animation: uiRays 2.1s linear both; }
+@keyframes uiRays { 0% { opacity: 0; transform: scale(0.3) rotate(0); } 15% { opacity: 1; transform: scale(1) rotate(20deg); } 80% { opacity: 0.8; } 100% { opacity: 0; transform: scale(1.1) rotate(120deg); } }
+.burst.lvup .burst-ic::after { content: ''; position: absolute; inset: -30px; pointer-events: none;
+  background: radial-gradient(circle, #fff 0 1.5px, transparent 2.5px) 10% 80% / 18px 22px, radial-gradient(circle, var(--rc) 0 2px, transparent 3px) 60% 40% / 26px 30px;
+  animation: uiSparks 1.6s 0.2s ease-out both; }
+@keyframes uiSparks { 0% { opacity: 0; transform: translateY(16px) scale(0.6); } 20% { opacity: 1; } 100% { opacity: 0; transform: translateY(-40px) scale(1.2); } }
+.burst.lvup .burst-title { animation: uiBurstTitle 0.5s 0.15s cubic-bezier(0.2, 1.2, 0.4, 1) both, uiLvFlash 0.8s 0.5s ease-out; }
+@keyframes uiLvFlash { 30% { color: #fff6c8; text-shadow: 0 0 24px #ffd75e, 0 0 6px #fff; } }
+/* the skill's XP ring pops when it levels */
+.sk-ring.lvpop { animation: uiRingPop 0.7s cubic-bezier(0.2, 1.4, 0.4, 1); }
+@keyframes uiRingPop { 0% { transform: scale(1); } 25% { transform: scale(1.18); box-shadow: 0 0 40px var(--rc), 0 0 0 6px color-mix(in srgb, var(--rc) 40%, transparent); } 100% { transform: scale(1); } }
+
+/* ---------------------------------------------------------------- calm */
+@media (prefers-reduced-motion: reduce) {
+  .float, .float.double, .float.dmg.crit { animation: none !important; transform: translate(-50%, -30px); }
+  .ob-row, .ob-row .ob-ic, .ob-row.bump b, .ob-row.bump .ob-ic, .ob-row.fresh .ob-name::before, .acard.pop .tile, .ws-row.pop .tile, .ws-card.pop .tile,
+  .burst-band, .burst-ic, .burst-title, .burst-sub, .burst-band::after, .sk-ring.lvpop { animation: none !important; }
+  .ob-row::after, .burst.lvup .burst-ic::before, .burst.lvup .burst-ic::after { display: none; }
+}

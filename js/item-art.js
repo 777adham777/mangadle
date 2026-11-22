@@ -46,7 +46,9 @@ function GL(c) {
 
 // --- drawing helpers (every element sets its own stroke, so tile CSS never bleeds in)
 // S: main shape, gradient + ink outline. o: {w: outline width, flat: true for a flat fill}
-const S = (d, c, o) => `<path d="${d}" fill="${o && o.flat ? c : G(c)}" stroke="${ART_INK}" stroke-width="${(o && o.w) || 2.4}" stroke-linejoin="round" stroke-linecap="round"/>`;
+// Outlines stay in one weight band (1.8 small parts .. 2.6 big silhouettes) so every icon reads as one set.
+const OUTW = (w) => Math.max(1.8, Math.min(2.6, w || 2.4));
+const S = (d, c, o) => `<path d="${d}" fill="${o && o.flat ? c : G(c)}" stroke="${ART_INK}" stroke-width="${OUTW(o && o.w)}" stroke-linejoin="round" stroke-linecap="round"/>`;
 // F: flat fill, no outline (shading, patterns, symbols). op: opacity
 const F = (d, c, op) => `<path d="${d}" fill="${c}" stroke="none"${op != null ? ` opacity="${op}"` : ''}/>`;
 // L: line. w: width (default 1.6)

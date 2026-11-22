@@ -869,13 +869,18 @@ function feedAdd(icon, name, n, cls, r) {
     while (feedRows.length > 5) { const o = feedRows.shift(); clearTimeout(o.t); o.el.remove(); }
   }
   f.t = setTimeout(() => { f.el.classList.add('out'); setTimeout(() => f.el.remove(), 400); const i = feedRows.indexOf(f); if (i >= 0) feedRows.splice(i, 1); }, 4200);
+  return f;
 }
-const feedItem = (id, n) => feedAdd(itemIc(id), ITEMS[id].name, n, '', rarity(id));
+const freshItems = new Set();
+const feedItem = (id, n) => {
+  const f = feedAdd(itemIc(id), ITEMS[id].name, n, '', rarity(id));
+  if (f && freshItems.delete(id)) retrigger(f.el, 'fresh');
+};
 const feedGold = (n, label) => feedAdd(ui('gold'), label || 'Gold', n, 'g', 3);
 
 /* =============================================================== FX */
 let floatCount = 0;
-function floatAt(el, html, cls, dx, dy) {
+function floatAt(el, html, cls, dx, dy, delay) {
   if (!el || floatCount > 24) return;
   const r = el.getBoundingClientRect();
   if (!r.width || r.bottom < 0 || r.top > innerHeight) return;
@@ -884,22 +889,31 @@ function floatAt(el, html, cls, dx, dy) {
   f.innerHTML = html;
   f.style.left = r.left + r.width / 2 + (dx || 0) + (Math.random() * 30 - 15) + 'px';
   f.style.top = r.top + r.height * 0.35 + (dy || 0) + 'px';
+  if (delay) f.style.animationDelay = delay + 'ms';
   $('#fx').appendChild(f);
   floatCount++;
-  setTimeout(() => { f.remove(); floatCount--; }, 1100);
+  setTimeout(() => { f.remove(); floatCount--; }, 1100 + (delay || 0));
 }
 function retrigger(el, cls) { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 let burstBusy = false;
 const burstQueue = [];
-function burst(title, sub, icon, color) {
-  if (burstBusy) { if (burstQueue.length < 3) burstQueue.push([title, sub, icon, color]); return; }
+function bannerBurst(title, sub, icon, color, kind) {
+  if (burstBusy) { if (burstQueue.length < 3) burstQueue.push([title, sub, icon, color, kind]); return; }
   burstBusy = true;
   const b = document.createElement('div');
-  b.className = 'burst';
+  b.className = 'burst' + (kind ? ' ' + kind : '');
   b.style.setProperty('--rc', color || 'var(--gold)');
   b.innerHTML = `<div class="burst-band"><div class="burst-ic">${icon || ''}</div><div class="burst-txt"><div class="burst-title">${esc(title)}</div><div class="burst-sub">${esc(sub)}</div></div></div>`;
   document.body.appendChild(b);
-  setTimeout(() => { b.remove(); burstBusy = false; if (burstQueue.length) burst(...burstQueue.shift()); }, 2100);
+  setTimeout(() => { b.remove(); burstBusy = false; if (burstQueue.length) bannerBurst(...burstQueue.shift()); }, 2100);
+}
+function burst(title, sub, icon, color, kind) { return bannerBurst(title, sub, icon, color, kind); }
+{
+  const route = () => {
+    const star = burst;
+    if (star.length === 3 && star !== bannerBurst) burst = function (a, b, c, d, e) { return Array.isArray(a) ? star(a, b, c) : bannerBurst(a, b, c, d, e); };
+  };
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', route); else setTimeout(route, 0);
 }
 function flash() { const f = document.createElement('div'); f.className = 'flash'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); }
 function inBattleView() { return S.ui.view === 'battle'; }
@@ -910,10 +924,10 @@ on('action', (d) => {
   const fast = actionTime(d.skill, d.act) < 0.8;
   if (!fast) {
     let i = 0;
-    for (const id in d.gains) floatAt(anchor, `+${fmt(d.gains[id])}${itemIc(id)}`, 'gain', 0, -i++ * 24);
-    if (d.gold) floatAt(anchor, `+${fmt(d.gold)}${ui('gold')}`, 'gold', 40, 0);
-    floatAt(anchor, `+${fmt(d.xp)} XP`, 'xp', 50, 24);
-    if (d.double) floatAt(anchor, '×2', 'gold', -50, 0);
+    for (const id in d.gains) { floatAt(anchor, `+${fmt(d.gains[id])}${itemIc(id)}`, 'gain r' + rarity(id), 0, -i * 24, i * 70); i++; }
+    if (d.gold) floatAt(anchor, `+${fmt(d.gold)}${ui('gold')}`, 'gold', 40, 0, i * 70);
+    floatAt(anchor, `+${fmt(d.xp)} XP`, 'xp', 50, 24, 120);
+    if (d.double) floatAt(anchor, '×2', 'gold double', -50, 0, 60);
     retrigger(card, 'pop');
   }
   for (const id in d.gains) feedItem(id, d.gains[id]);
@@ -921,7 +935,8 @@ on('action', (d) => {
 });
 on('levelup', (d) => {
   const s = SKILLS[d.skill];
-  burst('Level up', `${s.name} · Lv ${d.level - 1} → ${d.level}`, ic('skill', d.skill), rc(s.realm));
+  burst('Level up', `${s.name} · Lv ${d.level - 1} → ${d.level}`, ic('skill', d.skill), rc(s.realm), 'lvup');
+  setTimeout(() => { for (const el of $$(`[data-xpring="${d.skill}"]`)) retrigger(el, 'lvpop'); }, 60);
   const unlocked = s.actions.find((a) => a.level === d.level);
   if (unlocked) toast(`New in ${s.name}: ${unlocked.name}${unlocked.schem && !S.known[unlocked.schem] ? ' (needs its schematic)' : ''}`, 'good');
   if (MILESTONES.some((m) => m.lv === d.level) && s.realm !== 'combat') toast(`${s.name} milestone reached: ${MILESTONES.find((m) => m.lv === d.level).name}`, 'rare');
@@ -978,6 +993,8 @@ on('pet', (pet) => {
   toast(`${pet.name} joined you! ${petBonus(pet)}.`, 'rare');
 });
 on('newitem', (id) => {
+  freshItems.add(id);
+  setTimeout(() => freshItems.delete(id), 1500);
   if (!featureOpen('collection') || ITEMS[id].variant) return;   // beginners: no Collection menu yet · variants have their own log
   setTimeout(() => { if (!rareThisTick.has(id)) toast(`New in your Collection: ${ITEMS[id].name}`, 'good'); }, 0);
 });
