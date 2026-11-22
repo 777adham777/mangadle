@@ -328,7 +328,7 @@ const EXTRA_USES = [];
 
   defItem('cursed_fragment', 'Cursed Fragment', '🧩', 400);
   SKILLS.exorcism = { name: 'Cursed Research', realm: 'hex', icon: '🕯️', type: 'gather',
-    desc: 'Study the curses that haunt every world. They leave cursed essence, the materials of their world, and Cursed Fragments that level up any technique. Its level strengthens your Binding Vows.' };
+    desc: 'Study the curses that haunt every world. Each has a grade you see before facing it (Grade 4 to Grade 1, and the rare Special Grade): higher grades leave far more. They leave cursed essence, their world\'s materials and Cursed Fragments that level up any technique. Its level strengthens your Binding Vows.' };
   const X = (item, level, time, name, extra) => Object.assign(gather(item, level, time), { name, extra: extra.concat([['cursed_fragment', 0.04 + level / 1500, [1, 1]]]) });
   SKILLS.exorcism.actions = [
     X('hex_ash', 1, 3, 'Harbor Wraiths', [['reef_bass', 0.4, [1, 2]], ['tide_pearl', 0.02, [1, 1]]]),
