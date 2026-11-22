@@ -1,6 +1,9 @@
 /* Service worker: makes the game installable and playable offline.
    Bump VERSION on every deploy so players get the new files. */
-const VERSION = 'tri-realm-v109';
+importScripts('./js/item-images.js');
+
+const VERSION = 'tri-realm-v110';
+const ITEM_ICON_URLS = Object.values(ITEM_IMAGE_PATHS).map((path) => './' + path);
 const SHELL = [
   './',
   './index.html',
@@ -24,6 +27,7 @@ const SHELL = [
   './js/lore.js',
   './js/loot.js',
   './js/item-art.js',
+  './js/item-images.js',
   './js/art/leaf.js',
   './js/art/seas.js',
   './js/art/soul.js',
@@ -91,7 +95,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.concat(ITEM_ICON_URLS))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

@@ -95,7 +95,8 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `js/seas.js` | Orange Town overhaul: seasonings and their battle buffs, where they drop, catch weights and records |
 | `js/seas-ui.js` | Animated skill scenes (fishing, galley, voyages), spice rack, Shiny & Perfect logs, celebrations |
 | `js/ui-systems.js` | Interface for those systems; boots the game |
-| `js/icons.js` | Game icon set (SVG paths) and which icon each item, skill, enemy and screen uses |
+| `assets/item-icons/<world>/<id>.png`, `js/item-images.js` | Generated transparent 256×256 item icons and their ID map |
+| `js/item-art.js`, `js/icons.js`, `js/art/` | SVG fallback art, shared SVG paths and icon assignments for the UI |
 | `js/guide.js` | New-player onboarding: welcome screen, coach bubbles for the first 10 objectives, menu unlocks |
 | `js/scene.js` | Generated background scenes for each world |
 | `js/game.js` | Core engine (no DOM) with hooks for the world systems |

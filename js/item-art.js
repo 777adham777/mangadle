@@ -1,12 +1,12 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — item art (illustrated icons)
-   Every item gets its own small illustration instead of a one-colour glyph:
-   full colour, ink outline, cel shading and a gloss highlight, like a gacha
-   item icon. Drawn on a 64x64 grid. Each world's items live in js/art/*.js.
+   TRI-REALM IDLE — item art (generated PNG icons with SVG fallback)
+   Items listed in js/item-images.js use the generated transparent PNGs in
+   assets/item-icons/. The hand-drawn SVG artwork below remains as a fallback
+   for custom or synthetic items that do not have a generated image.
 
-   ART[id] = inner SVG markup (built with the helpers below).
-   ui.js itemIc() uses ART first and falls back to the old glyph (icons.js).
+   ART[id] = fallback inner SVG markup (built with the helpers below).
+   ui.js itemIc() uses generated images first, then ART, then the UI glyph.
 
    Style rules (keep every new icon in line):
    - Subject fills about 6..58 of the grid; weapons run diagonally, handle
@@ -84,14 +84,23 @@ return { S, F, L, H, SP, AURA, T, G, GL, lt, dk, mix, circ, ell, rect, poly, sta
 
 // Symbol markup for the sprite (called from ui.js installSprite)
 function artSymbols() {
-  return Object.entries(ART).map(([id, m]) => `<symbol id="ia-${id}" viewBox="0 0 64 64">${m}</symbol>`).join('');
+  const images = typeof ITEM_IMAGE_PATHS !== 'undefined' ? ITEM_IMAGE_PATHS : {};
+  const ids = new Set([...Object.keys(ART), ...Object.keys(images)]);
+  return [...ids].map((id) => {
+    const body = images[id]
+      ? `<image href="${images[id]}" width="64" height="64" preserveAspectRatio="xMidYMid meet"/>`
+      : ART[id];
+    return `<symbol id="ia-${id}" viewBox="0 0 64 64">${body}</symbol>`;
+  }).join('');
 }
 const artDefs = () => Object.values(ART_DEFS).join('');
 // The art id for an item: its own, or its base item's (quality variants)
 function artId(id) {
+  const images = typeof ITEM_IMAGE_PATHS !== 'undefined' ? ITEM_IMAGE_PATHS : {};
+  if (images[id]) return id;
   if (ART[id]) return id;
   const it = typeof ITEMS !== 'undefined' && ITEMS[id];
-  if (it && it.base && ART[it.base]) return it.base;
-  if (it && it.type === 'schematic' && ART[it.teaches]) return it.teaches;
+  if (it && it.base && (images[it.base] || ART[it.base])) return it.base;
+  if (it && it.type === 'schematic' && (images[it.teaches] || ART[it.teaches])) return it.teaches;
   return null;
 }
