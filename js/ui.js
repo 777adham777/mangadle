@@ -377,8 +377,9 @@ function farmRates(skill, a) {
 }
 function combatRates() {
   const z = ZONES[S.combat.zone], e = z.enemies[0];
-  const kph = 3600 / (timeToKill(e) + (z.boss ? BOSS_RESPAWN : 1.2));
-  return { z, kph, xph: kph * e.xp * 1.33 * xpMult(), goldh: kph * (e.gold[0] + e.gold[1]) / 2 * goldMult() };
+  const crush = typeof zoneCrushed === 'function' && zoneCrushed(S.combat.zone);
+  const kph = crush ? 3600 / REIATSU_CYCLE : 3600 / (timeToKill(e) + (z.boss ? BOSS_RESPAWN : 1.2));
+  return { z, kph, crush, xph: kph * e.xp * 1.33 * xpMult() * (crush ? 0.5 : 1), goldh: kph * (e.gold[0] + e.gold[1]) / 2 * goldMult() };
 }
 // The big "now farming" block (overview + the active skill page).
 function farmPanel() {
@@ -602,7 +603,7 @@ function zoneRow(z, i) {
   return `<button class="zrow ${z.boss ? 'boss' : ''} ${C.zone === i ? 'on' : ''}" data-zone="${i}" style="--rc:${rc(z.realm)}">
     <span class="z-ic">${ic('enemy', z.enemies[z.enemies.length - 1].name)}</span>
     <span class="z-main"><b>${ascTier(z.realm) ? `<em class="asc-tag t${ascTier(z.realm)}">${ASC[ascTier(z.realm)].name}</em>` : ''}${z.name}</b><small>${z.boss ? 'Boss · ' : ''}Rec. Lv ${z.rec} · ${z.enemies.map((e) => e.name).join(' · ')}</small></span>
-    <span class="z-tail"><span class="danger ${dc}">${dl}</span><span class="z-k">${ui('skull')}<b data-kills="${z.id}">${fmt(C.kills[z.id] || 0)}</b></span></span></button>`;
+    <span class="z-tail">${typeof zoneCrushed === 'function' && zoneCrushed(i) ? '<span class="rei-tag" title="Reiatsu: these foes collapse under your spiritual pressure. About 3× the kills, same loot per kill, half the XP.">Reiatsu</span>' : `<span class="danger ${dc}">${dl}</span>`}<span class="z-k">${ui('skull')}<b data-kills="${z.id}">${fmt(C.kills[z.id] || 0)}</b></span></span></button>`;
 }
 // stageHTML(): the battle arena lives in arena.js
 function logHTML() { return S.combat.log.map((l) => `<div class="${l.c}">${esc(l.m)}</div>`).join('') || '<div class="sys">Nothing yet.</div>'; }

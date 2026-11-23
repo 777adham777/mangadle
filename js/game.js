@@ -546,7 +546,12 @@ function tickCombat(dt) {
   C.hp = Math.min(max, C.hp + max * 0.008 * dt);
   if (C.enemy == null) {
     C.respawn -= dt;
-    if (C.respawn <= 0) spawnEnemy();
+    if (C.respawn <= 0) {
+      spawnEnemy();
+      // Reiatsu (reiatsu.js): a foe far beneath you collapses as it appears.
+      const e = curEnemy();
+      if (e && !ZONES[C.zone].boss && typeof reiatsuCrushes === 'function' && reiatsuCrushes(e)) dealDamage(e, C.eHp, false, 'Reiatsu', { crush: true });
+    }
     return;
   }
   const e = curEnemy();
@@ -593,10 +598,11 @@ function dealDamage(e, dmg, crit, label, extra) {
 }
 function killEnemy(e) {
   const C = S.combat, z = ZONES[C.zone];
+  const crush = !z.boss && typeof reiatsuCrushes === 'function' && reiatsuCrushes(e);   // half XP and bounty, faster respawn
   const g = Math.floor(randInt(e.gold[0], e.gold[1]) * goldMult());
   S.gold += g;
-  addXp('character', e.xp);
-  S.bounty += e.xp * 10;
+  addXp('character', e.xp * (crush ? 0.5 : 1));
+  S.bounty += e.xp * 10 * (crush ? 0.5 : 1);
   const dropped = [], loot = {}, dry = dryMult();
   let epic = false;
   for (const [id, ch, q] of e.drops) {
@@ -623,8 +629,8 @@ function killEnemy(e) {
   S.stats.kills++;
   if (z.boss) { S.stats.bossKills++; if (C.kills[z.id] === 1) toast(`${e.name} defeated! A new path opens...`, 'rare'); }
   clog(`Defeated ${e.name}: +${fmt(g)} gold${dropped.length ? ", " + dropped.join(", ") : ""}`, 'win');
-  C.enemy = null; C.respawn = z.boss ? BOSS_RESPAWN : 1.2;
-  emit('kill', { enemy: e, gold: g, loot, boss: !!z.boss });
+  C.enemy = null; C.respawn = z.boss ? BOSS_RESPAWN : crush ? REIATSU_RESPAWN : 1.2;
+  emit('kill', { enemy: e, gold: g, loot, boss: !!z.boss, crush });
 }
 // foeLanded: damage of the last enemy swing (0 = dodged). foes.js applies on-hit effects only when it connected.
 let foeLanded = 0;

@@ -694,6 +694,8 @@ const UNLOCKS = [
     hint: () => 'Reach Smelting level 5', why: 'The smelter shows you how to refine your weapons with ingots and, later, awaken them. Pick a weapon in the Bank.' },
   { id: 'feature:renown',     name: 'Renown & Ascension', need: () => !!S.gates.soul,
     hint: () => 'Open Soul City', why: 'Word of you spreads across worlds. Every world now tracks your Renown.' },
+  { id: 'feature:reiatsu',    name: 'Reiatsu',         need: () => (S.combat.kills.districts || 0) >= 25,
+    hint: () => 'Defeat 25 foes in the Outer Districts of Soul City', why: 'Your spiritual pressure has grown heavy. Foes far beneath you now collapse the moment they appear: old stages go about three times faster (same loot per kill, half the XP).' },
   { id: 'feature:huntlist',   name: 'Hunt List',       need: () => (!!S.gates.soul && skillLv('mining') >= 10) || !!(S.hlist && S.hlist.list && (S.hlist.list.length || S.hlist.done)),
     hint: () => 'Reach Reishi Mining level 10 in Soul City', why: 'The Hunter Association sends you a provisional licence. Pin up to 3 items you want (Collection or Bank): the Hunt List tracks where they drop, your odds and how long they should take.' },
 ];
