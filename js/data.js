@@ -661,7 +661,7 @@ const UNLOCKS = [
   { id: 'feature:battle',     name: 'Battlefield',     need: () => (S.stats.made.soldier_pill || 0) >= 5 || S.stats.kills > 0,
     hint: () => 'Brew 5 Soldier Pills', why: 'Armed and with pills in your pouch, the instructors let you train with real opponents.' },
   { id: 'feature:avatar',     name: 'Avatar',          need: () => S.stats.kills >= 30,
-    why: 'A village painter wants to sketch the new fighter. Dress your hero in Character → Look; feats across the worlds unlock new looks.' },
+    why: 'A village painter wants to sketch the new fighter. Dress your hero in Character → Customize; feats across the worlds unlock new looks.' },
   { id: 'feature:techniques', name: 'Techniques',      need: () => Object.keys(S.tech.lv).length > 0,
     hint: () => 'Find a technique scroll in battle', why: 'A defeated foe dropped a scroll. Techniques fire on their own in battle: equip them in their slots, and level them up with fragments from duplicate scrolls.' },
   { id: 'feature:collection', name: 'Collection Log',  need: () => Object.keys(S.found).length >= 12,

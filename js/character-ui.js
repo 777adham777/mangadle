@@ -2,9 +2,9 @@
 /* ==========================================================================
    TRI-REALM IDLE — the Character view (#character)
    - the hero big and animated, with the gear slots around it (paper doll)
-   - Gear: click a slot, its owned candidates are listed with the stat change vs what you wear
-   - Look: every cosmetic (avatar.js draws the figure and the cosmetic picker)
-   - the five stats, derived numbers, the build (builds-ui.js through UIX.equipBottom)
+   - Equipment: click a slot, its owned candidates are listed with the stat change vs what you wear
+   - Stats: the five stats big, combat + fortune numbers, the build (builds-ui.js through UIX.equipBottom)
+   - Customize (character:look): its own screen, a big preview + every cosmetic (avatar.js draws both)
    Loaded before ui-systems.js (it boots the game and the saved view must exist by then).
    ========================================================================== */
 
@@ -109,25 +109,46 @@ function chWornTile(s) {
   if (s === 'fruit') return S.fruit ? tile(S.fruit, `R${fruitRank()}`) : null;
   return S.equip[s] ? tile(S.equip[s], null) : null;
 }
-function chSlotBtn(s, look, up) {
-  const t = chWornTile(s) || tile(null, null, { r: 0, icon: ui(CH_EMPTY_IC[s]), title: CH_LABEL[s] });
-  return `<button class="ch-slot ${!look && chSlot === s ? 'on' : ''} ${chWornTile(s) ? '' : 'empty'}" data-chslot="${s}" title="${CH_LABEL[s]}">${t}${up ? `<i class="ch-up" title="Upgrade available">${ui('xp')}</i>` : ''}<small>${CH_LABEL[s]}</small></button>`;
+// A slot card: the worn tile, the slot name, what is worn and its stats.
+function chSlotLine(s) {
+  if (s === 'weapon') return curArm() ? chStatLine(curArm().id) : '';
+  if (s === 'food') return S.combat.food && count(S.combat.food) ? `<span>${ui('hp')}+${fmt(foodHeal(S.combat.food))} HP</span>` : '';
+  if (s === 'fruit') return S.fruit ? `<span>${ui('star')}Rank ${fruitRank()} / ${FRUIT_RANK_MAX}</span>` : '';
+  return S.equip[s] ? chStatLine(S.equip[s]) : '';
 }
-function chDollHTML(look, ups) {
-  const A = avState(), right = [chFoodOn() ? 'food' : null, chFruitOn() ? 'fruit' : null].filter(Boolean);
+function chSlotName(s) {
+  if (s === 'weapon') return curArm() ? ITEMS[curArm().id].name : '';
+  if (s === 'food') return S.combat.food && count(S.combat.food) ? ITEMS[S.combat.food].name : '';
+  if (s === 'fruit') return S.fruit ? ITEMS[S.fruit].name : '';
+  return S.equip[s] ? ITEMS[S.equip[s]].name : '';
+}
+function chSlotBtn(s, up) {
+  const worn = chWornTile(s), name = chSlotName(s);
+  const t = worn || tile(null, null, { r: 0, icon: ui(CH_EMPTY_IC[s]), title: CH_LABEL[s] });
+  return `<button class="ch-slot ${chSlot === s ? 'on' : ''} ${worn ? '' : 'empty'}" data-chslot="${s}" title="${CH_LABEL[s]}">
+    <span class="chs-tile">${t}${up ? `<i class="ch-up" title="Upgrade available">${ui('xp')}</i>` : ''}</span>
+    <span class="chs-t"><small>${CH_LABEL[s]}</small><b>${name ? esc(name) : '<em>Empty</em>'}</b>${worn ? `<span class="es-st">${chSlotLine(s)}</span>` : ''}</span></button>`;
+}
+function chCustomBtn(cls) {
+  return featureOpen('avatar')
+    ? `<button class="ch-custom ${cls || ''}" data-nav="character:look" title="Customize your character">${ui('avatar')}<span>Customize</span></button>`
+    : `<button class="ch-custom ${cls || ''} locked" data-locked="avatar" title="${esc(lockedNote('avatar'))}">${ui('lock')}<span>Customize</span></button>`;
+}
+function chDollHTML(ups) {
+  const A = avState(), right = ['food', 'fruit'].filter((s) => chSlotIds().includes(s));
   const b = xpInfo('character');
   const arch = typeof buildArch === 'function' && featureOpen('battle') ? buildArch() : [];
   return `<section class="win ch-doll">
+    ${hdr('Equipment', `${chSlotIds().filter((s) => chWornTile(s)).length} / ${chSlotIds().length} worn`)}
     <div class="ch-stage">
-      <div class="ch-col">${CH_GEAR.map(([s]) => chSlotBtn(s, look, ups[s])).join('')}</div>
-      <div class="av-floor ch-floor" style="--ink:${cosOf('color', A.color).ink}">${avatarSVG(null, { ctx: 'preview', pose: look ? avPreview || undefined : 'guard', cls: 'big' })}</div>
-      <div class="ch-col">${right.map((s) => chSlotBtn(s, look, ups[s])).join('')}</div>
+      <div class="ch-col">${CH_GEAR.map(([s]) => chSlotBtn(s, ups[s])).join('')}</div>
+      <div class="av-floor ch-floor" style="--ink:${cosOf('color', A.color).ink}">${avatarSVG(null, { ctx: 'preview', pose: 'guard', cls: 'big' })}${chCustomBtn('on-floor')}</div>
+      <div class="ch-col">${right.map((s) => chSlotBtn(s, ups[s])).join('')}</div>
     </div>
     <div class="ch-id">
       <span class="ch-lvb"><small>Lv</small><b data-lv="character">${b.L}</b></span>
       <span class="ch-idt"><b>${arch.length ? esc(arch.map((a) => ARCHES[a].name).join(' · ')) : 'Wanderer'}</b><span class="xpbar"><i data-xpbar="character" style="width:${b.p * 100}%"></i></span><small data-xptext="character">${xpText(b)}</small></span>
     </div>
-    ${look ? avPosesHTML() : ''}
   </section>`;
 }
 
@@ -169,31 +190,65 @@ function chListHTML(s, cands) {
 /* ------------------------------------------------------------ stats */
 function chStatsHTML() {
   if (!UIX.equipBottom) dirty = true;   // the boot render runs before builds-ui.js registers the build panel
+  const big = (icn, name, val, eff, tip) => `<div class="ch-st" title="${esc(tip)}"><span class="chst-ic">${ui(icn)}</span><span class="chst-t"><b>${name}</b><small>${eff}</small></span><em>${val}</em></div>`;
+  const num = (icn, label, val, tip) => `<div class="ch-num" title="${esc(tip)}"><span class="chn-ic">${ui(icn)}</span><small>${label}</small><b>${val}</b></div>`;
+  const crit = typeof critChance === 'function' ? critChance() : 0;
   return `<section class="win ch-stats">
     ${hdr('Stats', `Character Lv ${charLv()}`)}
-    ${charStatsHTML()}
-    <div class="ch-more">${stat('Dodge', pct(pDodge()))}${stat('Gold', '×' + goldMult().toFixed(2))}${stat('XP', '×' + xpMult().toFixed(2))}</div>
-    ${UIX.equipBottom ? uix('equipBottom') : ''}
+    <div class="ch-sts">
+      ${big('atk', 'Attack', fmt(statAtk()), `Max hit ${fmt(pMaxHit())}`, 'Raises the damage you deal')}
+      ${big('def', 'Defense', fmt(statDef()), `−${pct(1 - mitig(pDef()))} damage taken`, 'Reduces the damage you take')}
+      ${big('vit', 'Vitality', fmt(statVit()), `${fmt(pMaxHp())} max HP`, 'Raises your max HP')}
+      ${big('spd', 'Speed', fmt(statSpd()), `${pSpeed().toFixed(2)}s per attack`, 'Each point: +1% attack speed')}
+      ${big('luck', 'Luck', fmt(statLuck()), `Rare finds ×${luckMult().toFixed(2)}`, 'Each point: +1% chance on every rare find')}
+    </div>
+    <h4 class="ch-sub">Combat</h4>
+    <div class="ch-nums">
+      ${num('atk', 'Max hit', fmt(pMaxHit()), 'Your biggest normal hit')}
+      ${num('hp', 'Max HP', fmt(pMaxHp()), 'Health in battle')}
+      ${num('spd', 'Attack', pSpeed().toFixed(2) + 's', 'Time between attacks')}
+      ${num('pk_crit', 'Crit', pct(crit), 'Chance to land a critical hit')}
+      ${num('dodge', 'Dodge', pct(pDodge()), 'Chance to avoid a hit')}
+      ${num('def', 'Armor', '−' + pct(1 - mitig(pDef())), 'Damage taken is reduced by this much')}
+    </div>
+    <h4 class="ch-sub">Fortune</h4>
+    <div class="ch-nums">
+      ${num('gold', 'Gold', '×' + goldMult().toFixed(2), 'Gold from every source')}
+      ${num('xp', 'XP', '×' + xpMult().toFixed(2), 'XP from every action')}
+      ${num('luck', 'Rare', '×' + luckMult().toFixed(2), 'Chance of rare finds')}
+    </div>
+    ${UIX.equipBottom ? `<div class="ch-build">${uix('equipBottom')}</div>` : ''}
   </section>`;
 }
 
+/* ------------------------------------------------------------ customization screen */
+function chLookHTML() {
+  const A = avState();
+  return `
+  ${ptitle('Character', 'Customize', gbtn('Back to equipment', 'equip', 'data-nav="character"', 'dark'))}
+  <div class="ch-lookl">
+    <section class="win ch-lookst">
+      <div class="av-floor ch-floor" style="--ink:${cosOf('color', A.color).ink}">${avatarSVG(null, { ctx: 'preview', pose: avPreview || undefined, cls: 'big' })}</div>
+      ${avPosesHTML()}
+    </section>
+    <section class="win ch-look">${avPickHTML()}</section>
+  </div>`;
+}
+
 /* ------------------------------------------------------------ view */
-const chTabs = (look) => `<nav class="seg big-seg">
-  <button class="${look ? '' : 'on'}" data-nav="character">${ui('equip')}<span>Gear</span></button>
-  ${featureOpen('avatar') ? `<button class="${look ? 'on' : ''}" data-nav="character:look">${ui('avatar')}<span>Look</span></button>` : `<button class="locked" data-locked="avatar" title="${esc(lockedNote('avatar'))}">${ui('lock')}<span>Look</span></button>`}</nav>`;
 VIEWS.character = (tab) => {
   if (chSlotIds().includes(tab)) { chSlot = tab; S.ui.view = 'character'; tab = ''; }   // character:<slot> opens that slot
-  const look = tab === 'look' && featureOpen('avatar');
-  if (!look && S.ui.view !== 'character') S.ui.view = 'character';
+  if (tab === 'look' && featureOpen('avatar')) return chLookHTML();
+  if (S.ui.view !== 'character') S.ui.view = 'character';
   if (!chSlotIds().includes(chSlot)) chSlot = 'weapon';
   const ups = {}, lists = {};
   for (const s of chSlotIds()) { lists[s] = chCands(s); ups[s] = s !== 'fruit' && lists[s].some((c) => c.score > 0.0001); }
   return `
-  ${ptitle('Hero', 'Character', chTabs(look))}
-  <div class="ch-layout ${look ? 'look' : ''}">
-    ${chDollHTML(look, ups)}
-    ${look ? `<section class="win ch-list ch-look">${avPickHTML()}</section>` : chListHTML(chSlot, lists[chSlot])}
+  ${ptitle('Hero', 'Character')}
+  <div class="ch-layout">
+    ${chDollHTML(ups)}
     ${chStatsHTML()}
+    ${chListHTML(chSlot, lists[chSlot])}
   </div>`;
 };
 

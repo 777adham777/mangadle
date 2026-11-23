@@ -2149,6 +2149,6 @@ UPD.push(() => {
   S.avatar.seeded = 1;
   for (const [s] of COS_SLOTS) if (!cosOwned(s, cosOf(s, S.avatar[s]))) S.avatar[s] = COSMETICS[s][0].id;
   if (quiet || !avatarOn()) return;
-  for (const [s, c] of fresh) toast(`New cosmetic: ${c.name} (${COS_SLOTS.find((x) => x[0] === s)[1]}). Wear it in Character → Look.`, 'rare');
+  for (const [s, c] of fresh) toast(`New cosmetic: ${c.name} (${COS_SLOTS.find((x) => x[0] === s)[1]}). Wear it in Character → Customize.`, 'rare');
   if (fresh.length && S.ui.view === 'character:look') dirty = true;
 });

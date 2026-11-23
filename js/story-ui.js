@@ -52,7 +52,7 @@ function scPage(p) {
     return `<div class="sc-card end" style="--rc:${rc(ch.realm)}"><small class="sc-kick">Chapter ${ch.n} complete</small><h2>${esc(ch.title)}</h2>
       <p class="sc-txt">${esc(ch.end)}</p>
       <div class="sc-rew"><small>Chapter reward</small><div>${rewardTiles(0, R.items)}</div>
-      ${R.cos.length ? `<ul>${R.cos.map(([s, cid]) => { const c = COSMETICS[s] && COSMETICS[s].find((x) => x.id === cid); return c ? `<li>${ui('avatar')}<span>${s === 'hair' ? 'Haircut' : 'Outfit'}: <b>${esc(c.name)}</b></span></li>` : ''; }).join('')}</ul><small class="muted">Wear them in Character → Look.</small>` : ''}</div>
+      ${R.cos.length ? `<ul>${R.cos.map(([s, cid]) => { const c = COSMETICS[s] && COSMETICS[s].find((x) => x.id === cid); return c ? `<li>${ui('avatar')}<span>${s === 'hair' ? 'Haircut' : 'Outfit'}: <b>${esc(c.name)}</b></span></li>` : ''; }).join('')}</ul><small class="muted">Wear them in Character → Customize.</small>` : ''}</div>
       <button class="gbtn glow" data-scnext>${ui('play')}<span>Continue</span></button></div>`;
   }
   return `<div class="sc-card start" style="--rc:${rc(ch.realm)}">
