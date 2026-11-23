@@ -88,7 +88,11 @@ UPD.push(() => {
   if (performance.now() - scBoot < 1500 || $('#modal').classList.contains('show') || document.querySelector('.rv-wrap, .cx-wrap')) return;
   if (!SC_Q.length && goalState()) {
     const ch = chapterAt(S.goal);
-    if (!storyState().seen[ch.id]) SC_Q.push({ kind: 'start', ch });
+    if (!storyState().seen[ch.id]) {
+      // Chapter 1 never stops a new player: Old Ren talks in a bubble once the first logs are in.
+      if (ch === CHAPTERS[0]) { if ((S.stats.actions || 0) >= 5 || performance.now() - scBoot > 30000) npcSay(ch); return; }
+      SC_Q.push({ kind: 'start', ch });
+    }
   }
   if (SC_Q.length) scNext();
 });
@@ -99,6 +103,22 @@ on('goal', (g) => {
   if (i === chapterAt(i).from) return;   // a new chapter: its card tells the story
   setTimeout(() => toast(`${npc.name}: “${questOf(i).s}”`, 'good'), 900);
 });
+
+// A speech bubble that never blocks: the chapter's opening lines, the NPC's portrait, OK / Story.
+function npcSay(ch) {
+  storyState().seen[ch.id] = 1;
+  const id = ch.cast[0], N = NPCS[id];
+  const el = document.createElement('div');
+  el.className = 'npc-say';
+  el.setAttribute('role', 'status');
+  el.style.setProperty('--rc', rc(ch.realm));
+  el.innerHTML = `<span class="ns-art">${npcArt(id)}</span><div class="ns-body"><small>${esc(N.name)} · ${esc(N.title)}</small>
+    ${ch.intro.map((l) => `<p>${esc(l)}</p>`).join('')}<div class="ns-btns"><button class="gbtn sm" data-nsok>${ui('check')}<span>OK</span></button><button class="gbtn sm dark" data-storylog>${ui('quest')}<span>Story</span></button></div></div>`;
+  document.body.appendChild(el);
+  const close = () => { el.classList.add('out'); setTimeout(() => el.remove(), 350); };
+  el.addEventListener('click', (ev) => { if (ev.target.closest('[data-nsok], [data-storylog]')) close(); });
+  setTimeout(close, 40000);
+}
 
 /* ---------------------------------------------------------------- the story log */
 function storyLog() {

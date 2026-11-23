@@ -208,26 +208,15 @@ function updateCoach(force) {
 
 /* ------------------------------------------------------------ welcome */
 const isFreshSave = () => !S.ui.welcomed && S.goal === 0 && S.stats.actions === 0 && S.stats.kills === 0;
+// The first minute: one sentence, one button that really starts the game. Each step of the loop is explained
+// when it opens (INTRO: Crafting, Battlefield, Techniques), Old Ren's opening comes as a bubble once you chop.
 function showWelcome() {
-  const step = (icon, name, txt) => `<li><i>${icon}</i><span><b>${name}</b>${txt}</span></li>`;
-  openModal(`<div class="welcome">
-    <div class="wl-ic">${ui('hero')}</div>
-    <small>Tri-Realm Idle</small>
-    <h2>Welcome, Wanderer</h2>
-    <p>Six worlds have collided. You wake up at the edge of the <b>Leaf Village</b>, a village hidden in the forest, with nothing but a hatchet. Each world is sealed by a guardian.</p>
-    <div class="wl-goal"><small>Your goal</small><b>Grow strong enough to beat every guardian and cross all six worlds.</b></div>
-    <small class="wl-sub">How you get stronger</small>
-    <ol class="wl-loop">
-      ${step(ic('skill', 'woodcutting'), 'Chop', 'Fell trees. Wood is how everything starts.')}
-      ${step(ic('skill', 'arts'), 'Craft', 'Carve your first weapon, then brew pills that heal you.')}
-      ${step(ui('battle'), 'Fight', 'Equip your weapon and pills and fight. Foes drop gear, gold and technique scrolls.')}
-      ${step(ui('technique'), 'Build', 'Equip the techniques you find and level them up. Beat the guardian to open the next world.')}
-    </ol>
-    <ul class="wl-points">
-      <li><i>${ui('time')}</i><span><b>It plays itself.</b> An activity repeats on its own, even while the game is closed (up to 12 hours).</span></li>
-      <li><i>${ui('quest')}</i><span><b>Follow the Objective</b> at the top of the menu. New skills and menus open one at a time.</span></li>
-    </ul>
-    <div class="wl-cta">${gbtn('Pick up the hatchet', 'play', 'data-welcome="go"')}${gbtn('Look around first', '', 'data-welcome="skip"', 'dark')}</div>
+  openModal(`<div class="welcome first">
+    <small>Leaf Village · at dawn</small>
+    <h2>You have a hatchet.<br>Chop your first pine.</h2>
+    <p>Six worlds have collided, each sealed by a guardian. Every journey here starts with wood.</p>
+    <div class="wl-cta">${gbtn('Chop Pine Log', 'play', 'data-welcome="go"', 'go')}</div>
+    <button class="wl-skip" data-welcome="skip">Look around first</button>
   </div>`, null, true);
 }
 function welcomeChoice(go) {
@@ -258,6 +247,12 @@ const INTRO = {
              [() => ui('hp'), 'Auto-eat', 'You eat when your HP drops low. Nothing left means a lost fight.'],
              [() => ui('gold'), 'Loot', 'Foes drop gold, gear and the materials for new worlds.']],
     go: 'character:food', btn: 'Equip my pills' },
+  'feature:techniques': { icon: () => ui('technique'), kicker: 'New menu', title: 'Techniques',
+    text: 'A scroll fell from that foe. Techniques are how you build your fighter: equip them, level them up, then take on the guardian.',
+    points: [[() => ui('technique'), 'Equip it in a slot', 'Attack I first; more slots open as you level.'],
+             [() => ui('frag'), 'Copies level it up', 'Each duplicate scroll gives fragments.'],
+             [() => ui('gate'), 'Beat the guardian', 'It opens the next world.']],
+    go: 'techniques', btn: 'See my techniques' },
 };
 function showIntro(id) {
   const I = INTRO[id];
