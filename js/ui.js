@@ -1310,6 +1310,7 @@ function boot() {
   if (away > 30) {
     const secs = offlineSeconds(away), before = snapshot();
     fillChamber(away - secs);   // time beyond the offline limit goes to the Time Chamber
+    if (typeof awayBegin === 'function') awayBegin();
     SIM = true; advance(secs); SIM = false;
     showOffline(secs, before);
   }
@@ -1342,10 +1343,11 @@ function boot() {
   // save the moment the page is hidden, and summarize the gap when it comes back.
   document.addEventListener('visibilitychange', () => {
     catchUp();
-    if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = snapshot(); saveGame(); }
+    if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = snapshot(); if (typeof awayBegin === 'function') awayBegin(); saveGame(); }
     else if (hiddenSnap) {
       const away = (Date.now() - hiddenAt) / 1000;
       if (away > 60 && !$('#modal').classList.contains('show')) showOffline(offlineSeconds(away), hiddenSnap);
+      else if (typeof awayDrop === 'function') awayDrop();
       hiddenSnap = null;
     }
   });

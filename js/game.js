@@ -75,6 +75,7 @@ function defaultState() {
     kitchen: { spice: null },
     tasks: { day: '', daily: [], week: '', weekly: [] },   // daily / weekly objectives (tasks.js)
     missions: { list: [], cur: null, paused: 0 },   // the Mission Board (missions.js)
+    allies: { bond: {}, visits: 0 },    // allies' bonds (report.js)
     exped: { ships: [], dur: 600, food: true, repeat: true, last: null },   // expeditions.js           // seasoning picked in the Cooking spice rack (seas.js)
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),
@@ -144,7 +145,9 @@ function toast(msg, cls) { if (!SIM) notify(msg, cls); }
 // tiny event bus: the UI listens for juicy moments (hits, level-ups, loot) to animate them
 const BUS = {};
 function on(ev, fn) { (BUS[ev] = BUS[ev] || []).push(fn); }
-function emit(ev, d) { if (!SIM && BUS[ev]) for (const fn of BUS[ev]) fn(d); }
+// EMIT_TAP sees every event, even while simulating (report.js keeps the away log with it).
+let EMIT_TAP = null;
+function emit(ev, d) { if (EMIT_TAP) EMIT_TAP(ev, d); if (!SIM && BUS[ev]) for (const fn of BUS[ev]) fn(d); }
 
 /* -------------------------------------------------------------- items */
 // Weapons are individual copies (weapons.js): armCount counts the spare ones.

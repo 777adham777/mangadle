@@ -678,6 +678,8 @@ const UNLOCKS = [
     hint: () => 'Reach Cooking level 8', why: 'The galley cook lends you her spice rack. Season dishes for small battle buffs; your catches now bring up sea salt.' },
   { id: 'skill:voyaging',     name: 'Voyaging',        need: () => skillLv('cooking') >= 10 || usedSkill('voyaging'),
     hint: () => 'Reach Cooking level 10', why: 'With proper provisions and timber for the hull, a captain agrees to take you aboard.' },
+  { id: 'feature:allies',     name: 'Allies',          need: () => isUnlocked('skill:voyaging') || !!(S.allies && S.allies.visits),
+    hint: () => 'Reach Cooking level 10', why: 'Captain Mira: "A crew looks after its own." While you are away for an hour or more, the friends you made drop by with a gift, and each visit tightens your bond.' },
   { id: 'feature:tasks',      name: 'Daily objectives', need: () => !!S.gates.seas,
     hint: () => 'Reach Orange Town', why: 'The harbour board posts new jobs every day and every week, in every world you know. See the Overview.' },
   { id: 'feature:missions',   name: 'Mission Board',   need: () => (!!S.gates.seas && skillLv('fishing') >= 10) || !!(S.missions && S.missions.list && S.missions.list.length),
