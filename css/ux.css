@@ -181,3 +181,29 @@ html.calm *, html.calm *::before, html.calm *::after { animation-duration: 0.01m
 .nav-group.folded button.nav-sec { flex: 1 1 108px; letter-spacing: 0.05em; gap: 5px; }
 .nav-group.folded .nav-chips { margin-left: auto; padding-bottom: 3px; }
 .nav-quest .q-say p { -webkit-line-clamp: 1; line-clamp: 1; }
+
+/* ---------- mobile polish (PC first, phones must still look good) */
+@media (max-width: 860px) {
+  /* Top bar: brand, gold, bounty and settings all fit a 360-390 px screen */
+  .brand { font-size: 14px; letter-spacing: 0.14em; min-width: 0; overflow: hidden; white-space: nowrap; }
+  .curs { flex: none; }
+  .cur { padding: 0 8px 0 3px; gap: 4px; }
+  .cur b { font-size: 13px; }
+  .hud-btn { flex: none; }
+  /* Activity bar: the name gets the room; the thin bar keeps the progress; numbers live on the page */
+  .nb-stats { display: none; }
+  .nb-prog { flex: 0 1 64px; }
+  .nb-main { flex: 1 1 auto; }
+  .nb.idle:has(.nb-resume, .nb-goal, .nb-claim) > .nb-txt { display: none; }
+  .nb.idle .gbtn { flex: 1 1 auto; min-width: 0; overflow: hidden; }
+  .nb.idle .gbtn span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  /* Filter rows scroll sideways on one line instead of widening the page or stacking three rows */
+  .ws-st, .ws-cats, .bag-tabs, .bag-sort { display: flex; flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+  .ws-st::-webkit-scrollbar, .ws-cats::-webkit-scrollbar, .bag-tabs::-webkit-scrollbar, .bag-sort::-webkit-scrollbar { display: none; }
+  .ws-st > *, .ws-cats > *, .bag-tabs > *, .bag-sort > * { flex: none; }
+  .ws-bar { min-width: 0; max-width: 100%; }
+  .bag-sort { flex: 1 1 100%; }
+  .bag-sort button { flex: 1 0 auto; }
+  #main { overflow-x: hidden; }
+}
+@media (max-width: 380px) { .brand { font-size: 12px; letter-spacing: 0.1em; } .cur i { display: none; } }
