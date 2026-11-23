@@ -17,18 +17,20 @@
 .fo-body { display: grid; grid-template-columns: 250px minmax(0, 1fr); gap: 22px; align-items: center; padding: 22px 24px 20px 18px; min-height: 300px; }
 
 /* the item, in its progress ring */
-.fo-art { position: relative; width: 230px; height: 230px; display: grid; place-items: center; justify-self: center; }
-.fo-art::before { content: ''; position: absolute; inset: 18px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--rgc) 34%, transparent), transparent 68%); }
+/* the ring hugs the round icon: ring 7px, gap 6px (tile size = box - 26px) */
+.fo-art { --box: 220px; position: relative; width: var(--box); height: var(--box); margin-bottom: 14px; display: grid; place-items: center; justify-self: center; }
+.fo-art::before { content: ''; position: absolute; inset: -14px; border-radius: 50%; background: radial-gradient(circle, color-mix(in srgb, var(--rgc) 34%, transparent), transparent 68%); }
 .fo-ring { --p: 0; position: absolute; inset: 0; border-radius: 50%;
   background: conic-gradient(var(--rc) calc(var(--p) * 1turn), rgba(255, 255, 255, 0.08) 0);
   -webkit-mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px));
   mask: radial-gradient(farthest-side, transparent calc(100% - 7px), #000 calc(100% - 6px)); }
 .fo-win.on .fo-ring { filter: drop-shadow(0 0 6px color-mix(in srgb, var(--rc) 70%, transparent)); }
-.fo-art .fo-tile { --ts: 150px; position: relative; border-radius: 4px; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.14); }
-.fo-art .fo-tile .tile-art { border-radius: 4px; }
-.fo-win.on .fo-tile { animation: foFloat 3.2s ease-in-out infinite; }
+.fo-art .fo-tile { --ts: calc(var(--box) - 26px); position: relative; border-radius: 50%; box-shadow: 0 10px 28px rgba(0, 0, 0, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.14); }
+.fo-art .fo-tile .tile-art { border-radius: 50%; }
+.fo-art .fo-tile .tile-tag { top: 15%; right: 15%; }
+.fo-art .fo-tile .tile-badge { left: 12%; bottom: 12%; width: 26%; }
 .fo-tile.fo-hit { animation: foHit 0.32s cubic-bezier(0.2, 1.5, 0.4, 1); }
-.fo-time { position: absolute; bottom: 6px; left: 50%; transform: translateX(-50%); padding: 1px 9px; border-radius: 2px; background: rgba(8, 9, 13, 0.8);
+.fo-time { position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); padding: 1px 9px; border-radius: 2px; background: rgba(8, 9, 13, 0.8);
   border: 1px solid var(--line2); font: 700 12px var(--display); color: var(--dim); letter-spacing: 0.04em; white-space: nowrap; }
 .fo-time:empty { display: none; }
 .fo-pops { position: absolute; inset: 0; pointer-events: none; }
@@ -90,19 +92,17 @@
 .fc-left > .fo-win { min-height: 0; }
 .fc-left > .fo-win .fo-body { min-height: 0; }
 
-@keyframes foFloat { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-5px); } }
 @keyframes foHit { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
 @keyframes foPop { 0% { opacity: 0; transform: translate(-50%, 8px) scale(0.8); } 15% { opacity: 1; transform: translate(-50%, 0) scale(1.05); } 100% { opacity: 0; transform: translate(-50%, -60px) scale(1); } }
 
 @media (max-width: 720px) {
   .fo-body { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 16px; }
   .fo-bg::after { background: linear-gradient(180deg, rgba(10, 11, 15, 0.5) 0%, rgba(10, 11, 15, 0.9) 48%, rgba(10, 11, 15, 0.95) 100%); }
-  .fo-art { width: 180px; height: 180px; }
-  .fo-art .fo-tile { --ts: 116px; }
+  .fo-art { --box: 180px; }
   .fo-info h2 { font-size: 24px; }
   .fo-foot { flex-direction: column; }
   .fo-cta { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fo-win.on .fo-tile, .fo-tile.fo-hit, .fo-pop { animation: none; }
+  .fo-tile.fo-hit, .fo-pop { animation: none; }
 }
