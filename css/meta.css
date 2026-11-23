@@ -191,10 +191,39 @@
 .sc-fixes em { font: 800 16px var(--display); font-style: normal; }
 .sc-foot { grid-column: 1 / -1; font-size: 11px; color: var(--mute); }
 
-/* ---------------------------------------------------------------- Reiatsu */
-.rei-tag { font: 700 10px var(--display); letter-spacing: 0.14em; text-transform: uppercase; padding: 3px 6px; color: #e6f2ff; background: linear-gradient(90deg, #2b4a7a, #4b3a8a); border: 1px solid #8fb4ff; }
-#stage.reiatsu::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 3;
-  background: radial-gradient(60% 70% at 30% 70%, rgba(170, 200, 255, 0.22), transparent 70%), linear-gradient(0deg, rgba(140, 170, 255, 0.10), transparent 60%);
-  animation: reiPulse 1.6s ease-in-out infinite; }
-@keyframes reiPulse { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
-@media (prefers-reduced-motion: reduce) { #stage.reiatsu::after { animation: none; } }
+
+/* ---------------------------------------------------------------- Opportunities */
+.omen { --left: 1; position: fixed; z-index: 70; display: grid; justify-items: center; gap: 4px; transform: translate(-50%, -50%); background: none; border: 0; padding: 0; cursor: pointer; animation: omenIn 0.45s ease-out, omenBob 2.4s ease-in-out 0.45s infinite; }
+.om-bub { position: relative; width: 74px; height: 74px; border-radius: 50%; display: grid; place-items: center; background: radial-gradient(circle, #fff8dd 0%, color-mix(in srgb, var(--rc) 45%, transparent) 48%, transparent 70%); }
+.om-bub::before { content: ''; position: absolute; inset: -3px; border-radius: 50%; background: conic-gradient(var(--gold) calc(var(--left, 1) * 360deg), rgba(255, 255, 255, 0.12) 0); -webkit-mask: radial-gradient(circle, transparent 62%, #000 64%); mask: radial-gradient(circle, transparent 62%, #000 64%); }
+.om-bub svg { width: 44px; height: 44px; position: relative; filter: drop-shadow(0 3px 6px rgba(0, 0, 0, 0.6)); }
+.om-bub .gi { color: #fff; }
+.om-lab { display: grid; justify-items: center; padding: 4px 8px; background: rgba(0, 0, 0, 0.78); border: 1px solid color-mix(in srgb, var(--rc) 60%, transparent); }
+.om-lab b { font: 700 12px var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: #fff; white-space: nowrap; }
+.om-lab small { font: 600 11px var(--display); color: var(--gold); }
+.omen:hover .om-bub { filter: brightness(1.15); }
+.omen.taken { animation: omenTaken 0.45s ease-in forwards; pointer-events: none; }
+.omen.gone { animation: omenGone 0.45s ease-in forwards; pointer-events: none; }
+@keyframes omenIn { from { opacity: 0; transform: translate(-50%, -30%) scale(0.6); } }
+@keyframes omenBob { 0%, 100% { transform: translate(-50%, -50%); } 50% { transform: translate(-50%, -58%); } }
+@keyframes omenTaken { to { opacity: 0; transform: translate(-50%, -90%) scale(1.4); } }
+@keyframes omenGone { to { opacity: 0; transform: translate(-50%, -50%) scale(0.7); } }
+@media (prefers-reduced-motion: reduce) { .omen { animation: none; } }
+.om-buff { flex-shrink: 0; width: 32px; height: 32px; display: grid; place-items: center; background: #222328; border: 1px solid var(--gold); animation: omenPulse 1.2s ease-in-out infinite; }
+.om-buff svg { width: 22px; height: 22px; }
+@keyframes omenPulse { 50% { box-shadow: 0 0 10px #f4c66a88; } }
+
+/* ---------------------------------------------------------------- Hardcore */
+.hc-row { display: grid; gap: 6px; padding: 8px 10px; margin-bottom: 8px; background: var(--panel2); border: 1px solid var(--line2); }
+.hc-row.on { background: linear-gradient(90deg, #3a1016, var(--panel2)); border-color: #c4485c; }
+.hc-tog { display: flex; align-items: center; gap: 8px; background: none; border: 0; padding: 0; color: var(--text); font: 700 14px var(--display); letter-spacing: 0.12em; text-transform: uppercase; cursor: pointer; }
+.hc-tog > .gi { width: 18px; height: 18px; color: #ff8a98; }
+.hc-tog span { flex: 1; text-align: left; }
+.hc-sw { width: 38px; height: 20px; border-radius: 999px; background: #2b2c33; border: 1px solid var(--line2); position: relative; }
+.hc-sw i { position: absolute; top: 2px; left: 2px; width: 14px; height: 14px; border-radius: 50%; background: #9a9ca4; transition: left 0.15s; }
+.hc-row.on .hc-sw { background: #8c2f3a; border-color: #ff8a98; }
+.hc-row.on .hc-sw i { left: 20px; background: #fff; }
+.hc-row small { font-size: 11px; color: var(--dim); }
+.hc-row.on small { color: #ffc2ca; }
+.hc-tag { flex-shrink: 0; display: grid; place-items: center; height: 24px; padding: 0 6px; font: 800 11px var(--display); letter-spacing: 0.1em; color: #fff; background: #8c2f3a; border: 1px solid #ff8a98; }
+#stage.hardcore { box-shadow: inset 0 0 0 2px #c4485c, inset 0 0 60px rgba(224, 71, 90, 0.35); }
