@@ -23,7 +23,7 @@ const perLabel = { kill: 'per kill', haul: 'per haul', action: 'per task', chest
 function huntSrcRow(s) {
   if (!s.seen) return `<li class="hl-s unk"><span>${ui('lock')}<b>???</b><small>Undiscovered source</small></span></li>`;
   const go = s.go && s.open ? (s.go.k === 'view' ? gbtn('Go', 'play', `data-nav="${s.go.view}"`, 'dark sm') : gbtn('Go', 'play', `data-hgo='${esc(JSON.stringify(s.go))}'`, 'dark sm')) : '';
-  const post = s.go && s.open && s.go.k !== 'view' && typeof msOn === 'function' && msOn() ? `<button class="mini-btn" data-hpost='${esc(JSON.stringify(s.go))}' title="Post as an S-rank mission">${ui('missions')}</button>` : '';
+  const post = s.go && s.open && s.go.k !== 'view' && typeof msOn === 'function' && msOn() ? `<button class="mini-btn" data-hpost='${esc(JSON.stringify(s.go))}' title="Add to the Task Queue (until it stops)">${ui('missions')}</button>` : '';
   const eta = s.perHour > 0 ? `~${fmtTime(3600 / s.perHour)}` : s.open ? '' : 'locked';
   return `<li class="hl-s ${s.danger === 'deadly' || s.danger === 'risky' ? 'risky' : ''}"><span>${ic(s.icon[0], s.icon[1])}<b>${esc(s.label)}</b><small>${fmtRate(s.chance)} ${perLabel[s.per] || ''}${s.have ? ` · you have ${fmt(s.have)}` : ''}${s.danger === 'deadly' ? ' · deadly for you' : ''}</small></span>
     <em>${eta}</em><span class="hl-go">${go}${post}</span></li>`;
@@ -78,6 +78,6 @@ document.addEventListener('click', (ev) => {
     if (g.k === 'zone') { const zi = ZONES.findIndex((z) => z.id === g.zone); startCombat(zi); setView('battle'); }
     else { startAction(g.skill, g.id); setView(skillView(g.skill)); }
   }
-  else if (d.hpost) { const g = JSON.parse(d.hpost); if (postMission(Object.assign({ n: 0 }, g))) toast('Posted as an S-rank mission.', 'good'); }
+  else if (d.hpost) { const g = JSON.parse(d.hpost); if (postMission(Object.assign({ n: 0 }, g))) toast('Added to the Task Queue.', 'good'); }
   dirty = true;
 });

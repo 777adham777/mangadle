@@ -1,11 +1,11 @@
 /* ==========================================================================
-   Season 2 systems: Mission Board, News Coo report, Hunt List, Scouter,
+   Season 2 systems: Task Queue, away recap + allies, Hunt List, Scouter,
    Reiatsu pressure, world omens, Wanted poster. Same BigUI skin as style.css.
    ========================================================================== */
 
 /* ---------------------------------------------------------------- Mission Board */
 .ms-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 2px; background: #222328; border: 1px solid var(--line2); color: var(--cream); font: 700 12px var(--display); letter-spacing: 0.06em; }
-.ms-chip .gi { width: 16px; height: 16px; color: #e8c98a; }
+.ms-chip .gi { width: 16px; height: 16px; color: var(--cream); }
 .ms-chip:hover { background: #2b2c33; }
 .ms-chip.run { border-color: color-mix(in srgb, var(--act) 60%, var(--line2)); }
 .ms-chip.run .gi { color: var(--act); }
@@ -15,9 +15,9 @@
 
 .ms-board { width: 100%; display: grid; gap: 12px; text-align: left; max-height: calc(88dvh - 70px); overflow-y: auto; overscroll-behavior: contain; }
 .ms-head { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
-.ms-crest { width: 48px; height: 48px; display: grid; place-items: center; background: linear-gradient(160deg, #6b4a22, #3a2610); border: 1px solid #a07a3a; }
-.ms-crest .gi { width: 30px; height: 30px; color: #f4dfae; }
-.ms-head small { font: 600 11px var(--display); letter-spacing: 0.18em; text-transform: uppercase; color: #e8c98a; }
+.ms-crest { width: 44px; height: 44px; display: grid; place-items: center; background: #222328; border: 1px solid var(--line2); }
+.ms-crest .gi { width: 26px; height: 26px; color: var(--cream); }
+.ms-head small { font: 600 11px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
 .ms-head h2 { font: 700 26px var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: #fff; }
 .ms-slots { font: 600 14px var(--display); color: var(--dim); }
 .ms-slots b { font-size: 22px; color: #fff; }
@@ -30,9 +30,9 @@
 .ms-row.run { background: linear-gradient(90deg, color-mix(in srgb, var(--act) 16%, var(--panel2)), var(--panel2) 70%); border-color: color-mix(in srgb, var(--act) 45%, var(--line)); border-left-color: var(--act); }
 .ms-row.warn { opacity: 0.8; }
 .ms-row.empty { grid-template-columns: 30px 1fr; border-style: dashed; border-left-width: 1px; background: transparent; color: var(--mute); }
-.ms-rank { width: 28px; height: 28px; display: grid; place-items: center; font: 800 16px var(--display); background: #2a2116; border: 1px solid #6a4f28; color: #f0d9a0; }
-.ms-rank.r-S { background: #3a1018; border-color: #c4485c; color: #ffb3bf; }
-.ms-rank.r-A { background: #3a2508; border-color: #d4902a; color: #ffd08a; }
+.ms-rank { width: 28px; height: 28px; display: grid; place-items: center; font: 700 14px var(--display); background: #222328; border: 1px solid var(--line2); color: var(--dim); }
+.ms-rank.now { background: var(--act-bg); border-color: var(--act); color: #fff; }
+.ms-rank .gi { width: 13px; height: 13px; }
 .ms-main { display: grid; gap: 3px; min-width: 0; }
 .ms-main b { font: 600 14px var(--display); color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .ms-main small { font-size: 12px; color: var(--dim); }
@@ -46,9 +46,8 @@
 .ms-post { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding-top: 4px; border-top: 1px solid var(--line); }
 .ms-post select { min-width: 0; height: 36px; background: #111216; color: var(--text); border: 1px solid var(--line2); padding: 0 8px; font: 500 13px var(--body); }
 .ms-sizes { display: flex; gap: 2px; }
-.ms-sizes button { width: 38px; height: 36px; display: grid; place-items: center; gap: 0; background: #222328; border: 1px solid var(--line2); color: var(--dim); line-height: 1; }
-.ms-sizes button b { font: 800 14px var(--display); color: #f0d9a0; }
-.ms-sizes button small { font-size: 9px; }
+.ms-sizes button { min-width: 44px; height: 36px; padding: 0 6px; display: grid; place-items: center; background: #222328; border: 1px solid var(--line2); color: var(--dim); line-height: 1; }
+.ms-sizes button b { font: 700 13px var(--display); color: var(--text); }
 .ms-sizes button.on { background: #4a3313; border-color: var(--sel); color: #fff; }
 .ms-help { margin: 0; }
 @media (max-width: 600px) {
@@ -59,7 +58,7 @@
   .ms-row .ms-tools { grid-column: 3; grid-row: 1 / span 2; flex-direction: column; }
 }
 
-/* ---------------------------------------------------------------- News Coo report */
+/* ---------------------------------------------------------------- away recap */
 .coo { width: 100%; display: grid; gap: 12px; text-align: left; max-height: calc(88dvh - 70px); overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
 .coo-mast { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding-bottom: 10px; border-bottom: 3px double #b9a27a; }
 .coo-bird { width: 46px; height: 46px; display: grid; place-items: center; background: #e9dcc0; color: #3a2a14; border: 1px solid #b9a27a; }

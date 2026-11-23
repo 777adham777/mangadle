@@ -74,7 +74,7 @@ function defaultState() {
     quality: { log: {}, claim: {}, cv: 2, rec: {} },   // Shiny & Perfect catches (variant id -> how many), entries handed in to the logs, claim rules version, fish weight records (quality.js)
     kitchen: { spice: null },
     tasks: { day: '', daily: [], week: '', weekly: [] },   // daily / weekly objectives (tasks.js)
-    missions: { list: [], cur: null, paused: 0 },   // the Mission Board (missions.js)
+    missions: { list: [], cur: null, paused: 0 },   // the Task Queue (missions.js)
     allies: { bond: {}, visits: 0 },    // allies' bonds (report.js)
     hlist: { list: [], done: 0 },       // the Hunt List (huntlist.js)
     scout: { lost: {}, n: 0 },          // the Scouter (scouter.js)
@@ -405,7 +405,7 @@ function tickAction(dt) {
     if (why) { stopAction(why); return; }
     a.prog -= T;
     completeAction(a.skill, act);
-    if (S.action !== a) return;   // a hook ended it (a mission reached its size)
+    if (S.action !== a) return;   // a hook ended it (a queued task reached its size)
     T = actionTime(a.skill, act);
   }
 }

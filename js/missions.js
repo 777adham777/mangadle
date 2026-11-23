@@ -1,25 +1,21 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the Mission Board (Leaf Village mission desk), DOM-free
-   Post missions in order: each one is an activity (a skill action or a Battlefield
-   stage) and a size. When the running mission is done, or its activity stops
+   TRI-REALM IDLE — the Task Queue, DOM-free
+   Queue tasks in order: each one is an activity (a skill action or a Battlefield
+   stage) and a size. When the running task is done, or its activity stops
    (out of materials, defeat), the next one starts on its own, offline too.
-   - Mission size = Naruto mission rank: D ×25 · C ×100 · B ×500 · A ×2000 · S = until it stops.
-   - Board slots grow with your rank: Genin 2 (unlock) · Chunin 3 (Soul City) ·
-     Jonin 4 (Shinjuku) · Kage 5 (Green Island). The running mission takes a slot.
-   - "Prepare" (from Chunin): posts the gathering a craft mission is missing, before it.
-   - Stopping an activity yourself pauses the board, so it never starts something behind your back.
+   - Sizes: ×25 · ×100 · ×500 · ×2000 · until it stops.
+   - Slots: 2 when it opens, +1 at Soul City, Shinjuku and Green Island (5). The running task takes one.
+   - "Prepare" (from 3 slots): queues the gathering a craft task is missing, before it.
+   - Stopping an activity yourself pauses the queue, so it never starts something behind your back.
+   (Internal names keep the old "mission" prefix: saves store S.missions.)
    Loaded after tasks.js (before guide.js: the balance bot loads it too).
    ========================================================================== */
 
-const MS_SIZES = [[25, 'D'], [100, 'C'], [500, 'B'], [2000, 'A'], [0, 'S']];
-const MS_RANKS = [['Genin', () => true], ['Chunin', () => !!S.gates.soul], ['Jonin', () => !!S.gates.hex], ['Kage', () => !!S.gates.hunter]];
+const MS_SIZES = [25, 100, 500, 2000, 0];
 const msOn = () => isUnlocked('feature:missions');
-const msRank = () => MS_RANKS.filter(([, f]) => f()).length - 1;
-const msRankName = () => MS_RANKS[Math.max(0, msRank())][0];
-const msSlots = () => 2 + Math.max(0, msRank());
-const msPrepOn = () => msRank() >= 1;
-const msLetter = (n) => (MS_SIZES.find((s) => s[0] === n) || [0, 'S'])[1];
+const msSlots = () => 2 + (S.gates.soul ? 1 : 0) + (S.gates.hex ? 1 : 0) + (S.gates.hunter ? 1 : 0);
+const msPrepOn = () => msSlots() >= 3;
 function msState() {
   if (!S.missions || typeof S.missions !== 'object') S.missions = {};
   const M = S.missions;
@@ -61,7 +57,7 @@ const idleNow = () => !S.action && S.combat.zone == null;
 function postMission(m, at) {
   const M = msState();
   if (!msOn()) return false;
-  if (msFree() <= 0) { toast(`The board is full (${msSlots()} missions as ${msRankName()}).`, 'bad'); return false; }
+  if (msFree() <= 0) { toast(`The queue is full (${msSlots()} tasks).`, 'bad'); return false; }
   const x = m.k === 'zone' ? { k: 'zone', zone: m.zone, n: m.n || 0 } : { k: 'act', skill: m.skill, id: m.id, n: m.n || 0 };
   if (at == null || at < 0 || at > M.list.length) M.list.push(x); else M.list.splice(at, 0, x);
   M.paused = 0;
@@ -77,7 +73,7 @@ function moveMission(i, d) {
 }
 function resumeBoard() { msState().paused = 0; dirty = true; }
 
-// Prepare (Chunin+): for a craft mission of a fixed size, post the gathering it lacks right before it.
+// Prepare (3+ slots): for a craft task of a fixed size, post the gathering it lacks right before it.
 // Producers are the highest-level action you can run that makes the item; goes two steps deep.
 function msProducer(item) {
   let best = null;
@@ -112,12 +108,12 @@ function prepareMission(i) {
   need(a.in, m.n, 0);
   let added = 0;
   for (const s of steps) { if (msFree() <= 0) break; M.list.splice(i + added, 0, s); added++; }
-  if (added < steps.length) toast(`Not enough room on the board: ${steps.length - added} step${steps.length - added > 1 ? 's' : ''} left out.`, 'bad');
+  if (added < steps.length) toast(`Not enough room in the queue: ${steps.length - added} step${steps.length - added > 1 ? 's' : ''} left out.`, 'bad');
   dirty = true;
   return added;
 }
 
-// You stopped something yourself (outside an engine tick): the board waits for you.
+// You stopped something yourself (outside an engine tick): the queue waits for you.
 // (Retreating from a fight is caught by the UI: stopCombat also runs when you simply switch activity.)
 const msPauseIfMine = () => { if (!IN_STEP && S.missions && msOn() && msState().list.length) S.missions.paused = 1; };
 {

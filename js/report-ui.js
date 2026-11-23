@@ -1,20 +1,20 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the News Coo report (report.js keeps the away log and the allies)
-   Coming back after a while, a News Coo drops the morning paper:
-   - the headline: the best thing that happened while you were away (replayable);
-   - "Overnight": the missions, bosses, rare finds and levels, with their time;
+   TRI-REALM IDLE — the away recap (report.js keeps the away log and the allies)
+   Coming back after a while:
+   - the highlight: the best thing that happened while you were away (replayable);
+   - the timeline: queued tasks, bosses, rare finds and levels, with their time;
    - "Allies": who dropped by, their gift, your bond with them;
-   - "Ready now": what waits for a click (chests, techniques, plots, the board...);
-   - the haul: everything gained and spent.
+   - "Ready now": what waits for a click (chests, techniques, plots, the queue...);
+   - gains: everything gained and spent.
    Replaces showOffline() from ui.js. Loaded after ui.js and missions-ui.js.
    ========================================================================== */
 
-Object.assign(ICONS.ui, { coo: 'scroll-unfurled', ally: 'pirate-captain' });
+Object.assign(ICONS.ui, { ally: 'pirate-captain' });
 
 const clockAt = (ms) => { const d = new Date(ms); return `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`; };
 
-// How good an event is for the headline.
+// How good an event is for the highlight.
 function cooScore(e) {
   if (e.k === 'rare') return 20 + 20 * rarity(e.id);
   if (e.k === 'hunt') return 130;
@@ -38,7 +38,7 @@ function cooHeadline(e) {
   if (e.k === 'level') return { title: `${SKILLS[e.skill].name} reaches level ${e.level}`, sub: 'Training paid off', art: tile(null, null, { r: 3, icon: ic('skill', e.skill) }), r: 3 };
   return null;
 }
-// The "Overnight" column: one line per mission, boss, find; level-ups merged per skill; ships counted.
+// The timeline: one line per mission, boss, find; level-ups merged per skill; ships counted.
 function cooLines(rec, leftAt) {
   const rows = [], lv = {}, boss = {}, rare = {};
   let ships = 0, hauls = 0, shipT = 0;
@@ -59,7 +59,7 @@ function cooLines(rec, leftAt) {
     const at = `<time>${clockAt(leftAt + e.t * 1000)}</time>`;
     if (e.k === 'mission') {
       const tag = e.why === 'done' ? '<em class="ok">done</em>' : e.why === 'skip' ? `<em class="bad">skipped</em>` : '<em class="warn">stopped</em>';
-      return `${at}<span>${ui('missions')}Mission: ${esc(e.name)} ${e.n ? '×' + fmt(e.n) : ''}${e.why === 'stopped' ? ` (${fmt(e.done)} done)` : ''}${e.reason ? ` · ${esc(e.reason)}` : ''}</span>${tag}`;
+      return `${at}<span>${ui('missions')}Task: ${esc(e.name)} ${e.n ? '×' + fmt(e.n) : ''}${e.why === 'stopped' ? ` (${fmt(e.done)} done)` : ''}${e.reason ? ` · ${esc(e.reason)}` : ''}</span>${tag}`;
     }
     if (e.k === 'rare') return `${at}<span>${itemIc(e.id)}<b class="rar r${rarity(e.id)}">${esc(ITEMS[e.id].name)}</b>${e.n > 1 ? ` ×${fmt(e.n)}` : e.source ? ` · ${esc(e.source)}` : ''}</span>`;
     if (e.k === 'boss') return `${at}<span>${ui('skull')}${esc(e.name)} defeated${e.n > 1 ? ` ×${e.n}` : ''}</span>`;
@@ -92,7 +92,7 @@ function cooReady() {
   const out = [];
   const st = goalState();
   if (st && st.done) out.push(['Quest complete', gbtn('Claim', 'check', 'data-claim data-closemodal', 'sm glow')]);
-  if (typeof msOn === 'function' && msOn() && !msUsed()) out.push(['The Mission Board is empty', gbtn('Board', 'missions', 'data-msboard', 'sm')]);
+  if (typeof msOn === 'function' && msOn() && !msUsed()) out.push(['The Task Queue is empty', gbtn('Queue', 'missions', 'data-msboard', 'sm')]);
   const chests = Object.keys(S.items).filter((k) => ITEMS[k] && ITEMS[k].type === 'chest').reduce((a, k) => a + count(k), 0);
   if (chests) out.push([`${fmt(chests)} chest${chests > 1 ? 's' : ''} to open`, gbtn('Bank', 'open', 'data-nav="hero" data-closemodal', 'sm')]);
   if (typeof techOn === 'function' && techOn() && Object.keys(S.tech.lv).some((t) => TECHNIQUES[t] && fragCost(t) > 0 && techFrag(t) >= fragCost(t))) out.push(['A technique can level up', gbtn('Techniques', 'technique', 'data-nav="techniques" data-closemodal', 'sm')]);
@@ -122,18 +122,17 @@ showOffline = function (secs, before) {
   const H = best ? cooHeadline(best) : null;
   const lines = cooLines(rec, leftAt), ready = cooReady(), haul = cooHaul(before, after);
   const nothing = !lines && !haul.tiles.length && !rec.visits.length;
-  const date = new Date(now).toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'long' });
-  const head = H ? `<div class="coo-head r${H.r}">${H.art}<div><small>Headline${best.t != null ? ' · ' + clockAt(leftAt + best.t * 1000) : ''}</small><h3>${esc(H.title)}</h3><p>${esc(H.sub)}</p></div>${H.replay ? gbtn('Replay', 'rare', `data-cooreplay="${H.replay}"`, 'sm') : ''}</div>`
-    : `<div class="coo-head quiet"><div><small>Headline</small><h3>${nothing ? 'A quiet night in the multiverse' : 'Work went on while you were gone'}</h3><p>${nothing ? 'Nothing ran while you were away.' : 'No big news, just honest progress.'}</p></div>${typeof msOn === 'function' && msOn() ? gbtn('Mission Board', 'missions', 'data-msboard', 'sm') : ''}</div>`;
+  const head = H ? `<div class="coo-head r${H.r}">${H.art}<div><small>Highlight${best.t != null ? ' · ' + clockAt(leftAt + best.t * 1000) : ''}</small><h3>${esc(H.title)}</h3><p>${esc(H.sub)}</p></div>${H.replay ? gbtn('Replay', 'rare', `data-cooreplay="${H.replay}"`, 'sm') : ''}</div>`
+    : nothing ? `<div class="coo-head quiet"><div><small>Highlight</small><h3>Nothing ran while you were away</h3><p>${typeof msOn === 'function' && msOn() ? 'Queue a few tasks before you leave: they run one after another.' : 'Start an activity before you leave.'}</p></div>${typeof msOn === 'function' && msOn() ? gbtn('Task Queue', 'missions', 'data-msboard', 'sm') : ''}</div>` : '';
   const html = `<div class="coo">
-    <div class="coo-mast"><span class="coo-bird">${ui('coo')}</span><div><small>Delivered by the News Coo · ${esc(date)}</small><h2>The Morning Coo</h2></div><span class="coo-away"><small>You were away</small><b>${fmtTime(secs)}</b></span></div>
+    <div class="ob-head"><small>While you were away · ${fmtTime(secs)}</small><h2>Welcome back</h2></div>
     ${head}
     <div class="coo-cols">
-      <section class="coo-col"><h4>Overnight</h4>${lines ? `<ol class="coo-tl">${lines}</ol>` : `<p class="muted small">${nothing ? 'Post missions on the board before you leave: they run one after another while you are away.' : 'Steady work, nothing to report.'}</p>`}</section>
+      ${lines ? `<section class="coo-col"><h4>Timeline</h4><ol class="coo-tl">${lines}</ol></section>` : ''}
       ${rec.visits.length ? `<section class="coo-col"><h4>Allies</h4>${rec.visits.map(allyCard).join('')}</section>` : ''}
     </div>
     ${ready.length ? `<section class="coo-ready"><h4>Ready now</h4><div class="cr-list">${ready.map(([t, b]) => `<span>${esc(t)}${b}</span>`).join('')}</div></section>` : ''}
-    ${haul.tiles.length ? `<section class="coo-haul"><h4>The haul</h4><div class="ob-grid">${haul.tiles.join('')}${haul.more ? `<span class="coo-more">+${haul.more} more</span>` : ''}</div></section>` : ''}
+    ${haul.tiles.length ? `<section class="coo-haul"><h4>Gains</h4><div class="ob-grid">${haul.tiles.join('')}${haul.more ? `<span class="coo-more">+${haul.more} more</span>` : ''}</div></section>` : ''}
   </div>`;
   openModal(html, 'Continue');
 };
@@ -145,5 +144,5 @@ document.addEventListener('click', (ev) => {
   if (typeof REVEAL_SEEN !== 'undefined') delete REVEAL_SEEN[id];
   if (typeof dropReveal === 'function') dropReveal(id, 'While you were away');
 });
-// Links in the paper lead somewhere else: close it on the way.
+// Links in the recap lead somewhere else: close it on the way.
 document.addEventListener('click', (ev) => { if (ev.target.closest('.coo [data-nav]')) $('#modal').classList.remove('show', 'nofoot'); });
