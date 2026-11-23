@@ -482,8 +482,11 @@ VIEWS.realm = (realm, skill) => {
   const grid = !scene || s.type === 'voyage';
   return `<div class="sk-page sk-col" style="--rc:${rc(realm)}">
   ${skBannerHTML(realm, skill)}
-  ${scene ? skStageHTML(skill, scene, top) : `${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}${top}`}
-  ${s.type === 'craft' ? workshopHTML(skill, scene ? { detail: false } : {}) : !grid ? '' : `${s.actions.length ? hdr({ voyage: 'Destinations', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
+  ${scene && s.type === 'craft'
+    // Crafting: the recipe gallery sits beside the focus panel on wide screens (stacks under it otherwise)
+    ? `<div class="sk-stage craft-stage"><div class="stg-scene">${scene}${top}</div><div class="stg-side ws-side">${workshopHTML(skill, { detail: false })}</div></div>`
+    : scene ? skStageHTML(skill, scene, top) : `${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}${top}`}
+  ${s.type === 'craft' ? (scene ? '' : workshopHTML(skill, {})) : !grid ? '' : `${s.actions.length ? hdr({ voyage: 'Destinations', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
   ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}`}
   ${skMoreHTML(realm, skill)}

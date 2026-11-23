@@ -207,3 +207,16 @@ html.calm *, html.calm *::before, html.calm *::after { animation-duration: 0.01m
   #main { overflow-x: hidden; }
 }
 @media (max-width: 380px) { .brand { font-size: 12px; letter-spacing: 0.1em; } .cur i { display: none; } }
+
+/* ---------- crafting on wide screens: the recipe gallery beside the focus panel, the panel stays in view */
+.sk-stage.craft-stage { grid-template-columns: minmax(0, 1fr); }
+@media (min-width: 1280px) {
+  .sk-stage.craft-stage { grid-template-columns: minmax(540px, 46%) minmax(0, 1fr); gap: 16px; }
+  .craft-stage > .stg-scene { position: sticky; top: 0; align-self: start; }
+  .craft-stage .ws-side .ws-bar .ws-q, .craft-stage .ws-side .ws-bar label { flex: 1 1 100%; }
+  .craft-stage .ws-side .ws-body > .ws-list { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+}
+@media (min-width: 1280px) {
+  .craft-stage .ws-cats { flex-wrap: wrap; overflow: visible; }
+  .craft-stage .ws-cats > * { flex: 0 0 auto; }
+}
