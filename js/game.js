@@ -80,6 +80,7 @@ function defaultState() {
     scout: { lost: {}, n: 0 },          // the Scouter (scouter.js)
     omen: { n: 0, buff: null },         // opportunities (omens.js)
     hard: { on: false, kills: 0 },      // Hardcore mode (hardcore.js)
+    friends: [],                        // friend codes (poster.js)
     exped: { ships: [], dur: 600, food: true, repeat: true, last: null },   // expeditions.js           // seasoning picked in the Cooking spice rack (seas.js)
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),

@@ -87,6 +87,11 @@ function allyCard(v) {
       <span class="ca-gift">${gifts || `<span class="muted">${esc(A.gift)}</span>`}</span>
       <span class="ca-bond"><span class="pips">${pips}</span>Bond ${v.bond}/${ALLY_MAX} · ${allyPerkText(v.id, v.bond)}</span></div></div>`;
 }
+function friendCard(f) {
+  return `<div class="coo-ally friend"><span class="npc-face">${typeof heroSVG === 'function' ? heroSVG(f.l) : ui('hero')}</span><div class="ca-main">
+      <small>Friend · Bounty ${fmt(f.b)}</small><b>${esc(f.n)} dropped by</b>
+      <span class="ca-gift">${tile(null, fmt(f.gold), { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}</span></div></div>`;
+}
 // Everything waiting for a click.
 function cooReady() {
   const out = [];
@@ -121,15 +126,16 @@ showOffline = function (secs, before) {
   const best = rec.ev.filter((e) => cooScore(e) > 0).sort((a, b) => cooScore(b) - cooScore(a) || a.t - b.t)[0];
   const H = best ? cooHeadline(best) : null;
   const lines = cooLines(rec, leftAt), ready = cooReady(), haul = cooHaul(before, after);
-  const nothing = !lines && !haul.tiles.length && !rec.visits.length;
-  const head = H ? `<div class="coo-head r${H.r}">${H.art}<div><small>Highlight${best.t != null ? ' · ' + clockAt(leftAt + best.t * 1000) : ''}</small><h3>${esc(H.title)}</h3><p>${esc(H.sub)}</p></div>${H.replay ? gbtn('Replay', 'rare', `data-cooreplay="${H.replay}"`, 'sm') : ''}</div>`
+  const friends = rec.friends || [];
+  const nothing = !lines && !haul.tiles.length && !rec.visits.length && !friends.length;
+  const head = H ? `<div class="coo-head r${H.r}">${H.art}<div><small>Highlight${best.t != null ? ' · ' + clockAt(leftAt + best.t * 1000) : ''}</small><h3>${esc(H.title)}</h3><p>${esc(H.sub)}</p></div><span class="coo-hbtn">${H.replay ? gbtn('Replay', 'rare', `data-cooreplay="${H.replay}"`, 'sm') : ''}${H.replay && typeof posterOn === 'function' && posterOn() ? gbtn('Poster', 'poster', `data-poster="${H.replay}"`, 'dark sm') : ''}</span></div>`
     : nothing ? `<div class="coo-head quiet"><div><small>Highlight</small><h3>Nothing ran while you were away</h3><p>${typeof msOn === 'function' && msOn() ? 'Queue a few tasks before you leave: they run one after another.' : 'Start an activity before you leave.'}</p></div>${typeof msOn === 'function' && msOn() ? gbtn('Task Queue', 'missions', 'data-msboard', 'sm') : ''}</div>` : '';
   const html = `<div class="coo">
     <div class="ob-head"><small>While you were away · ${fmtTime(secs)}</small><h2>Welcome back</h2></div>
     ${head}
     <div class="coo-cols">
       ${lines ? `<section class="coo-col"><h4>Timeline</h4><ol class="coo-tl">${lines}</ol></section>` : ''}
-      ${rec.visits.length ? `<section class="coo-col"><h4>Allies</h4>${rec.visits.map(allyCard).join('')}</section>` : ''}
+      ${rec.visits.length || friends.length ? `<section class="coo-col"><h4>Allies</h4>${rec.visits.map(allyCard).join('')}${friends.map(friendCard).join('')}</section>` : ''}
     </div>
     ${ready.length ? `<section class="coo-ready"><h4>Ready now</h4><div class="cr-list">${ready.map(([t, b]) => `<span>${esc(t)}${b}</span>`).join('')}</div></section>` : ''}
     ${haul.tiles.length ? `<section class="coo-haul"><h4>Gains</h4><div class="ob-grid">${haul.tiles.join('')}${haul.more ? `<span class="coo-more">+${haul.more} more</span>` : ''}</div></section>` : ''}

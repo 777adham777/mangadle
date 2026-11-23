@@ -227,3 +227,25 @@
 .hc-row.on small { color: #ffc2ca; }
 .hc-tag { flex-shrink: 0; display: grid; place-items: center; height: 24px; padding: 0 6px; font: 800 11px var(--display); letter-spacing: 0.1em; color: #fff; background: #8c2f3a; border: 1px solid #ff8a98; }
 #stage.hardcore { box-shadow: inset 0 0 0 2px #c4485c, inset 0 0 60px rgba(224, 71, 90, 0.35); }
+
+/* ---------------------------------------------------------------- Wanted poster */
+.pst { width: 100%; display: grid; grid-template-columns: minmax(0, 300px) minmax(0, 1fr); gap: 16px; align-items: start; text-align: left; max-height: calc(88dvh - 70px); overflow-y: auto; background: color-mix(in srgb, var(--panel) 94%, transparent); border: 1px solid var(--line2); padding: 14px; }
+.pst-art canvas { width: 100%; height: auto; display: block; box-shadow: 0 14px 30px rgba(0, 0, 0, 0.6); background: #dcc08a; }
+.pst-side { display: grid; gap: 12px; align-content: start; min-width: 0; }
+.pst-f { display: grid; gap: 4px; }
+.pst-f small { font-size: 12px; color: var(--dim); }
+.pst-f input { min-width: 0; height: 36px; background: #111216; color: var(--text); border: 1px solid var(--line2); padding: 0 10px; font: 500 14px var(--body); width: 100%; }
+.pst-code { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 6px; }
+.pst-code input { font: 500 12px ui-monospace, monospace; }
+.pst-btns { display: flex; gap: 8px; flex-wrap: wrap; }
+.pst-friends { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.pst-friends li { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 4px 6px; background: var(--panel2); border: 1px solid var(--line); }
+.pst-friends li span { display: grid; min-width: 0; }
+.pst-friends b { font: 600 13px var(--display); }
+.pst-friends small { font-size: 11px; color: var(--dim); }
+.pst-fav { width: 40px; height: 40px; overflow: hidden; position: relative; background: #2a2230; }
+.pst-fav svg.avatar { position: absolute; width: 300%; height: auto; left: -98%; top: -44%; }
+.coo-hbtn { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
+.coo-ally.friend small { color: var(--gold); }
+.ch-poster .gi { color: #e8c98a; }
+@media (max-width: 640px) { .pst { grid-template-columns: 1fr; } .pst-art { max-width: 260px; justify-self: center; } }

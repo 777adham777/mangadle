@@ -682,6 +682,8 @@ const UNLOCKS = [
     hint: () => 'Reach Cooking level 10', why: 'Captain Mira: "A crew looks after its own." While you are away for an hour or more, the friends you made drop by with a gift, and each visit tightens your bond.' },
   { id: 'feature:tasks',      name: 'Daily objectives', need: () => !!S.gates.seas,
     hint: () => 'Reach Orange Town', why: 'The harbour board posts new jobs every day and every week, in every world you know. See the Overview.' },
+  { id: 'feature:poster',     name: 'Wanted poster',   need: () => (S.bounty || 0) >= 5000,
+    hint: () => 'Earn a Bounty of 5,000', why: 'Your first wanted poster is up. Open it from the Character view: share the image with a friend, and swap friend codes so your heroes visit each other.' },
   { id: 'feature:omens',      name: 'Opportunities',   need: () => (!!S.gates.seas && charLv() >= 30) || !!(S.omen && S.omen.n),
     hint: () => 'Reach Character level 30 in Orange Town', why: 'Keep an eye on the screen: now and then something from the world you are in shows up for 30 seconds (a messenger toad, a bottle in the waves...). Take it for a small bonus. Missing one costs nothing.' },
   { id: 'feature:scouter',    name: 'Scouter',         need: () => (!!S.gates.seas && S.stats.deaths >= 1) || !!(S.scout && S.scout.n),

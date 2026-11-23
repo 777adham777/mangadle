@@ -133,5 +133,6 @@ function awayEnd(secs) {
   AWAY = null;
   rec.secs = secs;
   rec.visits = allyVisits(secs);
+  rec.friends = typeof friendVisits === 'function' ? friendVisits(secs) : [];
   return rec;
 }
