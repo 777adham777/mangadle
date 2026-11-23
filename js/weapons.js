@@ -173,6 +173,44 @@ function refine(u) {
   return true;
 }
 
+/* ------------------------------------------------------------ B2. inheritance */
+// A stronger weapon can take over an older one's level, refinement and awakening (the old one is
+// melted down), so a new weapon is a real choice instead of a reset. It pays half of what its own
+// tier would have cost: half the refinement ingots (the gems are already set) and half of each
+// awakening. Levels carry over from the start; refinement and awakening once the forge opens.
+const armBaseAtk = (a) => (ITEMS[a.id].stats.atk || 0);
+const inheritFrom = (b, a) => !!(a && b && a.u !== b.u && armBaseAtk(b) > armBaseAtk(a) && (a.xp > b.xp || a.ref > b.ref || a.awk > b.awk));
+function inheritCost(b, a) {
+  const c = {}, add = (k, n) => { if (n > 0) c[k] = (c[k] || 0) + n; };
+  const ing = REF_INGOT.find((x) => ITEMS[baseOf(b.id)].value < x[0])[1];
+  let n = 0;
+  for (let r = b.ref; r < a.ref; r++) n += 2 + 2 * r;
+  add(ing, Math.ceil(n / 2));
+  for (let k = b.awk; k < a.awk; k++) { const ac = awkCost({ id: b.id, awk: k }); for (const m in ac) add(m, Math.ceil(ac[m] / 2)); }
+  return c;
+}
+// The copy that would give b the most.
+const inheritDonor = (b) => S.arms.filter((a) => inheritFrom(b, a)).sort((x, y) => armWorth(y) - armWorth(x))[0] || null;
+function inheritReason(b, a) {
+  if (!inheritFrom(b, a)) return 'Nothing to inherit';
+  if (!canAfford(inheritCost(b, a))) return 'Missing materials';
+  return '';
+}
+function inheritArm(bu, au) {
+  const b = armOf(bu), a = armOf(au);
+  if (!b || !a || inheritReason(b, a)) return false;
+  const c = inheritCost(b, a);
+  for (const k in c) takeStock(k, c[k]);
+  b.xp = Math.max(b.xp, a.xp); b.ref = Math.max(b.ref, a.ref);
+  if (a.awk > b.awk) { b.awk = a.awk; if (!b.el) b.el = a.el; }
+  const wasEq = a.u === S.equipU;
+  S.arms = S.arms.filter((x) => x !== a);
+  if (wasEq) equipArm(b.u);
+  emit('inherit', { a: b, from: a.id });
+  dirty = true;
+  return true;
+}
+
 /* ------------------------------------------------------------ C. awakening */
 const AWK = [null, { lv: 25, ref: 5, name: 'Awakening I' }, { lv: 50, ref: 10, name: 'Awakening II' }];
 const AWK_RELIC = 'husk_heart';

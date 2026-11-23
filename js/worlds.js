@@ -29,7 +29,7 @@ function addWorld(def) {
 // with levels that cost 7% more each, the late guardians were 5× to 1000× out of reach. Each world's foes now
 // get BAL[world]: their attack and HP are divided by √BAL so the guardian falls around its day of the week.
 // XP_SCALE sets how fast the Character level climbs in each world.
-const BAL = { shinobi: 0.7, seas: 1.6, soul: 6, ki: 13, hex: 100, hunter: 120, echo: 800, rift: 1020 };
+const BAL = { shinobi: 0.67, seas: 1.6, soul: 3, ki: 13, hex: 100, hunter: 120, echo: 800, rift: 600 };
 const ZONE_BAL = { fox: 0.7, admiral: 0.8, unbound: 1.9, mist: 81, ravine: 81, shoals: 81, reef: 81, storm: 81, districts: 81, desert: 81, spire: 62.4, plains: 81, canyon: 71.7, citadel: 66.3, alleys: 58.8, shrine: 75, veil: 73.8, thicket: 15.6, cliffs: 47.7, ruins: 58.2, plaza: 31.8, museum: 64.2, pillars: 75.9 };
 const ATK_SCALE = { hex: 4.5, hunter: 9, echo: 30, rift: 30 };
 const HP_SCALE = {};

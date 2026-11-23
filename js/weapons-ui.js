@@ -29,6 +29,18 @@ UIX.bagTop.push(() => {
     <div class="arm-grid">${uniq.map((a) => armTile(a)).join('')}${ids.map((id) => armStackTile(id, stacks[id])).join('')}</div></div>`;
 });
 
+// Inheritance: this copy takes over the level and refinement of a weaker weapon you own.
+function inheritHTML(b) {
+  if (!b) return '';
+  const a = inheritDonor(b);
+  if (!a) return '';
+  const why = inheritReason(b, a), c = inheritCost(b, a);
+  return `${hdr('Inherit', `from ${esc(ITEMS[a.id].name)} · ${armTag(a)}`)}
+    <p class="muted small">This weapon becomes <b>Lv ${Math.max(armLv(a), armLv(b))} +${Math.max(a.ref, b.ref)}${a.awk > b.awk ? ' ' + '◆'.repeat(a.awk) + (b.el || !a.el ? '' : ' ' + ELEMENTS[a.el].name) : ''}</b>. ${esc(ITEMS[a.id].name)} is melted down.</p>
+    ${Object.keys(c).length ? `<div class="aw-cost">${costTiles(c)}</div>` : ''}
+    ${gbtn(why || 'Inherit', 'upgrade', `data-inherit="${b.u}:${a.u}" ${why ? 'disabled' : ''}`, 'sm')}`;
+}
+
 // A stack of new copies: equip one, sell or salvage them.
 function armStackHTML(id) {
   const fresh = freshArms(id), n = fresh.length, it = ITEMS[id];
@@ -44,6 +56,7 @@ function armStackHTML(id) {
     if (n > 1) acts.push(gbtn(`Salvage all ×${fmt(n)}`, 'salvage', `data-armsalvall="${id}"`, 'dark sm'));
   }
   out.push(`<div class="dt-cta">${acts.join('')}</div>`);
+  out.push(inheritHTML(fresh[0]));
   out.push(`<p class="muted small">New copies of the same weapon stack. The one you wield earns battle XP: as soon as it gains a level, a refinement or an awakening, it leaves the stack and becomes a unique weapon.</p>`);
   out.push(`${hdr('Where to find')}${sourcesHTML(id)}`);
   return `<div class="arm-detail">${out.join('')}</div>`;
@@ -70,6 +83,7 @@ function armDetailHTML() {
   if (acts.length) out.push(`<div class="dt-cta">${acts.join('')}</div>`);
   if (eqd) out.push(`<p class="muted small">${ui('check')} You fight with this weapon.</p>`);
 
+  out.push(inheritHTML(a));
   if (!forgeOn()) {
     out.push(`<p class="muted small">${ui('lock')} Refinement and awakening open in Soul City (${esc(lockedNote('feature:awakening').replace('Locked. ', ''))}).</p>`);
     return `<div class="arm-detail">${out.join('')}</div>`;
@@ -102,6 +116,7 @@ function armDetailHTML() {
 
 on('armlevel', (d) => { if (d.lv % 5 === 0) toast(`${ITEMS[d.a.id].name} reached level ${d.lv}.`, 'good'); });
 on('refine', (d) => toast(`${ITEMS[d.a.id].name} refined to +${d.a.ref}.`, 'rare'));
+on('inherit', (d) => toast(`${ITEMS[d.a.id].name} inherits ${ITEMS[d.from].name}: Lv ${armLv(d.a)} +${d.a.ref}.`, 'rare'));
 on('awakenarm', (d) => burst(AWK[d.a.awk].name, `${ITEMS[d.a.id].name} · ${d.a.awk === 1 ? ELEMENTS[d.a.el].name : FAMILIES[armFamily(d.a.id)].name}`, itemIc(d.a.id), rc('soul')));
 
 // After selling / salvaging: stay on the stack while copies are left.
@@ -131,5 +146,6 @@ document.addEventListener('click', (ev) => {
     keepStackSel();
   }
   else if (d.refine) refine(d.refine);
+  else if (d.inherit) { const [bu, au] = d.inherit.split(':'); if (inheritArm(bu, au)) selArm = bu; }
   else if (d.awk) { const [u, el] = d.awk.split(':'); awakenArm(u, el); }
 });
