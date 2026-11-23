@@ -45,7 +45,7 @@ function pickRow(skill, a) {
     <span class="ws-go">${wsGoIc(st)}</span><span class="ws-prog"><i data-cardfill></i></span></button>`;
 }
 function pickerHTML(skill) {
-  const acts = SKILLS[skill].actions, open = acts.filter((a) => !wsLocked(actState(skill, a)));
+  const acts = wsActs(skill), open = acts.filter((a) => !wsLocked(actState(skill, a)));
   // Recipes: what you can make right now first, best first.
   if (SKILLS[skill].type === 'craft') open.sort((a, b) => WS_SORTS.best[1](skill, a, b));
   const next = acts.filter((a) => wsLocked(actState(skill, a))).sort((a, b) => a.level - b.level)[0];

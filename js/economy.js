@@ -67,6 +67,22 @@ const GEAR_TIERS = {
   star_badge: [24, 'schem', 'hyb'], stone_mask: [25, 'epic', 'hyb'], ancient_gravity_bracer: [27, 'relic', 'hyb'],
   // ---- The Rift (28+)
   rift_cleaver: [28.5, 'legend'], rift_eye: [29, 'legend', 'hyb'],
+  // ---- The manga armory (armory.js), world by world
+  leaf_weights: [0.8, 'drop', 'hyb'], three_prong_kunai: [1.5, 'drop'], chakra_threads: [1.5, 'drop', 'off'], springtime_suit: [2.2, 'drop'],
+  sand_gourd: [2.5, 'drop', 'def'], shark_skin_sword: [3.5, 'boss'],
+  justice_coat: [4.5, 'drop'], red_vest: [4.5, 'craft'], straw_hat: [4.5, 'rare', 'hyb'], black_leg_boots: [5, 'drop'], wado_blade: [5.5, 'craft'],
+  sniper_goggles: [5.5, 'drop', 'off'], weather_baton: [6, 'drop'], seastone_cuffs: [6.5, 'craft', 'def'],
+  asauchi: [8, 'drop'], flash_sandals: [8.5, 'craft', 'hyb'], quincy_cross: [9, 'drop', 'off'], hollow_mask_half: [9.5, 'drop', 'off'],
+  captain_haori: [10.5, 'craft'], bankai_blade: [11.5, 'boss'],
+  turtle_gi: [12, 'craft'], power_pole: [12.5, 'craft'], nimbus_charm: [13.5, 'drop', 'hyb'], senzu_pouch: [14, 'craft', 'def'],
+  ki_blaster: [14, 'drop'], z_sword: [15, 'schem'], fusion_earrings: [15.5, 'epic', 'hyb'],
+  jujutsu_uniform: [16, 'craft'], resonance_hammer: [16.5, 'drop'], playful_cloud: [17.5, 'drop'], cursed_finger: [17.5, 'drop', 'off'],
+  sealing_cube: [18.5, 'drop', 'def'], inverted_spear: [18.5, 'schem'], limitless_blindfold: [19.5, 'epic', 'off'],
+  hunter_rod: [20, 'craft'], ten_vest: [20.5, 'craft'], steel_skateboard: [20.5, 'drop', 'hyb'], medic_briefcase: [21, 'craft', 'def'],
+  steel_yoyos: [21.5, 'drop'], chain_of_judgement: [22, 'drop', 'off'], joker_cards: [22.5, 'schem'], royal_carapace: [23.5, 'epic'],
+  nichirin_blade: [24, 'craft'], fox_warding_mask: [24.5, 'craft', 'def'], slayer_uniform: [25, 'drop'], stopped_watch: [25, 'drop', 'hyb'],
+  steel_balls: [25.5, 'drop'], checkered_haori: [26, 'craft'], stand_arrow: [26.5, 'epic', 'off'], hanafuda_earrings: [27.5, 'epic', 'off'],
+  torn_mask: [28.5, 'rare', 'hyb'], rift_mantle: [28.5, 'relic'], crossover_blade: [29.5, 'legend'],
 };
 
 // Crafting recipes of the gear. Shares split the cost budget; [n] = a fixed count (boss parts, gems).
@@ -117,6 +133,26 @@ const GEAR_RECIPES = {
   wildhide_coat:    { beastlord_claw: [2], lynx_pelt: 0.4, boar_tusk: 0.3, hex_void: 0.3 },
   // Echo Quarter
   star_badge:       { chimera_heart: [1], sage_chakra: [2], wyrm_scale: 0.4, chimera_mane: 0.3, sun_ingot: 0.3 },
+  // The manga armory (armory.js): each world's own materials plus one older one
+  red_vest:         { beast_ember: [1], sea_kelp: 0.4, sea_crab: 0.3, shadowroot: 0.3 },
+  wado_blade:       { tide_pearl: [1], mist_steel: 0.4, ironwood: 0.3, sea_salt: 0.3 },
+  seastone_cuffs:   { leviathan_scale: [1], void_stone: 0.4, sea_kelp: 0.3, frost_crystal: 0.3 },
+  flash_sandals:    { wisp_flame: 0.3, reishi_ingot: 0.3, frost_ingot: 0.2, cloud_fern: 0.2 },
+  captain_haori:    { bone_ivory: [2], black_ingot: 0.4, phantom_silk: 0.3, spirit_orchid: 0.3 },
+  turtle_gi:        { ki_spark: 0.4, moon_rice: 0.3, phantom_silk: 0.3 },
+  power_pole:       { ki_orb: 0.4, star_ingot: 0.3, ironwood: 0.3 },
+  senzu_pouch:      { vital_bean: 0.4, ki_flare: 0.3, phantom_silk: 0.3 },
+  z_sword:          { warrior_sash: [2], ki_nova: 0.4, star_ingot: 0.4, starsteel: 0.2 },
+  jujutsu_uniform:  { hex_residue: 0.4, phantom_silk: 0.3, star_ingot: 0.3 },
+  inverted_spear:   { veil_shard: [2], hex_void: 0.4, sun_ingot: 0.3, ki_nova: 0.3 },
+  hunter_rod:       { swift_feather: 0.4, spirit_oak: 0.3, sun_ingot: 0.3 },
+  ten_vest:         { wild_fur: 0.3, lynx_pelt: 0.3, hex_shade: 0.2, sun_ingot: 0.2 },
+  medic_briefcase:  { stag_antler: 0.4, sun_ingot: 0.3, spirit_orchid: 0.3 },
+  joker_cards:      { beastlord_claw: [1], wyrm_scale: 0.4, phantom_silk: 0.3, hex_crown: 0.3 },
+  nichirin_blade:   { starmetal_fragment: 0.4, sun_ingot: 0.4, sunstone: 0.2 },
+  fox_warding_mask: { bronze_fragment: 0.4, jade_fragment: 0.3, spirit_oak: 0.3 },
+  checkered_haori:  { pillar_fragment: 0.4, gold_fragment: 0.3, phantom_silk: 0.3 },
+  rift_mantle:      { lord_visage: [1], rift_ingot: 0.4, echo_soul: 0.3, chimera_mane: 0.3 },
 };
 // Other Crafting recipes, moved to the world whose materials they use (level only).
 const ARTS_LEVELS = {

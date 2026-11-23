@@ -32,6 +32,15 @@ function wsCat(a) {
   return it.type === 'equip' ? it.slot : it.type === 'trade' ? 'trade' : itemKind(o);
 }
 const wsLocked = (st) => st === 'locked' || st === 'schem';
+// No overload: a piece of gear whose world is not open yet stays out of the workshop (and its counts)
+// until you reach that world, unless you already hold its schematic or a world gate asks for it.
+function wsShown(a) {
+  const id = wsOut(a), t = id && typeof GEAR_TIERS !== 'undefined' && GEAR_TIERS[id];
+  if (!t || (a.schem && S.known[a.schem]) || (typeof OFFERED !== 'undefined' && OFFERED.has(id))) return true;
+  const z = ZONES[Math.min(ZONES.length - 1, Math.floor(t[0]))];
+  return !z || realmOpen(z.realm);
+}
+const wsActs = (skill) => SKILLS[skill].actions.filter(wsShown);
 const wsRank = (s, a) => { const st = actState(s, a); return st === 'active' ? 3 : st === 'ready' ? 2 : wsLocked(st) ? 0 : 1; };
 // Narrow workshops (phones, small windows) show the selected recipe above the gallery instead of beside it.
 function wsNarrow() {
@@ -69,13 +78,13 @@ function wsMatch(skill, a, W, q, o) {
 function wsRecipes(skill, o) {
   o = o || {};
   const W = wsState(skill), q = (wsQuery[skill] || '').trim().toLowerCase(), g = wsGuideId(skill);
-  const list = SKILLS[skill].actions.filter((a) => a.id === g || wsMatch(skill, a, W, q, o));
+  const list = wsActs(skill).filter((a) => a.id === g || wsMatch(skill, a, W, q, o));
   // "Upcoming" reads best soonest-first, so the default level sort flips there.
   const key = W.st === 'locked' && (W.sort === 'lvd' || W.sort === 'best') ? 'lva' : W.sort;
   return list.sort((a, b) => WS_SORTS[key][1](skill, a, b));
 }
 function wsSelected(skill) {
-  const W = wsState(skill), acts = SKILLS[skill].actions;
+  const W = wsState(skill), acts = wsActs(skill);
   const pick = (id) => id && acts.find((a) => a.id === id);
   if (wsNarrow()) return pick(W.sel) || null;
   return pick(W.sel) || pick(wsGuideId(skill)) ||(S.action && S.action.skill === skill && pick(S.action.id)) || wsRecipes(skill)[0] || acts[0];
@@ -100,7 +109,7 @@ function wsCard(skill, a, selId) {
 }
 function wsNext(skill) {
   const W = wsState(skill);
-  const next = SKILLS[skill].actions.filter((a) => wsLocked(actState(skill, a)) && (W.cat === 'all' || wsCat(a) === W.cat)).sort((a, b) => a.level - b.level)[0];
+  const next = wsActs(skill).filter((a) => wsLocked(actState(skill, a)) && (W.cat === 'all' || wsCat(a) === W.cat)).sort((a, b) => a.level - b.level)[0];
   if (!next) return '';
   return `<button class="ws-next" data-wsel="${skill}:${next.id}">${tile(null, null, { r: actRarity(next), icon: actIc(skill, next), cls: 'xs', title: next.name })}
     <span><small>Next unlock</small><b>${esc(next.name)}</b></span><em>${next.schem && !S.known[next.schem] ? ui('schematic') : ui('lock')}Lv ${next.level}</em></button>`;
@@ -113,7 +122,7 @@ function wsListHTML(skill) {
   return list.map((a) => wsCard(skill, a, sel && sel.id)).join('') + (W.st === 'open' && !(wsQuery[skill] || '').trim() ? wsNext(skill) : '');
 }
 function wsCatsHTML(skill) {
-  const W = wsState(skill), acts = SKILLS[skill].actions;
+  const W = wsState(skill), acts = wsActs(skill);
   const present = WS_CATS.filter((c) => acts.some((a) => wsCat(a) === c[0]));
   if (present.length < 2) return '';
   const pool = wsRecipes(skill, { noCat: true });
@@ -125,7 +134,7 @@ function wsCatsHTML(skill) {
 }
 function wsStatusHTML(skill) {
   const W = wsState(skill), q = (wsQuery[skill] || '').trim().toLowerCase();
-  const pool = SKILLS[skill].actions.filter((a) => wsMatch(skill, a, W, q, { noSt: true }));
+  const pool = wsActs(skill).filter((a) => wsMatch(skill, a, W, q, { noSt: true }));
   const n = { all: pool.length, open: 0, ready: 0, locked: 0 };
   for (const a of pool) { const st = actState(skill, a); if (wsLocked(st)) n.locked++; else { n.open++; if (st === 'ready' || st === 'active') n.ready++; } }
   return `<nav class="seg ws-st" id="ws-st">${WS_STATUS.map(([k, l]) => `<button class="${W.st === k ? 'on' : ''}" data-wsst="${skill}:${k}"><span>${l}</span><em>${n[k]}</em></button>`).join('')}</nav>`;
@@ -172,7 +181,7 @@ function wsDetail(skill, a) {
 // o.detail === false: the selected recipe is shown elsewhere (beside a skill's scene, see skillpage-ui.js).
 function workshopHTML(skill, o) {
   o = o || {};
-  const s = SKILLS[skill], acts = s.actions, W = wsState(skill), sel = wsSelected(skill);
+  const s = SKILLS[skill], acts = wsActs(skill), W = wsState(skill), sel = wsSelected(skill);
   const open = acts.filter((x) => !wsLocked(actState(skill, x))).length;
   return `${hdr('Recipes', `${open} / ${acts.length} unlocked`)}
   <section class="ws" data-ws="${skill}">

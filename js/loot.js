@@ -140,10 +140,12 @@ function computeSalvage() {
   const realmOf = {};
   for (const z of ZONES) for (const e of z.enemies) for (const [t] of e.drops) if (!realmOf[t]) realmOf[t] = z.realm;
   for (const a of SKILLS.voyaging.actions) for (const [t] of a.loot.rare) if (!realmOf[t]) realmOf[t] = 'seas';
+  for (const k in RARE_FINDS) for (const [t] of RARE_FINDS[k]) if (!realmOf[t] && SKILLS[k]) realmOf[t] = SKILLS[k].realm;   // gear a skill finds
   for (const id in ITEMS) {
     const it = ITEMS[id];
     if (it.type !== 'equip' || CRAFTED[id]) continue;
     const realm = realmOf[id];
+    if (!realm) continue;   // no world: nothing to break it into
     const relics = Object.keys(ITEMS).filter((k) => ITEMS[k].relic === realm).sort((a, b) => ITEMS[a].value - ITEMS[b].value);
     if (!relics.length) continue;   // Rift gear: nothing to break it into
     const give = { [relics[0]]: SALVAGE_N[it.rarity] };

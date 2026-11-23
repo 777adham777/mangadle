@@ -100,6 +100,13 @@ const SETS = [
   { id: 'curse',   name: 'Curse Bearer',     pieces: ['cursed_cleaver', 'grudge_mail', 'hex_eye'], b2: { berserk: 0.2 }, b3: { leech: 0.05, exec: 0.25 } },
   { id: 'star',    name: 'Star Hunter',      pieces: ['hunter_glaive', 'wildhide_coat', 'star_badge'], b2: { boss: 0.15 }, b3: { first: 2, crit: 0.06 } },
   { id: 'ancient', name: 'Ancient Relics',   pieces: [['ancient_fog_cleaver', 'ancient_stormcaller'], 'ancient_ferryman_robe', 'ancient_gravity_bracer'], b2: { tech: 0.15, guard: 0.06 }, b3: { bleedHit: 0.2, leech: 0.04, counter: 1 } },
+  // the manga armory (armory.js): one crew per world, from Orange Town on
+  { id: 'strawhat', name: 'Straw Hat Crew',  pieces: [['wado_blade', 'weather_baton', 'black_leg_boots'], 'red_vest', ['straw_hat', 'sniper_goggles']], b2: { gold: 0.1, wind: 0.1 }, b3: { crit: 0.06, rare: 0.05 } },
+  { id: 'captain', name: 'Gotei Captain',    pieces: [['asauchi', 'bankai_blade'], 'captain_haori', ['flash_sandals', 'hollow_mask_half']], b2: { cdr: 0.08 }, b3: { tech: 0.12, crit: 0.05 } },
+  { id: 'turtle',  name: 'Turtle School',    pieces: [['power_pole', 'z_sword'], 'turtle_gi', ['nimbus_charm', 'senzu_pouch']], b2: { counter: 0.5 }, b3: { first: 1, formDrain: 0.3 } },
+  { id: 'jujutsu', name: 'Jujutsu High',     pieces: [['resonance_hammer', 'playful_cloud', 'inverted_spear'], 'jujutsu_uniform', ['limitless_blindfold', 'cursed_finger', 'sealing_cube']], b2: { tech: 0.1 }, b3: { cdr: 0.1, exec: 0.15 } },
+  { id: 'exam',    name: 'Hunter Exam',      pieces: [['hunter_rod', 'steel_yoyos', 'joker_cards'], 'ten_vest', ['steel_skateboard', 'chain_of_judgement', 'medic_briefcase']], b2: { first: 1 }, b3: { crit: 0.06, boss: 0.15 } },
+  { id: 'slayer',  name: 'Demon Slayer Corps', pieces: ['nichirin_blade', ['slayer_uniform', 'checkered_haori'], ['fox_warding_mask', 'hanafuda_earrings']], b2: { exec: 0.15 }, b3: { tag_fire: 0.25, burnHit: 1 } },
 ];
 const SET_OF = {};
 for (const s of SETS) for (const p of s.pieces) for (const id of [].concat(p)) (SET_OF[id] = SET_OF[id] || []).push(s);
