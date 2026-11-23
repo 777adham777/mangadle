@@ -88,9 +88,36 @@
 .fo-cta.stop { background: linear-gradient(180deg, #a8323f, #7a1f2a); border-top-color: #d85a66; }
 .fo-cta:disabled { cursor: not-allowed; background: var(--panel3); border-top-color: var(--line2); color: var(--dim); }
 
-/* Fishing / Cooking: the panel sits above their spot cards, beside the loadout */
-.fc-left > .fo-win { min-height: 0; }
-.fc-left > .fo-win .fo-body { min-height: 0; }
+/* header: name on the left, owned count on the right */
+.fo-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; }
+.fo-head > div { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.fo-own { display: flex; flex-direction: column; align-items: flex-end; flex-shrink: 0; line-height: 1.1; }
+.fo-own small { font: 600 10px var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--mute); }
+.fo-own b { font: 800 26px var(--display); color: #fff; }
+
+/* what it does, what it needs when locked, mastery */
+.fo-info .ac-note { flex-wrap: wrap; }
+.fo-info .ac-note:empty { display: none; }
+.fo-desc { margin: 0; font-size: 12.5px; line-height: 1.4; color: var(--dim); max-width: 60ch; }
+.fo-req { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 4px; }
+.fo-req li { display: flex; align-items: center; gap: 8px; padding: 7px 12px; background: rgba(8, 9, 13, 0.6); border: 1px solid var(--line); color: var(--dim); font-size: 13px; }
+.fo-req li .gi { width: 15px; height: 15px; fill: #ff8f9c; }
+.fo-req li.ok .gi { fill: var(--act); }
+.fo-req li span { flex: 1; min-width: 0; color: var(--text); }
+.fo-req li em { font-style: normal; font-size: 12px; color: var(--mute); text-align: right; }
+.fo-mast { display: flex; align-items: center; gap: 8px; font-size: 12.5px; color: var(--dim); }
+.fo-mast .gi { width: 15px; height: 15px; fill: var(--gold); }
+.fo-mast b { color: #fff; font-family: var(--display); }
+.fo-mast .bar { flex: 1; max-width: 260px; height: 5px; background: rgba(255, 255, 255, 0.08); overflow: hidden; }
+.fo-mast .bar i { display: block; height: 100%; width: 0; background: var(--gold); }
+.fo-info .fcl-q, .fo-info .fcl-spice { padding: 7px 12px; background: rgba(8, 9, 13, 0.6); border: 1px solid var(--line); }
+.fo-info .fcs-slots { grid-template-columns: repeat(6, 54px); }
+
+/* One progress display per page: the ring. Lists mark the running action by their state colours only,
+   and the activity bar hides its bar and numbers while you are on that skill's page. */
+.pk-row .ws-prog, .ws-card .ws-prog, .fc-card .fcc-prog { display: none; }
+#nowbar.here .nb-prog { display: none; }
+#nowbar.here .nb-main { flex: 1; }
 
 @keyframes foHit { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
 @keyframes foPop { 0% { opacity: 0; transform: translate(-50%, 8px) scale(0.8); } 15% { opacity: 1; transform: translate(-50%, 0) scale(1.05); } 100% { opacity: 0; transform: translate(-50%, -60px) scale(1); } }

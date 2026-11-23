@@ -1,10 +1,11 @@
 /* Skill page layout (VIEWS.realm in ui.js). No right column any more: the page uses the full width.
-   - Skills with an animated scene get a "stage": the scene beside a one-click picker of every unlocked
-     action (trees, fishing spots, recipes) — or, for Voyaging, its harbour.
+   - Skills with a focus panel (focus-ui.js) get a "stage": the panel beside a one-click picker of every
+     unlocked action (trees, ore veins, rituals). Crafting skills have no picker: their recipe gallery,
+     under the stage, is their one list.
    - Milestones, rare finds and synergies open in a window from buttons in the skill banner at the top.
    - Each skill's extra panels live in a tabbed sub-menu at the bottom of the page. */
 
-const PICK_TITLE = { woodcutting: 'Trees', mining: 'Ore veins', archaeology: 'Dig sites' };
+const PICK_TITLE = { woodcutting: 'Trees', mining: 'Ore veins', archaeology: 'Dig sites', bonding: 'Rituals', tracking: 'Hunts' };
 
 // Each prop is a four-frame transparent WebP strip, placed where the avatar's tool lands
 // (css/background-art.css). The hunter also gets a second prop (the trap). Fishing and
@@ -57,7 +58,7 @@ function pickerHTML(skill) {
 // The scene and, beside it, what the player acts on (plus the skill's own top panels).
 function skStageHTML(skill, scene, top) {
   const s = SKILLS[skill];
-  let side = s.type === 'gather' || s.type === 'craft' ? pickerHTML(skill) : '';
+  let side = s.type === 'gather' || s.type === 'bond' ? pickerHTML(skill) : '';
   side += top;
   const spotAt = scene.indexOf('<div class="spot ');
   if (spotAt >= 0) {

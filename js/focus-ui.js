@@ -1,15 +1,18 @@
 'use strict';
 /* ==========================================================================
    TRI-REALM IDLE — skill focus panel (replaces the animated skill scenes, 2026-11-23)
-   Every skill page shows, in place of the old scene, what you are making right now, large:
-   its item in a progress ring, what it gives (per hour, XP, owned), what it costs, what it
-   can also find, the skill's own gauge (vein, forge heat, strain, scent, resonance, curse
-   grade, excavation grid), the last result, and one Start / Stop button.
-   Idle, it shows the action you ran last (or the best one you can start).
+   The one detail view of a skill page, and the one place its running action shows progress:
+   the item, large, in a progress ring; what it gives (per hour, XP, next level), what it
+   costs, what it can also find, its effect (gear stats, heals, Shiny / Perfect odds), the
+   skill's own gauge (vein, forge heat, strain, scent, resonance, curse grade, dig grid),
+   mastery, the last result and one Start / Stop button.
+   It shows the selected action: the running one, else the one you picked last (recipe gallery,
+   Fishing / Cooking cards), else the best one you can start. A locked recipe shows what it needs.
+   Each page has one list of actions beside or under it (skillpage-ui.js, workshop-ui.js, spot-ui.js);
+   lists carry no progress bar, and the activity bar drops its own while you are on that page.
    Farming and Voyaging have none: their plots and harbour already are the focus.
-   Fishing and Cooking keep their own page (spot-ui.js); the panel replaces its scene.
-   The old scene code (shinobi-ui, soul-ui, ...) still holds each skill's hooks and only
-   draws when a .spot element is on the page, which no longer happens.
+   The old scene code (shinobi-ui, soul-ui, ...) only draws when a .spot element is on the page,
+   which no longer happens.
    Loaded last, after every *-ui.js file.
    ========================================================================== */
 
@@ -21,13 +24,19 @@ const FOCUS_VERB = {
 const focusOut = (a) => (a && a.out ? Object.keys(a.out)[0] : null);
 
 /* ---------------------------------------------------------------- which action */
+// A newly started action becomes the selection; picking a recipe / dish changes it without starting.
+const FO_RUN = {};
 function focusAct(skill) {
+  if (FC.includes(skill)) return fcSel(skill);
   const acts = SKILLS[skill].actions, pick = (id) => id && acts.find((a) => a.id === id);
+  const run = S.action && S.action.skill === skill ? S.action.id : null, craft = SKILLS[skill].type === 'craft';
+  const W = craft ? wsState(skill) : null;
   S.ui.foSel = S.ui.foSel || {};
-  if (S.action && S.action.skill === skill) S.ui.foSel[skill] = S.action.id;
-  const last = pick(S.ui.foSel[skill]);
-  if (last && !wsLocked(actState(skill, last))) return last;
-  const open = acts.filter((a) => !wsLocked(actState(skill, a)));
+  if (run && FO_RUN[skill] !== run) { S.ui.foSel[skill] = run; if (W) W.sel = run; }
+  FO_RUN[skill] = run;
+  const sel = pick(W ? W.sel : S.ui.foSel[skill]);
+  if (sel && (craft ? wsShown(sel) : !wsLocked(actState(skill, sel)))) return sel;
+  const open = (craft ? wsActs(skill) : acts).filter((a) => !wsLocked(actState(skill, a)));
   return open.filter((a) => actState(skill, a) === 'ready').sort((a, b) => b.level - a.level)[0] || open[0] || acts[0];
 }
 
@@ -58,49 +67,65 @@ function focusGaugeHTML(skill, a) {
 }
 
 /* ---------------------------------------------------------------- the panel */
-// o.lite: Fishing / Cooking, whose loadout card already lists the numbers; shows the session counter instead.
-function focusHTML(skill, o) {
-  o = o || {};
+// What the item does: gear stats, heals, its description, the skill's own lines (actLines).
+function focusNotes(skill, a) {
+  const out = focusOut(a), it = out && ITEMS[out], n = [];
+  if (it && it.type === 'equip' && it.stats) n.push(`<div class="ac-note">${statInline(it.stats)}</div>`);
+  if (it && it.type === 'food' && skill !== 'cooking') n.push(`<div class="ac-note"><span>${ui('hp')}Heals ${foodHeal(out)} HP</span></div>`);
+  if (FC.includes(skill)) n.push(fcQHTML(skill, a));
+  else n.push(uix('actLines', skill, a));
+  if (it && it.desc && SKILLS[skill].type === 'craft') n.push(`<p class="fo-desc">${esc(it.desc)}</p>`);
+  return n.join('');
+}
+function focusReqHTML(skill, a) {
+  const L = skillLv(skill), schem = a.schem && !S.known[a.schem], src = schem && sourcesOf(a.schem)[0];
+  return `<ul class="fo-req"><li class="${L >= a.level ? 'ok' : ''}">${ui(L >= a.level ? 'check' : 'lock')}<span>${SKILLS[skill].name} level ${a.level}</span><em>${L} / ${a.level}</em></li>
+    ${a.schem ? `<li class="${schem ? '' : 'ok'}">${ui(schem ? 'schematic' : 'check')}<span>${esc(ITEMS[a.schem].name)}</span><em>${schem ? (src ? `${esc(src.text)}${src.rate ? ' · ' + fmtRate(src.rate * luckMult()) : ''}` : 'Not found yet') : 'Learned'}</em></li>` : ''}</ul>`;
+}
+function focusHTML(skill) {
   const s = SKILLS[skill], a = focusAct(skill);
   if (!a) return '';
   const run = !!(S.action && S.action.skill === skill && S.action.id === a.id), st = actState(skill, a), r = actRarity(a), out = focusOut(a);
   const it = out && ITEMS[out], locked = wsLocked(st);
-  const busy = S.action && S.action.skill !== skill ? SKILLS[S.action.skill].name : '';
-  const kick = run ? FOCUS_VERB[skill] || 'Working' : busy ? `Busy with ${esc(busy)}` : locked ? 'Locked' : 'Ready';
+  const busy = S.action && !run ? (S.action.skill === skill ? findAction(skill, S.action.id).name : SKILLS[S.action.skill].name) : '';
+  const kick = run ? FOCUS_VERB[skill] || 'Working' : locked ? 'Locked' : busy ? `Busy with ${esc(busy)}` : 'Ready';
   const sub = [it ? typeLabel(out) : a.kind || '', `Lv ${a.level}`].filter(Boolean).join(' · ');
-  const f = locked ? null : farmRates(skill, a);
+  // Owned: gathering skills already list it in their picker beside the panel.
+  const own = out && (s.type === 'craft' || FC.includes(skill)) ? `<span class="fo-own"><small>Owned</small><b data-fam="${out}">${fmt(familyCount(out))}</b></span>` : '';
+  const ing = a.in ? `<div class="fo-ing"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : '') })).join('')}</div>` : '';
   let body = '';
-  if (o.lite) {
-    if (run && typeof fcSessHTML === 'function') body += `<div class="fo-sess" data-fcsess="${skill}">${fcSessHTML(skill)}</div>`;
-  } else if (f) {
-    const per = f.itemsh || f.per;
+  if (locked) body = focusReqHTML(skill, a) + ing + focusNotes(skill, a);
+  else {
+    const f = farmRates(skill, a), per = f.itemsh || f.per, need = xpInfo(skill).need;
     body += `<div class="fo-stats">
+      <span title="Time per action"><small>Each</small><b>${fmtTime(f.T)}</b></span>
       ${per ? `<span title="Per hour, doubles included"><small>Per hour</small><b>${fmt(per)}</b></span>` : ''}
       <span title="XP per hour"><small>XP / hour</small><b>${fmt(f.xph)}</b></span>
-      <span title="Time to the next level at this pace"><small>Next level</small><b ${run ? 'data-nextlv' : ''}>${run ? '—' : xpInfo(skill).need ? fmtTime((xpInfo(skill).need / (a.xp * skillXpMult(skill))) * f.T) : 'MAX'}</b></span>
-      ${out ? `<span title="Owned, every version"><small>Owned</small><b data-fam="${out}">${fmt(familyCount(out))}</b></span>` : ''}
+      <span title="Time to the next level at this pace"><small>Next level</small><b ${run ? 'data-nextlv' : ''}>${need ? fmtTime((need / (a.xp * skillXpMult(skill))) * f.T) : 'MAX'}</b></span>
       ${a.in ? `<span title="How many you can make with what you have"><small>Can make</small><b data-wscan="${skill}:${a.id}">${fmt(wsCan(a))}</b></span>` : ''}
     </div>`;
-    if (a.in) body += `<div class="fo-ing"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : '') })).join('')}</div>`;
-    if (a.extra && a.extra.length) body += `<div class="fo-ing fo-extra"><small>Can find</small>${a.extra.map(([k, ch]) => tile(k, fmtRate(ch * (ch < 0.2 ? rareMult(skill) : 1)), { cls: 'xs', unknown: !S.found[k] })).join('')}</div>`;
+    if (run && FC.includes(skill)) body += `<div class="fo-sess" data-fcsess="${skill}">${fcSessHTML(skill)}</div>`;
+    body += ing;
+    if (a.extra && a.extra.length) body += `<div class="fo-ing fo-extra"><small>Can find</small>${a.extra.map(([k, ch]) => tile(k, fmtRate(ch < 0.2 ? ch * rareMult(skill) : ch), { cls: 'xs', unknown: !S.found[k] })).join('')}</div>`;
+    body += focusNotes(skill, a);
+    if (skill === 'cooking' && typeof fcSpiceHTML === 'function') body += fcSpiceHTML();
+    body += focusGaugeHTML(skill, a);
+    body += `<div class="fo-mast" title="Mastery: each level makes this action 0.3% faster and adds 0.2% chance to double">${ui('mastery')}<span>Mastery <b data-mlv="${skill}:${a.id}">${masteryLv(skill, a.id)}</b></span><span class="bar"><i data-mfill="${skill}:${a.id}"></i></span></div>`;
   }
-  if (!locked) body += focusGaugeHTML(skill, a);
   const last = SPOT['last_' + skill];
   const cta = run ? `<button class="fo-cta stop" data-stop>${ui('stop')}<span>Stop</span></button>`
-    : `<button class="fo-cta" data-act="${skill}:${a.id}" ${locked || st === 'missing' ? 'disabled' : ''}>${ctaLabel(skill, a, st)}</button>`;
+    : `<button class="fo-cta" data-act="${skill}:${a.id}" ${locked || st === 'missing' ? 'disabled' : ''}>${st === 'ready' && FC.includes(skill) ? `${ui('play')}${FC_TXT[skill].go}` : ctaLabel(skill, a, st)}</button>`;
   return `<section class="win fo-win ${run ? 'on' : ''}" data-focus="${skill}" style="--rc:${rc(s.realm)}">
     <div class="fo-bg" data-skill-bg="${skill}" aria-hidden="true"></div>
     <div class="fo-body">
       <div class="fo-art r${r}">
-        <span class="fo-ring" data-foring="${skill}"></span>
+        <span class="fo-ring" data-foring="${skill}:${a.id}"></span>
         ${tile(null, null, { r, icon: actIc(skill, a), mark: actMark(a), cls: 'fo-tile', title: a.name })}
-        <span class="fo-time" ${run ? 'data-nowtime' : ''}>${run ? '' : fmtTime(actionTime(skill, a))}</span>
+        <span class="fo-time" ${run ? 'data-nowtime' : ''}>${run || locked ? '' : fmtTime(actionTime(skill, a))}</span>
         <div class="fo-pops" data-fopops="${skill}"></div>
       </div>
       <div class="fo-info">
-        <small class="fo-kick">${kick}</small>
-        <h2>${esc(a.name)}</h2>
-        <div class="fo-sub">${stars(r)}<span>${esc(sub)}</span></div>
+        <div class="fo-head"><div><small class="fo-kick">${kick}</small><h2>${esc(a.name)}</h2><div class="fo-sub">${stars(r)}<span>${esc(sub)}</span></div></div>${own}</div>
         ${body}
         <div class="fo-foot"><span class="fo-last" data-folast="${skill}" ${last ? '' : 'hidden'}>${last || ''}</span>${cta}</div>
       </div>
@@ -112,8 +137,6 @@ function focusHTML(skill, o) {
 // The panel takes the place of every skill scene.
 UIX.realmScene.length = 0;
 UIX.realmScene.push((realm, skill) => (SKILLS[skill] && !FOCUS_NONE[skill] && SKILLS[skill].actions.length ? focusHTML(skill) : ''));
-// Fishing / Cooking: the panel in place of their scene, beside their loadout card.
-fcSceneHTML = (skill) => focusHTML(skill, { lite: true });
 // The last result also lands in the panel.
 {
   const base = setLast;
@@ -125,13 +148,22 @@ fcSceneHTML = (skill) => focusHTML(skill, { lite: true });
 }
 
 /* ---------------------------------------------------------------- live */
+// Narrow screens: picking a recipe in the gallery brings the panel into view.
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest('.wc-pick[data-wsel]');
+  if (t && wsNarrow()) requestAnimationFrame(() => { const p = $('[data-focus]'); if (p) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); });
+});
+// The activity bar drops its progress and numbers while you look at that skill's page: the panel shows them.
 UPD.push(() => {
+  const nb = $('#nowbar');
+  if (nb) nb.classList.toggle('here', !!(S.action && S.ui.view === skillView(S.action.skill) && $('[data-focus]')));
   const el = $('[data-focus]');
   if (!el) return;
   const skill = el.dataset.focus;
   const ring = $('[data-foring]', el);
   if (ring) {
-    const a = S.action && S.action.skill === skill ? findAction(skill, S.action.id) : null;
+    // Only the shown action's own progress: a recipe you are browsing keeps an empty ring.
+    const a = S.action && S.action.skill + ':' + S.action.id === ring.dataset.foring ? findAction(skill, S.action.id) : null;
     const k = a ? Math.min(1, S.action.prog / actionTime(skill, a)) : 0;
     ring.style.setProperty('--p', k.toFixed(4));
   }

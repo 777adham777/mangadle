@@ -1,12 +1,9 @@
 'use strict';
 /* ==========================================================================
-   Fishing & Cooking: one game screen per skill (replaces the stage + picker + card grid / workshop).
-   - left: the scene, with a HUD drawn over it (where you are, the last catch / dish, the cast or
-     cook bar with Stop, a session counter that ticks up), and under it every spot / dish once,
-     as game cards: one click starts it
-   - right: the loadout of the selected spot / dish: its numbers, Shiny / Perfect odds, ingredients,
-     mastery, the seasoning (Cooking) and one big Start button
-   Per hour / level up / left stay in the activity bar at the top, so they are not repeated here.
+   Fishing & Cooking: one page per skill.
+   - the focus panel (focus-ui.js) shows the selected spot / dish: its numbers, Shiny / Perfect odds,
+     ingredients, seasoning (Cooking), mastery, the session counter and the one Start / Stop button
+   - under it, every spot / dish once, as game cards: one click selects it and starts it
    Loaded after seas-ui.js, workshop-ui.js and skillpage-ui.js.
    ========================================================================== */
 
@@ -51,27 +48,6 @@ function fcSessHTML(skill) {
 }
 function fcSessDraw(skill) {
   for (const el of $$(`[data-fcsess="${skill}"]`)) { el.innerHTML = fcSessHTML(skill); retrigger(el, 'bump'); }
-}
-
-/* ---------------------------------------------------------------- scene HUD */
-function fcHudHTML(skill) {
-  const a = S.action && S.action.skill === skill ? findAction(skill, S.action.id) : null;
-  if (!a) {
-    const busy = S.action ? `${esc(SKILLS[S.action.skill].name)} · ${esc(findAction(S.action.skill, S.action.id).name)}` : '';
-    return `<div class="fc-hud idle"><div class="fc-idle">${busy ? `<small>Busy with ${busy}</small>` : ''}<b>${FC_TXT[skill].idle}</b><i class="fc-chev"></i></div></div>`;
-  }
-  return `<div class="fc-hud">
-    <div class="fch-sess" data-fcsess="${skill}">${fcSessHTML(skill)}</div>
-    <div class="fch-cast">
-      ${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), mark: actMark(a), cls: 'xs', title: a.name })}
-      <span class="fch-main"><span class="fch-l"><small>${FC_TXT[skill].doing}</small><b>${esc(a.name)}</b><em data-nowtime></em></span>
-        <span class="fch-bar"><i data-nowfill></i></span></span>
-      <button class="fch-stop" data-stop title="Stop">${ui('stop')}</button>
-    </div></div>`;
-}
-// Idle, the fishing scene shows the spot of the selected fish.
-function fcSceneHTML(skill) {
-  return spotHTML(skill, { hud: fcHudHTML(skill), kicker: FC_TXT[skill].kicker, look: fcSel(skill) });
 }
 
 /* ---------------------------------------------------------------- cards */
@@ -124,15 +100,7 @@ function fcPickHTML(skill, sel) {
     ${skill === 'fishing' ? `<div class="fc-zones">${fcFishGrid(sel)}</div>` : fcCookGrid(sel)}</section>`;
 }
 
-/* ---------------------------------------------------------------- loadout */
-function fcCtaHTML(skill, a, st) {
-  st = st || actState(skill, a);
-  if (st === 'active') return `${ui('stop')}<span>Stop</span>`;
-  if (st === 'missing') return `${ui('close')}<span>Missing ${skill === 'cooking' ? 'ingredients' : 'items'}</span>`;
-  if (st === 'blocked') return `${ui('lock')}<span>${esc(actionBlock(skill, a).split('.')[0])}</span>`;
-  if (wsLocked(st)) return `${ui('lock')}<span>Level ${a.level}</span>`;
-  return `${ui('play')}<span>${FC_TXT[skill].go}</span>`;
-}
+/* ---------------------------------------------------------------- focus extras */
 function fcSpiceHTML() {
   if (!isUnlocked('feature:spices')) return `<div class="fcl-spice off">${ui('lock')}<span><b>Seasoning</b><small>${esc(lockedNote('feature:spices').replace('Locked. ', ''))}</small></span></div>`;
   const cur = S.kitchen.spice, sp = cur && SPICES[cur];
@@ -144,49 +112,22 @@ function fcSpiceHTML() {
       return `<button class="fcs ${cur === k ? 'on' : ''} ${n ? '' : 'empty'}" data-spice="${k}" style="--sc:${s.col}" title="${esc(s.adj)} dishes: ${esc(spiceText(k))}${cur === k ? ' · click again to cook plain' : ''}">${tile(s.item, fmt(n), { cls: 'xs' })}</button>`;
     }).join('')}</div></div>`;
 }
-function fcLoadHTML(skill, a) {
-  const st = actState(skill, a), o = fcOut(a), it = o && ITEMS[o], r = actRarity(a), locked = wsLocked(st);
-  const kind = skill === 'fishing' ? `Fish · ${fcZone(a).name}` : it ? typeLabel(o) : 'Dish';
-  const head = `<div class="fcl-head">${tile(null, null, { r, icon: actIc(skill, a), mark: actMark(a), cls: 'fcl-tile', title: a.name })}
-    <div class="fcl-t"><small>${esc(kind)}</small><h2>${esc(a.name)}</h2>${stars(r)}</div>
-    ${o && !locked ? `<span class="fcl-own"><small>Owned</small><b data-fam="${o}">${fmt(familyCount(o))}</b></span>` : ''}</div>`;
-  const cta = `<button class="fcl-cta" data-act="${skill}:${a.id}" data-fccta ${locked ? 'disabled' : ''}><span class="fcl-cta-l">${fcCtaHTML(skill, a, st)}</span><span class="fcl-cta-p"><i data-cardfill></i></span></button>`;
-  if (locked) {
-    const L = skillLv(skill), schem = a.schem && !S.known[a.schem];
-    return `<section class="win fc-load" data-card="${skill}:${a.id}" data-state="${st}" style="--dc:${fcCol(skill, a)}">${head}
-      <ul class="fcl-req"><li class="${L >= a.level ? 'ok' : ''}">${ui(L >= a.level ? 'check' : 'lock')}<span>${SKILLS[skill].name} level ${a.level}</span><em>${L} / ${a.level}</em></li>
-        ${a.schem ? `<li class="${schem ? '' : 'ok'}">${ui(schem ? 'schematic' : 'check')}<span>${esc(ITEMS[a.schem].name)}</span><em>${schem ? 'Not found yet' : 'Learned'}</em></li>` : ''}</ul>
-      ${a.in ? `<div class="fcl-ing locked">${Object.entries(a.in).map(([k, n]) => tile(k, `×${n}`, { cls: 'xs' })).join('')}</div>` : ''}
-      ${cta}</section>`;
-  }
-  const f = farmRates(skill, a), ml = masteryLv(skill, a.id);
-  const stats = `<div class="fcl-stats">
-    <span title="Time per ${skill === 'fishing' ? 'catch' : 'dish'}">${ui('time')}<b>${fmtTime(f.T)}</b><small>each</small></span>
-    <span title="XP per action">${ui('xp')}<b>${fmt(a.xp * skillXpMult(skill))}</b><small>xp each</small></span>
-    <span title="XP per hour">${ui('xp')}<b>${fmt(f.xph)}</b><small>xp / h</small></span>
-    <span title="Per hour, doubles included">${ui('spd')}<b>${fmt(f.itemsh || f.per)}</b><small>per hour</small></span></div>`;
-  // Shiny / Perfect: the odds, and where this one stands in the log.
-  let q = '';
-  const e = o && QUALITY[skill] ? qEntries(skill).find((x) => x.base === o) : null, logT = Q_TITLE[qKind(skill)];
+// Shiny / Perfect: the odds, and where this one stands in the log (shown in the focus panel).
+function fcQHTML(skill, a) {
+  const o = fcOut(a), it = o && ITEMS[o];
+  if (!it) return '';
+  const e = QUALITY[skill] ? qEntries(skill).find((x) => x.base === o) : null, logT = Q_TITLE[qKind(skill)];
   const logChip = !e ? '' : e.got ? `<span class="fcq-log got">${ui('check')}Logged</span>`
     : e.ready ? `<button class="fcq-log ready" data-qclaim="${skill}:${e.base}">${ui(qKind(skill))}Hand in</button>` : `<span class="fcq-log">Not in the ${logT}</span>`;
   if (skill === 'fishing') {
     const rec = S.quality.rec[o];
-    q = `<div class="fcl-q"><span class="fcq-main" title="Chance per catch of a Shiny ${esc(it.name)}. Grows with this fish's mastery.">${ui('shiny')}<small>Shiny</small><b>${fmtRate(shinyChance('fishing', a))}</b></span>
+    return `<div class="fcl-q"><span class="fcq-main" title="Chance per catch of a Shiny ${esc(it.name)}. Grows with this fish's mastery.">${ui('shiny')}<small>Shiny</small><b>${fmtRate(shinyChance('fishing', a))}</b></span>
       ${rec ? `<span class="fcq-rec" title="Your heaviest ${esc(it.name)}">${ui('record')}<small>Record</small><b>${fmtKg(rec)}</b></span>` : ''}${logChip}</div>`;
-  } else {
-    const sp = spiceFor('cooking', o);
-    q = `<div class="fcl-q"><span class="fcq-main" title="Chance per dish to come out Perfect (${it.type === 'food' ? 'heals 50% more' : 'buff 50% stronger'}). Grows with mastery and your level.">${ui('perfect')}<small>Perfect</small><b>${pct(perfectChance('cooking', a))}</b></span>
-      ${it.type === 'food' ? `<span class="fcq-rec" title="HP healed in battle">${ui('hp')}<small>Heals</small><b>${fmt(foodHeal(o))}</b></span>` : ''}
-      ${sp ? `<span class="fcq-sp" style="--sc:${SPICES[sp].col}" title="${esc(spiceText(sp))}">${gi(SPICES[sp].icon)}${esc(SPICES[sp].adj)}</span>` : ''}${logChip}</div>`;
   }
-  const ing = a.in ? `<div class="fcl-ingw"><h4>Ingredients<span>can make <b data-wscan="${skill}:${a.id}">${fmt(wsCan(a))}</b></span></h4>
-    <div class="fcl-ing">${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : '') })).join('')}</div></div>` : '';
-  const extra = uix('actLines', skill, a).replace(/<div class="ac-note q-line">[\s\S]*?<\/div>/, '');   // the q-line is already in the loadout
-  return `<section class="win fc-load" data-card="${skill}:${a.id}" data-state="${st}" style="--dc:${fcCol(skill, a)}">${head}${stats}${q}${ing}
-    ${skill === 'cooking' ? fcSpiceHTML() : ''}${extra}
-    <div class="fcl-mast" title="Mastery: each level makes this ${skill === 'fishing' ? 'catch' : 'dish'} 0.3% faster and adds 0.2% chance to double">${ui('mastery')}<span>Mastery <b data-mlv="${skill}:${a.id}">${ml}</b></span><span class="bar"><i data-mfill="${skill}:${a.id}"></i></span></div>
-    ${cta}</section>`;
+  const sp = spiceFor('cooking', o);
+  return `<div class="fcl-q"><span class="fcq-main" title="Chance per dish to come out Perfect (${it.type === 'food' ? 'heals 50% more' : 'buff 50% stronger'}). Grows with mastery and your level.">${ui('perfect')}<small>Perfect</small><b>${pct(perfectChance('cooking', a))}</b></span>
+    ${it.type === 'food' ? `<span class="fcq-rec" title="HP healed in battle">${ui('hp')}<small>Heals</small><b>${fmt(foodHeal(o))}</b></span>` : ''}
+    ${sp ? `<span class="fcq-sp" style="--sc:${SPICES[sp].col}" title="${esc(spiceText(sp))}">${gi(SPICES[sp].icon)}${esc(SPICES[sp].adj)}</span>` : ''}${logChip}</div>`;
 }
 
 /* ---------------------------------------------------------------- the page */
@@ -195,10 +136,8 @@ function fcPage(realm, skill) {
   return `<div class="sk-page sk-col fc-page" data-fc="${skill}" style="--rc:${rc(realm)}">
   ${skBannerHTML(realm, skill)}
   ${uix('realmTop', realm, skill)}
-  <div class="fc-stage">
-    <div class="fc-left">${fcSceneHTML(skill)}${fcPickHTML(skill, sel)}</div>
-    <aside class="fc-right">${fcLoadHTML(skill, sel)}</aside>
-  </div>
+  ${focusHTML(skill)}
+  ${fcPickHTML(skill, sel)}
   ${skMoreHTML(realm, skill)}
   </div>`;
 }
@@ -208,12 +147,6 @@ function fcPage(realm, skill) {
 }
 
 /* ---------------------------------------------------------------- live */
-UPD.push(() => {
-  for (const el of $$('[data-fccta]')) {
-    const [s, id] = el.dataset.act.split(':'), st = actState(s, findAction(s, id));
-    if (el.dataset.st !== st) { el.dataset.st = st; $('.fcl-cta-l', el).innerHTML = fcCtaHTML(s, findAction(s, id), st); }
-  }
-});
 on('action', (d) => {
   if (!FC.includes(d.skill)) return;
   const s = fcSess(d.skill), o = fcOut(d.act);
@@ -221,11 +154,6 @@ on('action', (d) => {
   for (const k in d.gains) if (baseOf(k) === o) { s.n += d.gains[k]; if (ITEMS[k] && ITEMS[k].q) s.q += d.gains[k]; }
   s.xp += d.xp;
   fcSessDraw(d.skill);
-  const el = spotNow();
-  if (el && el.dataset.spot === d.skill && actionTime(d.skill, d.act) >= 0.8) {
-    const B = d.skill === 'fishing' ? FISH_BOX : COOK_BOX;
-    spotPop(`+${fmt(d.xp)} XP`, B.x + B.h * 0.32, B.y + 8, 'xpf', 1300);
-  }
 });
 on('catch', (d) => {
   const s = fcSess('fishing');

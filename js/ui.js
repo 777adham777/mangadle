@@ -468,11 +468,14 @@ VIEWS.realm = (realm, skill) => {
   const active = S.action && S.action.skill === skill;
   const scene = uix('realmScene', realm, skill);
   const top = uix('realmTop', realm, skill);
-  // Full-width page: scene + picker on a stage, actions, then the tabbed sub-menu (skillpage-ui.js).
+  // Full-width page: the focus panel (focus-ui.js) and ONE list of actions, then the tabbed sub-menu
+  // (skillpage-ui.js). Gathering skills list their actions beside the focus panel, crafting skills in the
+  // recipe gallery under it (the focus panel is its detail view); only skills without a focus panel keep the card grid.
+  const grid = !scene || s.type === 'voyage';
   return `<div class="sk-page sk-col" style="--rc:${rc(realm)}">
   ${skBannerHTML(realm, skill)}
   ${scene ? skStageHTML(skill, scene, top) : `${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}${top}`}
-  ${s.type === 'craft' ? workshopHTML(skill) : `${s.actions.length ? hdr({ voyage: 'Destinations', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
+  ${s.type === 'craft' ? workshopHTML(skill, scene ? { detail: false } : {}) : !grid ? '' : `${s.actions.length ? hdr({ voyage: 'Destinations', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
   <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
   ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}`}
   ${skMoreHTML(realm, skill)}
