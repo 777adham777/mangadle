@@ -80,18 +80,18 @@
 .spot.sx-quake > .skill-prop-layer { animation: sxQuake 0.6s linear; }
 @keyframes skillCropSway { from { rotate: -3deg; } to { rotate: 3deg; } }
 
-.spot .scene-art-bg[data-skill-bg="woodcutting"] { background-image: url('../assets/backgrounds/skills/woodcutting.png'); }
-.spot .scene-art-bg[data-skill-bg="arts"] { background-image: url('../assets/backgrounds/skills/crafting.png'); }
-.spot .scene-art-bg[data-skill-bg="voyaging"] { background-image: url('../assets/backgrounds/skills/voyaging.png'); }
-.spot .scene-art-bg[data-skill-bg="mining"] { background-image: url('../assets/backgrounds/skills/mining.png'); }
-.spot .scene-art-bg[data-skill-bg="smithing"] { background-image: url('../assets/backgrounds/skills/smithing.png'); }
-.spot .scene-art-bg[data-skill-bg="gravity"] { background-image: url('../assets/backgrounds/skills/gravity.png'); }
-.spot .scene-art-bg[data-skill-bg="farming"] { background-image: url('../assets/backgrounds/skills/farming.png'); }
-.spot .scene-art-bg[data-skill-bg="exorcism"] { background-image: url('../assets/backgrounds/skills/exorcism.png'); }
-.spot .scene-art-bg[data-skill-bg="tracking"] { background-image: url('../assets/backgrounds/skills/tracking.png'); }
-.spot .scene-art-bg[data-skill-bg="archaeology"] { background-image: url('../assets/backgrounds/skills/archaeology.png'); }
-.spot .scene-art-bg[data-skill-bg="restoration"] { background-image: url('../assets/backgrounds/skills/restoration.png'); }
-.spot .scene-art-bg[data-skill-bg="bonding"] { background-image: url('../assets/backgrounds/skills/bonding.png'); }
+.spot .scene-art-bg[data-skill-bg="woodcutting"] { background-image: url('../assets/backgrounds/skills/woodcutting.webp'); }
+.spot .scene-art-bg[data-skill-bg="arts"] { background-image: url('../assets/backgrounds/skills/crafting.webp'); }
+.spot .scene-art-bg[data-skill-bg="voyaging"] { background-image: url('../assets/backgrounds/skills/voyaging.webp'); }
+.spot .scene-art-bg[data-skill-bg="mining"] { background-image: url('../assets/backgrounds/skills/mining.webp'); }
+.spot .scene-art-bg[data-skill-bg="smithing"] { background-image: url('../assets/backgrounds/skills/smithing.webp'); }
+.spot .scene-art-bg[data-skill-bg="gravity"] { background-image: url('../assets/backgrounds/skills/gravity.webp'); }
+.spot .scene-art-bg[data-skill-bg="farming"] { background-image: url('../assets/backgrounds/skills/farming.webp'); }
+.spot .scene-art-bg[data-skill-bg="exorcism"] { background-image: url('../assets/backgrounds/skills/exorcism.webp'); }
+.spot .scene-art-bg[data-skill-bg="tracking"] { background-image: url('../assets/backgrounds/skills/tracking.webp'); }
+.spot .scene-art-bg[data-skill-bg="archaeology"] { background-image: url('../assets/backgrounds/skills/archaeology.webp'); }
+.spot .scene-art-bg[data-skill-bg="restoration"] { background-image: url('../assets/backgrounds/skills/restoration.webp'); }
+.spot .scene-art-bg[data-skill-bg="bonding"] { background-image: url('../assets/backgrounds/skills/bonding.webp'); }
 
 @media (prefers-reduced-motion: reduce) {
   .sp-farm .farm-plot[data-frame="3"] { animation: none !important; }
@@ -110,13 +110,13 @@
 }
 /* Darken the top so the HUD reads over the busy part of the painting. */
 .arena-art-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8, 10, 16, 0.6) 0%, rgba(8, 10, 16, 0.15) 45%, transparent 70%); }
-.arena-art-bg[data-combat-bg="shinobi"] { background-image: url('../assets/backgrounds/combat/shinobi.png'); }
-.arena-art-bg[data-combat-bg="seas"] { background-image: url('../assets/backgrounds/combat/seas.png'); }
-.arena-art-bg[data-combat-bg="soul"] { background-image: url('../assets/backgrounds/combat/soul.png'); }
-.arena-art-bg[data-combat-bg="ki"] { background-image: url('../assets/backgrounds/combat/ki.png'); }
-.arena-art-bg[data-combat-bg="hex"] { background-image: url('../assets/backgrounds/combat/hex.png'); }
-.arena-art-bg[data-combat-bg="hunter"] { background-image: url('../assets/backgrounds/combat/hunter.png'); }
-.arena-art-bg[data-combat-bg="echo"] { background-image: url('../assets/backgrounds/combat/echo.png'); }
-.arena-art-bg[data-combat-bg="rift"] { background-image: url('../assets/backgrounds/combat/rift.png'); }
+.arena-art-bg[data-combat-bg="shinobi"] { background-image: url('../assets/backgrounds/combat/shinobi.webp'); }
+.arena-art-bg[data-combat-bg="seas"] { background-image: url('../assets/backgrounds/combat/seas.webp'); }
+.arena-art-bg[data-combat-bg="soul"] { background-image: url('../assets/backgrounds/combat/soul.webp'); }
+.arena-art-bg[data-combat-bg="ki"] { background-image: url('../assets/backgrounds/combat/ki.webp'); }
+.arena-art-bg[data-combat-bg="hex"] { background-image: url('../assets/backgrounds/combat/hex.webp'); }
+.arena-art-bg[data-combat-bg="hunter"] { background-image: url('../assets/backgrounds/combat/hunter.webp'); }
+.arena-art-bg[data-combat-bg="echo"] { background-image: url('../assets/backgrounds/combat/echo.webp'); }
+.arena-art-bg[data-combat-bg="rift"] { background-image: url('../assets/backgrounds/combat/rift.webp'); }
 .ar-hud { z-index: 2; }
 .ar-floor { z-index: 1; background: linear-gradient(180deg, transparent 0 72%, rgba(8, 10, 16, 0.42) 100%); }

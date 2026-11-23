@@ -2,14 +2,14 @@
    Bump VERSION on every deploy so players get the new files. */
 importScripts('./js/item-images.js');
 
-const VERSION = 'tri-realm-v114';
+const VERSION = 'tri-realm-v115';
 const ITEM_ICON_URLS = Object.values(ITEM_IMAGE_PATHS).map((path) => './' + path);
 const BACKGROUND_URLS = [
   'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
   'farming', 'exorcism', 'tracking', 'archaeology', 'restoration', 'bonding',
-].map((name) => `./assets/backgrounds/skills/${name}.png`).concat([
+].map((name) => `./assets/backgrounds/skills/${name}.webp`).concat([
   'shinobi', 'seas', 'soul', 'ki', 'hex', 'hunter', 'echo', 'rift',
-].map((name) => `./assets/backgrounds/combat/${name}.png`));
+].map((name) => `./assets/backgrounds/combat/${name}.webp`));
 const SKILL_SPRITE_URLS = [
   'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
   'farming', 'exorcism', 'tracking', 'tracking-trap', 'archaeology', 'restoration',
