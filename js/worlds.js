@@ -24,10 +24,25 @@ function addWorld(def) {
 // Late worlds stack many multipliers (techniques, awakening, forms, Domain, companions, Echo) on HP and defense,
 // so their foes hit much harder. Tuned with a simulation: each guardian is about as dangerous at world entry
 // as the Crimson Tyrant (time-to-kill / time-to-die ~0.9).
+// Balance pass (2026-11-23), tuned with a bot that plays the whole quest chain (target: one week of play).
+// The old ATK_SCALE (hex 4.5, hunter 9, echo 30, rift 30) was set when Energy Disciplines reached level 900;
+// with levels that cost 7% more each, the late guardians were 5× to 1000× out of reach. Each world's foes now
+// get BAL[world]: their attack and HP are divided by √BAL so the guardian falls around its day of the week.
+// XP_SCALE sets how fast the Character level climbs in each world.
+const BAL = { shinobi: 0.7, seas: 1.6, soul: 6, ki: 13, hex: 100, hunter: 120, echo: 800, rift: 1020 };
+const ZONE_BAL = { fox: 0.7, admiral: 0.8, unbound: 1.9, mist: 81, ravine: 81, shoals: 81, reef: 81, storm: 81, districts: 81, desert: 81, spire: 62.4, plains: 81, canyon: 71.7, citadel: 66.3, alleys: 58.8, shrine: 75, veil: 73.8, thicket: 15.6, cliffs: 47.7, ruins: 58.2, plaza: 31.8, museum: 64.2, pillars: 75.9 };
 const ATK_SCALE = { hex: 4.5, hunter: 9, echo: 30, rift: 30 };
+const HP_SCALE = {};
+for (const r in BAL) { ATK_SCALE[r] = (ATK_SCALE[r] || 1) / Math.sqrt(BAL[r]); HP_SCALE[r] = 1 / Math.sqrt(BAL[r]); }
+const XP_SCALE = { shinobi: 0.18, seas: 0.35, soul: 0.35, ki: 0.35, hex: 0.35, hunter: 0.35, echo: 0.35, rift: 0.35 };
 function finalizeWorlds() {
   UNLOCKS.push(...UNLOCK_TAIL);
-  for (const z of ZONES) if (ATK_SCALE[z.realm]) for (const e of z.enemies) e.atk = Math.round(e.atk * ATK_SCALE[z.realm]);
+  for (const z of ZONES) for (const e of z.enemies) {
+    if (ATK_SCALE[z.realm]) e.atk = Math.round(e.atk * ATK_SCALE[z.realm]);
+    if (HP_SCALE[z.realm]) e.hp = Math.round(e.hp * HP_SCALE[z.realm]);
+    if (ZONE_BAL[z.id]) { e.atk = Math.round(e.atk / Math.sqrt(ZONE_BAL[z.id])); e.hp = Math.round(e.hp / Math.sqrt(ZONE_BAL[z.id])); }
+    if (XP_SCALE[z.realm]) e.xp = Math.max(1, Math.round(e.xp * XP_SCALE[z.realm]));
+  }
   // The Rift opens after the last world's guardian.
   const ri = ZONES.findIndex((z) => z.realm === 'rift');
   GATES.rift.boss = ZONES[ri - 1].id;
@@ -567,7 +582,7 @@ const ECHOES = [
     D('pillar_fragment', 78, 7, 'Dig: Pillar Temple', [['echo_dust', 0.08, [1, 2]], ['pillar_glyph', 0.02, [1, 1]], ['awakening_shard', 0.03, [1, 1]]]),
   ];
   SKILLS.restoration.actions = [
-    craft('mermaid_compass', 5, 8, { clay_fragment: 40, tide_heart: 1, sapphire: 2 }),
+    craft('mermaid_compass', 1, 8, { clay_fragment: 40, tide_heart: 1, sapphire: 2 }),
     craft('founders_scroll', 18, 9, { bronze_fragment: 40, ashen_tail: 2, sage_lotus: 10 }),
     craft('reaper_hourglass', 30, 10, { jade_fragment: 40, sovereign_shard: 2, echo_soul: 5 }),
     craft('ancient_fog_cleaver', 38, 12, { fog_cleaver: 1, bronze_fragment: 60, mist_steel: 30, pillar_glyph: 1 }),

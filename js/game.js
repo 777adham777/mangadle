@@ -227,6 +227,12 @@ function milestoneFx(skill) {
 }
 const combatMilestones = () => COMBAT_MILESTONES.filter((lv) => charLv() >= lv).length;
 const luckMult = () => 1 + statLuck() / 100;
+// Only Rare (3★) and better finds are announced; commons simply land in the bank.
+const isRare = (id) => !ITEMS[id] || (ITEMS[id].rarity || 1) >= 3;
+// Bad-luck protection: after DRY_FREE kills without an Epic or Legendary drop, their chances climb
+// (+100% every DRY_FREE more kills) until one drops.
+const DRY_FREE = 800;
+const dryMult = () => 1 + Math.max(0, (S.stats.dry || 0) - DRY_FREE) / DRY_FREE;
 const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult() * (1 + synergyBonus('rare', skill)) * hmul('rare', skill);
 // Shiny / perfect / seasoned variants have their own logs (quality.js): they do not count here.
 function collectionPct() {
@@ -309,7 +315,8 @@ const statAtk  = () => 8 + 1.5 * charLv() + gearStat('atk');
 const statDef  = () => 1.5 * charLv() + gearStat('def');
 const statVit  = () => 40 + 9 * charLv() + gearStat('hp');
 const statSpd  = () => 0.2 * charLv() + gearStat('spd') + discFx('spd') + hadd('spdStat');
-const statLuck = () => 0.1 * charLv() + 15 * (S.shop.lucky_coin || 0) + gearStat('luck') + discFx('luck') + hadd('luckStat');
+const LUCKY_COIN = 8;
+const statLuck = () => 0.1 * charLv() + LUCKY_COIN * (S.shop.lucky_coin || 0) + gearStat('luck') + discFx('luck') + hadd('luckStat');
 const pMaxHit = () => statAtk() * dmgMult();
 const pDef    = () => statDef() * defMult();
 const pMaxHp  = () => Math.floor(statVit() * hpMult());
@@ -336,9 +343,12 @@ const energyPower = () => (1 + 0.1 * S.energy.powLv) * hmul('energy');
 const energyUsed  = () => Object.values(S.energy.alloc).reduce((a, b) => a + b, 0);
 const energyIdle  = () => energyCap() - energyUsed();
 const TRAIN_BY = Object.fromEntries(TRAININGS.map((t) => [t.id, t]));
-const trainCost = (t, L) => TRAIN_BY[t].base * Math.pow(1 + L / 10, 2);
-const capCost = () => Math.floor(50 * Math.pow(1.35, S.energy.capLv));
-const powCost = () => Math.floor(200 * Math.pow(1.55, S.energy.powLv));
+// Balance pass (2026-11-23): levels used to cost (1 + L/10)², so a discipline reached Lv 900 in a day
+// (×17 damage, ×9 skill speed). Now each level costs 7% more than the last: ~Lv 40-60 in a week.
+const DISC_K = 6000, DISC_G = 1.07;
+const trainCost = (t, L) => TRAIN_BY[t].base * DISC_K * Math.pow(DISC_G, L);
+const capCost = () => Math.floor(400 * Math.pow(1.6, S.energy.capLv));
+const powCost = () => Math.floor(1500 * Math.pow(1.8, S.energy.powLv));
 const totalTrain = () => TRAININGS.reduce((a, t) => a + tl(t.id), 0);
 
 /* ========================================================== simulation */
@@ -417,7 +427,7 @@ function rollRareFinds(skill, act, gains) {
     if (Math.random() < ch * m) {
       const real = id === 'GEM' ? rollWeighted(GEM_TABLE) : id === 'FRUIT' ? pick(FRUITS) : id;
       addItem(real, 1); gains[real] = (gains[real] || 0) + 1;
-      emit('rare', { id: real, source: SKILLS[skill].name });
+      if (isRare(real)) emit('rare', { id: real, source: SKILLS[skill].name });
     }
   }
   const pet = PETS.find((p) => p.skill === skill);
@@ -467,7 +477,7 @@ function rollLoot(l, mult, gains) {
 function giveDrop(id, n, announce) {
   if (id === 'FRUIT') { id = pick(FRUITS); announce = true; }
   addItem(id, n);
-  if (announce) emit('rare', { id, source: 'Voyage' });
+  if (announce && isRare(id)) emit('rare', { id, source: 'Voyage' });
 }
 
 /* ------------------------------------------------------------- combat */
@@ -492,6 +502,8 @@ function stopCombat() {
   C.zone = null; C.enemy = null;
   dirty = true;
 }
+// A guardian takes a while to rise again: bosses are worth refighting for their loot, not an XP farm.
+const BOSS_RESPAWN = 12;
 // Elites and mini-bosses (GDD §3): in a stage without a boss, 1 foe in 20 is an Elite (stronger, triple rewards,
 // drop chances ×3), and every 50th foe is the stage's Alpha, a mini-boss (×5 rewards, drop chances ×5).
 const RANKED = {};
@@ -574,20 +586,24 @@ function killEnemy(e) {
   S.gold += g;
   addXp('character', e.xp);
   S.bounty += e.xp * 10;
-  const dropped = [], loot = {};
+  const dropped = [], loot = {}, dry = dryMult();
+  let epic = false;
   for (const [id, ch, q] of e.drops) {
     if (ITEMS[id] && ITEMS[id].type === 'schematic') {
       if (!S.known[id] && Math.random() < ch * luckMult()) { learnSchematic(id); dropped.push(ITEMS[id].name); }
       continue;
     }
-    if (Math.random() < (ch < 0.2 ? ch * luckMult() : ch)) {
+    const big = id === 'FRUIT' || (ITEMS[id] && ITEMS[id].rarity >= 4);
+    if (Math.random() < (ch < 0.2 ? ch * luckMult() : ch) * (big ? dry : 1)) {
       const real = id === 'FRUIT' ? pick(FRUITS) : id;
       const n = randInt(q[0], q[1]);
       addItem(real, n); loot[real] = n;
       dropped.push(`${ITEMS[real].name}${n > 1 ? " ×" + n : ""}`);
-      if (ch < 0.2) emit('rare', { id: real, source: e.name });
+      if (big) epic = true;
+      if (ch < 0.2 && isRare(real)) emit('rare', { id: real, source: e.name });
     }
   }
+  S.stats.dry = epic ? 0 : (S.stats.dry || 0) + 1;
   C.kills[z.id] = (C.kills[z.id] || 0) + 1;
   if (e.rank) { S.stats.elites = (S.stats.elites || 0) + 1; if (e.rank === 2) S.stats.alphas = (S.stats.alphas || 0) + 1; }
   hrun('kill', e, z, loot, dropped);
@@ -596,7 +612,7 @@ function killEnemy(e) {
   S.stats.kills++;
   if (z.boss) { S.stats.bossKills++; if (C.kills[z.id] === 1) toast(`${e.name} defeated! A new path opens...`, 'rare'); }
   clog(`Defeated ${e.name}: +${fmt(g)} gold${dropped.length ? ", " + dropped.join(", ") : ""}`, 'win');
-  C.enemy = null; C.respawn = z.boss ? 3 : 1.2;
+  C.enemy = null; C.respawn = z.boss ? BOSS_RESPAWN : 1.2;
   emit('kill', { enemy: e, gold: g, loot, boss: !!z.boss });
 }
 // foeLanded: damage of the last enemy swing (0 = dodged). foes.js applies on-hit effects only when it connected.

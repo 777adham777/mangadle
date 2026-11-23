@@ -2,8 +2,20 @@
    Bump VERSION on every deploy so players get the new files. */
 importScripts('./js/item-images.js');
 
-const VERSION = 'tri-realm-v110';
+const VERSION = 'tri-realm-v112';
 const ITEM_ICON_URLS = Object.values(ITEM_IMAGE_PATHS).map((path) => './' + path);
+const BACKGROUND_URLS = [
+  'shinobi', 'seas', 'soul', 'ki', 'hex', 'hunter', 'echo', 'rift',
+].map((name) => `./assets/backgrounds/realms/${name}.png`).concat([
+  'woodcutting', 'crafting', 'fishing', 'cooking', 'voyaging', 'mining', 'smithing', 'gravity',
+  'farming', 'exorcism', 'tracking', 'archaeology', 'restoration', 'bonding',
+].map((name) => `./assets/backgrounds/skills/${name}.png`), [
+  'shinobi', 'seas', 'soul', 'ki', 'hex', 'hunter', 'echo', 'rift',
+].map((name) => `./assets/backgrounds/combat/${name}.png`));
+const SKILL_SPRITE_URLS = [
+  'woodcutting', 'crafting', 'fishing', 'cooking', 'voyaging', 'mining', 'smithing', 'gravity',
+  'farming', 'exorcism', 'exorcism-wisp', 'tracking', 'tracking-trap', 'archaeology', 'restoration', 'bonding',
+].map((name) => `./assets/skill-sprites/${name}.png`);
 const SHELL = [
   './',
   './index.html',
@@ -22,6 +34,10 @@ const SHELL = [
   './css/anim-kaio-hex.css',
   './css/anim-hunt-echo.css',
   './css/anim-ui.css',
+  './css/background-art.css',
+  './css/chest.css',
+  './css/drops.css',
+  './css/character.css',
   './js/data.js',
   './js/worlds.js',
   './js/lore.js',
@@ -66,6 +82,7 @@ const SHELL = [
   './js/custom.js',
   './js/creatures.js',
   './js/arena.js',
+  './js/drops-ui.js',
   './js/seas-ui.js',
   './js/shinobi-ui.js',
   './js/soul-ui.js',
@@ -82,9 +99,11 @@ const SHELL = [
   './js/skillpage-ui.js',
   './js/spot-ui.js',
   './js/catch-fx.js',
+  './js/character-ui.js',
   './js/ui-systems.js',
   './js/tooltips.js',
   './js/reveal.js',
+  './js/chest-fx.js',
   './js/builds-ui.js',
   './js/story-ui.js',
   './manifest.webmanifest',
@@ -95,7 +114,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.concat(ITEM_ICON_URLS))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.concat(ITEM_ICON_URLS, BACKGROUND_URLS, SKILL_SPRITE_URLS))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

@@ -103,7 +103,8 @@ function stageHTML() {
     const size = cr && cr[1].size ? cr[1].size : 1;
     foe = `<div class="fighter enemy enter ${boss ? 'boss' : ''} ${cr ? 'foe-cr' : foeLook(e, realm) ? 'foe-stick' : 'foe-beast'} ${e.rank ? 'rank' + e.rank : ''}" style="--sz:${size}"><div class="f-art" data-portrait="enemy">${foeArtHTML(e, realm)}</div><div class="windmark">!</div></div>`;
   }
-  return `<div class="ar-hud">${meHud}<div class="vs"><span>VS</span></div>${foeHud || '<div class="fhud-empty"></div>'}</div>
+  return `<div class="arena-art-bg" data-combat-bg="${realm}" aria-hidden="true"></div>
+    <div class="ar-hud">${meHud}<div class="vs"><span>VS</span></div>${foeHud || '<div class="fhud-empty"></div>'}</div>
     <div class="ar-floor" style="--rc:${rc(realm)}">
       <div class="cb-amb" aria-hidden="true">${CB_AMB}</div>
       <div class="fighter me"><div class="f-art av-art" data-portrait="player">${avatarSVG(null, { ctx: 'battle' })}</div><div class="stunmark">${gi('circle-sparks')}</div></div>

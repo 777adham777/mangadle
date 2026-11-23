@@ -24,7 +24,7 @@ const SPICE_ORDER = ['salt', 'pepper', 'lemon', 'kelp', 'chili', 'saffron'];
 const SPICE_OF_ITEM = {};
 SPICE_ORDER.forEach((k, i) => {
   const s = SPICES[k];
-  defItem(s.item, s.name, '🧂', [3, 6, 10, 8, 14, 60][i], { type: 'spice', spice: k, rarity: [1, 1, 2, 2, 2, 4][i] });
+  defItem(s.item, s.name, '🧂', [3, 6, 10, 8, 14, 60][i], { type: 'spice', spice: k, rarity: [1, 1, 2, 2, 2, 3][i] });
   SPICE_OF_ITEM[s.item] = k;
 });
 // "+25% healing, +12% damage for 30s" (m scales the numbers: perfect dishes, Perfect Log bonus)

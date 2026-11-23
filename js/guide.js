@@ -16,9 +16,9 @@ const GUIDE = [
   { skill: 'woodcutting', nav: 'Open <b>Woodcutting</b>. Everything in the village starts with wood.', start: 'Click <b>Pine Log</b> to start chopping.', run: 'Woodcutting repeats on its own, even while the game is closed. No need to watch it: come back later and the logs are waiting.' },
   { skill: 'woodcutting', nav: 'Back to <b>Woodcutting</b>.', start: 'Keep chopping <b>Pine Logs</b>.', run: 'The undergrowth also gives <b>Healing Leaves</b>. Higher levels unlock new trees, and each tree has its own <b>Mastery</b>. Reach level 5 and the village carpenter will teach you to craft.' },
   { act: 'arts:training_kunai', nav: '<b>Crafting</b> is now open. Open it.', start: 'Click <b>Wooden Sword</b>. It uses 5 Pine Logs.', run: 'Your very first weapon is on the bench. Crafting turns wood, herbs and battle spoils into gear, pills and technique scrolls.' },
-  { equip: true, nav: 'Your sword is ready: open your <b>Bank</b>.' },
+  { equip: true, nav: 'Your sword is ready: open your <b>Character</b>.' },
   { act: 'arts:soldier_pill', nav: 'Back to <b>Crafting</b>.', start: 'Click <b>Soldier Pill</b>. Each one uses 2 Healing Leaves from your woodcutting.', run: 'Brew 5 pills and the instructors will let you fight. Out of leaves? Chop more Pine Logs, then come back.' },
-  { food: true, nav: 'Before you fight, pack your pills: open your <b>Bank</b>.' },
+  { food: true, nav: 'Before you fight, pack your pills: open your <b>Character</b>.' },
   { zone: 0, nav: 'Pills packed. Open the <b>Battlefield</b>.', start: 'Pick the <b>Training Grounds</b>. It is an Easy stage.', run: 'Combat is automatic. When your HP drops low you eat a pill on your own. Foes drop gold, chakra crystals and, now and then, a <b>technique scroll</b>.' },
   { zone: 0, nav: 'Back to the <b>Battlefield</b>.', start: 'Keep fighting at the <b>Training Grounds</b>.', run: 'A scroll is read at once and teaches a technique. It goes into a slot on its own and fires in battle when ready.' },
   { zone: 0, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight at the <b>Training Grounds</b>.', run: 'Every foe gives Character XP. Each level raises your five stats: Attack, Defense, Vitality, Speed and Luck.' },
@@ -48,7 +48,7 @@ const GUIDE = [
 /* ------------------------------------------------------------ feature gates */
 // Menus open through UNLOCKS (data.js), one at a time, with the objective that introduces them.
 const featureOpen = (f) => isUnlocked('feature:' + f);
-const VIEW_FEATURE = { 'hero:collection': 'collection', 'hero:avatar': 'avatar', power: 'power', market: 'market', battle: 'battle' };
+const VIEW_FEATURE = { 'hero:collection': 'collection', power: 'power', market: 'market', battle: 'battle' };
 const featureOfView = (key) => VIEW_FEATURE[key] || null;
 function lockedNote(id) {
   const u = UNLOCK_BY[id.includes(':') ? id : 'feature:' + id];
@@ -100,14 +100,12 @@ function guideStep() {
     if (S.ui.view !== 'battle') return nav;
     return { sels: [`[data-zone="${G.zone}"]`], text: G.start };
   }
+  // Equip objectives happen in the Character view: the slot on the paper doll, then Equip in its list.
   if (G.equip) {
-    if (S.ui.view !== 'hero') return nav;
-    if (selItem && ITEMS[selItem] && ITEMS[selItem].type === 'equip' && count(selItem)) return { sels: ['[data-equip]'], text: 'Click <b>Equip</b>. You fight with it from now on.' };
-    if (!['all', 'equip'].includes(S.ui.bank)) return { sels: ['[data-bankf="equip"]'], text: 'Open the <b>Gear</b> tab.' };
-    const sa = typeof selArmCopy === 'function' && selArmCopy();
-    if (sa && sa.u !== S.equipU) return { sels: ['[data-armeq]'], text: 'Click <b>Equip</b>. You fight with it from now on.' };
-    const a = S.arms.find((x) => x.u !== S.equipU);
-    return a ? { sels: [`.arm-rack [data-arm="${armKey(a)}"]`], text: `Click your <b>${ITEMS[a.id].name}</b>. The weapon you wield levels up and becomes unique.` } : null;
+    if (!onGoalView(go)) return nav;
+    if (S.ui.view !== 'character' || (typeof chSlot !== 'undefined' && chSlot !== 'weapon')) return { sels: ['[data-chslot="weapon"]'], text: 'Click the <b>Weapon</b> slot.' };
+    if (!S.arms.some((x) => x.u !== S.equipU)) return null;
+    return { sels: ['.ch-cands [data-armeq]'], text: 'Click <b>Equip</b>. You fight with it from now on.' };
   }
   if (G.exped) {
     if (S.exped.ships.length) return { sels: ['.harbour .ships', '#navquest'], info: true, text: `${G.run}<span class="cm-prog">${fmt(st.cur)} / ${fmt(st.g.n)}</span>` };
@@ -124,12 +122,11 @@ function guideStep() {
     return { sels: ['[data-alloc="chakra:1"]'], text: 'Click <b>+</b> to put energy into Chakra. Disciplines level up forever, even offline.' };
   }
   if (G.food) {
-    if (S.ui.view !== 'hero') return nav;
+    if (!onGoalView(go)) return nav;
     const id = Object.keys(S.items).find((k) => ITEMS[k].type === 'food');
     if (!id) return { sels: navSels('realm:shinobi:arts'), text: 'You have no pills left. Brew some in Crafting first.' };
-    if (selItem === id) return { sels: ['[data-setfood]'], text: 'Click <b>Equip as battle food</b>. In battle you eat it on your own when your HP gets low.' };
-    if (!['all', 'food'].includes(S.ui.bank)) return { sels: ['[data-bankf="food"]'], text: 'Open the <b>Consumables</b> tab.' };
-    return { sels: [`.bag-grid [data-sel="${id}"]`], text: `Click your <b>${ITEMS[id].name}</b>.` };
+    if (S.ui.view !== 'character' || (typeof chSlot !== 'undefined' && chSlot !== 'food')) return { sels: ['[data-chslot="food"]'], text: 'Click the <b>Food</b> slot.' };
+    return { sels: ['.ch-cands [data-setfood]'], text: 'Click <b>Equip</b>. In battle you eat it on your own when your HP gets low.' };
   }
   if (G.spice) {
     if (S.action && S.action.skill === 'cooking' && S.kitchen.spice) return run(G.run);
@@ -257,10 +254,10 @@ const INTRO = {
     go: 'realm:seas:cooking', btn: 'Start cooking' },
   'feature:battle': { icon: () => ui('battle'), kicker: 'New menu', title: 'The Battlefield',
     text: 'Armed and with pills in your pouch, the instructors let you train with real opponents. Combat runs on its own: you only prepare.',
-    points: [[() => ui('food'), 'Equip your pills', 'Bank → your Soldier Pills → Equip as battle food.'],
+    points: [[() => ui('food'), 'Equip your pills', 'Character → Food slot → Equip.'],
              [() => ui('hp'), 'Auto-eat', 'You eat when your HP drops low. Nothing left means a lost fight.'],
              [() => ui('gold'), 'Loot', 'Foes drop gold, gear and the materials for new worlds.']],
-    go: 'hero', btn: 'Equip my pills' },
+    go: 'character:food', btn: 'Equip my pills' },
 };
 function showIntro(id) {
   const I = INTRO[id];

@@ -299,9 +299,9 @@ const SCENES = {
 SCENES.rift = SCENES.hub;
 
 function sceneSVG(kind, cls) {
-  const f = SCENES[kind] || SCENES.hub;
-  sceneMotes.kind = SCENES[kind] ? kind : 'hub';
-  return `<svg class="scene-svg ${cls || ''}" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${f()}</svg>`;
+  const scene = SCENES[kind] ? kind : 'hub';
+  sceneMotes.kind = scene;
+  return `<div class="scene-svg scene-art scene-art-${scene} ${cls || ''}" aria-hidden="true"></div>`;
 }
 // Cache: scenes are deterministic, build each once.
 const SCENE_CACHE = {};

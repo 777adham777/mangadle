@@ -2103,19 +2103,13 @@ const playerAv = () => document.querySelector('[data-portrait="player"] svg.avat
 /* ================================================================ view */
 let avSlot = 'style', avPreview = '';
 const PREVIEWS = [['', 'Stance'], ['guard', 'Guard'], ['strike', 'Attack'], ['victory', 'Victory'], ['hurt', 'Hurt'], ['fish', 'Fishing'], ['cook', 'Cooking'], ['wood', 'Chopping']];
-function avatarHTML() {
+// The look is changed in the Character view (character-ui.js): the pose buttons under the figure,
+// then the cosmetic picker (one tab per slot, the worn one marked).
+const avPosesHTML = () => `<nav class="av-poses">${PREVIEWS.map(([k, l]) => `<button class="${avPreview === k ? 'on' : ''}" data-avpose="${k}">${l}</button>`).join('')}</nav>`;
+function avPickHTML() {
   const A = avState();
-  return `
-  ${ptitle('Hero', 'Avatar', heroTabs('avatar'))}
-  <div class="av-layout">
-    <section class="win av-stage">
-      <div class="av-floor" style="--ink:${cosOf('color', A.color).ink}">${avatarSVG(null, { ctx: 'preview', pose: avPreview || undefined, cls: 'big' })}</div>
-      <nav class="av-poses">${PREVIEWS.map(([k, l]) => `<button class="${avPreview === k ? 'on' : ''}" data-avpose="${k}">${l}</button>`).join('')}</nav>
-      <div class="av-worn">${COS_SLOTS.map(([s, l]) => `<button class="${s === avSlot ? 'on' : ''}" data-avslot="${s}"><small>${l}</small><b class="r${cosOf(s, A[s]).r}">${esc(cosOf(s, A[s]).name)}</b></button>`).join('')}</div>
-      <div class="av-foot"><span class="muted small">${cosCount()} / ${cosTotal()} found · only for looks, each earned from a feat</span>${gbtn('Random look', 'star', 'data-avrandom', 'dark')}</div>
-    </section>
-    <section class="win av-pick">
-      <nav class="seg av-tabs">${COS_SLOTS.map(([s, l]) => `<button class="${s === avSlot ? 'on' : ''}" data-avslot="${s}">${l}<em>${COSMETICS[s].filter((c) => cosOwned(s, c)).length}/${COSMETICS[s].length}</em></button>`).join('')}</nav>
+  return `<div class="av-head"><nav class="seg av-tabs">${COS_SLOTS.map(([s, l]) => `<button class="${s === avSlot ? 'on' : ''}" data-avslot="${s}">${l}<em>${COSMETICS[s].filter((c) => cosOwned(s, c)).length}/${COSMETICS[s].length}</em></button>`).join('')}</nav>
+      <div class="av-foot"><span class="muted small">${cosCount()} / ${cosTotal()} found</span>${gbtn('Random', 'star', 'data-avrandom', 'dark sm')}</div></div>
       <div class="av-grid">${COSMETICS[avSlot].map((c) => {
         const own = cosOwned(avSlot, c), on = A[avSlot] === c.id;
         const pose = avSlot === 'stance' ? c.id : undefined;
@@ -2123,10 +2117,8 @@ function avatarHTML() {
         return `<button class="av-card r${c.r} ${on ? 'on' : ''} ${own ? '' : 'locked'}" style="--ink:${tint}" ${own ? `data-cos="${avSlot}:${c.id}"` : ''} title="${esc(own ? c.name : c.hint || '')}">
           <span class="av-mini">${avatarSVG({ [avSlot]: c.id }, { still: true, pose, cls: own ? '' : 'dim' })}</span>
           <span class="av-rar">${COS_RARITY[c.r]}</span>${c.w && REALMS[c.w] ? `<span class="av-world" style="--wc:${REALMS[c.w].color}">${ic('realm', c.w)}${esc(REALMS[c.w].name)}</span>` : '<span class="av-world free">Basic</span>'}
-          <b>${esc(c.name)}</b><small>${on ? `${ui('check')} Worn` : own ? 'Click to wear' : `${ui('lock')} ${esc(c.hint)}`}</small></button>`;
-      }).join('')}</div>
-    </section>
-  </div>`;
+          <b>${esc(c.name)}</b><small>${on ? `${ui('check')} Worn` : own ? 'Wear' : `${ui('lock')} ${esc(c.hint)}`}</small></button>`;
+      }).join('')}</div>`;
 }
 
 /* ================================================================ input + announcements */
@@ -2157,6 +2149,6 @@ UPD.push(() => {
   S.avatar.seeded = 1;
   for (const [s] of COS_SLOTS) if (!cosOwned(s, cosOf(s, S.avatar[s]))) S.avatar[s] = COSMETICS[s][0].id;
   if (quiet || !avatarOn()) return;
-  for (const [s, c] of fresh) toast(`New cosmetic: ${c.name} (${COS_SLOTS.find((x) => x[0] === s)[1]}). Wear it in Bank → Avatar.`, 'rare');
-  if (fresh.length && S.ui.view === 'hero:avatar') dirty = true;
+  for (const [s, c] of fresh) toast(`New cosmetic: ${c.name} (${COS_SLOTS.find((x) => x[0] === s)[1]}). Wear it in Character → Look.`, 'rare');
+  if (fresh.length && S.ui.view === 'character:look') dirty = true;
 });

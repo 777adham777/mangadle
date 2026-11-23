@@ -1,0 +1,115 @@
+/* ==========================================================================
+   Character view (js/character-ui.js): paper doll, slot list with stat deltas,
+   stats + build. Built on the BIGUI skin (charcoal square panels).
+   ========================================================================== */
+.ch-layout {
+  display: grid; gap: 14px; align-items: start;
+  grid-template-columns: minmax(0, 380px) minmax(0, 1fr) minmax(0, 340px);
+  grid-template-areas: "doll list stats";
+}
+.ch-doll { grid-area: doll; padding: 0; overflow: hidden; }
+.ch-list { grid-area: list; min-width: 0; }
+.ch-stats { grid-area: stats; min-width: 0; }
+
+/* ---------- paper doll: gear slots on both sides of the figure */
+.ch-stage { display: grid; grid-template-columns: 72px minmax(0, 1fr) 72px; gap: 6px; align-items: center; padding: 12px 10px 8px; }
+.ch-col { display: flex; flex-direction: column; align-items: center; gap: 10px; }
+.ch-floor.av-floor { height: 300px; border: 0; background:
+  radial-gradient(ellipse 60% 22% at 50% 90%, rgba(232, 153, 44, 0.2), transparent 70%),
+  radial-gradient(circle at 50% 42%, color-mix(in srgb, var(--ink, #78c) 24%, transparent), transparent 62%),
+  linear-gradient(180deg, #17181d 0%, #111216 84%, #0c0d10 84.3%, #101115 100%); }
+.ch-floor.av-floor::after { top: 84%; }
+.ch-floor.av-floor .avatar { width: 100%; max-width: 250px; height: 100%; }
+.ch-slot { position: relative; display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 0; background: none; border: 0; color: var(--dim); cursor: pointer; font: inherit; }
+.ch-slot .tile { --ts: 62px; border-radius: 2px; }
+.ch-slot .tile .tile-art { border-radius: 2px; }
+.ch-slot small { font: 600 9.5px var(--display); letter-spacing: 0.12em; text-transform: uppercase; }
+.ch-slot:hover .tile { transform: translateY(-2px); box-shadow: 0 0 0 1px var(--line2), 0 6px 14px rgba(0, 0, 0, 0.45); }
+.ch-slot.on .tile { box-shadow: 0 0 0 2px var(--sel), 0 0 16px rgba(232, 153, 44, 0.45); }
+.ch-slot.on small { color: var(--sel); }
+.ch-slot.empty .tile { opacity: 0.75; }
+.ch-up { position: absolute; top: -5px; right: -5px; z-index: 2; width: 20px; height: 20px; display: grid; place-items: center; font-size: 12px; color: #0d1a07; background: var(--act); box-shadow: 0 0 0 2px #111216, 0 0 10px rgba(111, 207, 69, 0.6); animation: chUp 1.6s ease-in-out infinite; }
+@keyframes chUp { 50% { transform: translateY(-2px); } }
+@media (prefers-reduced-motion: reduce) { .ch-up { animation: none; } }
+
+/* level band under the figure */
+.ch-id { display: flex; align-items: center; gap: 12px; padding: 10px 14px 12px; border-top: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); }
+.ch-lvb { flex-shrink: 0; width: 54px; height: 54px; display: grid; place-content: center; text-align: center; background: linear-gradient(160deg, #2c2d33, #17181c); box-shadow: inset 0 0 0 1px var(--line2), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
+.ch-lvb small { font: 600 9.5px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+.ch-lvb b { font: 700 24px/1 var(--display); color: #fff; }
+.ch-idt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.ch-idt > b { font: 700 15px var(--display); letter-spacing: 0.04em; color: #f0f0f2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ch-idt .xpbar i { background: var(--sel); }
+.ch-idt small { font-size: 11.5px; color: var(--dim); }
+.ch-idt small em { font-style: normal; color: var(--mute); }
+.ch-doll .av-poses { padding: 0 12px 12px; }
+
+/* ---------- the slot panel: what you wear, then every candidate */
+.ch-worn { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; margin-bottom: 10px;
+  background: linear-gradient(90deg, rgba(232, 153, 44, 0.1), rgba(255, 255, 255, 0.02) 60%); border: 1px solid color-mix(in srgb, var(--sel) 40%, var(--line)); }
+.ch-worn.empty { background: rgba(255, 255, 255, 0.02); border-color: var(--line); }
+.ch-worn .tile { --ts: 64px; border-radius: 2px; }
+.chw-t { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.chw-t small { font: 600 10px var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--sel); }
+.ch-worn.empty .chw-t small { color: var(--dim); }
+.chw-t b { font: 700 17px var(--display); color: #fff; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chw-t .es-st { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12.5px; color: var(--dim); }
+.chw-t .es-st span { display: inline-flex; align-items: center; gap: 3px; }
+.chw-a { display: flex; flex-direction: column; gap: 6px; }
+.ch-cands { display: flex; flex-direction: column; gap: 6px; }
+.ch-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 7px 8px; background: var(--panel2); border: 1px solid var(--line); }
+.ch-row.better { border-color: color-mix(in srgb, var(--act) 40%, var(--line)); }
+.ch-row .tile { --ts: 50px; border-radius: 2px; }
+.chr-t { min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.chr-t b { font: 600 14px var(--display); color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chr-t small { font-size: 11.5px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.chr-d { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 2px; }
+.chd { display: inline-flex; align-items: center; gap: 3px; padding: 1px 6px; font: 700 12px/1.5 var(--display); letter-spacing: 0.02em; }
+.chd .gi { width: 12px; height: 12px; }
+.chd.up { color: #8ee86a; background: rgba(111, 207, 69, 0.13); }
+.chd.dn { color: #ff7d86; background: rgba(224, 71, 90, 0.13); }
+.chd.eq { color: var(--mute); background: rgba(255, 255, 255, 0.04); font-weight: 600; }
+.ch-list .empty-note { padding: 18px 10px; text-align: center; color: var(--dim); }
+
+/* ---------- look: the cosmetic picker */
+.ch-look .av-head { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.ch-look .av-tabs { margin-bottom: 0; }
+.ch-look .av-grid { grid-template-columns: repeat(auto-fill, minmax(124px, 1fr)); }
+
+/* ---------- stats */
+.ch-stats .hdr:not(:first-child) small { display: none; }
+.ch-stats .cstats { padding: 0; margin-bottom: 8px; }
+.ch-more { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; margin-bottom: 12px; }
+.ch-more .stat b { font-size: 17px; }
+
+/* ---------- Bank without the Equipment window */
+.hero-layout.bank-layout { grid-template-columns: minmax(0, 1fr) 360px; }
+
+/* ---------- responsive */
+@media (max-width: 1380px) {
+  .ch-layout { grid-template-columns: minmax(0, 360px) minmax(0, 1fr); grid-template-areas: "doll list" "stats list"; }
+  .hero-layout.bank-layout { grid-template-columns: minmax(0, 1fr) 320px; }
+  .hero-layout.bank-layout > .detail { grid-column: auto; position: sticky; max-height: calc(100dvh - var(--hud-h) - 40px); }
+}
+@media (max-width: 980px) {
+  .hero-layout.bank-layout { grid-template-columns: minmax(0, 1fr); }
+  .hero-layout.bank-layout > .detail { position: static; max-height: none; }
+}
+@media (max-width: 860px) {
+  .ch-layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "doll" "list" "stats"; }
+  .ch-stage { grid-template-columns: 66px minmax(0, 1fr) 66px; padding: 10px 8px 6px; }
+  .ch-slot .tile { --ts: 56px; }
+  .ch-floor.av-floor { height: 250px; }
+}
+@media (max-width: 420px) {
+  .ch-worn { grid-template-columns: auto minmax(0, 1fr); }
+  .chw-a { grid-column: 1 / -1; flex-direction: row; justify-content: flex-end; }
+  .ch-row > .gbtn { padding: 0 10px 0 8px; }
+  .ch-look .av-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 6px; }
+  .ch-look .av-card { padding: 6px 4px 8px; }
+  .ch-look .av-card .av-mini { height: 92px; }
+  .ch-look .av-card .av-mini .avatar { width: 74px; height: 92px; }
+  .ch-look .av-card .av-world { display: none; }
+  .ch-look .av-card b { font-size: 12px; line-height: 1.2; }
+  .ch-look .av-card small { font-size: 10.5px; }
+}

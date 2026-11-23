@@ -135,7 +135,7 @@ const seenItems = new Set();
 
 /* =============================================================== routing */
 function normalizeView() {
-  const legacy = { overview: 'home', combat: 'battle', bank: 'hero', shop: 'market', rebirth: 'power' };
+  const legacy = { overview: 'home', combat: 'battle', bank: 'hero', shop: 'market', rebirth: 'power', 'hero:avatar': 'character:look' };
   let v = legacy[S.ui.view] || S.ui.view || 'home';
   if (v.startsWith('skill:')) {
     const s = v.split(':')[1];
@@ -198,7 +198,7 @@ function navRow(key, icon, label, o) {
 }
 function renderRail() {
   const groups = [];
-  const quick = [['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['hero:collection', 'collection', 'Collection'], ['market', 'market', 'Market'], ['power', 'power', 'Energy'], ...UIX.quick.flatMap((f) => f()), ['settings', 'settings', 'Settings']];
+  const quick = [['home', 'home', 'Overview'], ['character', 'character', 'Character'], ['hero', 'bank', 'Bank'], ['hero:collection', 'collection', 'Collection'], ['market', 'market', 'Market'], ['power', 'power', 'Energy'], ...UIX.quick.flatMap((f) => f()), ['settings', 'settings', 'Settings']];
   groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => {
     const f = featureOfView(k);
     if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
@@ -215,7 +215,7 @@ function renderRail() {
   $('#rail').innerHTML = `<div class="nav-quest" id="navquest">${goalHTML()}</div>${groups.join('')}${nextUnlockHTML('nav-next')}`;
   $('#tabbar').innerHTML = [
     `<button class="tab-btn" data-menu>${ui('menu')}<span>Menu</span></button>`,
-    ...[['home', 'home', 'Overview'], ['hero', 'hero', 'Bank'], ['battle', 'battle', 'Battle'], ['market', 'market', 'Market']]
+    ...[['home', 'home', 'Overview'], ['character', 'character', 'Character'], ['battle', 'battle', 'Battle'], ['hero', 'bank', 'Bank']]
       .map(([k, icn, l]) => {
         const f = featureOfView(k);
         if (f && !featureOpen(f)) return `<button class="tab-btn locked" data-locked="${f}">${ui('lock')}<span>${l}</span></button>`;
@@ -377,7 +377,7 @@ function farmRates(skill, a) {
 }
 function combatRates() {
   const z = ZONES[S.combat.zone], e = z.enemies[0];
-  const kph = 3600 / (timeToKill(e) + (z.boss ? 3 : 1.2));
+  const kph = 3600 / (timeToKill(e) + (z.boss ? BOSS_RESPAWN : 1.2));
   return { z, kph, xph: kph * e.xp * 1.33 * xpMult(), goldh: kph * (e.gold[0] + e.gold[1]) / 2 * goldMult() };
 }
 // The big "now farming" block (overview + the active skill page).
@@ -443,7 +443,7 @@ VIEWS.home = () => {
       ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
     ${gateHTML() ? '' : nextUnlockHTML('win ov-next')}</div>
   <section class="win adv-win">${hdr('Adventurer')}
-    ${featureOpen('avatar') ? `<button class="adv-av" data-nav="hero:avatar" title="Customize your avatar">${avatarSVG(null, { ctx: 'auto' })}</button>` : ''}<div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Character', 'Lv ' + charLv())}${stat('Techniques', `${Object.keys(S.tech.lv).length} / ${Object.keys(TECHNIQUES).length}`)}</div>
+    ${featureOpen('avatar') ? `<button class="adv-av" data-nav="character:look" title="Customize your avatar">${avatarSVG(null, { ctx: 'auto' })}</button>` : ''}<div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Character', 'Lv ' + charLv())}${stat('Techniques', `${Object.keys(S.tech.lv).length} / ${Object.keys(TECHNIQUES).length}`)}</div>
   </section>`;
 };
 
@@ -575,6 +575,7 @@ VIEWS.battle = () => {
         ${uix('battleSide')}
         <section class="win log-win">${hdr('Battle log')}<div class="log" id="clog">${logHTML()}</div></section>
       </div>
+      ${UIX.battleBottom ? uix('battleBottom') : ''}
       <section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), synergiesFrom('character'))}</section>
     </div>
     <section class="win stages">${hdr('Stages')}<div class="stage-list">${groups}</div></section>
@@ -608,41 +609,19 @@ function logHTML() { return S.combat.log.map((l) => `<div class="${l.c}">${esc(l
 
 /* ------------------------------------------------------------- bank & gear */
 const heroTabs = (tab) => `<nav class="seg big-seg">
-  <button class="${!tab ? 'on' : ''}" data-nav="hero">${ui('hero')}<span>Bank & Gear</span></button>
-  ${featureOpen('avatar') ? `<button class="${tab === 'avatar' ? 'on' : ''}" data-nav="hero:avatar">${ui('avatar')}<span>Avatar</span></button>` : ''}
+  <button class="${!tab ? 'on' : ''}" data-nav="hero">${ui('bank')}<span>Bank</span></button>
   ${featureOpen('collection') ? `<button class="${tab === 'collection' ? 'on' : ''}" data-nav="hero:collection">${ui('collection')}<span>Collection</span><em>${Math.floor(collectionPct() * 100)}%</em></button>` : `<button class="locked" data-locked="collection" title="${esc(lockedNote('collection'))}">${ui('lock')}<span>Collection</span></button>`}</nav>`;
 // Bank filters: one per item family (KINDS), each in its family colour.
 const BAG_TABS = [['all', 'equip', 'All'], ...Object.keys(KINDS).map((k) => [k, 'k-' + k, KINDS[k].name])];
 VIEWS.hero = (tab) => {
   if (tab === 'collection') return collectionHTML();
-  if (tab === 'avatar') return avatarHTML();
   if (S.ui.bank !== 'all') S.ui.bank = KIND_OF[S.ui.bank] || 'all';   // older saves filtered by type
   const ids = Object.keys(S.items).filter((k) => S.ui.bank === 'all' || itemKind(k) === S.ui.bank)
     .sort((a, b) => rarity(b) - rarity(a) || ITEMS[b].value - ITEMS[a].value);
   const worth = Object.keys(S.items).reduce((a, k) => a + ITEMS[k].value * S.items[k], 0);
-  // Battle food: eaten automatically when HP gets low.
-  const foodSlot = () => {
-    const id = S.combat.food;
-    if (!id) return `<div class="eslot empty food"><span class="tile r0"><span class="tile-art">${ui('food')}</span></span><span class="es-t"><small>Battle food</small><b class="muted">Empty: you won't heal</b></span></div>`;
-    return `<div class="eslot food">${tile(id, `<span data-count="${id}">${fmt(count(id))}</span>`, { tag: 'button', attrs: `data-sel="${id}"` })}<span class="es-t"><small>Battle food</small><b>${ITEMS[id].name}</b><span class="es-st">+${foodHeal(id)} HP each</span></span><button class="mini-btn" data-unfood title="Unequip">${ui('close')}</button></div>`;
-  };
-  const slot = (s, label, icn) => {
-    const id = S.equip[s];
-    if (!id) return `<div class="eslot empty"><span class="tile r0"><span class="tile-art">${ui(icn)}</span></span><span class="es-t"><small>${label}</small><b class="muted">Empty</b></span></div>`;
-    if (s === 'weapon' && curArm()) return `<div class="eslot">${armTile(curArm())}<span class="es-t"><small>${label} · ${armTag(curArm())}</small><b>${ITEMS[id].name}</b><span class="es-st">${statInline(Object.assign({}, ITEMS[id].stats, { atk: armAtk(curArm()) }))}</span></span><button class="mini-btn" data-unequip="${s}" title="Unequip">${ui('close')}</button></div>`;
-    return `<div class="eslot">${tile(id, null, { tag: 'button', attrs: `data-sel="${id}"` })}<span class="es-t"><small>${label}</small><b>${ITEMS[id].name}</b><span class="es-st">${statInline(ITEMS[id].stats)}</span></span><button class="mini-btn" data-unequip="${s}" title="Unequip">${ui('close')}</button></div>`;
-  };
   return `
-  ${ptitle('Hero', 'Bank & Gear', heroTabs(tab))}
-  <div class="hero-layout">
-    <section class="win equip-win">
-      ${hdr('Equipment')}
-      <div class="eslots">${slot('weapon', 'Weapon', 'weapon')}${slot('armor', 'Armor', 'armor')}${slot('accessory', 'Accessory', 'accessory')}${featureOpen('battle') ? foodSlot() : ''}
-        ${S.fruit ? `<div class="eslot fruit">${tile(S.fruit, null)}<span class="es-t"><small>Devil Fruit · rank ${fruitRank()}</small><b>${ITEMS[S.fruit].name}</b></span></div>` : ''}</div>
-      ${hdr('Attributes')}
-      ${attrList([['atk', 'Max hit', fmt(pMaxHit())], ['def', 'Defense', fmt(pDef())], ['hp', 'Max HP', fmt(pMaxHp())], ['spd', 'Attack speed', pSpeed().toFixed(1) + 's'], ['gold', 'Gold bonus', '×' + goldMult().toFixed(2)], ['xp', 'XP bonus', '×' + xpMult().toFixed(2)]])}
-      ${UIX.equipBottom ? uix('equipBottom') : ''}
-    </section>
+  ${ptitle('Hero', 'Bank', heroTabs(tab))}
+  <div class="hero-layout bank-layout">
     <section class="win bag-win">
       <nav class="bag-tabs">${BAG_TABS.map(([k, icn, l]) => `<button class="${S.ui.bank === k ? 'on' : ''}${KINDS[k] ? ' k-' + k : ''}" data-bankf="${k}" title="${l}">${ui(icn)}<span>${l}</span></button>`).join('')}</nav>
       ${uix('bagTop')}<div class="bag-grid">${ids.length ? ids.map((k) => tile(k, `<span data-count="${k}">${fmt(S.items[k])}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: seenItems.has(k) ? '' : '<span class="new">New</span>' })).join('') : '<div class="empty-note">Nothing here yet.</div>'}</div>
@@ -1242,9 +1221,11 @@ document.addEventListener('click', (ev) => {
   else if ('closemodal' in d) { $('#modal').classList.remove('show', 'nofoot'); updateCoach(true); }
   else if (d.open) {
     const [id, q] = d.open.split(':');
-    const res = openChest(id, q === 'all' ? count(id) : 1);
+    const n = q === 'all' ? count(id) : 1;
+    // chest-fx.js plays the opening (falls back to the plain loot window while simulating)
+    const res = typeof chestOpenFx === 'function' ? chestOpenFx(id, n) : openChest(id, n);
     if (res) {
-      showLoot(`Opened ${res.n} × ${ITEMS[id].name}`, res);
+      if (typeof chestOpenFx !== 'function') showLoot(`Opened ${res.n} × ${ITEMS[id].name}`, res);
       if (!count(id)) selItem = null;
     }
   }

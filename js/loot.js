@@ -153,3 +153,36 @@ function computeSalvage() {
 }
 computeRarity();
 computeSalvage();
+
+/* ------------------------------------------------------------ drop rate pass */
+// Balance pass (2026-11-23): an Epic or Legendary drop must be an event. The rates above were set one by one
+// and, with Luck, Elites and boss farming, a player saw ~100 Epic+ drops an hour. Now the item's rarity caps
+// its chance per try, by kind of try. A regular foe dies every ~10 s, a boss every ~30-60 s, a ship brings one
+// haul a minute, a skill action takes ~3-6 s:
+//   Rare (3★) ~ a few an hour · Epic (4★) ~ one every hour or two · Legendary (5★) ~ one a day or two.
+// Progression items are never capped: world relics, gate offerings, schematics (learned once) and pets.
+const RATE_CAP = {
+  foe:  [1, 1, 1, 1 / 150, 1 / 1500, 1 / 12000],
+  boss: [1, 1, 1, 1 / 10,  1 / 300,  1 / 3000],
+  haul: [1, 1, 1, 1 / 100, 1 / 900,  1 / 9000],
+  find: [1, 1, 1, 1 / 300, 1 / 4000, 1 / 40000],
+};
+const OFFERED = new Set(Object.values(GATES).flatMap((g) => Object.keys(g.offer)));
+function capRates() {
+  const cap = (list, kind) => {
+    for (const d of list) {
+      const id = d[0], it = ITEMS[id];
+      if (id === 'GEM' || (it && (it.relic || it.type === 'schematic' || OFFERED.has(id)))) continue;
+      const r = id === 'FRUIT' ? 5 : it ? it.rarity : 0;
+      if (r >= 3) d[1] = Math.min(d[1], RATE_CAP[kind][r]);
+    }
+  };
+  for (const z of ZONES) for (const e of z.enemies) cap(e.drops, z.boss ? 'boss' : 'foe');
+  for (const a of SKILLS.voyaging.actions) cap(a.loot.rare, 'haul');
+  for (const k in RARE_FINDS) cap(RARE_FINDS[k], 'find');
+  cap(GLOBAL_RARE, 'find');
+  // Chests are the jackpot rolls: a Devil Fruit stays a long shot inside them too.
+  for (const id in ITEMS) if (ITEMS[id].type === 'chest') for (const l of ITEMS[id].loot) if (l[0] === 'FRUIT') l[1] = Math.min(l[1], 0.3);
+  for (const p of PETS) if (p.chance) p.chance = Math.min(p.chance, 1 / 150);
+}
+capRates();

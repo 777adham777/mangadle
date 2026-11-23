@@ -6,6 +6,34 @@
 
 const PICK_TITLE = { woodcutting: 'Trees', mining: 'Ore veins', archaeology: 'Dig sites' };
 
+// Each prop is a four-frame transparent PNG strip. Extra rows in the atlas become a
+// second prop (the ward's curse, and the hunter's trap) rather than a static scene SVG.
+const SKILL_PROP_ART = {
+  woodcutting: ['woodcutting'], arts: ['crafting'], fishing: ['fishing'], cooking: ['cooking'],
+  voyaging: [], mining: ['mining'], smithing: ['smithing'], gravity: ['gravity'],
+  farming: ['farming'], exorcism: ['exorcism', 'exorcism-wisp'], tracking: ['tracking', 'tracking-trap'],
+  archaeology: ['archaeology'], restoration: ['restoration'], bonding: ['bonding'],
+};
+
+function farmSpriteNodesHTML(P) {
+  const n = P.length;
+  return P.map((p, i) => {
+    const x = plotX(i, n), crop = p && CROP_BY[p.crop];
+    const k = crop ? Math.min(1, p.t / (crop.mins * 60)) : 0;
+    const frame = !p ? 0 : k < 0.15 ? 0 : k < 0.4 ? 1 : k < 0.7 ? 2 : 3;
+    return `<i class="skill-prop farm-plot" data-sprite="farming" data-owner-skill="farming" data-farm-plot="${i}" data-frame="${frame}" style="left:${(x / 8).toFixed(2)}%" ${p ? '' : 'hidden'}></i>`;
+  }).join('');
+}
+
+function skillPropLayerHTML(skill) {
+  const art = SKILL_PROP_ART[skill];
+  if (!art || !art.length) return '';
+  const inner = skill === 'farming'
+    ? farmSpriteNodesHTML(plots())
+    : art.map((sprite) => `<i class="skill-prop prop-${sprite}" data-sprite="${sprite}" data-owner-skill="${skill}" data-frame="0"></i>`).join('');
+  return `<div class="skill-prop-layer" data-skill-props="${skill}" aria-hidden="true">${inner}</div>`;
+}
+
 function pickRow(skill, a) {
   const st = actState(skill, a), f = farmRates(skill, a), o = wsOut(a);
   return `<button class="ws-row pk-row" data-act="${skill}:${a.id}" data-card="${skill}:${a.id}" data-state="${st}">
@@ -30,6 +58,13 @@ function skStageHTML(skill, scene, top) {
   const s = SKILLS[skill];
   let side = s.type === 'gather' || s.type === 'craft' ? pickerHTML(skill) : '';
   side += top;
+  const spotAt = scene.indexOf('<div class="spot ');
+  if (spotAt >= 0) {
+    const openEnd = scene.indexOf('>', spotAt);
+    if (openEnd >= 0) scene = scene.slice(0, openEnd + 1)
+      + `<div class="scene-art-bg" data-skill-bg="${skill}" aria-hidden="true"></div>${skillPropLayerHTML(skill)}`
+      + scene.slice(openEnd + 1);
+  }
   return `<div class="sk-stage ${side.trim() ? '' : 'solo'}"><div class="stg-scene">${scene}</div>${side.trim() ? `<div class="stg-side">${side}</div>` : ''}</div>`;
 }
 
@@ -82,4 +117,39 @@ document.addEventListener('click', (ev) => {
   S.ui.skTab[skill] = key;
   for (const b of $$('[data-sktab]', box)) b.classList.toggle('on', b === t);
   for (const p of $$('.sk-pane', box)) p.hidden = p.dataset.pane !== key;
+});
+
+function skillPropFrame(skill) {
+  if (skill === 'voyaging') {
+    const progress = typeof voyK === 'function' ? voyK() : -1;
+    return progress < 0 ? 0 : Math.min(3, Math.floor(Math.min(0.9999, progress) * 4));
+  }
+  if (skill === 'bonding' && !(S.action && S.action.skill === skill)) {
+    const E = S.echo || {};
+    return E.id ? (E.rush > 0 ? 3 : 2) : 0;
+  }
+  const a = S.action && S.action.skill === skill ? findAction(skill, S.action.id) : null;
+  if (!a) return 0;
+  const duration = actionTime(skill, a);
+  const progress = duration > 0 ? Math.min(0.9999, S.action.prog / duration) : 0;
+  return Math.min(3, Math.floor(progress * 4));
+}
+
+UPD.push(() => {
+  const farmLayer = $('.skill-prop-layer[data-skill-props="farming"]');
+  if (farmLayer) {
+    const P = plots(), nodes = $$('[data-farm-plot]', farmLayer);
+    if (nodes.length !== P.length) farmLayer.innerHTML = farmSpriteNodesHTML(P);
+    for (const node of $$('[data-farm-plot]', farmLayer)) {
+      const p = P[+node.dataset.farmPlot], crop = p && CROP_BY[p.crop];
+      const k = crop ? Math.min(1, p.t / (crop.mins * 60)) : 0;
+      const frame = !p ? 0 : k < 0.15 ? 0 : k < 0.4 ? 1 : k < 0.7 ? 2 : 3;
+      node.hidden = !p;
+      if (node.dataset.frame !== String(frame)) node.dataset.frame = String(frame);
+    }
+  }
+  for (const node of $$('.skill-prop[data-owner-skill]:not([data-farm-plot])')) {
+    const frame = skillPropFrame(node.dataset.ownerSkill);
+    if (node.dataset.frame !== String(frame)) node.dataset.frame = String(frame);
+  }
 });
