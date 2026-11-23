@@ -692,6 +692,8 @@ const UNLOCKS = [
     hint: () => 'Reach Smelting level 5', why: 'The smelter shows you how to refine your weapons with ingots and, later, awaken them. Pick a weapon in the Bank.' },
   { id: 'feature:renown',     name: 'Renown & Ascension', need: () => !!S.gates.soul,
     hint: () => 'Open Soul City', why: 'Word of you spreads across worlds. Every world now tracks your Renown.' },
+  { id: 'feature:huntlist',   name: 'Hunt List',       need: () => (!!S.gates.soul && skillLv('mining') >= 10) || !!(S.hlist && S.hlist.list && (S.hlist.list.length || S.hlist.done)),
+    hint: () => 'Reach Reishi Mining level 10 in Soul City', why: 'The Hunter Association sends you a provisional licence. Pin up to 3 items you want (Collection or Bank): the Hunt List tracks where they drop, your odds and how long they should take.' },
 ];
 const UNLOCK_TAIL = [{ id: 'realm:rift', name: 'The Rift', need: () => !!S.gates.rift, hint: gateHint('rift') }];
 // worlds.js pushes each new world's unlocks, then the Rift closes the list.

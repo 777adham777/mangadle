@@ -14,7 +14,7 @@
 
 /* ---------------------------------------------------------------- the away log */
 let AWAY = null;
-const AWAY_KEEP = { rare: 1, pet: 1, levelup: 1, kill: 1, schematic: 1, mission: 1, death: 1, technique: 1, card: 1, expedition: 1 };
+const AWAY_KEEP = { rare: 1, pet: 1, levelup: 1, kill: 1, schematic: 1, mission: 1, death: 1, technique: 1, card: 1, expedition: 1, hunted: 1 };
 function awayBegin() {
   if (AWAY) return AWAY;
   AWAY = { t: 0, ev: [], since: Date.now() };
@@ -34,6 +34,7 @@ EMIT_TAP = (ev, d) => {
   if (ev === 'death') { if (!d.rank) AWAY.ev.push({ k: 'death', t, name: d.name }); return; }
   if (ev === 'technique') { if (d.fresh) AWAY.ev.push({ k: 'tech', t, id: d.id }); return; }
   if (ev === 'card') { AWAY.ev.push({ k: 'card', t, id: d.id }); return; }
+  if (ev === 'hunted') { AWAY.ev.push({ k: 'hunt', t, id: d.id, real: d.real }); return; }
   if (ev === 'expedition') AWAY.ev.push({ k: 'ship', t, id: d.id, hauls: d.hauls });
 };
 

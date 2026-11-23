@@ -76,6 +76,7 @@ function defaultState() {
     tasks: { day: '', daily: [], week: '', weekly: [] },   // daily / weekly objectives (tasks.js)
     missions: { list: [], cur: null, paused: 0 },   // the Mission Board (missions.js)
     allies: { bond: {}, visits: 0 },    // allies' bonds (report.js)
+    hlist: { list: [], done: 0 },       // the Hunt List (huntlist.js)
     exped: { ships: [], dur: 600, food: true, repeat: true, last: null },   // expeditions.js           // seasoning picked in the Cooking spice rack (seas.js)
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),

@@ -415,7 +415,7 @@ function farmPanel() {
 const VIEWS = {};
 // Extension points filled by ui-systems.js: each entry returns HTML (or '').
 // realmScene: an animated scene under a skill's banner (seas-ui.js); when one is shown it carries the farm numbers.
-const UIX = { bagTop: [], quick: [], homeTop: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [], nowbar: [] };
+const UIX = { bagTop: [], quick: [], homeTop: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [], nowbar: [], colDetail: [] };
 const uix = (k, ...a) => UIX[k].map((f) => f(...a) || '').join('');
 
 /* ------------------------------------------------------------- overview */
@@ -691,7 +691,7 @@ function collectionHTML() {
     const it = ITEMS[selCol], got = S.found[selCol];
     const rec = it.type === 'schematic' ? schemRecipe(selCol) : null;
     const teach = rec ? attrList([['star', 'Teaches', `${ITEMS[it.teaches].name} · ${SKILLS[rec.skill].name} Lv ${rec.act.level}`]]) : '';
-    detail = `${itemHead(selCol, !got)}<div class="dt-body">${got && it.type === 'equip' ? attrList(statRows(it.stats)) : ''}${teach}${hdr('Where to find')}${sourcesHTML(selCol)}</div>`;
+    detail = `${itemHead(selCol, !got)}<div class="dt-body">${got && it.type === 'equip' ? attrList(statRows(it.stats)) : ''}${teach}${uix('colDetail', selCol)}${hdr('Where to find')}${sourcesHTML(selCol)}</div>`;
   }
   const real = (k) => ITEMS[k] && !ITEMS[k].variant;
   const found = Object.keys(S.found).filter(real).length + Object.keys(S.pets).length, all = Object.keys(ITEMS).filter(real).length + PETS.length;
