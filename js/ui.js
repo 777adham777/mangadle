@@ -431,9 +431,9 @@ VIEWS.home = () => {
   return `
   ${ptitle('Tri-Realm Idle', 'Overview')}
   <div class="ov-top">
-    <section class="win">${farm || `<div class="idle-big">${ui('sleep')}<div><b>Nothing is farming</b><p class="muted">Idle games only progress while an activity runs. Pick a skill in the menu, or follow the objective.</p>
-      ${goalState() && !goalState().done ? gbtn('Go to: ' + esc(goalState().g.text), 'play', `data-nav="${goalState().g.go}"`, 'sm') : ''}</div></div>`}</section>
-    <section class="win quest-win">${goalHTML()}</section>
+    <section class="win">${farm || (() => { const re = resumeInfo(); return `<div class="idle-big">${ui('sleep')}<div><b>Nothing is farming</b><p class="muted">Idle games only progress while an activity runs. Pick a skill in the menu, or follow the objective.</p>
+      ${re ? gbtn('Resume: ' + esc(re.name), 'play', re.attr, 'sm go') : ''}</div></div>`; })()}</section>
+    <section class="win quest-win phone-only">${goalHTML()}</section>
   </div>
   ${gateHTML()}
   ${uix('homeTop')}
@@ -565,8 +565,8 @@ VIEWS.battle = () => {
   ${ptitle('Battlefield', z ? z.name : 'Choose a stage', `<div class="cskills">${cskill('character')}</div>`)}
   <div class="battle-layout">
     <div class="battle-main">
-      ${z ? `<section class="win farm-win">${farmPanel()}</section>` : ''}
       <section id="stage" class="arena ${C.zone != null ? 'fighting' : ''}">${stageHTML()}</section>
+      ${z ? battleStrip() : ''}
       <div class="battle-row">
         <section class="win controls">
           ${hdr('Tactics')}
@@ -584,6 +584,14 @@ VIEWS.battle = () => {
     <section class="win stages">${hdr('Stages')}${uix('stagesTop')}<div class="stage-list">${groups}</div></section>
   </div>`;
 };
+// Arena first: HP lives on the fighters (stageHTML); the rates sit once, in one strip under the arena.
+function battleStrip() {
+  const c = combatRates(), food = S.combat.food;
+  const cell = (k, v) => `<div><small>${k}</small><b>${v}</b></div>`;
+  return `<div class="bstrip" style="--rc:${rc('combat')}">${cell('Kills / hour', '≈' + fmt(c.kph))}${cell('XP / hour', '≈' + fmt(c.xph))}${cell('Gold / hour', '≈' + fmt(c.goldh))}
+    ${cell('Food left', food && count(food) ? `<span data-count="${food}">${fmt(count(food))}</span>` : '<span class="bad">None</span>')}
+    <div class="bs-act">${gbtn('Retreat', 'stop', 'data-stopcombat', 'dark sm')}</div></div>`;
+}
 // The five character stats: base value (level + gear) and what it does once every multiplier applies.
 function charStatsHTML() {
   const row = (icn, name, val, eff, tip) => `<div class="cstat" title="${esc(tip)}"><span class="cst-ic">${ui(icn)}</span><b>${name}</b><em>${val}</em><small>${eff}</small></div>`;
@@ -797,7 +805,7 @@ function nowHTML() {
         <span class="nb-txt"><small>${s.name} · Lv <em data-lv="${skill}">${skillLv(skill)}</em></small><b>${esc(a.name)}</b></span></button>
       <span class="nb-prog"><span class="pbar"><i data-nowfill></i></span>
         <span class="nb-stats">${a.out ? `<span><b>${fmt(f.itemsh)}</b>/h</span>` : ''}<span><b>${fmt(f.xph)}</b> xp/h</span><span>Lv up <b data-nextlv>—</b></span>${a.in ? `<span>Left <b data-canmake>${fmt(f.can)}</b></span>` : ''}</span></span>
-      ${claim}${uix('nowbar')}<button class="mini-btn hot" data-stop title="Stop">${ui('stop')}</button></div>`;
+      ${claim}${uix('nowbar')}${journalBtn()}<button class="mini-btn hot" data-stop title="Stop">${ui('stop')}</button></div>`;
   }
   if (S.combat.zone != null) {
     const c = combatRates();
@@ -806,9 +814,22 @@ function nowHTML() {
         <span class="nb-txt"><small>Fighting</small><b>${c.z.name}</b></span></button>
       <span class="nb-prog"><span class="pbar hp"><i data-nowhp></i></span>
         <span class="nb-stats"><span>HP <b data-hpnow></b></span><span><b>≈${fmt(c.kph)}</b> kills/h</span><span><b>≈${fmt(c.xph)}</b> xp/h</span></span></span>
-      ${claim}${uix('nowbar')}<button class="mini-btn hot" data-stopcombat title="Retreat">${ui('stop')}</button></div>`;
+      ${claim}${uix('nowbar')}${journalBtn()}<button class="mini-btn hot" data-stopcombat title="Retreat">${ui('stop')}</button></div>`;
   }
-  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>Nothing is farming</b></span>${claim || (gs ? gbtn('Next: ' + esc(gs.g.text), 'play', `data-nav="${gs.g.go}"`, 'sm') : '')}${uix('nowbar')}</div>`;
+  // Idle: offer the last activity back. The objective lives in the sidebar; only phones (no sidebar) see it here.
+  const re = resumeInfo();
+  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>${re ? esc(re.name) : 'Nothing is farming'}</b></span>
+    ${re ? gbtn('Resume', 'play', re.attr, 'sm go nb-resume') : ''}${claim || (gs && !re && S.ui.view !== 'home' ? gbtn('Next: ' + esc(gs.g.text), 'play', `data-nav="${gs.g.go}"`, 'sm nb-goal') : '')}${uix('nowbar')}${journalBtn()}</div>`;
+}
+// The last thing that ran (kept in S.ui.last by update()), if it can run again.
+function resumeInfo() {
+  const L = S.ui.last;
+  if (!L) return null;
+  if (L[0] === 'z') { const z = ZONES[L[1]]; return z && zoneUnlocked(L[1]) ? { name: z.name, attr: `data-zone="${L[1]}"` } : null; }
+  const a = SKILLS[L[1]] && findAction(L[1], L[2]);
+  if (!a || !skillOpen(L[1])) return null;
+  const st = actState(L[1], a);
+  return st === 'locked' || st === 'missing' ? null : { name: a.name, attr: `data-act="${L[1]}:${L[2]}"` };
 }
 function goalHTML() {
   const st = goalState();
@@ -831,8 +852,38 @@ function renderSide() {
   for (const q of $$('#navquest, .quest-win')) q.innerHTML = goalHTML();
 }
 
-/* =============================================================== obtained feed */
+/* =============================================================== Le Fil: the one notification column */
+// Every notice goes here: loot counts up on one row per item (+1, +2… +14), new items get the NEW tag on that
+// same row, messages (level-ups, unlocks, warnings) take their own row. Rows fade; the Journal keeps them all.
+// 4-5★ drops still open the reveal (reveal.js). Settings → Notifications filters what reaches the screen.
 const feedRows = [];
+const JOURNAL = [];
+function journalAdd(icon, text, n, cls) {
+  const last = JOURNAL[0];
+  if (last && last.text === text && last.cls === (cls || '') && Date.now() - last.t < 60000) { last.n += n || 0; last.t = Date.now(); return; }
+  JOURNAL.unshift({ t: Date.now(), icon, text, n: n || 0, cls: cls || '' });
+  if (JOURNAL.length > 120) JOURNAL.length = 120;
+}
+const FEED_MAX = () => (matchMedia('(max-width: 860px)').matches ? 2 : 4);
+const fedAt = {};   // item name -> last time it reached the feed (the Collection message checks it)
+// Settings → Notifications: 'all' (default), 'new' (new items, rare and messages), 'rare' (rare and warnings only).
+function feedShows(kind, r) {
+  const lv = (S.ui.set && S.ui.set.notif) || 'all';
+  if (lv === 'all') return true;
+  if (kind === 'loot') return lv === 'new' ? r >= 4 : r >= 5;
+  if (kind === 'new') return lv === 'new' || r >= 4;
+  if (kind === 'msg') return true;
+  return true;
+}
+function feedTrim() {
+  const max = FEED_MAX();
+  while (feedRows.length > max) {
+    // gold makes way first, then the oldest row
+    const gi = feedRows.findIndex((x) => x.cls === 'g');
+    const o = feedRows.splice(gi >= 0 && gi < feedRows.length - 1 ? gi : 0, 1)[0];
+    clearTimeout(o.t); o.el.remove();
+  }
+}
 function feedAdd(icon, name, n, cls, r) {
   const box = $('#feed');
   let f = feedRows.find((x) => x.name === name && x.cls === (cls || ''));
@@ -841,24 +892,57 @@ function feedAdd(icon, name, n, cls, r) {
     $('b', f.el).textContent = (f.n > 0 ? '+' : '') + fmt(f.n);
     retrigger(f.el, 'bump');
     clearTimeout(f.t);
+    feedRows.splice(feedRows.indexOf(f), 1); feedRows.push(f); box.appendChild(f.el);
   } else {
     const el = document.createElement('div');
     el.className = `ob-row r${r || 1} ${cls || ''}`;
     el.innerHTML = `<span class="ob-ic">${icon}</span><span class="ob-name">${esc(name)}</span><b>${n > 0 ? '+' : ''}${fmt(n)}</b>`;
     box.appendChild(el);
-    f = { name, cls: cls || '', n, el };
+    f = { name, cls: cls || '', n, el, icon };
     feedRows.push(f);
-    while (feedRows.length > 5) { const o = feedRows.shift(); clearTimeout(o.t); o.el.remove(); }
+    feedTrim();
   }
-  f.t = setTimeout(() => { f.el.classList.add('out'); setTimeout(() => f.el.remove(), 400); const i = feedRows.indexOf(f); if (i >= 0) feedRows.splice(i, 1); }, 4200);
+  f.t = setTimeout(() => feedDrop(f), 4200);
   return f;
+}
+function feedDrop(f) {
+  f.el.classList.add('out'); setTimeout(() => f.el.remove(), 400);
+  const i = feedRows.indexOf(f); if (i >= 0) feedRows.splice(i, 1);
+}
+// A message row (what used to be a toast). Same text twice in a row counts up instead of stacking.
+function feedMsg(msg, cls) {
+  journalAdd(ui(TOAST_IC[cls] || 'info'), msg, 0, 'msg ' + (cls || ''));
+  const box = $('#feed');
+  let f = feedRows.find((x) => x.msg === msg);
+  if (f) { f.k++; $('b', f.el).textContent = '×' + f.k; retrigger(f.el, 'bump'); clearTimeout(f.t); }
+  else {
+    const el = document.createElement('div');
+    el.className = `ob-row msg ${cls || ''}`;
+    el.innerHTML = `<span class="ob-ic">${ui(TOAST_IC[cls] || 'info')}</span><span class="ob-name"></span><b></b>`;
+    el.querySelector('.ob-name').textContent = msg;
+    box.appendChild(el);
+    f = { msg, k: 1, el, name: null, cls: 'msg' };
+    feedRows.push(f);
+    feedTrim();
+  }
+  f.t = setTimeout(() => feedDrop(f), cls === 'bad' || cls === 'rare' ? 5200 : 4200);
 }
 const freshItems = new Set();
 const feedItem = (id, n) => {
-  const f = feedAdd(itemIc(id), ITEMS[id].name, n, '', rarity(id));
+  const r = rarity(id), fresh = freshItems.has(id);
+  journalAdd(itemIc(id), ITEMS[id].name, n, fresh ? 'new' : '');
+  fedAt[ITEMS[id].name] = Date.now();
+  if (!feedShows(fresh ? 'new' : 'loot', r)) return;
+  const f = feedAdd(itemIc(id), ITEMS[id].name, n, '', r);
   if (f && freshItems.delete(id)) retrigger(f.el, 'fresh');
 };
-const feedGold = (n, label) => feedAdd(ui('gold'), label || 'Gold', n, 'g', 3);
+const feedGold = (n, label) => { journalAdd(ui('gold'), label || 'Gold', n, 'g'); if (feedShows('loot', 1)) feedAdd(ui('gold'), label || 'Gold', n, 'g', 3); };
+const journalBtn = () => `<button class="mini-btn nb-journal" data-journal title="Journal: everything you got and every message">${ui('log')}</button>`;
+function journalHTML() {
+  const ago = (t) => { const m = Math.floor((Date.now() - t) / 60000); return m < 1 ? 'now' : m < 60 ? m + ' min' : Math.floor(m / 60) + ' h'; };
+  const rows = JOURNAL.map((j) => `<div class="jr-row ${j.cls}"><span class="jr-ic">${j.icon}</span><span class="jr-t">${j.cls.includes('new') ? '<em class="jr-new">New</em>' : ''}${esc(j.text)}</span>${j.n ? `<b>${j.n > 0 ? '+' : ''}${fmt(j.n)}</b>` : '<b></b>'}<time>${ago(j.t)}</time></div>`).join('');
+  return `<div class="journal"><h2>Journal</h2><p class="muted small">This session: loot, new finds and messages, newest first.</p><div class="jr-list">${rows || '<div class="empty-note">Nothing yet.</div>'}</div></div>`;
+}
 
 /* =============================================================== FX */
 let floatCount = 0;
@@ -966,7 +1050,7 @@ on('rare', (d) => {
   rareThisTick.add(d.id);
   setTimeout(() => rareThisTick.delete(d.id), 0);
   const it = ITEMS[d.id];
-  toast(`Rare find: ${it.name} (${d.source})`, 'rare');
+  journalAdd(itemIc(d.id), `Rare find: ${it.name} (${d.source})`, 0, 'msg rare');   // its own feed row + the reveal already say it
   if (!(typeof dropReveal === 'function' && dropReveal(d.id, d.source)) && rarity(d.id) >= 5) burst('Rare drop', it.name, itemIc(d.id), 'var(--gold)');
   sideDirty = true;
 });
@@ -978,7 +1062,8 @@ on('newitem', (id) => {
   freshItems.add(id);
   setTimeout(() => freshItems.delete(id), 1500);
   if (!featureOpen('collection') || ITEMS[id].variant) return;   // beginners: no Collection menu yet · variants have their own log
-  setTimeout(() => { if (!rareThisTick.has(id)) toast(`New in your Collection: ${ITEMS[id].name}`, 'good'); }, 0);
+  // Le Fil: the item's own row already carries the NEW tag; only a find with no row gets a message.
+  setTimeout(() => { if (!rareThisTick.has(id) && !(Date.now() - (fedAt[ITEMS[id].name] || 0) < 1500)) toast(`New in your Collection: ${ITEMS[id].name}`, 'good'); }, 0);
 });
 on('schematic', (id) => {
   const rec = schemRecipe(id), it = ITEMS[ITEMS[id].teaches];
@@ -1104,6 +1189,8 @@ function update() {
   for (const el of $$('[data-mfill]')) { const [s2, id] = el.dataset.mfill.split(':'); el.style.width = masteryProg(s2, id).p * 100 + '%'; }
 
   // activity bar + farm panel
+  if (S.action) S.ui.last = ['a', S.action.skill, S.action.id];
+  else if (S.combat.zone != null) S.ui.last = ['z', S.combat.zone];
   if (S.action) {
     const a = findAction(S.action.skill, S.action.id), T = actionTime(S.action.skill, a), b = xpInfo(S.action.skill);
     for (const el of $$('[data-nowfill]')) el.style.width = Math.min(100, (S.action.prog / T) * 100) + '%';
@@ -1187,6 +1274,7 @@ document.addEventListener('click', (ev) => {
   else if ('skiptips' in d) { S.ui.noTips = 1; clearCoach(); toast('Tips turned off. Turn them back on anytime in Settings.', 'good'); dirty = true; }
   else if ('toggletips' in d) { S.ui.noTips = S.ui.noTips ? 0 : 1; coachOk = {}; if (S.ui.noTips) clearCoach(); dirty = true; }
   else if ('rewelcome' in d) showWelcome();
+  else if ('journal' in d) openModal(journalHTML(), 'Close');
   else if (d.nav) setView(d.nav);
   else if (d.act) {
     const [s, id] = d.act.split(':');
@@ -1268,16 +1356,7 @@ document.addEventListener('keydown', (ev) => { if (ev.key === 'Escape') { docume
 
 /* =============================================================== toasts */
 const TOAST_IC = { good: 'check', bad: 'close', rare: 'rare' };
-notify = (msg, cls) => {
-  const box = $('#toasts');
-  const el = document.createElement('div');
-  el.className = 'toast ' + (cls || '');
-  el.innerHTML = `<i>${ui(TOAST_IC[cls] || 'info')}</i><span></span>`;
-  el.lastChild.textContent = msg;
-  box.appendChild(el);
-  while (box.children.length > 3) box.firstChild.remove();
-  setTimeout(() => { el.classList.add('out'); setTimeout(() => el.remove(), 400); }, 3200);
-};
+notify = (msg, cls) => feedMsg(msg, cls);
 
 /* =============================================================== boot / loop */
 function saveGame() { try { localStorage.setItem(SAVE_KEY, serialize()); } catch (e) { /* storage unavailable */ } }

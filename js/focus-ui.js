@@ -156,7 +156,7 @@ document.addEventListener('click', (ev) => {
 // The activity bar drops its progress and numbers while you look at that skill's page: the panel shows them.
 UPD.push(() => {
   const nb = $('#nowbar');
-  if (nb) nb.classList.toggle('here', !!(S.action && S.ui.view === skillView(S.action.skill) && $('[data-focus]')));
+  if (nb) nb.classList.toggle('here', !!((S.action && S.ui.view === skillView(S.action.skill) && $('[data-focus]')) || (S.combat.zone != null && S.ui.view === 'battle')));
   const el = $('[data-focus]');
   if (!el) return;
   const skill = el.dataset.focus;
