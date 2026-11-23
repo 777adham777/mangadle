@@ -3,8 +3,10 @@
    TRI-REALM IDLE — battle arena
    A side-on fighting stage: a HUD with both health bars on top, and a floor
    where your stick figure and the foe stand facing each other.
-   Humanoid foes are stick figures dressed in their own colours and gear;
-   beasts and monsters are drawn creatures (creatures.js).
+   Every foe is a painted sprite (js/monster-art.js, made by tools/slice_monster_sheet.py),
+   animated in CSS: it breathes, coils before a blow, lunges, flashes when hit, falls.
+   Variants: Hardcore and Rift Tear foes use their own image, Ascension tiers recolour it.
+   Without a sprite, a foe falls back to its drawn creature (creatures.js) or stick figure.
    The foe's HUD reads its kit (foes.js): role, weakness, traits, statuses,
    the move it is winding up, boss phases and shield.
    Loaded after avatar.js and creatures.js, before ui-systems.js.
@@ -55,9 +57,29 @@ function foeLook(e, realm) {
 }
 const ELEM_ICON = { fire: 'fire', lightning: 'lightning-trio', wind: 'wingfoot', bleed: 'fangs', drain: 'heart-plus' };
 const ELEM_NAME = { fire: 'Fire', lightning: 'Lightning', wind: 'Wind', bleed: 'Bleed', drain: 'Drain' };
-// Foe portrait: its drawn creature, its dressed stick figure, or its icon.
+// Sprite size on the floor: the sheet cell maps to FOE_PX (guardians: BOSS_PX), times the foe's size
+// class from docs/MONSTER-SPRITES.md (the generator drew nearly everything at full height).
+const FOE_PX = 290, BOSS_PX = 360, SIZE_K = { S: 0.65, M: 0.85, L: 1 };
+const FOE_SIZE = {
+  'Golem': 'L', 'Cannon Brute': 'L', 'Merfolk': 'L', 'Leviathan': 'L', 'Towering': 'L', 'Lancer': 'L', 'Raging Ape': 'L', 'Commander': 'L',
+  'Horned Mutant': 'L', 'Bound Corpse': 'L', 'Elder Curse': 'L', 'Wyvern': 'L', 'Ruin Guardian': 'L', 'Feral Chimera': 'L', 'Living Statue': 'L',
+  'Pillar Warrior': 'L', 'Wind Pillar': 'L', 'Sprout Fiend': 'S',
+};
+const foeSize = (n) => { for (const k in FOE_SIZE) if (n.includes(k)) return FOE_SIZE[k]; return 'M'; };
+function foeSprite(e) {
+  const n = e.base || e.name, m = typeof MONSTER_ART !== 'undefined' && MONSTER_ART[n];
+  if (!m) return null;
+  const torn = !m.boss && e.name !== n && /^Torn /.test(e.name), v = torn ? '-torn' : e.hard ? '-hard' : '';
+  const px = m.boss ? BOSS_PX * m.h : FOE_PX * m.h * SIZE_K[foeSize(n)];
+  return { src: `assets/monsters/${m.p}${v}.webp`, h: Math.round(px), a: m.a };
+}
+// Foe portrait: its sprite, else its drawn creature, its dressed stick figure, or its icon.
 function foeArtHTML(e, realm, opts) {
-  const n = e.base || e.name;
+  const n = e.base || e.name, sp = foeSprite(e);
+  if (sp) {
+    const t = realm && typeof ascTier === 'function' && !(opts && opts.still) ? ascTier(realm) : 0;
+    return `<img class="foe-png ${t ? 'asc' + t : ''}" src="${sp.src}" alt="${esc(n)}" draggable="false">`;
+  }
   if (creatureOf(n)) return creatureSVG(n, opts);
   const look = foeLook(e, realm);
   return look ? avatarSVG(look.over, Object.assign({ ctx: 'enemy', flip: true, weapon: look.weapon }, opts && opts.still ? { still: true } : {})) : `<span class="creature">${ic('enemy', n)}</span>`;
@@ -66,6 +88,7 @@ function foeArtHTML(e, realm, opts) {
 /* ------------------------------------------------------------- markup */
 const foeAv = () => document.querySelector('[data-portrait="enemy"] svg.avatar');
 const foeCr = () => document.querySelector('[data-portrait="enemy"] svg.cr');
+const foePng = () => document.querySelector('[data-portrait="enemy"] img.foe-png');
 const meFighter = () => document.querySelector('.ar-floor .fighter.me');
 const foeFighter = () => document.querySelector('.ar-floor .fighter.enemy');
 // A chip: icon + short label, tooltip on hover.
@@ -93,7 +116,7 @@ function stageHTML() {
   if (!z) foe = `<div class="f-empty">${ui('map')}<b>Choose a stage</b><small>Start with an <em>Easy</em> one in the list.</small></div>`;
   else if (!e) foe = `<div class="f-empty searching">${ui('battle')}<b>Searching for a foe…</b></div>`;
   else {
-    const boss = z.boss, K = kitOf(e), n = e.base || e.name, cr = creatureOf(n);
+    const boss = z.boss, K = kitOf(e), n = e.base || e.name, sp = foeSprite(e), cr = !sp && creatureOf(n);
     const ticks = K && K.phases ? '<s style="left:66%"></s><s style="left:33%"></s>' : '';
     foeHud = `<div class="fhud enemy f-body ${boss ? 'boss' : ''}"><div class="f-name"><b>${boss ? '<span class="boss-tag">Boss</span>' : e.rank ? `<span class="boss-tag ${e.rank === 2 ? '' : 'elite'}">${e.rank === 2 ? 'Mini-boss' : 'Elite'}</span>` : ''}${e.name}</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(e.atk)}</span><span title="Defense">${ui('def')}${fmt(e.def)}</span><span title="Attack speed">${ui('spd')}${e.spd}s</span></span></div>
       <div class="hpbar enemy"><i data-ehp></i><b class="shieldbar" data-eshield></b>${ticks}<span data-ehptext></span></div>
@@ -101,7 +124,8 @@ function stageHTML() {
       <div class="ftags">${foeTagsHTML(e)}</div><div class="stchips foe" data-est></div>
       <div class="drops">${e.drops.map(([id, ch]) => tile(id, fmtRate(ch < 0.2 ? ch * luckMult() : ch), { cls: 'xs ' + (id !== 'FRUIT' && !S.found[id] ? 'dim' : '') })).join('')}${tile(null, fmt(e.gold[0]) + '+', { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}</div></div>`;
     const size = cr && cr[1].size ? cr[1].size : 1;
-    foe = `<div class="fighter enemy enter ${boss ? 'boss' : ''} ${cr ? 'foe-cr' : foeLook(e, realm) ? 'foe-stick' : 'foe-beast'} ${e.rank ? 'rank' + e.rank : ''}" style="--sz:${size}"><div class="f-art" data-portrait="enemy">${foeArtHTML(e, realm)}</div><div class="windmark">!</div></div>`;
+    const kind = sp ? 'foe-png' : cr ? 'foe-cr' : foeLook(e, realm) ? 'foe-stick' : 'foe-beast';
+    foe = `<div class="fighter enemy enter ${boss ? 'boss' : ''} ${kind} ${e.rank ? 'rank' + e.rank : ''}" style="--sz:${size}${sp ? `;--mh:${sp.h};--ma:${sp.a}` : ''}"><div class="f-art" data-portrait="enemy">${foeArtHTML(e, realm)}</div><div class="windmark">!</div></div>`;
   }
   return `<div class="arena-art-bg" data-combat-bg="${realm}" aria-hidden="true"></div>
     <div class="ar-hud">${meHud}<div class="vs"><span>VS</span></div>${foeHud || '<div class="fhud-empty"></div>'}</div>
@@ -198,7 +222,7 @@ const CB_REACH = { blade: 0.42, quick: 0.3, heavy: 0.42, spear: 0.62, fist: 0.26
 const cbOk = () => inBattleView() && !document.hidden && !!document.querySelector('.ar-floor');
 const cbFloorEl = () => document.querySelector('.ar-floor');
 // side 'p' (you) or 'e' (the foe): its drawing, its family, its fighter box
-const cbArt = (side) => (side === 'p' ? playerAv() : foeAv() || foeCr() || document.querySelector('.ar-floor .fighter.enemy .creature'));
+const cbArt = (side) => (side === 'p' ? playerAv() : foeAv() || foePng() || foeCr() || document.querySelector('.ar-floor .fighter.enemy .creature'));
 function cbFamOf(side) {
   if (side === 'p') return cbFam(S.equip && S.equip.weapon);
   const av = foeAv();
@@ -398,7 +422,7 @@ function cbLand(att, v, d, at, big) {
 function cbPre(side, v, left) {
   const av = side === 'p' ? playerAv() : foeAv(), k = Math.min(1, Math.max(0.3, (left * 1000) / (v.lead || 1)));
   if (av && v.pre.length) avPlay(av, cbScale(v.pre, k));
-  if (!av && side === 'e') { const c = foeCr(); if (c) c.classList.add('cb-coil'); }
+  if (!av && side === 'e') { const c = foePng() || foeCr(); if (c) c.classList.add('cb-coil'); }
   cbDash(side, v.fam, Math.round(v.lead * k), 120);
 }
 function cbSwing(side, d) {
@@ -415,7 +439,7 @@ function cbSwing(side, d) {
   const big = d.crit || share >= (side === 'p' ? 0.18 : 0.12) ? (share >= 0.3 ? 2 : 1) : 0;
   const post = v.post.map((s, i) => (i === 0 && big ? [s[0], s[1] + 50, s[2]] : s));
   if (av) avPlay(av, seq.concat(post));
-  if (side === 'e' && !av) { const c = foeCr(); if (c) { c.classList.remove('cb-coil'); retrigger(c, 'atk'); } }
+  if (side === 'e' && !av) { const c = foePng() || foeCr(); if (c) { c.classList.remove('cb-coil'); retrigger(c, 'atk'); } }
   if (v.proj) cbProj(side, v.proj, v.fly, lag);
   const at = lag + (v.proj && !avCalm() ? v.fly : 0);
   cbLand(side, v, d, at, big);

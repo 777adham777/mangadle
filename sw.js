@@ -1,8 +1,8 @@
 /* Service worker: makes the game installable and playable offline.
    Bump VERSION on every deploy so players get the new files. */
-importScripts('./js/item-images.js');
+importScripts('./js/item-images.js', './js/monster-art.js');
 
-const VERSION = 'tri-realm-v131';
+const VERSION = 'tri-realm-v132';
 const ITEM_ICON_URLS = Object.values(ITEM_IMAGE_PATHS).map((path) => './' + path);
 const BACKGROUND_URLS = [
   'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
@@ -89,6 +89,7 @@ const SHELL = [
   './js/hair2.js',
   './js/custom-pack.js',
   './js/custom.js',
+  './js/monster-art.js',
   './js/creatures.js',
   './js/arena.js',
   './js/drops-ui.js',
@@ -131,7 +132,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.concat(ITEM_ICON_URLS, BACKGROUND_URLS, SKILL_SPRITE_URLS))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.concat(ITEM_ICON_URLS, MONSTER_ART_URLS, BACKGROUND_URLS, SKILL_SPRITE_URLS))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

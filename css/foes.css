@@ -40,6 +40,24 @@
 .ar-floor .fighter.enemy.foe-cr .f-art { position: relative; }
 .ar-floor .fighter.enemy.foe-cr.down .f-art { animation: crDown 0.7s ease-in forwards; transform-origin: 50% 95%; }
 @keyframes crDown { 30% { transform: translateX(10px) scale(1.04, 0.92); } 100% { transform: translateX(20px) scale(0.6, 0.15); opacity: 0; filter: brightness(2.5); } }
+/* painted sprites (js/monster-art.js): sized by the arena (--mh px tall, --ma width / height), feet on the floor */
+.ar-floor .fighter.enemy.foe-png { --ak: 1; height: calc(var(--mh) * 1px * var(--ak) * var(--sz, 1)); width: calc(var(--mh) * var(--ma) * 1px * var(--ak) * var(--sz, 1)); right: 9%; bottom: 3%; }
+.ar-floor .fighter.enemy.foe-png .f-art { position: relative; }
+.ar-floor .fighter.enemy.foe-png .f-art::after { content: ''; position: absolute; left: 14%; right: 14%; bottom: -3px; height: 12px; border-radius: 50%; background: rgba(0, 0, 0, 0.42); z-index: -1; }
+.foe-png { display: block; width: 100%; height: 100%; object-fit: contain; object-position: 50% 100%; transform-origin: 50% 100%;
+  filter: drop-shadow(0 0 1.5px rgba(10, 10, 16, 0.9)); user-select: none; -webkit-user-drag: none; }
+.ar-floor .foe-png { animation: pngBreath 2.8s ease-in-out infinite; }
+.ar-floor .boss .foe-png { animation-duration: 3.6s; }
+.ar-floor .foe-png.cb-coil { animation: none; transform: translateX(10px) scale(1.03, 0.95); transition: transform 0.25s ease-out; }
+.ar-floor .foe-png.atk { animation: pngAtk 0.42s cubic-bezier(0.2, 0.9, 0.3, 1); }
+@keyframes pngBreath { 50% { transform: scale(1.015, 0.985); } }
+@keyframes pngAtk { 0% { transform: translateX(10px) scale(1.03, 0.95); } 35% { transform: translateX(-22px) scale(0.97, 1.04) rotate(-2deg); } 100% { transform: none; } }
+/* Ascension tiers recolour the foe: Ascended gold, Exalted azure, Mythic violet */
+.foe-png.asc1 { filter: sepia(0.6) saturate(1.7) drop-shadow(0 0 2px #ffd36a) drop-shadow(0 0 8px rgba(255, 200, 80, 0.55)); }
+.foe-png.asc2 { filter: sepia(0.6) hue-rotate(165deg) saturate(1.8) drop-shadow(0 0 2px #6fd6ff) drop-shadow(0 0 8px rgba(90, 190, 255, 0.55)); }
+.foe-png.asc3 { filter: sepia(0.6) hue-rotate(225deg) saturate(2) drop-shadow(0 0 2px #e07bff) drop-shadow(0 0 10px rgba(200, 90, 255, 0.6)); }
+.bst-art .foe-png { width: auto; height: 100%; max-width: 100%; }
+@media (prefers-reduced-motion: reduce) { .ar-floor .foe-png, .ar-floor .foe-png.atk { animation: none; } }
 /* Elite / Alpha glow */
 .ar-floor .fighter.enemy.rank1 .f-art { filter: drop-shadow(0 0 10px rgba(122, 196, 255, 0.75)); }
 .ar-floor .fighter.enemy.rank2 .f-art { filter: drop-shadow(0 0 14px rgba(255, 140, 60, 0.9)); }
@@ -130,6 +148,7 @@
 
 @media (max-width: 700px) {
   .ar-floor .fighter.enemy.foe-cr { width: calc(180px * var(--sz, 1)); height: calc(150px * var(--sz, 1)); right: 2%; }
+  .ar-floor .fighter.enemy.foe-png { --ak: 0.75; right: 2%; }
   .fchip em { display: none; }
   .phase-banner b { font-size: 19px; }
 }

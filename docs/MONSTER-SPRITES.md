@@ -469,3 +469,17 @@ STYLE (matching the attached background art):
 BOSS:
 The Unbound: a shapeless hunger with no fixed form, a towering hooded mass of deep night-violet darkness (#14102A) whose surface is speckled with tiny pink stars (#FFD0EE), many glowing magenta eyes (#FF5BD8) of different sizes scattered over its body, a broken violet halo ring (#8B2BD6) floating behind its head, long ragged claw-arms reaching forward, its lower body tapering into torn ribbons down to the ground line.
 ```
+
+---
+
+## État (2026-11-23) : intégré
+
+Les 12 planches ont été générées (ChatGPT a choisi un rendu pixel art plutôt que le cel-shading demandé ;
+l'ensemble est cohérent, il est gardé tel quel) et découpées par `tools/slice_monster_sheet.py` :
+`assets/monsters/<monde>/<id>.webp`, `-hard.webp`, `-torn.webp` (pas de Torn pour les gardiens), et
+`js/monster-art.js`. Le découpage suit les formes (chaque dessin connexe va au monstre dont la case contient
+son centre), car les monstres larges débordent de leur case. Les tailles de classe S / M / L n'ont pas été
+respectées par le générateur : le jeu les applique lui-même (`FOE_SIZE` dans `js/arena.js`).
+
+Pour refaire un monstre : régénérer la planche (ou la case), l'enregistrer dans `art-incoming/monsters/`, puis
+`python tools/slice_monster_sheet.py <planche>` (`--dry` pour l'aperçu `<planche>-preview.png` seul).
