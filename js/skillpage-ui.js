@@ -6,7 +6,7 @@
 
 const PICK_TITLE = { woodcutting: 'Trees', mining: 'Ore veins', archaeology: 'Dig sites' };
 
-// Each prop is a four-frame transparent PNG strip, placed where the avatar's tool lands
+// Each prop is a four-frame transparent WebP strip, placed where the avatar's tool lands
 // (css/background-art.css). The hunter also gets a second prop (the trap). Fishing and
 // Cooking keep their own game screen (spot-ui.js), Voyaging draws its ship sprite in
 // seas-ui.js, Bonding keeps the player's drawn Echo and Exorcism its drawn curse.

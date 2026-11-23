@@ -535,7 +535,7 @@ const CS_BOX = { x: 196, y: 58, h: 194 };
 const CS_FLOOR = 246;
 const CS_W = rigToSpot(CS_BOX, CS_WK);                 // the work spot on the bench, scene coordinates
 const CS_TOP = Math.round(rigToSpot(CS_BOX, [0, CS_WK[1] + 2.5])[1]);   // the bench's top surface
-const CS_GHOST = [392, 112];                           // where the item takes shape
+const CS_GHOST = [308, 132];                           // where the item takes shape above the bench
 const CS_RACK = { x: 610, w: 160, y: 188 };            // the shelf finished items land on
 const csHash = (s) => { let h = 0; for (const c of s) h = (h * 31 + c.charCodeAt(0)) >>> 0; return h; };
 const csPick = (id, list) => list[csHash(id) % list.length];

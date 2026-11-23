@@ -2,7 +2,7 @@
    Bump VERSION on every deploy so players get the new files. */
 importScripts('./js/item-images.js');
 
-const VERSION = 'tri-realm-v127';
+const VERSION = 'tri-realm-v128';
 const ITEM_ICON_URLS = Object.values(ITEM_IMAGE_PATHS).map((path) => './' + path);
 const BACKGROUND_URLS = [
   'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
@@ -13,7 +13,7 @@ const BACKGROUND_URLS = [
 const SKILL_SPRITE_URLS = [
   'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
   'farming', 'exorcism', 'tracking', 'tracking-trap', 'archaeology', 'restoration',
-].map((name) => `./assets/skill-sprites/${name}.png`);
+].map((name) => `./assets/skill-sprites/${name}.webp`);
 const SHELL = [
   './',
   './index.html',

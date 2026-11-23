@@ -25,10 +25,14 @@
 .spot .scene-art-bg ~ .spot-hud,
 .spot .scene-art-bg ~ .sx-meter { z-index: 6; }
 
-/* Props: 4-frame strips cut to the drawing (tools/build_skill_sprite_strips.py), so each one
-   keeps its own aspect ratio. Placed by centre x (left + translate) and ground line (bottom),
-   sized by height so they stay in proportion with the 60%-tall avatar. */
+/* Props: 4-frame strips painted in each scene's style (art-incoming/props/BRIEF.md), cut from
+   2x2 sheets by tools/build_skill_prop_sheets.py, so each one keeps its own aspect ratio.
+   Placed by centre x (left + translate) and ground line (bottom), sized by height so they stay
+   in proportion with the 60%-tall avatar. The art has no cast shadow: the second background
+   layer is a soft contact shadow on the ground line, under the drawing. */
 .skill-prop {
+  --prop-shadow: radial-gradient(closest-side, rgba(10, 8, 20, 0.42), rgba(10, 8, 20, 0.18) 60%, transparent);
+  --shadow-w: 78%;
   position: absolute;
   display: block;
   width: auto;
@@ -36,47 +40,46 @@
   aspect-ratio: 1;
   translate: -50% 0;
   background-repeat: no-repeat;
-  background-position: 0% 50%;
-  background-size: 400% 100%;
+  background-position: 0% 50%, 50% 100%;
+  background-size: 400% 100%, var(--shadow-w) 9%;
   transform-origin: 50% 100%;
-  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
 }
 .skill-prop[hidden] { display: none !important; }
-.skill-prop[data-frame="0"] { background-position-x: 0%; }
-.skill-prop[data-frame="1"] { background-position-x: 33.3333%; }
-.skill-prop[data-frame="2"] { background-position-x: 66.6667%; }
-.skill-prop[data-frame="3"] { background-position-x: 100%; }
-.skill-prop[data-sprite="woodcutting"] { background-image: url('../assets/skill-sprites/woodcutting.png'); aspect-ratio: 0.781; }
-.skill-prop[data-sprite="crafting"] { background-image: url('../assets/skill-sprites/crafting.png'); aspect-ratio: 1.103; }
-.skill-prop[data-sprite="voyaging"] { background-image: url('../assets/skill-sprites/voyaging.png'); aspect-ratio: 0.994; }
-.skill-prop[data-sprite="mining"] { background-image: url('../assets/skill-sprites/mining.png'); aspect-ratio: 1.059; }
-.skill-prop[data-sprite="smithing"] { background-image: url('../assets/skill-sprites/smithing.png'); aspect-ratio: 0.912; }
-.skill-prop[data-sprite="gravity"] { background-image: url('../assets/skill-sprites/gravity.png'); aspect-ratio: 0.881; }
-.skill-prop[data-sprite="farming"] { background-image: url('../assets/skill-sprites/farming.png'); aspect-ratio: 0.922; }
-.skill-prop[data-sprite="exorcism"] { background-image: url('../assets/skill-sprites/exorcism.png'); aspect-ratio: 0.559; }
-.skill-prop[data-sprite="tracking"] { background-image: url('../assets/skill-sprites/tracking.png'); aspect-ratio: 1.244; }
-.skill-prop[data-sprite="tracking-trap"] { background-image: url('../assets/skill-sprites/tracking-trap.png'); aspect-ratio: 1.281; }
-.skill-prop[data-sprite="archaeology"] { background-image: url('../assets/skill-sprites/archaeology.png'); aspect-ratio: 1.55; }
-.skill-prop[data-sprite="restoration"] { background-image: url('../assets/skill-sprites/restoration.png'); aspect-ratio: 1.181; }
+.skill-prop[data-frame="0"] { background-position-x: 0%, 50%; }
+.skill-prop[data-frame="1"] { background-position-x: 33.3333%, 50%; }
+.skill-prop[data-frame="2"] { background-position-x: 66.6667%, 50%; }
+.skill-prop[data-frame="3"] { background-position-x: 100%, 50%; }
+.skill-prop[data-sprite="woodcutting"] { background-image: url('../assets/skill-sprites/woodcutting.webp'), var(--prop-shadow); aspect-ratio: 0.830; --shadow-w: 62%; }
+.skill-prop[data-sprite="crafting"] { background-image: url('../assets/skill-sprites/crafting.webp'), var(--prop-shadow); aspect-ratio: 1.837; --shadow-w: 74%; }
+.skill-prop[data-sprite="voyaging"] { background-image: url('../assets/skill-sprites/voyaging.webp'); aspect-ratio: 1.538; }
+.skill-prop[data-sprite="mining"] { background-image: url('../assets/skill-sprites/mining.webp'), var(--prop-shadow); aspect-ratio: 1.055; --shadow-w: 88%; }
+.skill-prop[data-sprite="smithing"] { background-image: url('../assets/skill-sprites/smithing.webp'), var(--prop-shadow); aspect-ratio: 1.008; --shadow-w: 74%; }
+.skill-prop[data-sprite="gravity"] { background-image: url('../assets/skill-sprites/gravity.webp'), var(--prop-shadow); aspect-ratio: 0.642; --shadow-w: 86%; }
+.skill-prop[data-sprite="farming"] { background-image: url('../assets/skill-sprites/farming.webp'), var(--prop-shadow); aspect-ratio: 0.998; --shadow-w: 84%; }
+.skill-prop[data-sprite="exorcism"] { background-image: url('../assets/skill-sprites/exorcism.webp'); aspect-ratio: 0.795; }
+.skill-prop[data-sprite="tracking"] { background-image: url('../assets/skill-sprites/tracking.webp'), var(--prop-shadow); aspect-ratio: 1.417; --shadow-w: 88%; }
+.skill-prop[data-sprite="tracking-trap"] { background-image: url('../assets/skill-sprites/tracking-trap.webp'), var(--prop-shadow); aspect-ratio: 1.360; --shadow-w: 72%; }
+.skill-prop[data-sprite="archaeology"] { background-image: url('../assets/skill-sprites/archaeology.webp'), var(--prop-shadow); aspect-ratio: 2.002; --shadow-w: 90%; }
+.skill-prop[data-sprite="restoration"] { background-image: url('../assets/skill-sprites/restoration.webp'), var(--prop-shadow); aspect-ratio: 1.470; --shadow-w: 74%; }
 
 /* Each prop sits where the avatar's tool lands (avatar box: ~17% wide, 60% tall, feet at 21%). */
-.sp-wood .prop-woodcutting { left: 34.5%; bottom: 23%; height: 82%; scale: -1 1; }   /* mirrored: the cut faces the axe */
+.sp-wood .prop-woodcutting { left: 34.3%; bottom: 24.7%; height: 76%; }   /* the cut is painted on the axe's side */
 /* This painting's grass starts lower than the other scenes: the whole woodcutting stage
    (avatar, tree, chips) steps down onto it. 11% of the scene = 18% of the 60%-tall avatar box. */
 .sp-wood > svg.spot-fx, .sp-wood > .skill-prop-layer { translate: 0 11%; }
 .sp-wood > .spot-av { translate: 0 18%; }
-.sp-craft .prop-crafting { left: 50%; bottom: 17%; height: 40%; }
-.sp-mine .prop-mining { left: 37.5%; bottom: 17%; height: 44%; }
-.sp-forge .prop-smithing { left: 37%; bottom: 17%; height: 42%; }
-.sp-grav .prop-gravity { left: 66%; bottom: 18%; height: 40%; }
-.sp-farm .farm-plot { bottom: 15%; height: 30%; }
-.sp-hex .prop-exorcism { left: 37%; bottom: 32%; height: 32%; rotate: 8deg; filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px rgba(255, 230, 170, 0.8)); }
-.sp-hunt .prop-tracking { left: 21%; bottom: 8%; height: 30%; }
-.sp-hunt .prop-tracking-trap { left: 72%; bottom: 14%; height: 46%; }
-.sp-dig .prop-archaeology { left: 35%; bottom: 14%; height: 30%; }
-.sp-shop .prop-restoration { left: 38%; bottom: 33%; height: 26%; }
+.sp-craft .prop-crafting { left: 39%; bottom: 18.5%; height: 28%; }
+.sp-mine .prop-mining { left: 37.6%; bottom: 17.5%; height: 38%; }
+.sp-forge .prop-smithing { left: 36.6%; bottom: 17.5%; height: 33%; }
+.sp-grav .prop-gravity { left: 66.7%; bottom: 18%; height: 38%; }
+.sp-farm .farm-plot { bottom: 14.8%; height: 22%; }
+.sp-hex .prop-exorcism { left: 37.4%; bottom: 30%; height: 35%; }
+.sp-hunt .prop-tracking { left: 21%; bottom: 6.5%; height: 29%; }
+.sp-hunt .prop-tracking-trap { left: 74%; bottom: 13.3%; height: 35%; }
+.sp-dig .prop-archaeology { left: 32%; bottom: 13.2%; height: 24%; }
+.sp-shop .prop-restoration { left: 36.5%; bottom: 31%; height: 24%; }
 .sp-voy .ship { width: 19%; }
-.sp-voy .ship-bob > .prop-voyaging { position: absolute; left: 50%; bottom: 0; width: 125%; height: auto; }
+.sp-voy .ship-bob > .prop-voyaging { position: absolute; left: 50%; bottom: 0; width: 154%; height: auto; }
 .sp-voy .ship-bob > .ship-av { left: 14%; top: auto; bottom: 34%; width: 34%; height: 52%; }
 .sp-voy .ship-svg, .sp-voy .voy-farw, .sp-voy .voy-mid { display: none; }
 .sp-farm .farm-plot[data-frame="3"] { animation: skillCropSway 2.8s ease-in-out infinite alternate; }
