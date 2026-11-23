@@ -93,6 +93,14 @@ function focusHTML(skill) {
   // Owned: gathering skills already list it in their picker beside the panel.
   const own = out && (s.type === 'craft' || FC.includes(skill)) ? `<span class="fo-own"><small>Owned</small><b data-fam="${out}">${fmt(familyCount(out))}</b></span>` : '';
   const ing = a.in ? `<div class="fo-ing"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : '') })).join('')}</div>` : '';
+  // Zéro mémoire: a missing material says who makes it, and one click goes there (or queues it first).
+  const gets = a.in && !locked ? Object.entries(a.in).filter(([k, n]) => stock(k) < n).map(([k, n]) => {
+    const p = typeof msProducer === 'function' ? msProducer(k) : null;
+    if (!p) return `<div class="fo-get none">${tile(k, null, { cls: 'xs' })}<span><b>${esc(ITEMS[k].name)}</b><small>No skill of yours makes it yet: the Bank says where it drops.</small></span></div>`;
+    const runs = Math.max(1, Math.ceil((n * 10 - stock(k)) / (p.a.out[k] || 1)));
+    const q = typeof msOn === 'function' && msOn() ? `<button class="gbtn sm sel" data-getq="${p.skill}:${p.a.id}:${runs}:${skill}:${a.id}" title="Task Queue: ${esc(p.a.name)} ×${runs} (enough for 10), then this recipe">Queue first</button>` : '';
+    return `<div class="fo-get">${tile(k, null, { cls: 'xs' })}<span><b>${esc(ITEMS[k].name)}</b><small>${esc(SKILLS[p.skill].name)} · ${esc(p.a.name)}</small></span><span class="fo-get-b"><button class="gbtn sm" data-act="${p.skill}:${p.a.id}" title="Start ${esc(p.a.name)}">${ui('play')}<span>Get it</span></button>${q}</span></div>`;
+  }).join('') : '';
   let body = '';
   if (locked) body = focusReqHTML(skill, a) + ing + focusNotes(skill, a);
   else {
@@ -105,7 +113,7 @@ function focusHTML(skill) {
       ${a.in ? `<span title="How many you can make with what you have"><small>Can make</small><b data-wscan="${skill}:${a.id}">${fmt(wsCan(a))}</b></span>` : ''}
     </div>`;
     if (run && FC.includes(skill)) body += `<div class="fo-sess" data-fcsess="${skill}">${fcSessHTML(skill)}</div>`;
-    body += ing;
+    body += ing + gets;
     if (a.extra && a.extra.length) body += `<div class="fo-ing fo-extra"><small>Can find</small>${a.extra.map(([k, ch]) => tile(k, fmtRate(ch < 0.2 ? ch * rareMult(skill) : ch), { cls: 'xs', unknown: !S.found[k] })).join('')}</div>`;
     body += focusNotes(skill, a);
     if (skill === 'cooking' && typeof fcSpiceHTML === 'function') body += fcSpiceHTML();

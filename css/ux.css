@@ -113,3 +113,71 @@
   /* Focus panel: a smaller ring so the action list starts in the first screen */
   .fo-art { --box: 132px; margin-bottom: 6px; }
 }
+
+/* ---------- 05 · zéro mémoire: missing materials lead somewhere; the Bank searches, sorts and locks */
+.fo-get { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 6px 8px; background: rgba(20, 21, 25, 0.85); border: 1px solid var(--line); border-left: 3px solid #ff7a88; }
+.fo-get + .fo-get { margin-top: -1px; }
+.fo-get > span:nth-child(2) { display: grid; gap: 1px; min-width: 0; }
+.fo-get b { font: 600 14px var(--display); }
+.fo-get small { font-size: 12px; color: var(--dim); }
+.fo-get-b { display: flex; gap: 6px; }
+.fo-get.none { border-left-color: var(--line2); }
+@media (max-width: 560px) { .fo-get { grid-template-columns: auto minmax(0, 1fr); } .fo-get-b { grid-column: 1 / -1; } .fo-get-b .gbtn { flex: 1; justify-content: center; } }
+.bag-tools { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin: 2px 0 10px; }
+.bag-q { flex: 1 1 200px; display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; background: #0f1013; border: 1px solid var(--line2); color: var(--mute); }
+.bag-q:focus-within { border-color: var(--sel, #e8992c); }
+.bag-q input { flex: 1; min-width: 0; height: 100%; background: none; border: 0; outline: 0; color: var(--text); font: inherit; font-size: 14px; }
+.bag-sort { display: inline-flex; border: 1px solid var(--line2); }
+.bag-sort button { height: 32px; padding: 0 11px; font: 600 11.5px var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); background: #1c1d22; }
+.bag-sort button + button { border-left: 1px solid var(--line2); }
+.bag-sort button.on { background: #9a5f14; color: #fff; }
+.lockb { position: absolute; left: 3px; top: 3px; z-index: 2; width: 17px; height: 17px; display: grid; place-items: center; font-size: 11px; background: var(--gold); color: #1a1206; border: 1px solid #000; }
+.lock-btn { margin-left: auto; }
+
+/* ---------- 06 · the menu that fits: folded worlds, compact menu rows (icon + full label) */
+.nav-quick { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.nq { flex-direction: row; justify-content: flex-start; height: 25px; padding: 0 8px; gap: 7px; font-size: 11.5px; text-transform: none; letter-spacing: 0; }
+.nq .gi { font-size: 14px; flex: none; }
+.nq span { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nq.on { box-shadow: inset 2px 0 0 var(--sel); }
+button.nav-sec { width: 100%; text-align: left; background: none; cursor: default; }
+button.nav-sec.fold { cursor: pointer; border-radius: 4px; padding-block: 5px; }
+button.nav-sec.fold:hover { background: rgba(255, 255, 255, 0.04); }
+.nav-sec > span { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ns-chev { font-style: normal; width: 10px; color: var(--mute); font: 700 13px/1 var(--display); }
+.ns-busy { width: 8px; height: 8px; border-radius: 50%; background: var(--ok, #6fcf45); box-shadow: 0 0 6px var(--ok, #6fcf45); flex: none; }
+.nav-group.folded { gap: 3px; }
+.nav-chips { display: flex; flex-wrap: wrap; gap: 4px; padding: 0 8px 4px 26px; }
+.nchip { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 7px 0 5px; background: #1c1d22; border: 1px solid var(--line); color: var(--dim); font-size: 13px; }
+.nchip .gi { font-size: 14px; color: var(--rc); }
+.nchip b { font: 700 12px var(--display); color: var(--text); font-variant-numeric: tabular-nums; }
+.nchip:hover { border-color: var(--rc); }
+.nchip.busy { border-color: var(--ok, #6fcf45); box-shadow: inset 0 0 0 1px var(--ok, #6fcf45); }
+
+/* ---------- 08 · Settings → Display, shortcuts */
+.uxs-row { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 16px; align-items: center; padding: 10px 0; border-top: 1px solid var(--line); }
+.uxs-row:first-of-type { border-top: 0; }
+.uxs-t { display: grid; gap: 2px; min-width: 0; }
+.uxs-t b { font: 600 15px var(--display); }
+.uxs-t small { font-size: 12.5px; color: var(--dim); }
+.uxs-seg { display: inline-flex; border: 1px solid var(--line2); }
+.uxs-seg button { height: 32px; padding: 0 12px; font: 600 12px var(--display); letter-spacing: 0.06em; color: var(--dim); background: #1c1d22; white-space: nowrap; }
+.uxs-seg button + button { border-left: 1px solid var(--line2); }
+.uxs-seg button.on { background: #9a5f14; color: #fff; }
+@media (max-width: 600px) { .uxs-row { grid-template-columns: 1fr; } .uxs-seg { justify-self: start; } }
+.uxkeys h2 { margin: 0 0 12px; font: 700 22px var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
+.uxk-list { display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); }
+.uxk-list div { display: grid; grid-template-columns: 6.5em 1fr; gap: 12px; align-items: center; padding: 7px 10px; background: #16171b; font-size: 14px; }
+.uxk-list kbd { justify-self: start; font: 700 12px var(--display); background: #2c2d33; border: 1px solid #4a4c55; border-bottom-width: 3px; color: #fff; padding: 3px 7px; }
+/* Reduced motion chosen in Settings: still every animation and transition */
+html.calm *, html.calm *::before, html.calm *::after { animation-duration: 0.01ms !important; animation-iteration-count: 1 !important; animation-delay: 0s !important; transition-duration: 0.01ms !important; scroll-behavior: auto !important; }
+/* folded worlds: one line each (name shrinks, the skill chips stay whole) */
+.nav-group.folded { flex-direction: row; align-items: center; gap: 4px; border-bottom: 1px solid var(--line); }
+.nav-group.folded button.nav-sec { flex: 1 1 auto; min-width: 0; border-bottom: 0; margin: 0; padding: 6px 4px 6px 8px; }
+.nav-group.folded .nav-chips { flex: none; flex-wrap: nowrap; padding: 0 2px 0 0; gap: 3px; }
+.nav-group.folded .nchip { height: 22px; padding: 0 5px 0 4px; gap: 3px; }
+/* a 3-skill world puts its chips on a second line rather than cutting its name */
+.nav-group.folded { flex-wrap: wrap; }
+.nav-group.folded button.nav-sec { flex: 1 1 108px; letter-spacing: 0.05em; gap: 5px; }
+.nav-group.folded .nav-chips { margin-left: auto; padding-bottom: 3px; }
+.nav-quest .q-say p { -webkit-line-clamp: 1; line-clamp: 1; }

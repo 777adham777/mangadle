@@ -204,14 +204,22 @@ function renderRail() {
     if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
     return `<button class="nq ${isOn(k) ? 'on' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}</button>`;
   }).join('')}</div>`);
-  for (const r of openRealms()) {
-    groups.push(`<div class="nav-group"><div class="nav-sec" style="--rc:${rc(r)}">${ic('realm', r)}${REALMS[r].name}</div>
-      ${openSkillsOf(r).map((k) => navRow(`realm:${r}:${k}`, ic('skill', k), SKILLS[k].name, { skill: k, color: rc(r), busy: S.action && S.action.skill === k })).join('')}</div>`);
+  // Le menu qui tient: from 3 worlds on, the worlds you are not in fold to one line of skill chips (icon + level,
+  // one click each). Open: the world on screen, the one working, the newest, and any you unfolded yourself.
+  const realms = openRealms(), fold = realms.length >= 3, ro = S.ui.railOpen || {};
+  const [vn, vr] = S.ui.view.split(':');
+  const auto = new Set([vn === 'realm' ? vr : null, S.action ? SKILLS[S.action.skill].realm : null, realms[realms.length - 1]]);
+  for (const r of realms) {
+    const open = !fold || (ro[r] != null ? !!ro[r] : auto.has(r));
+    const ks = openSkillsOf(r), busy = S.action && ks.includes(S.action.skill);
+    const head = `<button class="nav-sec ${fold ? 'fold' : ''}" ${fold ? `data-railfold="${r}" aria-expanded="${open}"` : 'tabindex="-1"'} style="--rc:${rc(r)}">${fold ? `<i class="ns-chev">${open ? '⌄' : '›'}</i>` : ''}${ic('realm', r)}<span>${REALMS[r].name}</span>${!open && busy ? '<i class="ns-busy" title="An activity runs here"></i>' : ''}</button>`;
+    groups.push(open ? `<div class="nav-group">${head}
+      ${ks.map((k) => navRow(`realm:${r}:${k}`, ic('skill', k), SKILLS[k].name, { skill: k, color: rc(r), busy: S.action && S.action.skill === k })).join('')}</div>`
+      : `<div class="nav-group folded">${head}<div class="nav-chips">${ks.map((k) => `<button class="nchip ${S.action && S.action.skill === k ? 'busy' : ''}" data-nav="realm:${r}:${k}" style="--rc:${rc(r)}" title="${SKILLS[k].name}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b></button>`).join('')}</div></div>`);
   }
   // Combat sits under the starting world: you fish and cook before you fight.
   if (featureOpen('battle')) groups.splice(Math.min(2, groups.length), 0, `<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
-    ${navRow('battle', ui('battle'), S.combat.zone != null ? ZONES[S.combat.zone].name : 'Battlefield', { color: rc('combat'), busy: S.combat.zone != null })}
-    <div class="nav-cskills"><button class="ncs" data-nav="battle" title="Character level">${ic('skill', 'character')}<span>Character</span><b data-lv="character">${skillLv('character')}</b><span class="nr-xp"><i data-xpbar="character"></i></span></button></div></div>`);
+    ${navRow('battle', ui('battle'), S.combat.zone != null ? ZONES[S.combat.zone].name : 'Battlefield', { color: rc('combat'), busy: S.combat.zone != null, skill: 'character' })}</div>`);
   $('#rail').innerHTML = `<div class="nav-quest" id="navquest">${goalHTML()}</div>${groups.join('')}${nextUnlockHTML('nav-next')}`;
   $('#tabbar').innerHTML = [
     `<button class="tab-btn" data-menu>${ui('menu')}<span>Menu</span></button>`,
@@ -627,15 +635,21 @@ const BAG_TABS = [['all', 'equip', 'All'], ...Object.keys(KINDS).map((k) => [k, 
 VIEWS.hero = (tab) => {
   if (tab === 'collection') return collectionHTML();
   if (S.ui.bank !== 'all') S.ui.bank = KIND_OF[S.ui.bank] || 'all';   // older saves filtered by type
-  const ids = Object.keys(S.items).filter((k) => S.ui.bank === 'all' || itemKind(k) === S.ui.bank)
-    .sort((a, b) => rarity(b) - rarity(a) || ITEMS[b].value - ITEMS[a].value);
+  // Zéro mémoire: search by name, sort by rarity / quantity / newest / stack value. Locked items carry a padlock.
+  const q = (S.ui.bankq || '').trim().toLowerCase(), order = Object.keys(S.items), sort = S.ui.bankSort || 'rarity';
+  const SORTS = { rarity: (a, b) => rarity(b) - rarity(a) || ITEMS[b].value - ITEMS[a].value, qty: (a, b) => S.items[b] - S.items[a],
+    new: (a, b) => order.indexOf(b) - order.indexOf(a), value: (a, b) => ITEMS[b].value * S.items[b] - ITEMS[a].value * S.items[a] };
+  const ids = order.filter((k) => (S.ui.bank === 'all' || itemKind(k) === S.ui.bank) && (!q || ITEMS[k].name.toLowerCase().includes(q)))
+    .sort(SORTS[sort] || SORTS.rarity);
   const worth = Object.keys(S.items).reduce((a, k) => a + ITEMS[k].value * S.items[k], 0);
   return `
   ${ptitle('Hero', 'Bank', heroTabs(tab))}
   <div class="hero-layout bank-layout">
     <section class="win bag-win">
       <nav class="bag-tabs">${BAG_TABS.map(([k, icn, l]) => `<button class="${S.ui.bank === k ? 'on' : ''}${KINDS[k] ? ' k-' + k : ''}" data-bankf="${k}" title="${l}">${ui(icn)}<span>${l}</span></button>`).join('')}</nav>
-      ${uix('bagTop')}<div class="bag-grid">${ids.length ? ids.map((k) => tile(k, `<span data-count="${k}">${fmt(S.items[k])}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: seenItems.has(k) ? '' : '<span class="new">New</span>' })).join('') : '<div class="empty-note">Nothing here yet.</div>'}</div>
+      <div class="bag-tools"><label class="bag-q">${ui('search')}<input id="bank-q" type="search" data-bankq placeholder="Search the bank" value="${esc(S.ui.bankq || '')}" autocomplete="off"></label>
+        <nav class="bag-sort">${[['rarity', 'Rarity'], ['qty', 'Qty'], ['new', 'Newest'], ['value', 'Value']].map(([k, l]) => `<button class="${sort === k ? 'on' : ''}" data-banksort="${k}">${l}</button>`).join('')}</nav></div>
+      ${uix('bagTop')}<div class="bag-grid">${ids.length ? ids.map((k) => tile(k, `<span data-count="${k}">${fmt(S.items[k])}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: (S.locked && S.locked[k] ? `<span class="lockb" title="Locked">${ui('lock')}</span>` : '') + (seenItems.has(k) ? '' : '<span class="new">New</span>') })).join('') : '<div class="empty-note">' + (q ? 'No item matches.' : 'Nothing here yet.') + '</div>'}</div>
       <div class="bag-foot"><span>${Object.keys(S.items).length} item types</span><span>Bank value ${ui('gold')} ${fmt(worth)}</span></div>
     </section>
     <section class="win detail">${armDetailHTML() || inspectorHTML()}</section>
@@ -676,7 +690,7 @@ function inspectorHTML() {
   body.push(`${hdr('Where to find')}${sourcesHTML(selItem)}`);
   return `${itemHead(selItem)}
     <div class="dt-stats">${stat('Owned', fmt(n), `data-count="${selItem}"`)}${stat('Value', fmt(it.value) + ' g')}${stat('Stack value', fmt(it.value * n) + ' g')}</div>
-    ${equipped ? '' : `<div class="dt-cta">${acts.join('')}<div class="sell-row"><button class="gbtn dark sm" data-sell="${selItem}:1">Sell 1</button><button class="gbtn dark sm" data-sell="${selItem}:half">Sell half</button><button class="gbtn dark sm" data-sell="${selItem}:all">Sell all</button></div></div>`}
+    ${equipped ? '' : `<div class="dt-cta">${acts.join('')}<div class="sell-row">${(() => { const lk = S.locked && S.locked[selItem], dis = lk ? 'disabled title="Locked: unlock it to sell"' : ''; return `<button class="gbtn dark sm" data-sell="${selItem}:1" ${dis}>Sell 1</button><button class="gbtn dark sm" data-sell="${selItem}:half" ${dis}>Sell half</button><button class="gbtn dark sm" data-sell="${selItem}:all" ${dis}>Sell all</button><button class="gbtn sm ${lk ? 'gold' : 'dark'} lock-btn" data-lock="${selItem}" title="${lk ? 'Unlock: it can be sold again' : 'Lock: protect it from selling'}">${ui('lock')}<span>${lk ? 'Locked' : 'Lock'}</span></button>`; })()}</div></div>`}
     <div class="dt-body">${body.join('')}</div>`;
 }
 
@@ -1288,6 +1302,10 @@ document.addEventListener('click', (ev) => {
   else if ('stopcombat' in d) stopCombat();
   else if (d.sel) { selItem = d.sel; dirty = true; }
   else if (d.bankf) { S.ui.bank = d.bankf; dirty = true; }
+  else if (d.railfold) { const r = d.railfold; S.ui.railOpen = S.ui.railOpen || {}; S.ui.railOpen[r] = t.getAttribute('aria-expanded') === 'true' ? 0 : 1; renderRail(); update(); }
+  else if (d.banksort) { S.ui.bankSort = d.banksort; dirty = true; }
+  else if (d.lock) { S.locked = S.locked || {}; if (S.locked[d.lock]) delete S.locked[d.lock]; else S.locked[d.lock] = 1; toast(S.locked[d.lock] ? `${ITEMS[d.lock].name} is locked: it cannot be sold.` : `${ITEMS[d.lock].name} unlocked.`, 'good'); dirty = true; }
+  else if (d.getq) { const [skill, id, n, cs, cid] = d.getq.split(':'); queueFirst(skill, id, +n, cs, cid); }
   else if (d.equip) { equip(d.equip); toast(`Equipped ${ITEMS[d.equip].name}`, 'good'); }
   else if (d.unequip) unequip(d.unequip);
   else if (d.eat) { if (!S.fruit || S.fruit === d.eat || confirm(`Replace your ${ITEMS[S.fruit].name}? Its power will be lost.`)) { eatFruit(d.eat); burst('Power awakened', ITEMS[d.eat].desc, itemIc(d.eat), 'var(--gold)'); } }
@@ -1333,6 +1351,16 @@ document.addEventListener('click', (ev) => {
 document.addEventListener('change', (ev) => {
   if (ev.target.matches('[data-food]')) { S.combat.food = ev.target.value || null; ev.target.blur(); dirty = true; }
 });
+document.addEventListener('input', (ev) => { if (ev.target.matches('[data-bankq]')) { S.ui.bankq = ev.target.value; dirty = true; } });
+// Zéro mémoire: put the gathering a recipe lacks at the head of the Task Queue, with the recipe right after it.
+function queueFirst(skill, id, n, cs, cid) {
+  if (typeof postMission !== 'function' || !msOn()) return;
+  const craft = cs && cid;
+  if (!postMission({ k: 'act', skill, id, n }, 0)) return;
+  if (craft && msFree() > 0) postMission({ k: 'act', skill: cs, id: cid, n: 0 }, 1);
+  toast(`Queued first: ${findAction(skill, id).name} ×${fmt(n)}${craft ? ', then the recipe' : ''}.`, 'good');
+  if (!S.action && S.combat.zone == null && typeof msStartNext === 'function') msStartNext();
+}
 /* touch screens never show title tooltips: tapping a non-interactive titled element shows its label */
 if (matchMedia('(hover: none)').matches) {
   let tipEl = null, tipTimer = 0;

@@ -125,6 +125,7 @@ function fmt(n) {
   const neg = n < 0; n = Math.abs(n);
   let s;
   if (n < 1000) s = (n < 10 && n % 1 ? n.toFixed(1) : Math.floor(n)).toString();
+  else if (n < 1e15 && typeof S !== 'undefined' && S && S.ui && S.ui.set && S.ui.set.num === 'full') s = Math.floor(n).toLocaleString('en-US');   // Settings → Numbers
   else {
     const units = ['K', 'M', 'B', 'T', 'Qa', 'Qi'];
     let i = -1;
@@ -733,6 +734,7 @@ function salvage(id, n) {
   return got;
 }
 function sell(id, n) {
+  if (S.locked && S.locked[id]) return;   // locked in the Bank: protected from selling
   n = Math.min(n, count(id));
   if (n <= 0) return;
   removeItem(id, n);
