@@ -74,6 +74,7 @@ function defaultState() {
     quality: { log: {}, claim: {}, cv: 2, rec: {} },   // Shiny & Perfect catches (variant id -> how many), entries handed in to the logs, claim rules version, fish weight records (quality.js)
     kitchen: { spice: null },
     tasks: { day: '', daily: [], week: '', weekly: [] },   // daily / weekly objectives (tasks.js)
+    missions: { list: [], cur: null, paused: 0 },   // the Mission Board (missions.js)
     exped: { ships: [], dur: 600, food: true, repeat: true, last: null },   // expeditions.js           // seasoning picked in the Cooking spice rack (seas.js)
     ui: { view: 'home', bank: 'all', tab: {} },
     last: Date.now(),
@@ -352,12 +353,16 @@ const powCost = () => Math.floor(1500 * Math.pow(1.8, S.energy.powLv));
 const totalTrain = () => TRAININGS.reduce((a, t) => a + tl(t.id), 0);
 
 /* ========================================================== simulation */
+let IN_STEP = false;      // true while the engine runs a tick (anything else is the player's doing)
 function step(dt) {
-  hrun('tick', dt);
-  tickAction(dt);
-  tickCombat(dt);
-  tickEnergy(dt);
-  S.stats.playtime += dt;
+  IN_STEP = true;
+  try {
+    hrun('tick', dt);
+    tickAction(dt);
+    tickCombat(dt);
+    tickEnergy(dt);
+    S.stats.playtime += dt;
+  } finally { IN_STEP = false; }
 }
 function advance(seconds) {
   let t = seconds;
@@ -395,6 +400,7 @@ function tickAction(dt) {
     if (why) { stopAction(why); return; }
     a.prog -= T;
     completeAction(a.skill, act);
+    if (S.action !== a) return;   // a hook ended it (a mission reached its size)
     T = actionTime(a.skill, act);
   }
 }

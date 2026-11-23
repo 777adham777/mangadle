@@ -680,6 +680,8 @@ const UNLOCKS = [
     hint: () => 'Reach Cooking level 10', why: 'With proper provisions and timber for the hull, a captain agrees to take you aboard.' },
   { id: 'feature:tasks',      name: 'Daily objectives', need: () => !!S.gates.seas,
     hint: () => 'Reach Orange Town', why: 'The harbour board posts new jobs every day and every week, in every world you know. See the Overview.' },
+  { id: 'feature:missions',   name: 'Mission Board',   need: () => (!!S.gates.seas && skillLv('fishing') >= 10) || !!(S.missions && S.missions.list && S.missions.list.length),
+    hint: () => 'Reach Fishing level 10 in Orange Town', why: 'Sensei Kaede sends you the Leaf mission desk: post missions in order and they run one after another, even while you are away. Open it from the activity bar.' },
   worldUnlock('soul', 'Soul City'),
   { id: 'skill:mining',       name: 'Reishi Mining',   need: () => !!S.gates.soul || usedSkill('mining') },
   { id: 'skill:smithing',     name: 'Smelting',        need: () => skillLv('mining') >= 5 || usedSkill('smithing'),

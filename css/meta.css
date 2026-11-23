@@ -1,0 +1,60 @@
+/* ==========================================================================
+   Season 2 systems: Mission Board, News Coo report, Hunt List, Scouter,
+   Reiatsu pressure, world omens, Wanted poster. Same BigUI skin as style.css.
+   ========================================================================== */
+
+/* ---------------------------------------------------------------- Mission Board */
+.ms-chip { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 10px; border-radius: 2px; background: #222328; border: 1px solid var(--line2); color: var(--cream); font: 700 12px var(--display); letter-spacing: 0.06em; }
+.ms-chip .gi { width: 16px; height: 16px; color: #e8c98a; }
+.ms-chip:hover { background: #2b2c33; }
+.ms-chip.run { border-color: color-mix(in srgb, var(--act) 60%, var(--line2)); }
+.ms-chip.run .gi { color: var(--act); }
+.ms-chip.paused { border-color: color-mix(in srgb, var(--sel) 70%, var(--line2)); }
+.ms-chip.paused .gi { color: var(--sel); }
+@media (max-width: 860px) { .ms-chip b { display: none; } .ms-chip { padding: 0 8px; } }
+
+.ms-board { width: 100%; display: grid; gap: 12px; text-align: left; }
+.ms-head { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; }
+.ms-crest { width: 48px; height: 48px; display: grid; place-items: center; background: linear-gradient(160deg, #6b4a22, #3a2610); border: 1px solid #a07a3a; }
+.ms-crest .gi { width: 30px; height: 30px; color: #f4dfae; }
+.ms-head small { font: 600 11px var(--display); letter-spacing: 0.18em; text-transform: uppercase; color: #e8c98a; }
+.ms-head h2 { font: 700 26px var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: #fff; }
+.ms-slots { font: 600 14px var(--display); color: var(--dim); }
+.ms-slots b { font-size: 22px; color: #fff; }
+.ms-note { display: flex; align-items: center; gap: 10px; padding: 8px 10px; background: var(--panel2); border: 1px solid var(--line2); font-size: 13px; color: var(--dim); }
+.ms-note > .gi { width: 18px; height: 18px; flex-shrink: 0; }
+.ms-note span { flex: 1; }
+.ms-note.paused { border-color: color-mix(in srgb, var(--sel) 60%, var(--line2)); color: #f3d3a5; }
+.ms-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.ms-row { display: grid; grid-template-columns: 30px auto minmax(0, 1fr) auto auto; gap: 10px; align-items: center; padding: 6px 8px; background: var(--panel2); border: 1px solid var(--line); border-left: 3px solid var(--rc, var(--line2)); }
+.ms-row.run { background: linear-gradient(90deg, color-mix(in srgb, var(--act) 16%, var(--panel2)), var(--panel2) 70%); border-color: color-mix(in srgb, var(--act) 45%, var(--line)); border-left-color: var(--act); }
+.ms-row.warn { opacity: 0.8; }
+.ms-row.empty { grid-template-columns: 30px 1fr; border-style: dashed; border-left-width: 1px; background: transparent; color: var(--mute); }
+.ms-rank { width: 28px; height: 28px; display: grid; place-items: center; font: 800 16px var(--display); background: #2a2116; border: 1px solid #6a4f28; color: #f0d9a0; }
+.ms-rank.r-S { background: #3a1018; border-color: #c4485c; color: #ffb3bf; }
+.ms-rank.r-A { background: #3a2508; border-color: #d4902a; color: #ffd08a; }
+.ms-main { display: grid; gap: 3px; min-width: 0; }
+.ms-main b { font: 600 14px var(--display); color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ms-main small { font-size: 12px; color: var(--dim); }
+.ms-main .pbar { height: 6px; --rc: var(--act); }
+.ms-eta { font: 600 12px var(--display); color: var(--dim); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.ms-row.run .ms-eta { color: var(--act); }
+.ms-tools { display: flex; gap: 4px; }
+.ms-tools .mini-btn { width: 26px; height: 26px; font-size: 10px; }
+.ms-tools .mini-btn .gi { width: 13px; height: 13px; }
+.ms-tools .mini-btn:disabled { opacity: 0.3; }
+.ms-post { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: 8px; align-items: center; padding-top: 4px; border-top: 1px solid var(--line); }
+.ms-post select { min-width: 0; height: 36px; background: #111216; color: var(--text); border: 1px solid var(--line2); padding: 0 8px; font: 500 13px var(--body); }
+.ms-sizes { display: flex; gap: 2px; }
+.ms-sizes button { width: 38px; height: 36px; display: grid; place-items: center; gap: 0; background: #222328; border: 1px solid var(--line2); color: var(--dim); line-height: 1; }
+.ms-sizes button b { font: 800 14px var(--display); color: #f0d9a0; }
+.ms-sizes button small { font-size: 9px; }
+.ms-sizes button.on { background: #4a3313; border-color: var(--sel); color: #fff; }
+.ms-help { margin: 0; }
+@media (max-width: 600px) {
+  .ms-post { grid-template-columns: 1fr; }
+  .ms-row { grid-template-columns: 26px minmax(0, 1fr) auto; }
+  .ms-row > .tile { display: none; }
+  .ms-row .ms-eta { grid-column: 2; grid-row: 2; }
+  .ms-row .ms-tools { grid-column: 3; grid-row: 1 / span 2; flex-direction: column; }
+}

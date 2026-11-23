@@ -415,7 +415,7 @@ function farmPanel() {
 const VIEWS = {};
 // Extension points filled by ui-systems.js: each entry returns HTML (or '').
 // realmScene: an animated scene under a skill's banner (seas-ui.js); when one is shown it carries the farm numbers.
-const UIX = { bagTop: [], quick: [], homeTop: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [] };
+const UIX = { bagTop: [], quick: [], homeTop: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [], nowbar: [] };
 const uix = (k, ...a) => UIX[k].map((f) => f(...a) || '').join('');
 
 /* ------------------------------------------------------------- overview */
@@ -794,7 +794,7 @@ function nowHTML() {
         <span class="nb-txt"><small>${s.name} · Lv <em data-lv="${skill}">${skillLv(skill)}</em></small><b>${esc(a.name)}</b></span></button>
       <span class="nb-prog"><span class="pbar"><i data-nowfill></i></span>
         <span class="nb-stats">${a.out ? `<span><b>${fmt(f.itemsh)}</b>/h</span>` : ''}<span><b>${fmt(f.xph)}</b> xp/h</span><span>Lv up <b data-nextlv>—</b></span>${a.in ? `<span>Left <b data-canmake>${fmt(f.can)}</b></span>` : ''}</span></span>
-      ${claim}<button class="mini-btn hot" data-stop title="Stop">${ui('stop')}</button></div>`;
+      ${claim}${uix('nowbar')}<button class="mini-btn hot" data-stop title="Stop">${ui('stop')}</button></div>`;
   }
   if (S.combat.zone != null) {
     const c = combatRates();
@@ -803,9 +803,9 @@ function nowHTML() {
         <span class="nb-txt"><small>Fighting</small><b>${c.z.name}</b></span></button>
       <span class="nb-prog"><span class="pbar hp"><i data-nowhp></i></span>
         <span class="nb-stats"><span>HP <b data-hpnow></b></span><span><b>≈${fmt(c.kph)}</b> kills/h</span><span><b>≈${fmt(c.xph)}</b> xp/h</span></span></span>
-      ${claim}<button class="mini-btn hot" data-stopcombat title="Retreat">${ui('stop')}</button></div>`;
+      ${claim}${uix('nowbar')}<button class="mini-btn hot" data-stopcombat title="Retreat">${ui('stop')}</button></div>`;
   }
-  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>Nothing is farming</b></span>${claim || (gs ? gbtn('Next: ' + esc(gs.g.text), 'play', `data-nav="${gs.g.go}"`, 'sm') : '')}</div>`;
+  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>Nothing is farming</b></span>${claim || (gs ? gbtn('Next: ' + esc(gs.g.text), 'play', `data-nav="${gs.g.go}"`, 'sm') : '')}${uix('nowbar')}</div>`;
 }
 function goalHTML() {
   const st = goalState();
