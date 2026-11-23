@@ -73,7 +73,7 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `css/style.css` | Main styling |
 | `css/seas.css` | Skill scenes, Shiny & Perfect tiles and logs, spice rack |
 | `js/data.js` | Core content: worlds 1-3, items, zones, shop, objectives, synergies, gates, unlock order |
-| `js/armory.js` | The manga armory: 53 more pieces across every world (drops, finds, recipes, 3 schematics, 6 crew sets); stats from `js/economy.js`; icon prompts in `docs/ARMORY-ICONS.md` |
+| `js/armory.js` | The manga armory: 53 more pieces across every world (drops, finds, recipes, 3 schematics, 6 crew sets); stats from `js/economy.js`; icon sheet prompts in `docs/ARMORY-ICONS.md`, cut by `tools/slice_icon_sheet.py` |
 | `js/loot.js` | Loot pass: world chests, drop-only gear with utility perks, rarity from drop rates, salvage values |
 | `js/worlds.js` | Worlds 4-7 and the Rift finale, registered with `addWorld()`; content for techniques and awakening |
 | `js/systems.js` | World systems (Renown, Ascension, armor sockets/reforge, farming, transformations, Domain, pacts, contracts, beasts, cards, Echo...), plugged into engine hooks |
