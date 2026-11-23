@@ -60,7 +60,11 @@
 .skill-prop[data-sprite="restoration"] { background-image: url('../assets/skill-sprites/restoration.png'); aspect-ratio: 1.181; }
 
 /* Each prop sits where the avatar's tool lands (avatar box: ~17% wide, 60% tall, feet at 21%). */
-.sp-wood .prop-woodcutting { left: 36.5%; bottom: 14%; height: 82%; }
+.sp-wood .prop-woodcutting { left: 34.5%; bottom: 23%; height: 82%; scale: -1 1; }   /* mirrored: the cut faces the axe */
+/* This painting's grass starts lower than the other scenes: the whole woodcutting stage
+   (avatar, tree, chips) steps down onto it. 11% of the scene = 18% of the 60%-tall avatar box. */
+.sp-wood > svg.spot-fx, .sp-wood > .skill-prop-layer { translate: 0 11%; }
+.sp-wood > .spot-av { translate: 0 18%; }
 .sp-craft .prop-crafting { left: 50%; bottom: 17%; height: 40%; }
 .sp-mine .prop-mining { left: 37.5%; bottom: 17%; height: 44%; }
 .sp-forge .prop-smithing { left: 37%; bottom: 17%; height: 42%; }
