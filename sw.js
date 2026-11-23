@@ -2,19 +2,17 @@
    Bump VERSION on every deploy so players get the new files. */
 importScripts('./js/item-images.js');
 
-const VERSION = 'tri-realm-v112';
+const VERSION = 'tri-realm-v113';
 const ITEM_ICON_URLS = Object.values(ITEM_IMAGE_PATHS).map((path) => './' + path);
 const BACKGROUND_URLS = [
-  'shinobi', 'seas', 'soul', 'ki', 'hex', 'hunter', 'echo', 'rift',
-].map((name) => `./assets/backgrounds/realms/${name}.png`).concat([
-  'woodcutting', 'crafting', 'fishing', 'cooking', 'voyaging', 'mining', 'smithing', 'gravity',
+  'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
   'farming', 'exorcism', 'tracking', 'archaeology', 'restoration', 'bonding',
-].map((name) => `./assets/backgrounds/skills/${name}.png`), [
+].map((name) => `./assets/backgrounds/skills/${name}.png`).concat([
   'shinobi', 'seas', 'soul', 'ki', 'hex', 'hunter', 'echo', 'rift',
 ].map((name) => `./assets/backgrounds/combat/${name}.png`));
 const SKILL_SPRITE_URLS = [
-  'woodcutting', 'crafting', 'fishing', 'cooking', 'voyaging', 'mining', 'smithing', 'gravity',
-  'farming', 'exorcism', 'exorcism-wisp', 'tracking', 'tracking-trap', 'archaeology', 'restoration', 'bonding',
+  'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
+  'farming', 'exorcism', 'tracking', 'tracking-trap', 'archaeology', 'restoration',
 ].map((name) => `./assets/skill-sprites/${name}.png`);
 const SHELL = [
   './',

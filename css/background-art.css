@@ -1,25 +1,12 @@
-/* Generated manga-inspired environments. Foreground skill animations remain layered above these images. */
-.scene-art {
-  background-position: center;
-  background-repeat: no-repeat;
-  background-size: cover;
-}
-.scene-art-shinobi { background-image: url('../assets/backgrounds/realms/shinobi.png'); }
-.scene-art-seas { background-image: url('../assets/backgrounds/realms/seas.png'); }
-.scene-art-soul { background-image: url('../assets/backgrounds/realms/soul.png'); }
-.scene-art-ki { background-image: url('../assets/backgrounds/realms/ki.png'); }
-.scene-art-hex { background-image: url('../assets/backgrounds/realms/hex.png'); }
-.scene-art-hunter { background-image: url('../assets/backgrounds/realms/hunter.png'); }
-.scene-art-echo { background-image: url('../assets/backgrounds/realms/echo.png'); }
-.scene-art-rift, .scene-art-hub, .scene-art-battle { background-image: url('../assets/backgrounds/realms/rift.png'); }
-
-/* Skill backgrounds are the generated base. Animated props use transparent sprite strips;
-   the former SVG scene illustrations stay in the DOM only for their existing JS hooks. */
+/* Painted environments (531-712 px wide) for the skill scenes and the battle arena only:
+   boxes of about that size, so they are never blown up. The full-page backdrop stays the
+   vector scene from scene.js. Animated props are transparent sprite strips on top;
+   the former SVG scene stays in the DOM only for its JS hooks. */
 .spot .scene-art-bg {
   position: absolute;
   z-index: 0;
   inset: 0;
-  background-position: center;
+  background-position: center 72%;
   background-repeat: no-repeat;
   background-size: cover;
   pointer-events: none;
@@ -38,70 +25,63 @@
 .spot .scene-art-bg ~ .spot-hud,
 .spot .scene-art-bg ~ .sx-meter { z-index: 6; }
 
+/* Props: 4-frame strips cut to the drawing (tools/build_skill_sprite_strips.py), so each one
+   keeps its own aspect ratio. Placed by centre x (left + translate) and ground line (bottom),
+   sized by height so they stay in proportion with the 60%-tall avatar. */
 .skill-prop {
   position: absolute;
   display: block;
-  width: 20%;
-  height: auto;
-  aspect-ratio: 1 / 1;
+  width: auto;
+  height: 40%;
+  aspect-ratio: 1;
+  translate: -50% 0;
   background-repeat: no-repeat;
   background-position: 0% 50%;
   background-size: 400% 100%;
-  image-rendering: auto;
-  transform-origin: 50% 90%;
+  transform-origin: 50% 100%;
+  filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.35));
 }
 .skill-prop[hidden] { display: none !important; }
 .skill-prop[data-frame="0"] { background-position-x: 0%; }
 .skill-prop[data-frame="1"] { background-position-x: 33.3333%; }
 .skill-prop[data-frame="2"] { background-position-x: 66.6667%; }
 .skill-prop[data-frame="3"] { background-position-x: 100%; }
-.skill-prop[data-sprite="woodcutting"] { background-image: url('../assets/skill-sprites/woodcutting.png'); }
-.skill-prop[data-sprite="crafting"] { background-image: url('../assets/skill-sprites/crafting.png'); }
-.skill-prop[data-sprite="fishing"] { background-image: url('../assets/skill-sprites/fishing.png'); }
-.skill-prop[data-sprite="cooking"] { background-image: url('../assets/skill-sprites/cooking.png'); }
-.skill-prop[data-sprite="voyaging"] { background-image: url('../assets/skill-sprites/voyaging.png'); }
-.skill-prop[data-sprite="mining"] { background-image: url('../assets/skill-sprites/mining.png'); }
-.skill-prop[data-sprite="smithing"] { background-image: url('../assets/skill-sprites/smithing.png'); }
-.skill-prop[data-sprite="gravity"] { background-image: url('../assets/skill-sprites/gravity.png'); }
-.skill-prop[data-sprite="farming"] { background-image: url('../assets/skill-sprites/farming.png'); }
-.skill-prop[data-sprite="exorcism"] { background-image: url('../assets/skill-sprites/exorcism.png'); }
-.skill-prop[data-sprite="exorcism-wisp"] { background-image: url('../assets/skill-sprites/exorcism-wisp.png'); }
-.skill-prop[data-sprite="tracking"] { background-image: url('../assets/skill-sprites/tracking.png'); }
-.skill-prop[data-sprite="tracking-trap"] { background-image: url('../assets/skill-sprites/tracking-trap.png'); }
-.skill-prop[data-sprite="archaeology"] { background-image: url('../assets/skill-sprites/archaeology.png'); }
-.skill-prop[data-sprite="restoration"] { background-image: url('../assets/skill-sprites/restoration.png'); }
-.skill-prop[data-sprite="bonding"] { background-image: url('../assets/skill-sprites/bonding.png'); }
+.skill-prop[data-sprite="woodcutting"] { background-image: url('../assets/skill-sprites/woodcutting.png'); aspect-ratio: 0.781; }
+.skill-prop[data-sprite="crafting"] { background-image: url('../assets/skill-sprites/crafting.png'); aspect-ratio: 1.103; }
+.skill-prop[data-sprite="voyaging"] { background-image: url('../assets/skill-sprites/voyaging.png'); aspect-ratio: 0.994; }
+.skill-prop[data-sprite="mining"] { background-image: url('../assets/skill-sprites/mining.png'); aspect-ratio: 1.059; }
+.skill-prop[data-sprite="smithing"] { background-image: url('../assets/skill-sprites/smithing.png'); aspect-ratio: 0.912; }
+.skill-prop[data-sprite="gravity"] { background-image: url('../assets/skill-sprites/gravity.png'); aspect-ratio: 0.881; }
+.skill-prop[data-sprite="farming"] { background-image: url('../assets/skill-sprites/farming.png'); aspect-ratio: 0.922; }
+.skill-prop[data-sprite="exorcism"] { background-image: url('../assets/skill-sprites/exorcism.png'); aspect-ratio: 0.559; }
+.skill-prop[data-sprite="tracking"] { background-image: url('../assets/skill-sprites/tracking.png'); aspect-ratio: 1.244; }
+.skill-prop[data-sprite="tracking-trap"] { background-image: url('../assets/skill-sprites/tracking-trap.png'); aspect-ratio: 1.281; }
+.skill-prop[data-sprite="archaeology"] { background-image: url('../assets/skill-sprites/archaeology.png'); aspect-ratio: 1.55; }
+.skill-prop[data-sprite="restoration"] { background-image: url('../assets/skill-sprites/restoration.png'); aspect-ratio: 1.181; }
 
-/* Position each generated prop where the old SVG's focal object used to sit. */
-.sp-wood .prop-woodcutting { left: 29%; bottom: -6%; width: 26%; }
-.sp-craft .prop-crafting { left: 58%; bottom: -5%; width: 24%; }
-.spot[data-spot="fishing"] .prop-fishing { left: 53%; bottom: 20%; width: 18%; }
-.spot.sp-galley .prop-cooking { left: 60%; bottom: -2%; width: 22%; }
-.sp-voy .ship-bob > .prop-voyaging { position: absolute; inset: 0; width: 100%; height: 100%; aspect-ratio: auto; transform: none; }
+/* Each prop sits where the avatar's tool lands (avatar box: ~17% wide, 60% tall, feet at 21%). */
+.sp-wood .prop-woodcutting { left: 36.5%; bottom: 14%; height: 82%; }
+.sp-craft .prop-crafting { left: 50%; bottom: 17%; height: 40%; }
+.sp-mine .prop-mining { left: 37.5%; bottom: 17%; height: 44%; }
+.sp-forge .prop-smithing { left: 37%; bottom: 17%; height: 42%; }
+.sp-grav .prop-gravity { left: 66%; bottom: 18%; height: 40%; }
+.sp-farm .farm-plot { bottom: 15%; height: 30%; }
+.sp-hex .prop-exorcism { left: 37%; bottom: 32%; height: 32%; rotate: 8deg; filter: drop-shadow(0 0 3px #fff) drop-shadow(0 0 10px rgba(255, 230, 170, 0.8)); }
+.sp-hunt .prop-tracking { left: 21%; bottom: 8%; height: 30%; }
+.sp-hunt .prop-tracking-trap { left: 72%; bottom: 14%; height: 46%; }
+.sp-dig .prop-archaeology { left: 35%; bottom: 14%; height: 30%; }
+.sp-shop .prop-restoration { left: 38%; bottom: 33%; height: 26%; }
+.sp-voy .ship { width: 19%; }
+.sp-voy .ship-bob > .prop-voyaging { position: absolute; left: 50%; bottom: 0; width: 125%; height: auto; }
+.sp-voy .ship-bob > .ship-av { left: 14%; top: auto; bottom: 34%; width: 34%; height: 52%; }
 .sp-voy .ship-svg, .sp-voy .voy-farw, .sp-voy .voy-mid { display: none; }
-.sp-bond .ec-slot { display: none; }
-.sp-mine .prop-mining { left: 60%; bottom: -2%; width: 22%; }
-.sp-forge .prop-smithing { left: 66%; bottom: -4%; width: 20%; }
-.sp-grav .prop-gravity { left: 57%; bottom: -1%; width: 21%; }
-.sp-farm .farm-plot { left: 0; bottom: 17%; width: 9.5%; transform: translateX(-50%); }
-.sp-hex .prop-exorcism { left: 45%; bottom: 8%; width: 13%; }
-.sp-hex .prop-exorcism-wisp { left: 64%; bottom: 25%; width: 11%; }
-.sp-hunt .prop-tracking { left: 12%; bottom: -3%; width: 26%; }
-.sp-hunt .prop-tracking-trap { left: 60%; bottom: -5%; width: 27%; }
-.sp-dig .prop-archaeology { left: 55%; bottom: -5%; width: 25%; }
-.sp-shop .prop-restoration { left: 64%; bottom: 12%; width: 18%; }
-.sp-bond .prop-bonding { left: 68%; bottom: 22%; width: 13%; }
-.sp-bond .prop-bonding { animation: skillEchoHover 2.2s ease-in-out infinite alternate; }
 .sp-farm .farm-plot[data-frame="3"] { animation: skillCropSway 2.8s ease-in-out infinite alternate; }
 .spot.thud-big > .skill-prop-layer { animation: wcThudBig 0.3s linear; }
 .spot.sx-quake > .skill-prop-layer { animation: sxQuake 0.6s linear; }
-@keyframes skillEchoHover { from { translate: 0 0; } to { translate: 0 -4px; } }
-@keyframes skillCropSway { from { transform: translateX(-50%) rotate(-3deg); } to { transform: translateX(-50%) rotate(3deg); } }
+@keyframes skillCropSway { from { rotate: -3deg; } to { rotate: 3deg; } }
 
 .spot .scene-art-bg[data-skill-bg="woodcutting"] { background-image: url('../assets/backgrounds/skills/woodcutting.png'); }
 .spot .scene-art-bg[data-skill-bg="arts"] { background-image: url('../assets/backgrounds/skills/crafting.png'); }
-.spot .scene-art-bg[data-skill-bg="fishing"] { background-image: url('../assets/backgrounds/skills/fishing.png'); }
-.spot .scene-art-bg[data-skill-bg="cooking"] { background-image: url('../assets/backgrounds/skills/cooking.png'); }
 .spot .scene-art-bg[data-skill-bg="voyaging"] { background-image: url('../assets/backgrounds/skills/voyaging.png'); }
 .spot .scene-art-bg[data-skill-bg="mining"] { background-image: url('../assets/backgrounds/skills/mining.png'); }
 .spot .scene-art-bg[data-skill-bg="smithing"] { background-image: url('../assets/backgrounds/skills/smithing.png'); }
@@ -114,7 +94,7 @@
 .spot .scene-art-bg[data-skill-bg="bonding"] { background-image: url('../assets/backgrounds/skills/bonding.png'); }
 
 @media (prefers-reduced-motion: reduce) {
-  .sp-bond .prop-bonding, .sp-farm .farm-plot[data-frame="3"] { animation: none !important; }
+  .sp-farm .farm-plot[data-frame="3"] { animation: none !important; }
 }
 
 .arena.arena { position: relative; isolation: isolate; background: rgba(8, 10, 16, 0.18); }
@@ -122,12 +102,14 @@
   position: absolute;
   z-index: 0;
   inset: 0;
-  background-position: center 55%;
+  background-position: center bottom;   /* keep the painted ground under the fighters */
   background-repeat: no-repeat;
   background-size: cover;
   filter: brightness(0.78) saturate(0.92);
   pointer-events: none;
 }
+/* Darken the top so the HUD reads over the busy part of the painting. */
+.arena-art-bg::after { content: ''; position: absolute; inset: 0; background: linear-gradient(180deg, rgba(8, 10, 16, 0.6) 0%, rgba(8, 10, 16, 0.15) 45%, transparent 70%); }
 .arena-art-bg[data-combat-bg="shinobi"] { background-image: url('../assets/backgrounds/combat/shinobi.png'); }
 .arena-art-bg[data-combat-bg="seas"] { background-image: url('../assets/backgrounds/combat/seas.png'); }
 .arena-art-bg[data-combat-bg="soul"] { background-image: url('../assets/backgrounds/combat/soul.png'); }

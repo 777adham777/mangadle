@@ -6,13 +6,14 @@
 
 const PICK_TITLE = { woodcutting: 'Trees', mining: 'Ore veins', archaeology: 'Dig sites' };
 
-// Each prop is a four-frame transparent PNG strip. Extra rows in the atlas become a
-// second prop (the ward's curse, and the hunter's trap) rather than a static scene SVG.
+// Each prop is a four-frame transparent PNG strip, placed where the avatar's tool lands
+// (css/background-art.css). The hunter also gets a second prop (the trap). Fishing and
+// Cooking keep their own game screen (spot-ui.js), Voyaging draws its ship sprite in
+// seas-ui.js, Bonding keeps the player's drawn Echo and Exorcism its drawn curse.
 const SKILL_PROP_ART = {
-  woodcutting: ['woodcutting'], arts: ['crafting'], fishing: ['fishing'], cooking: ['cooking'],
-  voyaging: [], mining: ['mining'], smithing: ['smithing'], gravity: ['gravity'],
-  farming: ['farming'], exorcism: ['exorcism', 'exorcism-wisp'], tracking: ['tracking', 'tracking-trap'],
-  archaeology: ['archaeology'], restoration: ['restoration'], bonding: ['bonding'],
+  woodcutting: ['woodcutting'], arts: ['crafting'], mining: ['mining'], smithing: ['smithing'],
+  gravity: ['gravity'], farming: ['farming'], exorcism: ['exorcism'],
+  tracking: ['tracking', 'tracking-trap'], archaeology: ['archaeology'], restoration: ['restoration'],
 };
 
 function farmSpriteNodesHTML(P) {
@@ -122,7 +123,8 @@ document.addEventListener('click', (ev) => {
 function skillPropFrame(skill) {
   if (skill === 'voyaging') {
     const progress = typeof voyK === 'function' ? voyK() : -1;
-    return progress < 0 ? 0 : Math.min(3, Math.floor(Math.min(0.9999, progress) * 4));
+    // 0 = moored at home; at sea the ship sails (1-2), then frame 3 for the last stretch.
+    return progress < 0 ? 0 : 1 + Math.min(2, Math.floor(Math.min(0.9999, progress) * 3));
   }
   if (skill === 'bonding' && !(S.action && S.action.skill === skill)) {
     const E = S.echo || {};

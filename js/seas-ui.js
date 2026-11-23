@@ -413,7 +413,7 @@ function spotHTML(skill, o) {
     cls = 'sp-voy voy-' + look; bg = voyBg(look); name = a ? a.name : 'Home port'; sub = a ? 'At sea' : 'Docked';
     const strip = (k, h) => `<svg viewBox="0 0 1600 ${h}" preserveAspectRatio="none">${voyStrip(look, k)}</svg>`;
     layers = `<div class="voy-farw"><div class="voy-far">${strip('far', 60)}</div></div><div class="spot-wave mid">${waveStrip(VL.sea[1], 0.5, 4 * rough, 30)}</div><div class="voy-mid">${strip('mid', 50)}</div>
-      <div class="ship ${a ? 'sailing' : ''}" style="left:${SPOT.voyLeft != null ? SPOT.voyLeft.toFixed(2) : 10}%"><div class="ship-bob">${shipSVG(rc('seas'))}<div class="ship-av">${avatarSVG(null, { ctx: 'preview', pose: a ? 'sail' : 'swagger' })}</div></div><i class="wake"></i></div>
+      <div class="ship ${a ? 'sailing' : ''}" style="left:${SPOT.voyLeft != null ? SPOT.voyLeft.toFixed(2) : 10}%"><div class="ship-bob"><i class="skill-prop prop-voyaging" data-sprite="voyaging" data-owner-skill="voyaging" data-frame="0"></i>${shipSVG(rc('seas'))}<div class="ship-av">${avatarSVG(null, { ctx: 'preview', pose: a ? 'sail' : 'swagger' })}</div></div><i class="wake"></i></div>
       <div class="spot-wave front">${waveStrip(VL.sea[2], 0.8, 6 * rough, 26)}</div>${voyWeather(look)}`;
     if (VL.fog) layers += '<div class="fogband"></div><div class="fogband two"></div>';
   }

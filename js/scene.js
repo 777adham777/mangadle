@@ -299,9 +299,11 @@ const SCENES = {
 SCENES.rift = SCENES.hub;
 
 function sceneSVG(kind, cls) {
-  const scene = SCENES[kind] ? kind : 'hub';
-  sceneMotes.kind = scene;
-  return `<div class="scene-svg scene-art scene-art-${scene} ${cls || ''}" aria-hidden="true"></div>`;
+  // Vector scene: stays sharp at any window size. (The painted realm images are only 531 px
+  // wide, far too small for a full-page backdrop; they are used inside the scene boxes.)
+  const f = SCENES[kind] || SCENES.hub;
+  sceneMotes.kind = SCENES[kind] ? kind : 'hub';
+  return `<svg class="scene-svg ${cls || ''}" viewBox="0 0 1600 900" preserveAspectRatio="xMidYMax slice" aria-hidden="true">${f()}</svg>`;
 }
 // Cache: scenes are deterministic, build each once.
 const SCENE_CACHE = {};
