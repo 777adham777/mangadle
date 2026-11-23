@@ -1,6 +1,7 @@
 # Icônes de l'Armurerie manga — prompts ChatGPT (planches de 6)
 
 53 nouveaux équipements (`js/armory.js`) → **9 planches** de 6 icônes (la 9e en a 5).
+Pour tout déléguer à ChatGPT / Codex (génération, découpe, contrôle, commit, déploiement) : envoie-lui `docs/CHATGPT-ARMORY-ICONS-BRIEF.md`.
 Chaque planche est découpée automatiquement en icônes prêtes pour le jeu : transparence, cadrage,
 256×256, bon dossier de monde, branchement dans `js/item-images.js`.
 

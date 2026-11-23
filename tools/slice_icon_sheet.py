@@ -3,6 +3,7 @@
     python tools/slice_icon_sheet.py                 # every art-incoming/armory/sheet-<n>.png found
     python tools/slice_icon_sheet.py 3               # only sheet-3.png
     python tools/slice_icon_sheet.py path.png 3      # any file, as batch 3
+    python tools/slice_icon_sheet.py --check         # are all 53 armory icons there, 256x256 RGBA, registered?
     options: --dry (preview only)  --holes (on a white/grey background, also clear enclosed pockets of it)
 
 Batch <n> lists the 6 item ids in reading order (left to right, top row first): docs/ARMORY-ICONS.md
@@ -251,7 +252,30 @@ def run(sheet_path, n, dry, holes):
         "  MISSING: " + ", ".join(missing) if missing else "", prev.relative_to(ROOT) if ROOT in prev.parents else prev))
 
 
+def check():
+    """Every armory icon present, 256x256 RGBA with transparent corners, and registered."""
+    entries = dict(re.findall(r'^\s*"(\w+)": "([^"]+)"', MAP_JS.read_text(encoding="utf8"), re.M))
+    bad = []
+    for i in ORDER:
+        path = ROOT / ("assets/item-icons/%s/%s.png" % (FOLDER[i], i))
+        if entries.get(i) != "assets/item-icons/%s/%s.png" % (FOLDER[i], i):
+            bad.append(i + " (not in js/item-images.js)")
+        elif not path.exists():
+            bad.append(i + " (no file)")
+        else:
+            im = Image.open(path)
+            corners = [im.convert("RGBA").getpixel(xy)[3] for xy in ((0, 0), (SIZE - 1, 0), (0, SIZE - 1), (SIZE - 1, SIZE - 1))]
+            if im.size != (SIZE, SIZE) or im.mode != "RGBA" or max(corners) > 0:
+                bad.append("%s (%s %s, corner alpha %s)" % (i, im.size, im.mode, max(corners)))
+    print("armory icons: %d / %d ok, map size %d" % (len(ORDER) - len(bad), len(ORDER), len(entries)))
+    for b in bad:
+        print("  BAD", b)
+    return not bad
+
+
 if __name__ == "__main__":
+    if "--check" in sys.argv:
+        sys.exit(0 if check() else 1)
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
     dry, holes = "--dry" in sys.argv, "--holes" in sys.argv
     if len(args) == 2:
