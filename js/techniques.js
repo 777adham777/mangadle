@@ -2,9 +2,10 @@
 /* ==========================================================================
    TRI-REALM — techniques (GDD §2.2), DOM-free. Data: TECHNIQUES in worlds.js.
    - Collection: S.tech.lv[id] = level (1-10), S.tech.frag[id] = fragments.
-   - Scrolls drop in battle and are read at once: a random technique of that world
-     (unknown ones 3× as likely, and a pity counter guarantees one). Duplicates → fragments.
-   - Crafted scrolls teach a chosen technique (deterministic).
+   - Scrolls drop in battle (a pity counter guarantees one) and go to the Bank. You read them
+     when you choose (Bank, Techniques page, the battle dock): a world's scroll teaches a random
+     technique of that world (unknown ones 3× as likely); a duplicate gives fragments.
+   - Crafted scrolls teach a chosen technique (deterministic). They wait in the Bank too.
    - Typed slots, filled by category. In battle each equipped technique fires as soon as its
      cooldown is over, in slot order; defensive ones wait for their condition. No energy bar.
    ========================================================================== */
@@ -86,9 +87,44 @@ function upgradeTech(id) {
   return true;
 }
 
+/* ------------------------------------------------------------ scrolls in the bag */
+const isScroll = (id) => !!(ITEMS[id] && ITEMS[id].type === 'scroll');
+const scrollIds = () => Object.keys(S.items).filter((k) => isScroll(k) && S.items[k] > 0);
+const scrollsOwned = () => scrollIds().reduce((a, k) => a + S.items[k], 0);
+// Why a scroll can't be read (or ''): everything it can teach is already level 10.
+function scrollBlock(id) {
+  const it = ITEMS[id];
+  if (!it || it.type !== 'scroll') return 'Not a scroll.';
+  const ids = it.tech ? [it.tech] : TECH_POOLS[it.pool] || [];
+  if (ids.length && ids.every((t) => techLv(t) >= TECH_MAX)) return it.tech ? 'Mastered: this technique is level 10.' : 'Every technique it teaches is mastered.';
+  return '';
+}
+// Read n scrolls of one stack (n = 'all' reads the whole stack). Returns { id, n, res: [gainTech results] }.
+function readScrolls(id, n) {
+  if (scrollBlock(id)) return null;
+  const it = ITEMS[id], k = Math.min(count(id), n === 'all' ? Infinity : Math.max(1, n | 0));
+  if (!k) return null;
+  removeItem(id, k);
+  const res = [];
+  for (let i = 0; i < k; i++) {
+    const r = it.tech ? gainTech(it.tech, 'read') : readScroll(it.pool, 'read');
+    if (r) res.push(r);
+    if (scrollBlock(id)) { addItem(id, k - i - 1); break; }   // mastered on the way: keep the rest
+  }
+  emit('scrollsread', { id, n: res.length, res });
+  return { id, n: res.length, res };
+}
+// Every readable stack at once (the battle dock's button).
+function readAllScrolls() {
+  const out = [];
+  for (const id of scrollIds()) { const r = readScrolls(id, 'all'); if (r) out.push(r); }
+  return out;
+}
+
 /* ------------------------------------------------------------ scroll drops */
 // Every foe of a world with a technique pool can drop that world's scroll. Bosses drop it often.
 // Pity: 60 kills in a row without one guarantees the next; your very first comes by the 10th kill.
+// It goes to the Bank: reading it is your call.
 const SCROLL_RATE = 1 / 40, SCROLL_BOSS = 1 / 4, SCROLL_PITY = 60;
 for (const z of ZONES) {
   if (!TECH_POOLS[z.realm]) continue;
@@ -98,21 +134,13 @@ hook('kill', (e, z, loot, dropped) => {
   const sid = 'scroll_' + z.realm;
   if (!TECH_POOLS[z.realm]) return;
   S.tech.pity = (S.tech.pity || 0) + 1;
-  if (!loot[sid] && (S.tech.pity >= SCROLL_PITY || (!Object.keys(S.tech.lv).length && S.stats.kills >= 9))) {
+  const first = !Object.keys(S.tech.lv).length && !scrollsOwned() && !S.stats.scrollFound;
+  if (!loot[sid] && (S.tech.pity >= SCROLL_PITY || (first && S.stats.kills >= 9))) {
     addItem(sid, 1); loot[sid] = 1; dropped.push(ITEMS[sid].name);
   }
   if (!loot[sid]) return;
   S.tech.pity = 0;
-  for (let i = 0; i < loot[sid]; i++) readScroll(z.realm, e.name);
-  removeItem(sid, loot[sid]);
-});
-// Crafted scrolls teach their technique at once (they never sit in the bank).
-hook('action', (skill, act) => {
-  const o = act.out && Object.keys(act.out)[0], it = o && ITEMS[o];
-  if (!it || it.type !== 'scroll') return;
-  const n = count(o);
-  removeItem(o, n);
-  for (let i = 0; i < n; i++) (it.tech ? gainTech(it.tech, SKILLS[skill].name) : readScroll(it.pool, SKILLS[skill].name));
+  if (!S.stats.scrollFound) { S.stats.scrollFound = 1; emit('firstscroll', sid); }
 });
 hook('block', (skill, act) => {
   const it = act.out && ITEMS[Object.keys(act.out)[0]];

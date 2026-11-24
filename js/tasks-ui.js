@@ -30,7 +30,7 @@ UIX.homeTop.push(() => {
     ${hdr('Weekly objectives', `new ones in ${fmtTime((nextWeek() - Date.now()) / 1000)}`)}
     <div class="task-list">${T.weekly.map((t, i) => taskRow(t, i)).join('') || '<div class="empty-note">Nothing this week.</div>'}</div></section>`;
 });
-on('task', (d) => toast(`Objective done: +${fmt(d.gold)} gold`, 'rare'));
+on('task', (d) => toast(`Objective done: +${fmt(d.gold)} gold · ${taskScrolls(d.t)} scroll${taskScrolls(d.t) > 1 ? 's' : ''} in your Bank`, 'rare'));
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-task]');
   if (!t || t.disabled) return;

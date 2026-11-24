@@ -73,7 +73,7 @@ function claimTask(weekly, i) {
   const gold = Math.round(taskGold(t) * goldMult());
   S.gold += gold;
   const pools = WORLD_ORDER.filter((r) => TECH_POOLS[r] && realmOpen(r)), got = [];
-  if (pools.length) for (let k = 0; k < taskScrolls(t); k++) got.push(readScroll(pick(pools), weekly ? 'Weekly objective' : 'Daily objective'));
+  if (pools.length) for (let k = 0; k < taskScrolls(t); k++) { const sid = 'scroll_' + pick(pools); addItem(sid, 1); got.push(sid); }
   if (weekly && realmOpen('hex')) addItem('cursed_fragment', 5);
   S.stats.tasks = (S.stats.tasks || 0) + 1;
   emit('task', { t, gold });

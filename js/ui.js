@@ -205,7 +205,7 @@ function renderRail() {
   groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => {
     const f = featureOfView(k);
     if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
-    return `<button class="nq ${isOn(k) ? 'on' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}</button>`;
+    return `<button class="nq ${isOn(k) ? 'on' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}${k === 'techniques' && typeof scrollsOwned === 'function' && scrollsOwned() ? `<em class="nq-badge" title="Scrolls to read">${fmt(scrollsOwned())}</em>` : ''}</button>`;
   }).join('')}</div>`);
   // Le menu qui tient: from 3 worlds on, the worlds you are not in fold to one line of skill chips (icon + level,
   // one click each). Open: the world on screen, the one working, the newest, and any you unfolded yourself.
@@ -656,8 +656,9 @@ function gsTopHTML(z) {
 }
 function gsTechHTML() {
   if (typeof techOn !== 'function' || !techOn()) return '';
-  const slots = openSlots();
-  return `<div class="gs-techs">${slots.map((sl) => {
+  const slots = openSlots(), sc = scrollsOwned();
+  const read = sc ? `<button class="gs-tech gs-scrolls" data-readscroll="*" title="Read your ${sc} scroll${sc > 1 ? 's' : ''}">${gi('tied-scroll')}<em>Read ×${fmt(sc)}</em></button>` : '';
+  return `<div class="gs-techs">${read}${slots.map((sl) => {
     const id = S.tech.slots[sl.id];
     if (!id || !techLv(id)) return `<button class="gs-tech empty" data-nav="techniques" title="${esc(sl.name)}: empty. Equip a technique">${ui(TECH_CATS[sl.cat].icon)}</button>`;
     const pas = TECHNIQUES[id].cat === 'passive';
@@ -813,6 +814,7 @@ function inspectorHTML() {
     body.push(`<p class="lore">${it.desc}</p>${mine ? attrList([['star', 'Your rank', `${rk} / ${FRUIT_RANK_MAX} · power ×${(1 + 0.25 * (rk - 1)).toFixed(2)}`]]) : ''}<p class="muted">Only one fruit at a time — eating another kind replaces it. Eat copies of yours to raise its rank (+25% power each). Fruit eaters fish 40% slower.</p>`);
     acts.push(mine ? (rk >= FRUIT_RANK_MAX ? gbtn('Max rank', 'fruit', 'disabled') : gbtn(`Eat: rank ${rk + 1}`, 'fruit', `data-eat="${selItem}"`)) : gbtn('Eat', 'fruit', `data-eat="${selItem}"`));
   }
+  else if (it.type === 'scroll' && typeof scrollInspect === 'function') { const x = scrollInspect(selItem); body.push(x.body); acts.push(...x.acts); }
   else if (it.type === 'chest') {
     const tot = it.loot.reduce((a, l) => a + l[1], 0);
     body.push(`${hdr('Contents', `${fmt(it.gold[0])}–${fmt(it.gold[1])} gold + one of`)}<ul class="srcs">${it.loot.map(([id, w, q]) => `<li><span><i>${itemIc(id)}</i>${esc(fruitLabel(id))}${q[1] > 1 ? ` ×${q[0]}–${q[1]}` : ''}</span><b>${fmtRate(w / tot)}</b></li>`).join('')}</ul>`);

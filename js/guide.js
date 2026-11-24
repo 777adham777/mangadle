@@ -20,7 +20,7 @@ const GUIDE = [
   { act: 'arts:soldier_pill', nav: 'Back to <b>Crafting</b>.', start: 'Click <b>Soldier Pill</b>. Each one uses 2 Healing Leaves from your woodcutting.', run: 'Brew 5 pills and the instructors will let you fight. Out of leaves? Chop more Pine Logs, then come back.' },
   { food: true, nav: 'Before you fight, pack your pills: open your <b>Character</b>.' },
   { zone: 0, nav: 'Pills packed. Open the <b>Battlefield</b>.', start: 'Pick the <b>Training Grounds</b>. It is an Easy stage.', run: 'Combat is automatic. When your HP drops low you eat a pill on your own. Foes drop gold, chakra crystals and, now and then, a <b>technique scroll</b>.' },
-  { zone: 0, nav: 'Back to the <b>Battlefield</b>.', start: 'Keep fighting at the <b>Training Grounds</b>.', run: 'A scroll is read at once and teaches a technique. It goes into a slot on its own and fires in battle when ready.' },
+  { zone: 0, nav: 'Back to the <b>Battlefield</b>.', start: 'Keep fighting at the <b>Training Grounds</b>.', run: 'A scroll you find goes to your Bank. Read it on the <b>Techniques</b> page: it teaches a technique that slots itself in and fires in battle when ready.' },
   { zone: 0, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight at the <b>Training Grounds</b>.', run: 'Every foe gives Character XP. Each level raises your five stats: Attack, Defense, Vitality, Speed and Luck.' },
   { market: true, nav: 'The <b>Market</b> is open. Spend your gold there.' },
   { zone: 1, nav: 'Back to the <b>Battlefield</b>.', start: 'Fight in the <b>Misty Forest</b>.', run: 'Every world ends with a guardian. Beat the Ashen Fox to reach a new world.' },
@@ -248,11 +248,11 @@ const INTRO = {
              [() => ui('gold'), 'Loot', 'Foes drop gold, gear and the materials for new worlds.']],
     go: 'character:food', btn: 'Equip my pills' },
   'feature:techniques': { icon: () => ui('technique'), kicker: 'New menu', title: 'Techniques',
-    text: 'A scroll fell from that foe. Techniques are how you build your fighter: equip them, level them up, then take on the guardian.',
-    points: [[() => ui('technique'), 'Equip it in a slot', 'Attack I first; more slots open as you level.'],
+    text: 'A scroll fell from that foe. It waits in your Bank: read it here and its technique is yours. Techniques are how you build your fighter.',
+    points: [[() => ui('technique'), 'Read it, it slots itself', 'Attack I first; more slots open as you level.'],
              [() => ui('frag'), 'Copies level it up', 'Each duplicate scroll gives fragments.'],
              [() => ui('gate'), 'Beat the guardian', 'It opens the next world.']],
-    go: 'techniques', btn: 'See my techniques' },
+    go: 'techniques', btn: 'Read my scroll' },
 };
 function showIntro(id) {
   const I = INTRO[id];
