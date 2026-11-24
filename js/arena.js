@@ -1,60 +1,20 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — battle arena
-   A side-on fighting stage: a HUD with both health bars on top, and a floor
-   where your stick figure and the foe stand facing each other.
+   TRI-REALM IDLE — battle arena ("Grand Stage", 2026-11-24)
+   The fight is seen through your eyes: no hero on screen, only the foe, big,
+   in the middle of its world's painted stage. Its name, HP, wind-up and tags
+   float above it; its drops sit in a corner, the farm rates in the other.
+   You live in the command dock under the stage (ui.js VIEWS.battle): your HP,
+   your swing, your techniques, your food.
    Every foe is a painted sprite (js/monster-art.js, made by tools/slice_monster_sheet.py),
-   animated in CSS: it breathes, coils before a blow, lunges, flashes when hit, falls.
+   animated in CSS: it breathes, coils before a blow, lunges at you, flashes when hit, falls.
    Variants: Hardcore and Rift Tear foes use their own image, Ascension tiers recolour it.
-   Without a sprite, a foe falls back to its drawn creature (creatures.js) or stick figure.
+   Without a sprite, a foe falls back to its drawn creature (creatures.js) or its icon.
    The foe's HUD reads its kit (foes.js): role, weakness, traits, statuses,
    the move it is winding up, boss phases and shield.
-   Loaded after avatar.js and creatures.js, before ui-systems.js.
+   Loaded after draw-util.js and creatures.js, before ui-systems.js.
    ========================================================================== */
 
-// Enemy name keyword -> how that foe is dressed. First match wins.
-// over: avatar cosmetics (ink = skin colour); weapon: item id drawn in hand ('' = bare hands).
-const FOE_LOOKS = [
-  [/Admiral/,              { outfit: 'uniform', hair: 'mop', hat: 'tricorn', face: 'fierce', back: 'coat', ink: '#3c5f9e' }, 'stormcaller'],
-  [/Corsair/,              { outfit: 'corsair', hair: 'mop', hat: 'bandana', face: 'patch', back: 'coat', ink: '#7a4a9a' }, 'corsair_cutlass'],
-  [/Cannon Brute/,         { outfit: 'corsair', hair: 'tuft', hat: 'bandana', face: 'fierce', ink: '#a0623a' }, 'hand_cannon'],
-  [/Navy Recruit/,         { outfit: 'tee', hair: 'tuft', hat: 'bucket', face: 'dots', ink: '#5a8ac0' }, 'rusty_cutlass'],
-  [/Merfolk/,              { outfit: 'none', hair: 'mop', face: 'fierce', ink: '#2fa3a0' }, 'power_gauntlets'],
-  [/Bandit Thug/,          { outfit: 'tee', hair: 'tuft', hat: 'bandana', face: 'scar', ink: '#a8704a' }, 'iron_wakizashi'],
-  [/Rogue Apprentice/,     { outfit: 'shinobi', hair: 'spikes', hat: 'hood', face: 'mask', ink: '#56688c' }, 'crystal_kunai'],
-  [/Mist Assassin/,        { outfit: 'shinobi', hair: 'tuft', hat: 'hood', face: 'mask', back: 'scarf', ink: '#8a9ab8' }, 'ashen_fang'],
-  [/Masked Lancer/,        { outfit: 'reaper', hair: 'ember', face: 'husk', back: 'shroud', ink: '#43375a' }, 'bone_lance'],
-  [/Bone Priest/,          { outfit: 'reaper', hat: 'horns', face: 'husk', back: 'shroud', ink: '#56446a' }, 'wraith_sickle'],
-  [/Masked Sovereign/,     { outfit: 'reaper', hair: 'ember', hat: 'horns', face: 'husk', back: 'shroud', aura: 'wisps', ink: '#2c2140' }, 'sovereign_blade'],
-  [/Wasteland Brawler/,    { outfit: 'gi', hair: 'tuft', hat: 'martial', face: 'fierce', ink: '#b07a44' }, 'power_gauntlets'],
-  [/Elite Soldier/,        { outfit: 'gi', hair: 'spikes', hat: 'martial', face: 'scar', ink: '#4f72a8' }, 'power_gauntlets'],
-  [/Armored Commander/,    { outfit: 'gi', hat: 'martial', face: 'scar', back: 'coat', ink: '#7462a0' }, 'black_warhammer'],
-  [/Horned Mutant/,        { outfit: 'none', hat: 'horns', face: 'fierce', ink: '#9a3f66' }, ''],
-  [/Crimson Tyrant/,       { outfit: 'gi', hair: 'flame', hat: 'horns', face: 'fierce', back: 'mantle', aura: 'embers', ink: '#c0303f' }, 'power_gauntlets'],
-  [/Hollow Sorcerer/,      { outfit: 'uniform', hair: 'swept', hat: 'talisman', face: 'cursed', back: 'shroud', ink: '#43306a' }, 'wraith_sickle'],
-  [/Bound Corpse/,         { outfit: 'tee', hat: 'talisman', face: 'blank', ink: '#76887a' }, ''],
-  [/Veil Walker/,          { outfit: 'uniform', hair: 'frost', face: 'cursed', back: 'shroud', ink: '#52649a' }, 'cursed_cleaver'],
-  [/Cursed Matriarch/,     { outfit: 'uniform', hair: 'frost', hat: 'talisman', face: 'cursed', back: 'sigil', aura: 'smoke', ink: '#6a2f7a' }, 'cursed_cleaver'],
-  [/Rival Examinee/,       { outfit: 'wilds', hair: 'wild', hat: 'beast', face: 'paint', back: 'quiver', ink: '#4f8a40' }, 'sunforged_bow'],
-  [/Bandit Hunter/,        { outfit: 'wilds', hair: 'mop', hat: 'beast', face: 'scar', back: 'quiver', ink: '#8a6230' }, 'sunforged_bow'],
-  [/Masked Vampire/,       { outfit: 'longcoat', hair: 'swept', face: 'marble', back: 'shroud', ink: '#6a1f30' }, 'eclipse_blade'],
-  [/Sunlight Monk/,        { outfit: 'gi', hat: 'martial', face: 'dots', ink: '#d0943a', aura: 'embers' }, 'power_gauntlets'],
-  [/Echo Thief/,           { outfit: 'longcoat', hair: 'swept', hat: 'laurel', face: 'marble', ink: '#62629a' }, 'crystal_kunai'],
-  [/Wind Pillar Guard/,    { outfit: 'none', hair: 'swept', hat: 'laurel', face: 'fierce', ink: '#4a9a9a' }, 'bone_lance'],
-  [/Pillar Warrior/,       { outfit: 'none', hair: 'tuft', hat: 'laurel', face: 'fierce', ink: '#9a7450' }, 'bone_lance'],
-  [/Pillar Lord/,          { outfit: 'longcoat', hair: 'swept', hat: 'laurel', face: 'marble', back: 'wings', aura: 'echo', ink: '#84409a' }, 'eclipse_blade'],
-  [/Rift Emperor/,         { outfit: 'riftwear', hair: 'crest', hat: 'crown', face: 'rifteye', back: 'mantle', aura: 'storm', ink: '#8b2bd6' }, 'rift_cleaver'],
-];
-function foeLook(e, realm) {
-  const name = e.base || e.name;
-  const m = FOE_LOOKS.find(([re]) => re.test(name));
-  if (!m) return null;
-  const base = (REALMS[realm] && REALMS[realm].color) || '#ff5d73';
-  const over = Object.assign({ style: 'flat', color: 'chalk', hat: 'none', face: 'fierce', back: 'none', aura: 'none', stance: 'relaxed', hair: 'none', top: 'none', bottom: 'none', ink: shade(base, -0.32) }, m[1]);
-  if (over.outfit) { over.top = over.bottom = over.outfit; delete over.outfit; }
-  if (e.rank === 2 && over.aura === 'none') over.aura = 'embers';      // an Alpha burns with power
-  return { over, weapon: ITEMS[m[2]] ? m[2] : '' };
-}
 const ELEM_ICON = { fire: 'fire', lightning: 'lightning-trio', wind: 'wingfoot', bleed: 'fangs', drain: 'heart-plus' };
 const ELEM_NAME = { fire: 'Fire', lightning: 'Lightning', wind: 'Wind', bleed: 'Bleed', drain: 'Drain' };
 // Sprite size on the floor: the sheet cell maps to FOE_PX (guardians: BOSS_PX), times the foe's size
@@ -73,7 +33,7 @@ function foeSprite(e) {
   const px = m.boss ? BOSS_PX * m.h : FOE_PX * m.h * SIZE_K[foeSize(n)];
   return { src: `assets/monsters/${m.p}${v}.webp`, h: Math.round(px), a: m.a };
 }
-// Foe portrait: its sprite, else its drawn creature, its dressed stick figure, or its icon.
+// Foe portrait: its sprite, else its drawn creature, else its icon.
 function foeArtHTML(e, realm, opts) {
   const n = e.base || e.name, sp = foeSprite(e);
   if (sp) {
@@ -81,16 +41,14 @@ function foeArtHTML(e, realm, opts) {
     return `<img class="foe-png ${t ? 'asc' + t : ''}" src="${sp.src}" alt="${esc(n)}" draggable="false">`;
   }
   if (creatureOf(n)) return creatureSVG(n, opts);
-  const look = foeLook(e, realm);
-  return look ? avatarSVG(look.over, Object.assign({ ctx: 'enemy', flip: true, weapon: look.weapon }, opts && opts.still ? { still: true } : {})) : `<span class="creature">${ic('enemy', n)}</span>`;
+  return `<span class="creature">${ic('enemy', n)}</span>`;
 }
 
 /* ------------------------------------------------------------- markup */
-const foeAv = () => document.querySelector('[data-portrait="enemy"] svg.avatar');
 const foeCr = () => document.querySelector('[data-portrait="enemy"] svg.cr');
 const foePng = () => document.querySelector('[data-portrait="enemy"] img.foe-png');
-const meFighter = () => document.querySelector('.ar-floor .fighter.me');
 const foeFighter = () => document.querySelector('.ar-floor .fighter.enemy');
+const meDock = () => document.querySelector('.gs-me');
 // A chip: icon + short label, tooltip on hover.
 const chip = (icon, label, tip, cls) => `<span class="fchip ${cls || ''}" title="${esc(tip)}">${gi(icon)}${label ? `<em>${esc(label)}</em>` : ''}</span>`;
 function foeTagsHTML(e) {
@@ -104,36 +62,41 @@ function foeTagsHTML(e) {
   for (const id in tr) out.push(chip(TRAITS[id].icon, TRAITS[id].name, TRAITS[id].desc(tr[id]), (S.combat.affix || []).some((a) => a[0] === id) ? 'affix' : 'trait'));
   return out.join('');
 }
-// Idle life on the floor: motes drifting up in the stage's colour, dust stirring at the fighters' feet (CSS only).
+// Idle life on the floor: motes drifting up in the stage's colour, dust stirring at the foe's feet (CSS only).
 const CB_AMB = [...Array(9)].map((_, i) => `<i style="left:${(i * 11.3 + 4) % 100}%;--d:${(6 + (i * 1.7) % 5).toFixed(1)}s;animation-delay:${(-i * 1.37).toFixed(2)}s;--sx:${i % 2 ? 18 : -14}px"></i>`).join('')
-  + '<b class="cb-dust me"></b><b class="cb-dust foe"></b>';
+  + '<b class="cb-dust foe"></b>';
+// The farm rates, top right of the stage (once: the activity bar hides its numbers on this page).
+function gsRatesHTML() {
+  const c = combatRates();
+  return `<div class="gs-rates"><div><small>Kills / h</small><b>≈${fmt(c.kph)}</b></div><div><small>XP / h</small><b>≈${fmt(c.xph)}</b></div><div><small>Gold / h</small><b>≈${fmt(c.goldh)}</b></div></div>`;
+}
+// The stage: the foe's plate, the foe, its drops, the rates. Redrawn on every spawn (ui.js).
 function stageHTML() {
   const C = S.combat, e = curEnemy(), z = C.zone != null ? ZONES[C.zone] : null;
   const realm = z ? z.realm : WORLD_ORDER[0];
-  const meHud = `<div class="fhud me f-body"><div class="f-name"><b>You</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(pMaxHit())}</span><span title="Defense">${ui('def')}${fmt(pDef())}</span><span title="Attack speed">${ui('spd')}${pSpeed().toFixed(1)}s</span>${pDodge() ? `<span title="Dodge">${ui('dodge')}${pct(pDodge())}</span>` : ''}</span></div>
-      <div class="hpbar"><i data-php></i><span data-phptext></span></div><div class="atkbar"><i data-patk></i></div><div class="stchips" data-pst></div>${uix('stageMe')}</div>`;
-  let foeHud = '', foe = '';
-  if (!z) foe = `<div class="f-empty">${ui('map')}<b>Choose a stage</b><small>Start with an <em>Easy</em> one in the list.</small></div>`;
+  let plate = '', foe = '', side = '';
+  if (!z) foe = `<div class="f-empty">${ui('map')}<b>Choose a stage</b><small>Start with an <em>Easy</em> one in the list below.</small></div>`;
   else if (!e) foe = `<div class="f-empty searching">${ui('battle')}<b>Searching for a foe…</b></div>`;
   else {
     const boss = z.boss, K = kitOf(e), n = e.base || e.name, sp = foeSprite(e), cr = !sp && creatureOf(n);
     const ticks = K && K.phases ? '<s style="left:66%"></s><s style="left:33%"></s>' : '';
-    foeHud = `<div class="fhud enemy f-body ${boss ? 'boss' : ''}"><div class="f-name"><b>${boss ? '<span class="boss-tag">Boss</span>' : e.rank ? `<span class="boss-tag ${e.rank === 2 ? '' : 'elite'}">${e.rank === 2 ? 'Mini-boss' : 'Elite'}</span>` : ''}${e.name}</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(e.atk)}</span><span title="Defense">${ui('def')}${fmt(e.def)}</span><span title="Attack speed">${ui('spd')}${e.spd}s</span></span></div>
+    const rank = boss ? '<span class="boss-tag">Boss</span>' : e.rank ? `<span class="boss-tag ${e.rank === 2 ? '' : 'elite'}">${e.rank === 2 ? 'Mini-boss' : 'Elite'}</span>` : '';
+    plate = `<div class="gs-plate fhud enemy ${boss ? 'boss' : ''}">
+      <div class="gs-name">${rank}<b>${esc(e.name)}</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(e.atk)}</span><span title="Defense">${ui('def')}${fmt(e.def)}</span><span title="Attack speed">${ui('spd')}${e.spd}s</span></span></div>
       <div class="hpbar enemy"><i data-ehp></i><b class="shieldbar" data-eshield></b>${ticks}<span data-ehptext></span></div>
       <div class="castbar" data-ecast><div class="atkbar enemy"><i data-eatk></i></div><span data-ecastname></span></div>
-      <div class="ftags">${foeTagsHTML(e)}</div><div class="stchips foe" data-est></div>
-      <div class="drops">${e.drops.map(([id, ch]) => tile(id, fmtRate(ch < 0.2 ? ch * luckMult() : ch), { cls: 'xs ' + (id !== 'FRUIT' && !S.found[id] ? 'dim' : '') })).join('')}${tile(null, fmt(e.gold[0]) + '+', { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}</div></div>`;
+      <div class="ftags">${foeTagsHTML(e)}</div><div class="stchips foe" data-est></div></div>`;
+    side = `<div class="gs-drops"><small>Drops</small><div class="drops">${e.drops.map(([id, ch]) => tile(id, fmtRate(ch < 0.2 ? ch * luckMult() : ch), { cls: 'xs ' + (id !== 'FRUIT' && !S.found[id] ? 'dim' : '') })).join('')}${tile(null, fmt(e.gold[0]) + '+', { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}</div></div>`;
     const size = cr && cr[1].size ? cr[1].size : 1;
-    const kind = sp ? 'foe-png' : cr ? 'foe-cr' : foeLook(e, realm) ? 'foe-stick' : 'foe-beast';
+    const kind = sp ? 'foe-png' : cr ? 'foe-cr' : 'foe-beast';
     foe = `<div class="fighter enemy enter ${boss ? 'boss' : ''} ${kind} ${e.rank ? 'rank' + e.rank : ''}" style="--sz:${size}${sp ? `;--mh:${sp.h};--ma:${sp.a}` : ''}"><div class="f-art" data-portrait="enemy">${foeArtHTML(e, realm)}</div><div class="windmark">!</div></div>`;
   }
   return `<div class="arena-art-bg" data-combat-bg="${realm}" aria-hidden="true"></div>
-    <div class="ar-hud">${meHud}<div class="vs"><span>VS</span></div>${foeHud || '<div class="fhud-empty"></div>'}</div>
     <div class="ar-floor" style="--rc:${rc(realm)}">
       <div class="cb-amb" aria-hidden="true">${CB_AMB}</div>
-      <div class="fighter me"><div class="f-art av-art" data-portrait="player">${avatarSVG(null, { ctx: 'battle' })}</div><div class="stunmark">${gi('circle-sparks')}</div></div>
       ${foe}
-    </div>`;
+    </div>
+    ${plate}${z && e ? gsRatesHTML() : ''}${side}`;
 }
 
 /* ------------------------------------------------------------- live HUD */
@@ -164,8 +127,15 @@ UPD.push(() => {
   const eBox = document.querySelector('[data-est]');
   const p = stChips('p'), e = eBox ? stChips('e') : '';
   if (p + e !== stSig) { stSig = p + e; pBox.innerHTML = p; if (eBox) eBox.innerHTML = e; }
-  const me = meFighter();
+  const me = meDock();
   if (me) me.classList.toggle('stunned', stOn('p', 'stun'));
+  // the technique buttons in the dock: cooldown sweep, "ready" glow
+  for (const b of document.querySelectorAll('[data-gstech]')) {
+    const id = b.dataset.gstech, cd = Math.max(0, RT.cd[id] || 0), T = techCd(id) || 1;
+    b.style.setProperty('--cd', (cd / T).toFixed(3));
+    b.classList.toggle('cool', cd > 0.05);
+    setText(b.querySelector('s'), cd > 0.05 ? Math.ceil(cd) + 's' : '');
+  }
   const C = S.combat, foe = curEnemy(), cast = document.querySelector('[data-ecast]');
   if (cast && foe) {
     const m = RT.foe.next, wind = !!(m && m.tele);
@@ -178,130 +148,111 @@ UPD.push(() => {
   }
 });
 
-/* ------------------------------------------------------------- reactions (combat animation pass) */
-// Every blow reads as anticipation -> contact (a hit-stop) -> follow-through. The wind-up starts a moment
-// BEFORE the blow lands (it watches the swing timers), so the contact frame lines up with the damage number.
-// Each weapon family (avatar.js cbFam: blade, quick, heavy, spear, bow, gun, fist) swings its own way and
-// leaves its own impact and particles; beasts lunge and claw. Crits and big hits get a bigger moment
-// (larger impact, a flash, a small shake of the floor). Reduced motion: poses only, no dash/shake/flash/particles.
-// pre: the wind-up (ends on the contact pose) · post: hit-stop + follow-through · fx: impact · extra: more impacts (ms after contact)
+// The top bar's "next stage" progress (ui.js gsTopHTML).
+UPD.push(() => {
+  const bar = $('[data-gsnext]');
+  if (!bar) return;
+  const N = gsNextInfo();
+  if (!N || N.open) return;
+  bar.style.width = (N.have / N.need) * 100 + '%';
+  setText($('[data-gsnexttxt]'), N.boss ? (N.have ? 'Boss defeated' : 'Defeat the boss') : `${N.have} / ${N.need} kills`);
+});
+
+/* ------------------------------------------------------------- reactions (combat animation) */
+// You are the camera. Your blows land on the foe: an impact drawn by your weapon's family (blade, quick,
+// heavy, spear, bow, gun, fist), a flash and a knock-back on the foe; bows and guns fire a projectile from
+// the bottom of the screen. The foe coils before its blow (it watches its swing timer), lunges at you,
+// and its hit lands on the screen: claw marks, a red flash, the dock shakes. Crits and big hits get a bigger
+// moment (larger impact, a flash, a small shake of the stage). Reduced motion: flashes only.
+// A weapon's shape, from its id.
+function weaponKind(id) {
+  const n = id || '';
+  return /bow/.test(n) ? 'bow' : /hammer/.test(n) ? 'hammer' : /cannon/.test(n) ? 'cannon' : /gauntlet/.test(n) ? 'fist'
+    : /claw/.test(n) ? 'claw' : /sickle/.test(n) ? 'sickle' : /lance/.test(n) ? 'lance' : /cleaver/.test(n) ? 'cleaver'
+    : /katana|blade/.test(n) ? 'katana' : /kunai|senbon|tanto|fang|wakizashi/.test(n) ? 'short' : 'cutlass';
+}
+const CB_KIND = { katana: 'blade', cutlass: 'blade', sickle: 'blade', short: 'quick', hammer: 'heavy', cleaver: 'heavy', lance: 'spear', bow: 'bow', cannon: 'gun', fist: 'fist', claw: 'fist' };
+function cbFam(id) {
+  if (!id || !ITEMS[id]) return 'fist';
+  const k = weaponKind(id);
+  if (k !== 'cutlass') return CB_KIND[k] || 'blade';
+  // a plain sword shape: the item's own family (weapons.js, or it.fam behind a manga name) refines it
+  const af = ITEMS[id].fam || (typeof armFamily === 'function' ? armFamily(id) : '');
+  return af === 'short' ? 'quick' : 'blade';
+}
+// Per family, in turn: the impact, more impacts (ms after the first), a projectile [kind, flight ms].
 const CB_SEQ = {
-  blade: [
-    { pre: [['windup', 150, 'out'], ['strike', 50, 'in']], post: [['strike', 70], ['bladeFollow', 200, 'out']], fx: 'slash' },
-    { pre: [['bladeLow', 150, 'out'], ['bladeRise', 50, 'in']], post: [['bladeRise', 90]], fx: 'rise' },
-    { pre: [['windup', 150, 'out'], ['strike', 50, 'in']], post: [['strike', 70], ['bladeFollow', 200, 'out']], fx: 'slash' },
-    { pre: [['coil', 150, 'out'], ['thrust', 50, 'in']], post: [['thrust', 90]], fx: 'pierce' },
-  ],
-  quick: [
-    { pre: [['qCoil', 90, 'out'], ['qSlashA', 40, 'in']], post: [['qSlashA', 40], ['qSlashB', 70, 'out'], ['qSlashB', 60]], fx: 'x', extra: [110] },
-    { pre: [['coil', 90, 'out'], ['thrust', 40, 'in']], post: [['thrust', 40], ['qSlashA', 70, 'out'], ['qSlashA', 50]], fx: 'x', extra: [110] },
-  ],
-  heavy: [
-    { pre: [['hvRaise', 230, 'out'], ['hvRaise', 60], ['hvSlam', 60, 'in']], post: [['hvSlam', 140]], fx: 'smash' },
-    { pre: [['windup', 200, 'out'], ['strike', 60, 'in']], post: [['strike', 110], ['bladeFollow', 220, 'out']], fx: 'smash' },
-  ],
-  spear: [
-    { pre: [['spCoil', 170, 'out'], ['thrust', 50, 'in']], post: [['thrust', 90]], fx: 'pierce' },
-    { pre: [['spCoil', 170, 'out'], ['thrust', 50, 'in']], post: [['thrust', 40], ['spCoil', 80, 'out'], ['thrust', 50, 'in'], ['thrust', 60]], fx: 'pierce', extra: [130] },
-  ],
-  bow: [{ pre: [['bowDraw', 280, 'out'], ['bowDraw', 50]], post: [['bowLoose', 40, 'in'], ['bowLoose', 220]], fx: 'arrow', proj: 'arrow', fly: 130 }],
-  gun: [
-    { pre: [['gunAim', 160, 'out'], ['gunAim', 30]], post: [['gunKick', 40, 'in'], ['gunKick', 90], ['gunAim', 150, 'out']], fx: 'shot', proj: 'bullet', fly: 70 },
-    { pre: [['gunAim', 160, 'out'], ['gunAim', 30]], post: [['gunKick', 40, 'in'], ['gunAim', 60, 'out'], ['gunKick', 40, 'in'], ['gunKick', 90]], fx: 'shot', proj: 'bullet', fly: 70, extra: [100] },
-  ],
-  fist: [
-    { pre: [['jab', 70, 'in']], post: [['jab', 40], ['cross', 80, 'in'], ['cross', 70]], fx: 'punch', extra: [120] },
-    { pre: [['coil', 120, 'out'], ['upper', 60, 'in']], post: [['upper', 110]], fx: 'punch' },
-    { pre: [['chamber', 130, 'out'], ['kick', 50, 'in']], post: [['kick', 100]], fx: 'punch' },
-  ],
-  beast: [{ pre: [], lead: 160, post: [], fx: 'claw' }],
+  blade: [{ fx: 'slash' }, { fx: 'rise' }, { fx: 'slash' }, { fx: 'pierce' }],
+  quick: [{ fx: 'x', extra: [110] }, { fx: 'x', extra: [110] }],
+  heavy: [{ fx: 'smash' }],
+  spear: [{ fx: 'pierce' }, { fx: 'pierce', extra: [130] }],
+  bow: [{ fx: 'arrow', proj: 'arrow', fly: 160 }],
+  gun: [{ fx: 'shot', proj: 'bullet', fly: 90 }, { fx: 'shot', proj: 'bullet', fly: 90, extra: [100] }],
+  fist: [{ fx: 'punch', extra: [120] }, { fx: 'punch' }],
 };
-for (const f in CB_SEQ) for (const v of CB_SEQ[f]) if (v.lead == null) v.lead = v.pre.reduce((a, s) => a + s[1], 0);
-// how far in front of its own centre each family reaches (share of the fighter's width)
-const CB_REACH = { blade: 0.42, quick: 0.3, heavy: 0.42, spear: 0.62, fist: 0.26, beast: 0.1 };
 const cbOk = () => inBattleView() && !document.hidden && !!document.querySelector('.ar-floor');
 const cbFloorEl = () => document.querySelector('.ar-floor');
-// side 'p' (you) or 'e' (the foe): its drawing, its family, its fighter box
-const cbArt = (side) => (side === 'p' ? playerAv() : foeAv() || foePng() || foeCr() || document.querySelector('.ar-floor .fighter.enemy .creature'));
-function cbFamOf(side) {
-  if (side === 'p') return cbFam(S.equip && S.equip.weapon);
-  const av = foeAv();
-  return av ? cbFam(av.dataset.weapon) : 'beast';
+const cbArt = () => foePng() || foeCr() || document.querySelector('.ar-floor .fighter.enemy .creature');
+const cbS = { p: { n: 0 }, e: { coil: 0 } };
+let cbLastHit = 0;
+function cbVar() {
+  const fam = cbFamOf(), L = CB_SEQ[fam] || CB_SEQ.blade;
+  return Object.assign({ fam }, L[cbS.p.n++ % L.length]);
 }
-const cbS = { p: { pre: 0, n: 0, v: null }, e: { pre: 0, n: 0, v: null } };
-let cbBusy = 0, cbLastHit = 0;
-function cbVar(side) {
-  const st = cbS[side], fam = cbFamOf(side);
-  if (side === 'p' && AV_EXT.attacks.length && st.n % 3 === 2) return { fam, pre: [], lead: 0, post: AV_EXT.attacks[Math.floor(st.n / 3) % AV_EXT.attacks.length], fx: 'slash' };
-  const L = CB_SEQ[fam] || CB_SEQ.blade;
-  return Object.assign({ fam }, L[st.n % L.length]);
-}
-const cbScale = (steps, k) => steps.map(([p, ms, e]) => [p, Math.max(16, Math.round(ms * k)), e]);
-// a fighter's box inside the floor (layout box: unaffected by dashes)
-function cbBox(side) {
-  const f = side === 'p' ? meFighter() : foeFighter();
+const cbFamOf = () => cbFam(S.equip && S.equip.weapon);
+// the foe's box inside the floor (layout box: unaffected by its animations)
+function cbBox() {
+  const f = foeFighter();
   if (!f) return null;
   return { x: f.offsetLeft, y: f.offsetTop, w: f.offsetWidth, h: f.offsetHeight, cx: f.offsetLeft + f.offsetWidth / 2, el: f };
 }
-// where blows land on a side, and where a shot leaves the attacker's hand
-function cbHitAt(side) {
-  const b = cbBox(side);
+// where your blows land (a spread around the foe's chest), and where you stand (the bottom of the screen)
+function cbHitAt() {
+  const b = cbBox();
   if (!b) return [0, 0];
-  if (side === 'p') return [b.cx + b.w * 0.08, b.y + b.h * 0.44];
-  return foeAv() ? [b.cx - b.w * 0.06, b.y + b.h * 0.44] : [b.x + b.w * 0.32, b.y + b.h * 0.52];
+  return [b.cx + b.w * (Math.random() * 0.36 - 0.18), b.y + b.h * (0.32 + Math.random() * 0.26)];
 }
-function cbHandAt(side) {
-  const b = cbBox(side);
-  if (!b) return [0, 0];
-  return side === 'p' ? [b.cx + b.w * 0.34, b.y + b.h * 0.42] : [b.cx - b.w * 0.34, b.y + b.h * 0.42];
+function cbYouAt() {
+  const f = cbFloorEl();
+  return f ? [f.offsetWidth / 2 + (Math.random() * 80 - 40), f.offsetHeight * 0.9] : [0, 0];
 }
-// The attacker dashes in: still for most of the wind-up, a fast burst into contact, held through the hit-stop, eased back.
-function cbDash(side, fam, lead, hold) {
-  if (avCalm() || fam === 'bow' || fam === 'gun') return;
-  const a = cbBox(side), o = cbBox(side === 'p' ? 'e' : 'p');
-  if (!a || !o) return;
-  const reach = (CB_REACH[fam] || 0.4) * a.w;
-  let dx;
-  if (side === 'p') dx = (foeAv() ? o.cx - o.w * 0.14 : o.x + o.w * 0.2) - a.cx - reach;
-  else dx = foeAv() ? -(a.cx - (o.cx + o.w * 0.14) - reach) : -(a.x + a.w * 0.16 - (o.cx + o.w * 0.22));
-  const lim = (cbFloorEl().offsetWidth || 600) * 0.5;
-  dx = Math.max(-lim, Math.min(lim, dx));
-  if (side === 'p' ? dx <= 4 : dx >= -4) return;
-  const back = 240, T = lead + hold + back, s = Math.max(0, lead - 110) / T, c = lead / T, h = (lead + hold) / T;
-  const tx = (x) => `translateX(${Math.round(x)}px)`;
-  a.el.animate([{ transform: 'none', offset: 0 }, { transform: 'none', offset: s, easing: 'cubic-bezier(.55,0,.9,.45)' }, { transform: tx(dx), offset: c }, { transform: tx(dx), offset: h, easing: 'cubic-bezier(.2,.8,.3,1)' }, { transform: 'none', offset: 1 }], { duration: T });
-}
-// The struck drawing: a white flash and a knock-back.
-function cbKnock(side, big, kind) {
-  const el = cbArt(side);
+// The struck foe: a white flash and a small push away from you.
+function cbKnock(big, kind) {
+  const el = cbArt();
   if (!el || !el.animate) return;
   if (!el.dataset.cbf) el.dataset.cbf = getComputedStyle(el).filter || 'none';
   const base = el.dataset.cbf === 'none' ? '' : el.dataset.cbf;
-  const dir = side === 'p' ? -1 : 1, k = (big ? 13 : 7) * dir;
   const fl = (b) => ((b ? `brightness(${b}) ` : '') + base).trim() || 'none';
-  if (avCalm()) { el.animate([{ filter: fl(1.8) }, { filter: fl(0) }], { duration: 180 }); return; }
-  const sq = kind === 'smash' ? ' scale(1.04,0.93)' : '';
+  if (calmMotion()) { el.animate([{ filter: fl(1.8) }, { filter: fl(0) }], { duration: 180 }); return; }
+  const k = big ? 0.93 : 0.965, sq = kind === 'smash' ? ' scale(1.04,0.9)' : '', sx = (Math.random() < 0.5 ? -1 : 1) * (big ? 10 : 5);
   el.animate([
     { transform: 'none', filter: fl(3) },
-    { transform: `translateX(${k}px) skewX(${-dir * 4}deg)${sq}`, filter: fl(2.2), offset: 0.2 },
-    { transform: `translateX(${k * 0.4}px)`, filter: fl(1.2), offset: 0.55 },
+    { transform: `translate(${sx}px,-6px) scale(${k})${sq}`, filter: fl(2.2), offset: 0.2 },
+    { transform: `translate(${sx * 0.4}px,-2px) scale(${(1 + k) / 2})`, filter: fl(1.2), offset: 0.55 },
     { transform: 'none', filter: fl(0) },
   ], { duration: big ? 380 : 260, easing: 'cubic-bezier(.2,.7,.3,1)' });
 }
-// A small shake of the floor (big moments only), and a one-frame inverted "impact frame" for the biggest.
+// A small shake of the stage (big moments only), and a one-frame inverted "impact frame" for the biggest.
 function cbShake(n) {
-  const f = cbFloorEl();
-  if (!f || avCalm()) return;
+  const f = document.querySelector('#stage');
+  if (!f || calmMotion()) return;
   const a = n || 5;
   f.animate([{ transform: 'none' }, { transform: `translate(${-a}px,${a * 0.4}px)` }, { transform: `translate(${a * 0.8}px,${-a * 0.4}px)` }, { transform: `translate(${-a * 0.5}px,${a * 0.2}px)` }, { transform: `translate(${a * 0.3}px,0)` }, { transform: 'none' }], { duration: 280, easing: 'ease-out' });
 }
 function cbImpactFrame() {
   const f = cbFloorEl();
-  if (!f || avCalm()) return;
+  if (!f || calmMotion()) return;
   f.animate([{ filter: 'invert(1) grayscale(1) contrast(1.8)' }, { filter: 'invert(1) grayscale(1) contrast(1.8)', offset: 0.55 }, { filter: 'none' }], { duration: 120 });
 }
-// ---- impact drawings (centred, 120x120; a hit on you is mirrored)
-const cbStar = (n, r1, r2) => { const p = []; for (let i = 0; i < n * 2; i++) { const a = (i * Math.PI) / n - Math.PI / 2, r = i % 2 ? r2 : r1; p.push(`${(Math.cos(a) * r).toFixed(1)},${(Math.sin(a) * r).toFixed(1)}`); } return p.join(' '); };
+// The foe's blow reaches you: a red flash over the stage and the dock jolts.
+function cbHurt(big) {
+  const st = document.querySelector('#stage'), me = meDock();
+  if (st) { const v = document.createElement('div'); v.className = 'gs-hurt' + (big ? ' big' : ''); st.appendChild(v); setTimeout(() => v.remove(), 520); }
+  retrigger(me, 'jolt');
+  if (big) cbShake(big === 2 ? 8 : 5);
+}
+// ---- impact drawings (centred, 120x120)
+const cbStar = (n, ra, rb) => { const p = []; for (let i = 0; i < n * 2; i++) { const a = (i * Math.PI) / n - Math.PI / 2, r = i % 2 ? rb : ra; p.push(`${(Math.cos(a) * r).toFixed(1)},${(Math.sin(a) * r).toFixed(1)}`); } return p.join(' '); };
 const CB_ART = {
   slash: (c) => `<path d="M-56,-36 Q2,0 58,32 Q-4,-12 -56,-36Z" fill="${c}" opacity=".6" transform="scale(1.08)"/><path d="M-52,-32 Q0,-2 54,29 Q-4,-10 -52,-32Z" fill="#fff"/>`,
   rise: (c) => `<path d="M-56,36 Q2,0 58,-32 Q-4,12 -56,36Z" fill="${c}" opacity=".6" transform="scale(1.08)"/><path d="M-52,32 Q0,2 54,-29 Q-4,10 -52,32Z" fill="#fff"/>`,
@@ -309,7 +260,7 @@ const CB_ART = {
   pierce: (c) => `<path d="M-60,0 L26,-9 L60,0 L26,9Z" fill="${c}" opacity=".6"/><path d="M-56,0 L28,-5 L56,0 L28,5Z" fill="#fff"/><polygon points="${cbStar(6, 22, 7)}" fill="#fff" stroke="${c}" stroke-width="2.5" transform="translate(30,0)"/>`,
   smash: (c) => `<circle r="40" fill="none" stroke="${c}" stroke-width="5" opacity=".7" class="cb-ring"/><polygon points="${cbStar(9, 52, 18)}" fill="#fff" stroke="${c}" stroke-width="3.5" stroke-linejoin="round"/>`,
   punch: (c) => `<circle r="30" fill="none" stroke="#fff" stroke-width="5" class="cb-ring"/><polygon points="${cbStar(8, 34, 13)}" fill="#fff" stroke="${c}" stroke-width="3" stroke-linejoin="round"/>`,
-  arrow: (c) => `<polygon points="${cbStar(7, 26, 9)}" fill="#fff" stroke="${c}" stroke-width="2.5"/><path d="M-40,0 H6" stroke="#c9a46a" stroke-width="3"/><path d="M-40,0 l-6,-5 h5 l5,5 l-5,5 h-5z" fill="#e8443a"/>`,
+  arrow: (c) => `<polygon points="${cbStar(7, 26, 9)}" fill="#fff" stroke="${c}" stroke-width="2.5"/>`,
   shot: () => `<circle cx="-8" cy="-6" r="13" fill="#d8d4cc" opacity=".5"/><polygon points="${cbStar(8, 24, 8)}" fill="#fff6d0" stroke="#ff9a2b" stroke-width="3"/>`,
   claw: (c) => [-16, 0, 16].map((d) => `<path d="M${-26 + d},-40 Q${-2 + d},-6 ${18 + d},38" fill="none" stroke="${c}" stroke-width="9" stroke-linecap="round" opacity=".7"/><path d="M${-26 + d},-40 Q${-2 + d},-6 ${18 + d},38" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round"/>`).join(''),
   magic: (c) => `<circle r="34" fill="none" stroke="${c}" stroke-width="5" class="cb-ring"/><polygon points="${cbStar(8, 38, 12)}" fill="#fff" stroke="${c}" stroke-width="3"/><circle r="12" fill="${c}" opacity=".7"/>`,
@@ -325,7 +276,7 @@ function cbFx(x, y, kind, col, o) {
   o = o || {};
   const f = cbFloorEl();
   if (!f || cbLive > 8 || !CB_ART[kind]) return;
-  const calm = avCalm(), big = !!o.big, dir = o.dir || 1;
+  const calm = calmMotion(), big = !!o.big, dir = o.dir || 1;
   let parts = '';
   if (!calm) for (const [pk, n0] of CB_PARTS[kind] || []) {
     const n = Math.round(n0 * (big ? 1.7 : 1));
@@ -336,8 +287,8 @@ function cbFx(x, y, kind, col, o) {
     }
   }
   const el = document.createElement('div');
-  el.className = `cbfx k-${kind}${big ? ' big' : ''}`;
-  el.style.cssText = `left:${Math.round(x)}px;top:${Math.round(y)}px;--c:${col || '#fff'};--s:${dir};--rot:${Math.round(o.rot != null ? o.rot : Math.random() * 16 - 8)}deg`;
+  el.className = `cbfx k-${kind}${big ? ' big' : ''}${o.near ? ' near' : ''}`;
+  el.style.cssText = `left:${Math.round(x)}px;top:${Math.round(y)}px;--c:${col || '#fff'};--s:${dir};--rot:${Math.round(o.rot != null ? o.rot : Math.random() * 40 - 20)}deg`;
   el.innerHTML = `<svg viewBox="-60 -60 120 120">${CB_ART[kind](col || '#fff')}</svg>${parts}`;
   f.appendChild(el);
   cbLive++;
@@ -350,7 +301,7 @@ function cbFx(x, y, kind, col, o) {
     setTimeout(() => fl.remove(), 260);
   }
 }
-// A projectile from one side to the other (arrow, bullet, kunai, cannonball, ki, aura orb, talisman).
+// A projectile from you (the bottom of the screen) to the foe: it shrinks as it flies away.
 const CB_PROJ = {
   arrow: '<svg viewBox="-24 -7 48 14"><path d="M-20,0 H15" stroke="#c9a46a" stroke-width="2.6"/><path d="M14,-4.5 L23,0 L14,4.5Z" fill="#dfe4ee" stroke="#111" stroke-width="1.2"/><path d="M-20,0 l-3,-5 h5 l3,5 l-3,5 h-5z" fill="#e8443a" stroke="#111" stroke-width="1"/></svg>',
   bullet: '<svg viewBox="-24 -7 48 14"><ellipse cx="14" cy="0" rx="11" ry="5.5" fill="#ffb23a" opacity=".45"/><ellipse cx="14" cy="0" rx="7" ry="3.4" fill="#fff6c8"/></svg>',
@@ -360,25 +311,25 @@ const CB_PROJ = {
   orb: '<svg viewBox="-24 -12 48 24"><circle cx="10" r="11" fill="#9be15d" opacity=".4"/><circle cx="11" r="6" fill="#e9ffd8"/></svg>',
   talisman: '<svg viewBox="-24 -12 48 24"><rect x="0" y="-10" width="13" height="20" rx="1" fill="#f4ecd4" stroke="#111" stroke-width="1.3"/><path d="M6.5,-6 v12 M3,-2 h7 M3,3 h7" stroke="#c42a2a" stroke-width="1.6"/></svg>',
 };
-function cbProj(from, kind, fly, delay) {
-  if (avCalm()) return;
+function cbProj(kind, fly, delay, to) {
+  if (calmMotion()) return;
   const go = () => {
     const f = cbFloorEl();
     if (!f) return;
-    const to = from === 'p' ? 'e' : 'p', [x0, y0] = cbHandAt(from), [x1, y1] = cbHitAt(to), s = from === 'p' ? 1 : -1;
+    const [x0, y0] = cbYouAt(), [x1, y1] = to || cbHitAt();
+    const r = (Math.atan2(y1 - y0, x1 - x0) * 180) / Math.PI;
     const el = document.createElement('div');
     el.className = `cbproj j-${kind}`;
     el.innerHTML = CB_PROJ[kind] || CB_PROJ.orb;
     f.appendChild(el);
-    const arc = kind === 'ball' ? -34 : kind === 'arrow' ? -10 : 0;
-    const T = (x, y, r) => `translate(${Math.round(x)}px,${Math.round(y)}px) scaleX(${s}) rotate(${r || 0}deg)`;
-    const a = el.animate([{ transform: T(x0, y0, arc ? -12 : 0), opacity: 0.4 }, { transform: T((x0 + x1) / 2, (y0 + y1) / 2 + arc, 0), opacity: 1, offset: 0.5 }, { transform: T(x1, y1, arc ? 12 : 0), opacity: 1 }], { duration: fly, easing: 'linear' });
+    const T = (x, y, s) => `translate(${Math.round(x)}px,${Math.round(y)}px) rotate(${Math.round(r)}deg) scale(${s})`;
+    const a = el.animate([{ transform: T(x0, y0, 2.2), opacity: 0.5 }, { transform: T((x0 + x1) / 2, (y0 + y1) / 2 - 20, 1.4), opacity: 1, offset: 0.5 }, { transform: T(x1, y1, 0.9), opacity: 1 }], { duration: fly, easing: 'cubic-bezier(.3,.6,.6,1)' });
     a.onfinish = () => el.remove();
     setTimeout(() => el.remove(), fly + 200);
   };
   if (delay > 0) setTimeout(go, delay); else go();
 }
-// The damage number ui.js just made: its weight (size by share of HP), and it waits for the contact frame.
+// The damage number ui.js just made: its weight (size by share of HP), and it waits for the impact.
 function cbFloat(delay, cls, i) {
   const box = document.getElementById('fx'), f = box && box.lastElementChild;
   if (!f || f.dataset.cb || !f.classList.contains('float')) return;
@@ -388,77 +339,60 @@ function cbFloat(delay, cls, i) {
   if (delay > 0) { const d = Math.min(650, Math.round(delay)); f.style.animationDelay = d + 'ms'; f.style.animationDuration = 1100 - d + 'ms'; }
 }
 const cbWeight = (share) => (share >= 0.2 ? 'cb-huge' : share >= 0.08 ? 'cb-big' : share < 0.02 ? 'cb-small' : '');
-const cbCol = (side) => {
-  if (side === 'e' && !foeAv()) return '#ff5d73';
-  const id = side === 'p' ? S.equip && S.equip.weapon : foeAv().dataset.weapon;
-  return id && ITEMS[id] ? RCOL[Math.min(6, rarity(id))] : '#ffd9a0';
-};
-// The defender reacts at the contact frame: hurt pose (big hits stagger), flash and knock-back, the impact.
-function cbLand(att, v, d, at, big) {
-  const def = att === 'p' ? 'e' : 'p';
+const cbCol = () => { const id = S.equip && S.equip.weapon; return id && ITEMS[id] ? RCOL[Math.min(6, rarity(id))] : '#ffd9a0'; };
+// Your blow lands on the foe (after `at` ms): the impact, the flash and push, more impacts for combos.
+function cbLand(v, d, at, big) {
   const go = () => {
     if (!cbOk()) return;
-    const [x, y] = cbHitAt(def), dir = att === 'p' ? 1 : -1;
+    const [x, y] = cbHitAt();
     if (d.dodge) {
-      const av = def === 'p' ? playerAv() : foeAv();
-      if (av) avPlay(av, [['dodge', 80, 'out'], ['dodge', 170]]);
-      const el = cbArt(def);
-      if (el && el.animate && !avCalm()) el.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${18 * dir}px)`, opacity: 0.55, offset: 0.3 }, { transform: 'none', opacity: 1 }], { duration: 360, easing: 'cubic-bezier(.2,.8,.3,1)' });
-      cbFx(x + 10 * dir, y, 'whiff', '#fff', { dir });
+      const el = cbArt(), s = Math.random() < 0.5 ? -1 : 1;
+      if (el && el.animate && !calmMotion()) el.animate([{ transform: 'none', opacity: 1 }, { transform: `translateX(${26 * s}px)`, opacity: 0.55, offset: 0.3 }, { transform: 'none', opacity: 1 }], { duration: 360, easing: 'cubic-bezier(.2,.8,.3,1)' });
+      cbFx(x - 30 * s, y, 'whiff', '#fff');
       return;
     }
-    const kind = d.blocked && !d.label && d.dmg === d.blocked ? 'shield' : v.fx, col = kind === 'claw' ? '#ff4d5e' : v.col || cbCol(att);
-    cbFx(x, y, kind, col, { big, dir });
-    cbKnock(def, big, kind);
-    const av = def === 'p' ? playerAv() : foeAv();
-    if (av && kind !== 'shield' && !(def === 'e' && av.dataset.av === 'ko')) avPlay(av, big ? [['hurtBig', 60, 'out'], ['hurtBig', 180]] : [['hurt', 60, 'out'], ['hurt', 120]]);
+    const kind = d.blocked && !d.label && d.dmg === d.blocked ? 'shield' : v.fx, col = v.col || cbCol();
+    cbFx(x, y, kind, col, { big });
+    cbKnock(big, kind);
     if (big) cbShake(big === 2 ? 7 : 5);
-    for (const ms of v.extra || []) setTimeout(() => { if (!cbOk()) return; cbFx(x + 8 * dir, y - 10, kind, col, { dir }); cbKnock(def, false); }, ms);
-    if (kind === 'smash') { const b = cbBox(def); if (b) cbFx(x, b.y + b.h * 0.9, 'smash', '#cfc4b4', { dir, rot: 0 }); }
+    for (const ms of v.extra || []) setTimeout(() => { if (!cbOk()) return; const [x2, y2] = cbHitAt(); cbFx(x2, y2, kind, col); cbKnock(false); }, ms);
+    if (kind === 'smash') { const b = cbBox(); if (b) cbFx(b.cx, b.y + b.h * 0.92, 'smash', '#cfc4b4', { rot: 0 }); }
   };
   if (at > 0) setTimeout(go, at); else go();
 }
-// The swing of one side: wind-up before the blow (from the swing timers), then contact + follow-through.
-function cbPre(side, v, left) {
-  const av = side === 'p' ? playerAv() : foeAv(), k = Math.min(1, Math.max(0.3, (left * 1000) / (v.lead || 1)));
-  if (av && v.pre.length) avPlay(av, cbScale(v.pre, k));
-  if (!av && side === 'e') { const c = foePng() || foeCr(); if (c) c.classList.add('cb-coil'); }
-  cbDash(side, v.fam, Math.round(v.lead * k), 120);
+// Your swing: a projectile for bows and guns, then the impact.
+function cbSwingP(d) {
+  const v = cbVar(), e = curEnemy(), share = d.dmg ? d.dmg / (e ? e.hp : 1e9) : 0;
+  const big = d.crit || share >= 0.18 ? (share >= 0.3 ? 2 : 1) : 0;
+  const at = v.proj && !calmMotion() ? v.fly : 0;
+  if (v.proj) cbProj(v.proj, v.fly, 0);
+  cbLand(v, d, at, big);
+  return { at, big, share };
 }
-function cbSwing(side, d) {
-  const st = cbS[side], now = performance.now(), av = side === 'p' ? playerAv() : foeAv();
-  let v = st.pre && st.v && now - st.pre < st.v.lead + 320 ? st.v : null, lag = 0, seq = [];
-  if (!v) {
-    v = cbVar(side);
-    lag = Math.min(90, v.lead);
-    if (v.pre.length) seq = cbScale(v.pre, lag / v.lead);
-    cbDash(side, v.fam, lag, 70);
-  }
-  st.pre = 0; st.v = null; st.n++;
-  const e = curEnemy(), share = d.dmg ? d.dmg / (side === 'p' ? (e ? e.hp : 1e9) : pMaxHp()) : 0;
-  const big = d.crit || share >= (side === 'p' ? 0.18 : 0.12) ? (share >= 0.3 ? 2 : 1) : 0;
-  const post = v.post.map((s, i) => (i === 0 && big ? [s[0], s[1] + 50, s[2]] : s));
-  if (av) avPlay(av, seq.concat(post));
-  if (side === 'e' && !av) { const c = foePng() || foeCr(); if (c) { c.classList.remove('cb-coil'); retrigger(c, 'atk'); } }
-  if (v.proj) cbProj(side, v.proj, v.fly, lag);
-  const at = lag + (v.proj && !avCalm() ? v.fly : 0);
-  cbLand(side, v, d, at, big);
+// The foe's swing: it lunges at you, and its blow lands on the screen.
+function cbSwingE(d) {
+  const c = foePng() || foeCr();
+  if (c) { c.classList.remove('cb-coil'); retrigger(c, 'atk'); }
+  cbS.e.coil = 0;
+  const share = d.dmg ? d.dmg / pMaxHp() : 0, big = d.crit || share >= 0.12 ? (share >= 0.3 ? 2 : 1) : 0, at = calmMotion() ? 0 : 140;
+  setTimeout(() => {
+    if (!cbOk()) return;
+    const [x, y] = cbYouAt();
+    if (d.dodge) { cbFx(x, y - 30, 'whiff', '#fff'); return; }
+    cbFx(x, y - 40, d.blocked && d.dmg === d.blocked ? 'shield' : 'claw', '#ff4d5e', { big, near: true });
+    cbHurt(big);
+  }, at);
   return { at, big, share };
 }
 UPD.push(() => {
   const C = S.combat, e = curEnemy();
   if (!e || C.zone == null || C.enemy == null || !cbOk()) return;
-  const now = performance.now();
-  const ps = cbS.p, pv = ps.v || cbVar('p');
-  // (the frame loop runs before the game step of the next frame: aim the contact ~1 frame later)
-  if (C.pT > pv.lead / 1000 + 0.1) { ps.pre = 0; ps.v = null; }
-  else if (!ps.pre && C.pT <= pv.lead / 1000 && !playerHeld() && now > cbBusy && C.pT > 0) { ps.pre = now; ps.v = pv; cbPre('p', pv, C.pT + 0.016); }
-  const es = cbS.e, ev = es.v || cbVar('e');
-  if (C.eT > ev.lead / 1000 + 0.1) { es.pre = 0; es.v = null; }
-  else if (!es.pre && C.eT <= ev.lead / 1000 && C.eT > 0) { es.pre = now; es.v = ev; cbPre('e', ev, C.eT + 0.016); }
+  // the foe coils ~0.3 s before its blow
+  if (!cbS.e.coil && C.eT > 0 && C.eT <= 0.3) { cbS.e.coil = 1; const c = foePng() || foeCr(); if (c) c.classList.add('cb-coil'); }
+  else if (cbS.e.coil && C.eT > 0.4) { cbS.e.coil = 0; const c = foePng() || foeCr(); if (c) c.classList.remove('cb-coil'); }
 });
 
-// ---- techniques: each kind has its own cast (a power-up into a big strike, a palm thrust that fires, a seal, an aura)
+// ---- techniques: each kind has its own cast (a power-up into a big strike, a thrown projectile, a seal, an aura)
 // [kind, colour, family or projectile]
 const CB_TECH = {
   shadow_strike: ['melee', '#b07cff', 'quick'], reaper_slash: ['melee', '#8fa0ff', 'blade'], iron_fist: ['melee', '#ffcf5a', 'fist'], nen_enhance: ['melee', '#ffe46a', 'fist'],
@@ -470,17 +404,19 @@ const CB_TECH = {
 };
 const cbTech = (id) => CB_TECH[id] || [TECHNIQUES[id] && TECHNIQUES[id].tags.includes('melee') ? 'melee' : 'proj', '#ffd27a', 'orb'];
 let cbT = { id: null, t0: 0, i: 0, at: 0 };
-// A ring of energy (and the technique's glyph) on a side.
+// A ring of energy (and the technique's glyph): on the foe, or at the bottom of the screen for you.
 function cbRing(side, col, id, delay) {
   const go = () => {
-    const f = cbFloorEl(), b = cbBox(side);
-    if (!f || !b) return;
+    const f = cbFloorEl(), b = cbBox();
+    if (!f) return;
+    const [x, y] = side === 'e' && b ? [b.cx, b.y + b.h * 0.55] : [f.offsetWidth / 2, f.offsetHeight * 0.86];
     const el = document.createElement('div');
-    el.className = 'cbring';
-    el.style.cssText = `left:${Math.round(b.cx)}px;top:${Math.round(b.y + b.h * 0.55)}px;--c:${col}`;
+    el.className = 'cbring' + (side === 'e' ? '' : ' you');
+    el.style.cssText = `left:${Math.round(x)}px;top:${Math.round(y)}px;--c:${col}`;
     el.innerHTML = `<i></i><i></i>${id ? `<b>${ic('technique', id)}</b>` : ''}`;
     f.appendChild(el);
     setTimeout(() => el.remove(), 1000);
+    if (side !== 'e') retrigger(document.querySelector(`[data-gstech="${id}"]`), 'fire');
   };
   if (delay > 0) setTimeout(go, delay); else go();
 }
@@ -493,34 +429,26 @@ function cbDomain(col) {
   f.appendChild(el);
   setTimeout(() => el.remove(), 1500);
 }
-// The body of the cast; returns when its first blow lands (ms).
+// The cast; returns when its first blow lands (ms).
 function cbCast(id) {
-  const [k, col, x] = cbTech(id), av = playerAv(), now = performance.now();
-  let seq, at;
-  if (k === 'melee') {
-    const fam = CB_SEQ[x] ? x : 'blade', v = CB_SEQ[fam][id === 'nen_enhance' ? 1 : 0];
-    seq = [['powerUp', 140, 'out']].concat(cbScale(v.pre, 0.8), v.post.map((s, i) => (i ? s : [s[0], s[1] + 60, s[2]])));
-    at = 140 + Math.round(v.lead * 0.8);
-    cbRing('p', col, null);
-    cbDash('p', fam, at, 130);
-  } else if (k === 'proj') { seq = [['cast', 110, 'out'], ['cast', 420]]; at = 260; }
-  else if (k === 'blast') { seq = [['seal', 180, 'out'], ['cast', 70, 'in'], ['cast', 320]]; at = 300; cbRing('p', col, null); }
-  else if (k === 'domain') { seq = [['powerUp', 260, 'out'], ['powerUp', 160], ['cast', 70, 'in'], ['cast', 300]]; at = 460; cbDomain(col); cbRing('p', col, id); }
-  else if (k === 'seal') { seq = [['cast', 120, 'out'], ['cast', 320]]; at = 270; cbProj('p', 'talisman', 150, 120); cbRing('e', col, id, at); }
-  else { const p = id === 'nen_special' ? 'powerUp' : 'seal'; seq = [[p, 140, 'out'], [p, 380]]; at = 120; cbRing('p', col, id, 100); }
-  if (av) avPlay(av, seq);
-  cbBusy = now + seq.reduce((a, s) => a + s[1], 0);
-  cbS.p.pre = 0; cbS.p.v = null;
+  const [k, col] = cbTech(id);
+  let at;
+  if (k === 'melee') { at = 180; cbRing('p', col, id); }
+  else if (k === 'proj') { at = 260; cbRing('p', col, id); }
+  else if (k === 'blast') { at = 300; cbRing('p', col, id); }
+  else if (k === 'domain') { at = 460; cbDomain(col); cbRing('p', col, id); }
+  else if (k === 'seal') { at = 270; cbRing('p', col, id); cbProj('talisman', 150, 120); cbRing('e', col, null, at); }
+  else { at = 120; cbRing('p', col, id, 60); }
   return at;
 }
 function cbTechHit(id, d) {
   const now = performance.now();
   if (cbT.id !== id || now - cbT.t0 > 40) cbT = { id, t0: now, i: 0, at: cbCast(id) };
   const i = cbT.i++, [k, col, x] = cbTech(id), at = cbT.at + i * (k === 'proj' ? 90 : 80);
-  if (k === 'proj') cbProj('p', CB_PROJ[x] ? x : 'orb', 150, at - 150);
+  if (k === 'proj') cbProj(CB_PROJ[x] ? x : 'orb', 150, at - 150);
   const e = curEnemy(), share = e && d.dmg ? d.dmg / e.hp : 0, big = i === 0 && (d.label || share >= 0.15) ? (share >= 0.3 ? 2 : 1) : 0;
   const fx = k === 'melee' ? (CB_SEQ[x] || CB_SEQ.blade)[0].fx : k === 'blast' || id === 'domain_blaze' ? 'fire' : 'magic';
-  cbLand('p', { fx, col }, d, at, big);
+  cbLand({ fx, col }, d, at, big);
   if (big === 2) setTimeout(cbImpactFrame, at);
   return { at, big, share, i };
 }
@@ -535,9 +463,10 @@ on('tech', (d) => {
 on('hit', (d) => {
   if (!cbOk()) return;
   if (d.dot) {
-    // damage over time: a coloured flicker, no pose
-    const el = cbArt(d.target === 'enemy' ? 'e' : 'p'), col = { poison: '#8fe04a', burn: '#ff8a3a', bleed: '#ff4d5e' }[d.dot] || '#ff4d5e';
-    if (el && el.animate && !avCalm()) el.animate([{ filter: `drop-shadow(0 0 0 ${col})` }, { filter: `drop-shadow(0 0 10px ${col}) brightness(1.3)` }, { filter: `drop-shadow(0 0 0 ${col})` }], { duration: 360 });
+    // damage over time: a coloured flicker on the foe, a pulse of the dock for you
+    if (d.target !== 'enemy') { retrigger(meDock(), 'dot'); return; }
+    const el = cbArt(), col = { poison: '#8fe04a', burn: '#ff8a3a', bleed: '#ff4d5e' }[d.dot] || '#ff4d5e';
+    if (el && el.animate && !calmMotion()) el.animate([{ filter: `drop-shadow(0 0 0 ${col})` }, { filter: `drop-shadow(0 0 10px ${col}) brightness(1.3)` }, { filter: `drop-shadow(0 0 0 ${col})` }], { duration: 360 });
     return;
   }
   const now = performance.now();
@@ -545,54 +474,43 @@ on('hit', (d) => {
   if (d.target === 'enemy') {
     if (RT.casting) r = cbTechHit(RT.casting, d);
     // not a swing of your timer (Thorns, a lingering burn...): its impact only
-    else if ((d.label && d.label !== 'Counter') || (!d.label && S.combat.pT > 0.001)) { r = { at: 0, big: 0, share: 0 }; cbLand('p', (RT.fx.burn || 0) > 0 ? { fx: 'fire', col: '#ff7a2b' } : { fx: 'magic', col: '#ffd27a' }, d, 0, 0); }
-    else r = cbSwing('p', d);
+    else if ((d.label && d.label !== 'Counter') || (!d.label && S.combat.pT > 0.001)) { r = { at: 0, big: 0, share: 0 }; cbLand((RT.fx.burn || 0) > 0 ? { fx: 'fire', col: '#ff7a2b' } : { fx: 'magic', col: '#ffd27a' }, d, 0, 0); }
+    else r = cbSwingP(d);
     cbLastHit = Math.max(cbLastHit, now + r.at);
     if (!d.dodge) cbFloat(r.at, cbWeight(r.share) + (r.big ? ' cb-heavy' : ''), r.i || 0);
   } else {
-    r = cbSwing('e', d);
+    r = cbSwingE(d);
     if (!d.dodge) cbFloat(r.at, cbWeight(r.share * 0.6) + (r.big ? ' cb-heavy' : ''));
   }
 });
-// The foe falls at the contact frame of the last blow: stagger, collapse (a stick fighter kneels and slumps),
-// then fades in a puff of dust and rising motes. A boss: a bigger burst, a shake and an impact frame.
+// The foe falls after the last blow lands: stagger, collapse, then fades in a puff of dust and rising motes.
+// A boss: a bigger burst, a shake and an impact frame.
 on('kill', (d) => {
   if (!cbOk()) return;
-  const f = foeFighter(), av = foeAv(), boss = d.boss, delay = Math.max(0, cbLastHit - performance.now()) + 40;
-  if (av) av.dataset.av = 'ko';   // no more stance / wind-up: it stays down
+  const f = foeFighter(), boss = d.boss, delay = Math.max(0, cbLastHit - performance.now()) + 40;
   setTimeout(() => {
     if (!f || !f.isConnected) return;
-    if (av) avPlay(av, [['hurtBig', 70, 'out'], ['hurtBig', 170], ['ko', 420, 'in'], ['ko', 4000]]);
     f.classList.add('down');
-    const b = cbBox('e');
+    const b = cbBox();
     if (b) {
       const el = document.createElement('div');
       el.className = 'cbko' + (boss ? ' boss' : '');
-      el.style.cssText = `left:${Math.round(b.cx + (av ? 6 : -b.w * 0.05))}px;top:${Math.round(b.y + b.h * 0.93)}px`;
-      el.innerHTML = avCalm() ? '' : [...Array(boss ? 12 : 7)].map((_, i) => `<i style="--x:${Math.round(-50 + Math.random() * 100)}px;--y:${Math.round(-60 - Math.random() * 90)}px;--d:${Math.round(700 + Math.random() * 500)}ms;animation-delay:${450 + i * 50}ms"></i>`).join('') + '<s></s>';
+      el.style.cssText = `left:${Math.round(b.cx)}px;top:${Math.round(b.y + b.h * 0.93)}px`;
+      el.innerHTML = calmMotion() ? '' : [...Array(boss ? 12 : 7)].map((_, i) => `<i style="--x:${Math.round(-50 + Math.random() * 100)}px;--y:${Math.round(-60 - Math.random() * 90)}px;--d:${Math.round(700 + Math.random() * 500)}ms;animation-delay:${450 + i * 50}ms"></i>`).join('') + '<s></s>';
       cbFloorEl().appendChild(el);
       setTimeout(() => el.remove(), 2200);
     }
     if (boss) { cbShake(8); cbImpactFrame(); }
   }, delay);
-  // you: a victory flourish once the foe is down
-  setTimeout(() => {
-    const me = playerAv();
-    if (!me || !cbOk() || performance.now() < cbKoT) return;
-    avPlay(me, cbFamOf('p') === 'fist' || boss ? [['victory', 240, 'back'], ['victory', 460]] : [['flourish', 260, 'back'], ['flourish', 520]]);
-    if (boss) cbRing('p', '#ffd75e', null);
-  }, delay + 520);
 });
-// You fall: stagger, then stay down a moment (avatar.js basePose reads cbKoT); a stick foe gloats.
+// You fall: the stage goes red and dark for a moment.
 on('death', () => {
-  cbKoT = performance.now() + 2400;
   if (!cbOk()) return;
-  const me = playerAv(), av = foeAv();
-  if (me) avPlay(me, [['hurtBig', 70, 'out'], ['hurtBig', 160], ['ko', 420, 'in']]);
-  if (av) setTimeout(() => av.isConnected && avPlay(av, [['victory', 240, 'back'], ['victory', 600]]), 300);
+  const st = document.querySelector('#stage');
+  if (st) { const v = document.createElement('div'); v.className = 'gs-down'; v.innerHTML = '<b>Defeated</b><small>Back on your feet in a moment</small>'; st.appendChild(v); setTimeout(() => v.remove(), 2400); }
   cbShake(6);
 });
-on('spawn', () => { cbS.p.pre = cbS.e.pre = 0; cbS.p.v = cbS.e.v = null; cbS.e.n = 0; });
+on('spawn', () => { cbS.e.coil = 0; });
 on('foemove', (d) => {
   if (!inBattleView()) return;
   floatAt($('[data-portrait="enemy"]'), `<small>${esc(d.m.name)}</small>`, 'move', 0, -50);

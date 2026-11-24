@@ -2,10 +2,10 @@
 /* ==========================================================================
    TRI-REALM IDLE — the story (DOM-free)
    The objectives (GOALS in data.js) are the quests of a basic storyline, told in
-   eight chapters: one per world, then the Rift. Each chapter has a guide (a figure
-   drawn with the avatar rig) who gives you every quest with a line of their own.
+   eight chapters: one per world, then the Rift. Each chapter has a guide (a
+   portrait badge) who gives you every quest with a line of their own.
    Every quest pays gold and items that help with the next step; finishing a
-   chapter also gives that world's outfit and haircut and a piece of gear.
+   chapter also gives a piece of gear.
    The thread: you wake above the Leaf Village with a torn map and no memory.
    Worlds have been colliding since the sky cracked; every guardian was driven mad
    by a shard of the Rift. The map's marks light up one world at a time, and the
@@ -14,63 +14,62 @@
    Loaded after every file that defines items (foes.js, builds.js).
    ========================================================================== */
 
-// look: what the guide wears (avatar cosmetics: outfit, hair, face, hat, colour)
 const NPCS = {
-  ren:    { name: 'Old Ren',          title: 'Village carpenter',      look: { outfit: 'leafsuit', hair: 'cut_copycat', face: 'dots', color: 'chalk' } },
-  kaede:  { name: 'Sensei Kaede',     title: 'Leaf instructor',        look: { outfit: 'jonin', hair: 'cut_flash', face: 'dots', color: 'chalk' } },
-  mira:   { name: 'Captain Mira',     title: 'Shipwright of Orange Town', look: { outfit: 'kingcoat', hair: 'cut_emperor', face: 'smile', color: 'chalk' } },
-  bart:   { name: 'Bartolo',          title: 'Galley cook',            look: { outfit: 'cook', hair: 'cut_cook', face: 'smile', color: 'chalk' } },
-  kuro:   { name: 'Ferryman Kuro',    title: 'Guide of the dead',      look: { outfit: 'redcloud', hair: 'cut_panther', face: 'dots', color: 'chalk' } },
-  tetsu:  { name: 'Tetsu',            title: 'Soul smith',             look: { outfit: 'clantunic', hair: 'cut_pineapple', face: 'fierce', color: 'chalk' } },
-  kai:    { name: 'Master Kai',       title: 'Gravity hermit',         look: { outfit: 'firefist', hair: 'cut_sungod', face: 'smile', color: 'chalk' } },
-  yuki:   { name: 'Yuki',             title: 'Curse sorcerer',         look: { outfit: 'avenger', hair: 'cut_sixeyes', face: 'dots', color: 'chalk' } },
-  nett:   { name: 'Examiner Nett',    title: 'Hunter Association',     look: { outfit: 'swordsman', hair: 'cut_wildspike', face: 'smile', color: 'chalk' } },
-  selene: { name: 'Curator Selene',   title: 'Keeper of the museum',   look: { outfit: 'surgeon', hair: 'cut_goldrolls', face: 'dots', color: 'chalk' } },
-  carto:  { name: 'The Cartographer', title: 'Who drew your map',      look: { outfit: 'flamecloak', hair: 'cut_traitor', face: 'dots', color: 'chalk' } },
+  ren:    { name: 'Old Ren',          title: 'Village carpenter' },
+  kaede:  { name: 'Sensei Kaede',     title: 'Leaf instructor' },
+  mira:   { name: 'Captain Mira',     title: 'Shipwright of Orange Town' },
+  bart:   { name: 'Bartolo',          title: 'Galley cook' },
+  kuro:   { name: 'Ferryman Kuro',    title: 'Guide of the dead' },
+  tetsu:  { name: 'Tetsu',            title: 'Soul smith' },
+  kai:    { name: 'Master Kai',       title: 'Gravity hermit' },
+  yuki:   { name: 'Yuki',             title: 'Curse sorcerer' },
+  nett:   { name: 'Examiner Nett',    title: 'Hunter Association' },
+  selene: { name: 'Curator Selene',   title: 'Keeper of the museum' },
+  carto:  { name: 'The Cartographer', title: 'Who drew your map' },
 };
 
-// from: index of the chapter's first quest · end: the line when it closes · reward: items + cosmetics [slot, id]
+// from: index of the chapter's first quest · end: the line when it closes · reward: items
 const CHAPTERS = [
   { id: 'leaf', n: 1, from: 0, realm: 'shinobi', title: 'The Apprentice of the Leaf', cast: ['ren', 'kaede'],
     intro: ['You wake in the forest above the Leaf Village with a torn map in your fist and no memory of how you got there.',
       'An old carpenter finds you. "Worlds have been crashing into each other since the sky cracked. You fell out of one, eh? Then you\'ll need to learn to stand on your own."'],
     end: 'The Ashen Fox lies still. In its den, a shard of light pulses, and the first mark on your map lights up: a harbour no map shows.',
-    reward: { items: { old_compass: 1, sealed_scroll: 2 }, cos: [['outfit', 'leafsuit'], ['hair', 'cut_leafsun']] } },
+    reward: { items: { old_compass: 1, sealed_scroll: 2 } } },
   { id: 'blue', n: 2, from: 17, realm: 'seas', title: 'A Harbour No Map Shows', cast: ['mira', 'bart'],
     intro: ['The river spills you into Orange Town, a port of crooked masts and loud gulls.',
       'A captain looks at your map and whistles. "That mark is under the Admiral\'s flagship. Nobody sails there hungry, and nobody sails there alone."'],
     end: 'The Admiral falls. Under his flagship a drowned seal glows with the same light as your map. The sea itself seems to breathe out.',
-    reward: { items: { sea_charm: 1, treasure_map: 1 }, cos: [['outfit', 'kingcoat'], ['hair', 'cut_swordsman']] } },
+    reward: { items: { sea_charm: 1, treasure_map: 1 } } },
   { id: 'soul', n: 3, from: 29, realm: 'soul', title: 'Below the Drowned Seal', cast: ['kuro', 'tetsu'],
     intro: ['Beyond the seal there is no sea, only grey streets and lanterns that never go out.',
       'A ferryman studies you. "The living don\'t come here. Unless they carry a map like yours. Then they always come back changed."'],
     end: 'The Masked Sovereign\'s mask splits in two. Behind his throne, a stair climbs out of the afterlife into a sky full of thunder.',
-    reward: { items: { reaper_scarf: 1, ruby: 1 }, cos: [['outfit', 'clantunic'], ['hair', 'cut_panther']] } },
+    reward: { items: { reaper_scarf: 1, ruby: 1 } } },
   { id: 'ki', n: 4, from: 39, realm: 'ki', title: 'The Gravity Stair', cast: ['kai'],
     intro: ['At the top of the stair: endless plains, a tiny planet of a house and an old man doing push-ups on one finger.',
       '"You fight like someone in a hurry," he says without looking up. "Slow down. Get heavy. Then we\'ll talk about that map."'],
     end: 'The Crimson Tyrant\'s horn still hums. Its curse is not from this world, and it is pulling at a gate of black paper.',
-    reward: { items: { weighted_gi: 1, capsule_crate: 2 }, cos: [['outfit', 'firefist'], ['hair', 'cut_sungod']] } },
+    reward: { items: { weighted_gi: 1, capsule_crate: 2 } } },
   { id: 'hex', n: 5, from: 46, realm: 'hex', title: 'Paper Gates', cast: ['yuki'],
     intro: ['Neon, rain and talismans on every door. The curses of Shinjuku turn to look at you as you pass.',
       'A blindfolded sorcerer smiles. "Curses feed on fear. Lately they feed on shards like the one your map is chasing. Let\'s starve them."'],
     end: 'The Matriarch\'s eye closes for good, but not before it shows you a trail into a green, roaring wild.',
-    reward: { items: { paper_blade: 1, cursed_box: 2 }, cos: [['outfit', 'avenger'], ['hair', 'cut_sixeyes']] } },
+    reward: { items: { paper_blade: 1, cursed_box: 2 } } },
   { id: 'hunt', n: 6, from: 51, realm: 'hunter', title: 'The Hunter\'s Licence', cast: ['nett'],
     intro: ['Green Island: trees as tall as towers and beasts worth a fortune.',
       'An examiner taps your map. "Everyone on this island wants that. Pass the exam, earn a licence, and maybe I\'ll tell you who drew it."'],
     end: 'The Chimera King\'s heart is still beating. Behind its nest, a stone door carved with strange poses waits for it.',
-    reward: { items: { chimera_fang: 1, hunters_cache: 2 }, cos: [['outfit', 'swordsman'], ['hair', 'cut_wildspike']] } },
+    reward: { items: { chimera_fang: 1, hunters_cache: 2 } } },
   { id: 'echo', n: 7, from: 56, realm: 'echo', title: 'Echoes in Stone', cast: ['selene'],
     intro: ['Marble plazas, pillars and statues that seem to hold their breath. Every stone here remembers another world.',
       'A curator adjusts her glasses. "Your map is a museum piece, you know. Its maker was here once. Dig, and you\'ll find out."'],
     end: 'The Pillar Lord kneels. On his throne someone has left a note in the same ink as your map: "Seven relics. One gate. Come."',
-    reward: { items: { stone_mask: 1, echo_reliquary: 1 }, cos: [['outfit', 'surgeon'], ['hair', 'cut_goldrolls']] } },
+    reward: { items: { stone_mask: 1, echo_reliquary: 1 } } },
   { id: 'rift', n: 8, from: 62, realm: 'rift', title: 'Where Worlds Meet', cast: ['carto'],
     intro: ['The gate tears open. A figure in a burning cloak waits on the other side, holding the other half of your map.',
       '"I drew it," says the Cartographer. "Every mark is a world the Rift was swallowing. The Rift Emperor wants them all to be one. Someone who belongs to all of them can stop him."'],
     end: 'The Rift is quiet. The map in your hand is whole again, and every world on it is still its own. For now.',
-    reward: { items: { rift_shard: 1 }, cos: [['outfit', 'flamecloak'], ['hair', 'cut_traitor']] } },
+    reward: { items: { rift_shard: 1 } } },
 ];
 // One per GOALS entry: s: the guide's line, w: which of the chapter's cast says it, i: items on claim.
 const Q = (s, i, w) => ({ s, i: i || {}, w: w || 0 });
@@ -180,8 +179,6 @@ function storyGive(k, n) {
     if (i === chapterEnd(ch)) {
       const R = ch.reward;
       for (const k in R.items) storyGive(k, R.items[k]);
-      const A = typeof avState === 'function' ? avState() : null;
-      if (A) for (const [slot, id] of R.cos) A.got[slot + ':' + id] = 1;
       storyState().done[ch.id] = 1;
       emit('chapter', ch);
     }

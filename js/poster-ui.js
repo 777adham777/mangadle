@@ -2,9 +2,9 @@
 /* ==========================================================================
    TRI-REALM IDLE — the Wanted poster on screen (poster.js holds the codes)
    "Wanted poster" (Character view, and the Replay highlight of a rare find) opens a
-   window: the poster drawn on a canvas (your hero, your Bounty, your latest feat),
+   window: the poster drawn on a canvas (your weapon, your Bounty, your latest feat),
    your name, Share / Save image, your friend code, and your friends' codes.
-   The hero and item art are the game's own SVG, turned into images for the canvas.
+   Item art is the game's own (SVG or images), turned into images for the canvas.
    Loaded after ui.js and character-ui.js.
    ========================================================================== */
 
@@ -36,9 +36,8 @@ async function svgImage(svg, w, h) {
   await img.decode();
   return img;
 }
-function heroSVG(look) {
-  return avatarSVG(look ? Object.assign({}, look) : null, { still: true, pose: 'guard' }).replace(/\sdata-[a-z]+="[^"]*"/g, '');
-}
+// A friend (or you) as a badge: the initial of the name.
+const friendBadge = (n) => `<span class="npc-face mono"><b>${esc(String(n || '?').trim().charAt(0).toUpperCase() || '?')}</b></span>`;
 function itemSVG(id) {
   const a = typeof artId === 'function' ? artId(id) : null, sym = a && document.getElementById('ia-' + a);
   if (!sym) return null;
@@ -79,10 +78,16 @@ async function drawPoster(canvas, featId) {
   const bg = c.createLinearGradient(0, fy, 0, fy + fh);
   bg.addColorStop(0, '#2a2a33'); bg.addColorStop(1, col);
   c.fillStyle = bg; c.fillRect(fx, fy, fw, fh);
+  // the photo shows what you fight with: your weapon, big (bare hands: your world's emblem)
   try {
-    const hero = await svgImage(heroSVG(), 360, 504);
+    const wid = S.equip && S.equip.weapon, src = wid && typeof ITEM_IMAGE_PATHS !== 'undefined' && ITEM_IMAGE_PATHS[wid];
+    const sym = document.getElementById('gi-' + icName('realm', realm));
+    const svg = !src && ((wid && itemSVG(wid)) || (sym ? `<svg viewBox="0 0 512 512"><g fill="#f1dfb6" opacity=".85">${sym.innerHTML}</g></svg>` : null));
+    const art = src ? await new Promise((ok, no) => { const im = new Image(); im.onload = () => ok(im); im.onerror = no; im.src = src; }) : svg ? await svgImage(svg, 380, 380) : null;
+    if (!art) throw new Error('no art');
     c.save(); c.beginPath(); c.rect(fx, fy, fw, fh); c.clip();
-    c.drawImage(hero, fx + fw / 2 - 210, fy + 6, 420, 588);
+    c.shadowColor = 'rgba(0,0,0,0.55)'; c.shadowBlur = 30; c.shadowOffsetY = 12;
+    c.drawImage(art, fx + fw / 2 - 190, fy + fh / 2 - 190, 380, 380);
     c.restore();
   } catch (e) { /* the frame stays empty */ }
   c.globalCompositeOperation = 'multiply'; c.fillStyle = 'rgba(200,160,100,0.35)'; c.fillRect(fx, fy, fw, fh); c.globalCompositeOperation = 'source-over';
@@ -125,9 +130,9 @@ function posterHTML() {
       <div class="ms-head"><span class="ms-crest">${ui('poster')}</span><div><small>Bounty ${fmt(S.bounty || 0)} · ${esc(BOUNTY_RANKS[bountyRank()][1])}</small><h2>Wanted poster</h2></div></div>
       <label class="pst-f"><small>Name on the poster</small><input id="pst-name" type="text" maxlength="20" value="${esc(heroName())}" autocomplete="off"></label>
       <div class="pst-btns">${gbtn('Share', 'play', 'data-pstshare', 'sm')}${gbtn('Save image', 'check', 'data-pstsave', 'dark sm')}</div>
-      <label class="pst-f"><small>Your friend code: give it to a friend, their game shows your hero</small><span class="pst-code"><input id="pst-mycode" type="text" readonly value="${esc(code)}">${gbtn('Copy', '', 'data-pstcopy', 'dark sm')}</span></label>
+      <label class="pst-f"><small>Your friend code: give it to a friend, you'll drop by in their game</small><span class="pst-code"><input id="pst-mycode" type="text" readonly value="${esc(code)}">${gbtn('Copy', '', 'data-pstcopy', 'dark sm')}</span></label>
       <label class="pst-f"><small>Add a friend's code (${F.length} / ${FRIEND_MAX}): they drop by once a day with gold</small><span class="pst-code"><input id="pst-add" type="text" placeholder="TR1..." autocomplete="off">${gbtn('Add', 'plus', `data-pstadd ${F.length >= FRIEND_MAX ? 'disabled' : ''}`, 'sm')}</span></label>
-      ${F.length ? `<ul class="pst-friends">${F.map((f, i) => `<li><span class="pst-fav">${heroSVG(f.l)}</span><span><b>${esc(f.n)}</b><small>Bounty ${fmt(f.b)}</small></span><button class="mini-btn" data-pstdrop="${i}" title="Remove">${ui('close')}</button></li>`).join('')}</ul>` : ''}
+      ${F.length ? `<ul class="pst-friends">${F.map((f, i) => `<li>${friendBadge(f.n)}<span><b>${esc(f.n)}</b><small>Bounty ${fmt(f.b)}</small></span><button class="mini-btn" data-pstdrop="${i}" title="Remove">${ui('close')}</button></li>`).join('')}</ul>` : ''}
     </div></div>`;
 }
 async function showPoster(featId) {
@@ -163,8 +168,8 @@ async function sharePoster() {
 
 // Entry points: the Character view, and next to "Replay" on a rare highlight.
 {
-  const base = chCustomBtn;
-  chCustomBtn = function (cls) { return base(cls) + (posterOn() ? `<button class="ch-custom ch-poster ${cls || ''}" data-poster title="Your wanted poster">${ui('poster')}<span>Poster</span></button>` : ''); };
+  const base = chDollBtns;
+  chDollBtns = function () { return base() + (posterOn() ? `<button class="ch-custom ch-poster" data-poster title="Your wanted poster">${ui('poster')}<span>Poster</span></button>` : ''); };
 }
 
 document.addEventListener('click', (ev) => {
@@ -183,14 +188,15 @@ document.addEventListener('click', (ev) => {
   }
   if ('pstadd' in d) {
     const inp = $('#pst-add'), err = addFriend(inp.value);
-    if (err) toast(err, 'bad'); else { toast('Friend added. Their hero will drop by.', 'good'); showPoster(posterFeatId); }
+    if (err) toast(err, 'bad'); else { toast('Friend added. They will drop by.', 'good'); showPoster(posterFeatId); }
     return;
   }
   if (d.pstdrop !== undefined) { dropFriend(+d.pstdrop); showPoster(posterFeatId); }
 });
 document.addEventListener('change', (ev) => {
   if (ev.target.id !== 'pst-name') return;
-  S.avatar.name = ev.target.value.trim().slice(0, 20).replace(/[<>&"']/g, '') || '';
+  S.hero = S.hero || {};
+  S.hero.name = ev.target.value.trim().slice(0, 20).replace(/[<>&"']/g, '') || '';
   const cv = $('#pst-canvas'), code = $('#pst-mycode');
   if (cv) drawPoster(cv, posterFeatId);
   if (code) code.value = myCode();

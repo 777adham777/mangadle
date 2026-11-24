@@ -85,9 +85,6 @@ function unlockContent() {
 }
 function maxSystems() {
   for (const p of PETS) S.pets[p.id] = 1;
-  const A = avState();
-  for (const [s] of COS_SLOTS) for (const c of COSMETICS[s]) A.got[s + ':' + c.id] = 1;
-  A.seeded = 1;
   for (const r of WORLD_ORDER) S.renown[r] = Math.max(renownPts(r), RENOWN_K * 100 * 100);
   for (const id in TECHNIQUES) S.tech.lv[id] = TECH_MAX;
   for (const id in TECHNIQUES) if (!isEquipped(id)) { const sl = slotFor(id); if (sl) S.tech.slots[sl.id] = id; }
@@ -140,9 +137,8 @@ const DEV_ACTS = {
     S.gold += 1e9;
     S.bounty = Math.max(S.bounty, BOUNTY_RANKS[BOUNTY_RANKS.length - 1][0]);
   }, 'Everything unlocked and maxed.'),
-  systems: () => cheat(maxSystems, 'Pets, looks, techniques, tools, cards, museum, beasts, Echo and Renown maxed.'),
+  systems: () => cheat(maxSystems, 'Pets, techniques, tools, cards, museum, beasts, Echo and Renown maxed.'),
   pets: () => cheat(() => { for (const p of PETS) S.pets[p.id] = 1; }, 'Every pet found.'),
-  looks: () => cheat(() => { const A = avState(); for (const [s] of COS_SLOTS) for (const c of COSMETICS[s]) A.got[s + ':' + c.id] = 1; A.seeded = 1; }, 'Every avatar look unlocked.'),
   renown: () => cheat(() => { for (const r of WORLD_ORDER) S.renown[r] = RENOWN_K * 100 * 100; }, 'Renown 100 in every world.'),
   goldK: () => cheat(() => { S.gold += 1e3; }),
   goldM: () => cheat(() => { S.gold += 1e6; }),
@@ -225,10 +221,8 @@ VIEWS.dev = () => {
       <div class="btn-row">${btn('bounty', '+1M bounty', 'bounty')}${btn('train', '+100 training levels', 'energy')}</div>
     </section>
     <section class="win">${hdr('Systems')}
-      <div class="btn-row">${btn('systems', 'Max every system', 'crown')}${btn('pets', 'All pets', 'pet')}${btn('looks', 'All avatar looks', 'avatar')}${btn('renown', 'Renown 100', 'trophy')}</div>
-      <div class="btn-row"><a class="gbtn dark sm" href="editor.html" target="_blank" rel="noopener"><i class="gbtn-ic">${ui('avatar')}</i><span>Open the Studio</span></a></div>
-      <p class="muted small">The Studio makes animations, haircuts, clothes, hats, faces, back pieces, auras and colours for the avatar.</p>
-      <p class="muted small">Max every system: pets, avatar looks, Renown 100, techniques at level 10, every tool, full Greed Island Cards and museum, every beast at level 20, an Echo graded A, Gold Hunter licence, a set of Dragon Balls.</p>
+      <div class="btn-row">${btn('systems', 'Max every system', 'crown')}${btn('pets', 'All pets', 'pet')}${btn('renown', 'Renown 100', 'trophy')}</div>
+      <p class="muted small">Max every system: pets, Renown 100, techniques at level 10, every tool, full Greed Island Cards and museum, every beast at level 20, an Echo graded A, Gold Hunter licence, a set of Dragon Balls.</p>
     </section>
   </div>
   <section class="win">${hdr('Items', `${Object.keys(S.items).length} kinds in the bank`)}

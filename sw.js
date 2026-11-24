@@ -2,7 +2,7 @@
    Bump VERSION on every deploy so players get the new files. */
 importScripts('./js/item-images.js', './js/monster-art.js');
 
-const VERSION = 'tri-realm-v142';
+const VERSION = 'tri-realm-v143';
 const ITEM_ICON_URLS = Object.values(ITEM_IMAGE_PATHS).map((path) => './' + path);
 const BACKGROUND_URLS = [
   'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
@@ -10,10 +10,6 @@ const BACKGROUND_URLS = [
 ].map((name) => `./assets/backgrounds/skills/${name}.webp`).concat([
   'shinobi', 'seas', 'soul', 'ki', 'hex', 'hunter', 'echo', 'rift',
 ].map((name) => `./assets/backgrounds/combat/${name}.webp`));
-const SKILL_SPRITE_URLS = [
-  'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
-  'farming', 'exorcism', 'tracking', 'tracking-trap', 'archaeology', 'restoration',
-].map((name) => `./assets/skill-sprites/${name}.webp`);
 const SHELL = [
   './',
   './index.html',
@@ -26,11 +22,6 @@ const SHELL = [
   './css/foes.css',
   './css/fx.css',
   './css/anim-combat.css',
-  './css/anim-shinobi.css',
-  './css/anim-soul.css',
-  './css/anim-seas.css',
-  './css/anim-kaio-hex.css',
-  './css/anim-hunt-echo.css',
   './css/anim-ui.css',
   './css/background-art.css',
   './css/chest.css',
@@ -40,6 +31,7 @@ const SHELL = [
   './css/focus.css',
   './css/ux.css',
   './css/ux4.css',
+  './css/battle.css',
   './js/data.js',
   './js/worlds.js',
   './js/lore.js',
@@ -86,12 +78,7 @@ const SHELL = [
   './js/story.js',
   './js/guide.js',
   './js/ui.js',
-  './js/hair-cuts.js',
-  './js/outfits.js',
-  './js/avatar.js',
-  './js/hair2.js',
-  './js/custom-pack.js',
-  './js/custom.js',
+  './js/draw-util.js',
   './js/monster-art.js',
   './js/creatures.js',
   './js/arena.js',
@@ -111,7 +98,6 @@ const SHELL = [
   './js/workshop-ui.js',
   './js/skillpage-ui.js',
   './js/spot-ui.js',
-  './js/catch-fx.js',
   './js/character-ui.js',
   './js/ui-systems.js',
   './js/tooltips.js',
@@ -128,7 +114,6 @@ const SHELL = [
   './js/poster-ui.js',
   './js/focus-ui.js',
   './js/ux3.js',
-  './js/pixel-hero.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -137,7 +122,7 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.concat(ITEM_ICON_URLS, MONSTER_ART_URLS, BACKGROUND_URLS, SKILL_SPRITE_URLS))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.concat(ITEM_ICON_URLS, MONSTER_ART_URLS, BACKGROUND_URLS))).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {

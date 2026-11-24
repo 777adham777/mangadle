@@ -1,10 +1,9 @@
 'use strict';
 /* ==========================================================================
    TRI-REALM IDLE — the Character view (#character)
-   - the hero big and animated, with the gear slots around it (paper doll)
-   - Equipment: click a slot, its owned candidates are listed with the stat change vs what you wear
+   - Equipment: one card per slot (no figure since 2026-11-24: the avatar was removed);
+     click a slot, its owned candidates are listed with the stat change vs what you wear
    - Stats: the five stats big, combat + fortune numbers, the build (builds-ui.js through UIX.equipBottom)
-   - Customize (character:look): its own screen, a big preview + every cosmetic (avatar.js draws both)
    Loaded before ui-systems.js (it boots the game and the saved view must exist by then).
    ========================================================================== */
 
@@ -129,25 +128,17 @@ function chSlotBtn(s, up) {
     <span class="chs-tile">${t}${up ? `<i class="ch-up" title="Upgrade available">${ui('xp')}</i>` : ''}</span>
     <span class="chs-t"><small>${CH_LABEL[s]}</small><b>${name ? esc(name) : '<em>Empty</em>'}</b>${worn ? `<span class="es-st">${chSlotLine(s)}</span>` : ''}</span></button>`;
 }
-function chCustomBtn(cls) {
-  return featureOpen('avatar')
-    ? `<button class="ch-custom ${cls || ''}" data-nav="character:look" title="Customize your character">${ui('avatar')}<span>Customize</span></button>`
-    : `<button class="ch-custom ${cls || ''} locked" data-locked="avatar" title="${esc(lockedNote('avatar'))}">${ui('lock')}<span>Customize</span></button>`;
-}
+// Buttons beside your level (poster-ui.js adds the Wanted poster).
+function chDollBtns() { return ''; }
 function chDollHTML(ups) {
-  const A = avState(), right = ['food', 'fruit'].filter((s) => chSlotIds().includes(s));
   const b = xpInfo('character');
   const arch = typeof buildArch === 'function' && featureOpen('battle') ? buildArch() : [];
   return `<section class="win ch-doll">
     ${hdr('Equipment', `${chSlotIds().filter((s) => chWornTile(s)).length} / ${chSlotIds().length} worn`)}
-    <div class="ch-stage">
-      <div class="ch-col">${CH_GEAR.map(([s]) => chSlotBtn(s, ups[s])).join('')}</div>
-      <div class="av-floor ch-floor" style="--ink:${cosOf('color', A.color).ink}">${avatarSVG(null, { ctx: 'preview', pose: 'guard', cls: 'big' })}${chCustomBtn('on-floor')}</div>
-      <div class="ch-col">${right.map((s) => chSlotBtn(s, ups[s])).join('')}</div>
-    </div>
+    <div class="ch-stage">${chSlotIds().map((s) => chSlotBtn(s, ups[s])).join('')}</div>
     <div class="ch-id">
       <span class="ch-lvb"><small>Lv</small><b data-lv="character">${b.L}</b></span>
-      <span class="ch-idt"><b>${arch.length ? esc(arch.map((a) => ARCHES[a].name).join(' · ')) : 'Wanderer'}</b><span class="xpbar"><i data-xpbar="character" style="width:${b.p * 100}%"></i></span><small data-xptext="character">${xpText(b)}</small></span>
+      <span class="ch-idt"><b>${arch.length ? esc(arch.map((a) => ARCHES[a].name).join(' · ')) : 'Wanderer'}</b><span class="xpbar"><i data-xpbar="character" style="width:${b.p * 100}%"></i></span><small data-xptext="character">${xpText(b)}</small></span>${chDollBtns()}
     </div>
   </section>`;
 }
@@ -221,24 +212,9 @@ function chStatsHTML() {
   </section>`;
 }
 
-/* ------------------------------------------------------------ customization screen */
-function chLookHTML() {
-  const A = avState();
-  return `
-  ${ptitle('Character', 'Customize', gbtn('Back to equipment', 'equip', 'data-nav="character"', 'dark'))}
-  <div class="ch-lookl">
-    <section class="win ch-lookst">
-      <div class="av-floor ch-floor" style="--ink:${cosOf('color', A.color).ink}">${avatarSVG(null, { ctx: 'preview', pose: avPreview || undefined, cls: 'big' })}</div>
-      ${avPosesHTML()}
-    </section>
-    <section class="win ch-look">${avPickHTML()}</section>
-  </div>`;
-}
-
 /* ------------------------------------------------------------ view */
 VIEWS.character = (tab) => {
   if (chSlotIds().includes(tab)) { chSlot = tab; S.ui.view = 'character'; tab = ''; }   // character:<slot> opens that slot
-  if (tab === 'look' && featureOpen('avatar')) return chLookHTML();
   if (S.ui.view !== 'character') S.ui.view = 'character';
   if (!chSlotIds().includes(chSlot)) chSlot = 'weapon';
   const ups = {}, lists = {};

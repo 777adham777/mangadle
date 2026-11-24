@@ -7,35 +7,6 @@
 
 const PICK_TITLE = { woodcutting: 'Trees', mining: 'Ore veins', archaeology: 'Dig sites', bonding: 'Rituals', tracking: 'Hunts' };
 
-// Each prop is a four-frame transparent WebP strip, placed where the avatar's tool lands
-// (css/background-art.css). The hunter also gets a second prop (the trap). Fishing and
-// Cooking keep their own game screen (spot-ui.js), Voyaging draws its ship sprite in
-// seas-ui.js, Bonding keeps the player's drawn Echo and Exorcism its drawn curse.
-const SKILL_PROP_ART = {
-  woodcutting: ['woodcutting'], arts: ['crafting'], mining: ['mining'], smithing: ['smithing'],
-  gravity: ['gravity'], farming: ['farming'], exorcism: ['exorcism'],
-  tracking: ['tracking', 'tracking-trap'], archaeology: ['archaeology'], restoration: ['restoration'],
-};
-
-function farmSpriteNodesHTML(P) {
-  const n = P.length;
-  return P.map((p, i) => {
-    const x = plotX(i, n), crop = p && CROP_BY[p.crop];
-    const k = crop ? Math.min(1, p.t / (crop.mins * 60)) : 0;
-    const frame = !p ? 0 : k < 0.15 ? 0 : k < 0.4 ? 1 : k < 0.7 ? 2 : 3;
-    return `<i class="skill-prop farm-plot" data-sprite="farming" data-owner-skill="farming" data-farm-plot="${i}" data-frame="${frame}" style="left:${(x / 8).toFixed(2)}%" ${p ? '' : 'hidden'}></i>`;
-  }).join('');
-}
-
-function skillPropLayerHTML(skill) {
-  const art = SKILL_PROP_ART[skill];
-  if (!art || !art.length) return '';
-  const inner = skill === 'farming'
-    ? farmSpriteNodesHTML(plots())
-    : art.map((sprite) => `<i class="skill-prop prop-${sprite}" data-sprite="${sprite}" data-owner-skill="${skill}" data-frame="0"></i>`).join('');
-  return `<div class="skill-prop-layer" data-skill-props="${skill}" aria-hidden="true">${inner}</div>`;
-}
-
 function pickRow(skill, a) {
   const st = actState(skill, a), f = farmRates(skill, a), o = wsOut(a);
   return `<button class="ws-row pk-row" data-act="${skill}:${a.id}" data-card="${skill}:${a.id}" data-state="${st}">
@@ -55,18 +26,11 @@ function pickerHTML(skill) {
     ${next ? `<div class="ws-next pk-next">${tile(null, null, { r: actRarity(next), icon: actIc(skill, next), cls: 'xs', title: next.name })}
       <span><small>Next unlock</small><b>${esc(next.name)}</b></span><em>${next.schem && !S.known[next.schem] ? ui('schematic') : ui('lock')}Lv ${next.level}</em></div>` : ''}</div></section>`;
 }
-// The scene and, beside it, what the player acts on (plus the skill's own top panels).
+// The focus panel and, beside it, what the player acts on (plus the skill's own top panels).
 function skStageHTML(skill, scene, top) {
   const s = SKILLS[skill];
   let side = s.type === 'gather' || s.type === 'bond' ? pickerHTML(skill) : '';
   side += top;
-  const spotAt = scene.indexOf('<div class="spot ');
-  if (spotAt >= 0) {
-    const openEnd = scene.indexOf('>', spotAt);
-    if (openEnd >= 0) scene = scene.slice(0, openEnd + 1)
-      + `<div class="scene-art-bg" data-skill-bg="${skill}" aria-hidden="true"></div>${skillPropLayerHTML(skill)}`
-      + scene.slice(openEnd + 1);
-  }
   return `<div class="sk-stage ${side.trim() ? '' : 'solo'}"><div class="stg-scene">${scene}</div>${side.trim() ? `<div class="stg-side">${side}</div>` : ''}</div>`;
 }
 
@@ -123,40 +87,4 @@ document.addEventListener('click', (ev) => {
   S.ui.skTab[skill] = key;
   for (const b of $$('[data-sktab]', box)) b.classList.toggle('on', b === t);
   for (const p of $$('.sk-pane', box)) p.hidden = p.dataset.pane !== key;
-});
-
-function skillPropFrame(skill) {
-  if (skill === 'voyaging') {
-    const progress = typeof voyK === 'function' ? voyK() : -1;
-    // 0 = moored at home; at sea the ship sails (1-2), then frame 3 for the last stretch.
-    return progress < 0 ? 0 : 1 + Math.min(2, Math.floor(Math.min(0.9999, progress) * 3));
-  }
-  if (skill === 'bonding' && !(S.action && S.action.skill === skill)) {
-    const E = S.echo || {};
-    return E.id ? (E.rush > 0 ? 3 : 2) : 0;
-  }
-  const a = S.action && S.action.skill === skill ? findAction(skill, S.action.id) : null;
-  if (!a) return 0;
-  const duration = actionTime(skill, a);
-  const progress = duration > 0 ? Math.min(0.9999, S.action.prog / duration) : 0;
-  return Math.min(3, Math.floor(progress * 4));
-}
-
-UPD.push(() => {
-  const farmLayer = $('.skill-prop-layer[data-skill-props="farming"]');
-  if (farmLayer) {
-    const P = plots(), nodes = $$('[data-farm-plot]', farmLayer);
-    if (nodes.length !== P.length) farmLayer.innerHTML = farmSpriteNodesHTML(P);
-    for (const node of $$('[data-farm-plot]', farmLayer)) {
-      const p = P[+node.dataset.farmPlot], crop = p && CROP_BY[p.crop];
-      const k = crop ? Math.min(1, p.t / (crop.mins * 60)) : 0;
-      const frame = !p ? 0 : k < 0.15 ? 0 : k < 0.4 ? 1 : k < 0.7 ? 2 : 3;
-      node.hidden = !p;
-      if (node.dataset.frame !== String(frame)) node.dataset.frame = String(frame);
-    }
-  }
-  for (const node of $$('.skill-prop[data-owner-skill]:not([data-farm-plot])')) {
-    const frame = skillPropFrame(node.dataset.ownerSkill);
-    if (node.dataset.frame !== String(frame)) node.dataset.frame = String(frame);
-  }
 });

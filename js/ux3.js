@@ -21,7 +21,7 @@ function uxSet(k) {
 
 /* ---------------------------------------------------------------- applying them */
 // Reduced motion: one class on <html> (css/ux.css stills every animation) and the same answer to every
-// prefers-reduced-motion check the scripts make (avatar, chests, combat), so nothing needs its own switch.
+// prefers-reduced-motion check the scripts make (chests, combat), so nothing needs its own switch.
 const uxMM = window.matchMedia.bind(window);
 window.matchMedia = function (q) {
   if (/prefers-reduced-motion:\s*reduce/.test(q) && typeof S !== 'undefined' && S.ui && S.ui.set && S.ui.set.motion === 'reduced') {

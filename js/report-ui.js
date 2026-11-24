@@ -88,7 +88,7 @@ function allyCard(v) {
       <span class="ca-bond"><span class="pips">${pips}</span>Bond ${v.bond}/${ALLY_MAX} · ${allyPerkText(v.id, v.bond)}</span></div></div>`;
 }
 function friendCard(f) {
-  return `<div class="coo-ally friend"><span class="npc-face">${typeof heroSVG === 'function' ? heroSVG(f.l) : ui('hero')}</span><div class="ca-main">
+  return `<div class="coo-ally friend">${friendBadge(f.n)}<div class="ca-main">
       <small>Friend · Bounty ${fmt(f.b)}</small><b>${esc(f.n)} dropped by</b>
       <span class="ca-gift">${tile(null, fmt(f.gold), { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}</span></div></div>`;
 }

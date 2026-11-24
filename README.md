@@ -22,10 +22,11 @@ One character and one progression cross every world; each world adds activities 
 - **Expeditions**: ships sail in parallel with anything else, need hull wood, optional dishes bring back more
 - Worlds open after their guardian falls and you make an offering at the gate; skills and menus open one at a time
 - Renown and Ascension per world, synergies between activities, schematics and relics for iconic gear, loot rarity, chests, Devil Fruits
-- **Foes with kits**: every enemy has a role, an element it is weak to (some resist one), a passive trait and signature moves (stuns, poison, bleed, burns, shields, heals, life steal); big moves are telegraphed and trigger your defensive techniques; bosses change phase at 66% and 33% HP; Elites and Alphas roll random affixes. Non-human foes are drawn creatures, humans are dressed stick figures
+- **Foes with kits**: every enemy has a role, an element it is weak to (some resist one), a passive trait and signature moves (stuns, poison, bleed, burns, shields, heals, life steal); big moves are telegraphed and trigger your defensive techniques; bosses change phase at 66% and 33% HP; Elites and Alphas roll random affixes. Every foe is a painted sprite (a few beasts are drawn creatures)
 - **Elites and mini-bosses** in every stage; **daily and weekly objectives** from every open world
+- **Battle seen through your eyes**: no hero on screen, the foe stands big in the middle of its world's stage; you are the command dock under it (HP, swing, techniques on cooldown, food)
 - **Collection Log** with items, pets, techniques, a bestiary and companions
-- **Story**: the objectives are quests in eight chapters (one per world, then the Rift), each with a guide drawn with the avatar rig; quests pay items, chapters pay gear, an outfit and a haircut
+- **Story**: the objectives are quests in eight chapters (one per world, then the Rift), each with a guide; quests pay items, chapters pay gear
 - **Builds**: every piece of gear has a perk (criticals, wounds, life steal, thorns, execute, berserk, counters, opening strike, giant slayer, element techniques...), 12 sets of 2-3 pieces, and the Equipment window names your archetype
 - **Every skill has a scene and its own mechanic**: the woodcutting clearing, the fishing spots (drawn catches; shiny and big ones are fought and shown off), the galley, the Reishi mine (veins, Mother Lode), the soul forge (forge heat, White Heat, Pure ingots), the gravity chamber (strain, Breakthroughs), the living farm (Giant crops, mutations), the neon alley (graded curses up to Special Grade), the forest trail (scent, Prime Prey, Shiny beasts), the dig site (excavation grids), the museum workshop (Flawless restorations) and the Echo (resonance)
 - **Shiny & Perfect** collection logs on every skill that makes something; Epic and Legendary drops are revealed like a gacha pull and say what they are for
@@ -46,20 +47,6 @@ Then open http://localhost:8000. Opening `index.html` directly also works, but o
 Add `?dev` to the URL (or tap the TRI·REALM logo 7 times) to get a **Dev** entry in the menu: unlock every world, skill, menu and stage,
 max levels and systems, give items and gold, speed time up (×10 to ×1000) or skip hours, god mode and one-hit kills, skip objectives.
 The first cheat backs up the save so it can be restored from the same page. `?dev=0` (or the button on the page) turns it off.
-
-## Studio (content editor)
-
-Open `editor.html` (or **Dev → Open the Studio**) to make avatar content with the game's own renderer:
-animations (keyframes on the rig with a dope sheet, onion skin, auto-key and IK handles; they become stances,
-skill animations or attacks), haircuts (locks painted with a brush, arc locks and free hair masses, with symmetry),
-tops and bottoms (pieces drawn on the torso, arms and legs that follow every pose, with prints, gloves, or the
-parametric base garment), hats and faces (vector layers),
-back pieces (cape, hood, mantle, free art), auras (flames and particle emitters) and colours.
-Each piece gets a name, world, rarity and the feat that earns it.
-
-Work is kept as a draft in the browser. **Preview in game** makes the game on the same computer load the draft
-(it turns dev mode on; reload the game tab). **Save to project** writes `js/custom-pack.js`, which `js/custom.js`
-turns into game content; commit and deploy it like any other change.
 
 ## Deploying an update
 
@@ -101,10 +88,10 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `js/guide.js` | New-player onboarding: welcome screen, coach bubbles for the first 10 objectives, menu unlocks |
 | `js/scene.js` | Generated background scenes for each world |
 | `js/game.js` | Core engine (no DOM) with hooks for the world systems |
-| `js/ui.js` | Interface: sidebar with every skill, activity bar, skill pages, bank, battle; rendering, input, save/load |
+| `js/ui.js` | Interface: sidebar with every skill, activity bar, skill pages, bank, battle page (top bar + command dock); rendering, input, save/load |
+| `js/arena.js`, `css/battle.css` | The battle stage: the foe, its plate, drops and rates; hit effects (yours on the foe, its blows on the screen); the bestiary page |
+| `js/draw-util.js` | Small shared drawing helpers (easing, points, colour shading, reduced motion) |
 | `js/dev.js` | Hidden dev tools for testing (`?dev`): unlock everything, levels, items, time speed, god mode, save backup |
-| `js/custom.js` | Turns the Studio's pack (`js/custom-pack.js`) into avatar content and cosmetics |
-| `editor.html`, `js/editor.js`, `css/editor.css` | The Studio, the content editor |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable app + offline support |
 
 ## Credits

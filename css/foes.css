@@ -73,11 +73,6 @@
 .ar-floor .fighter.enemy.special .f-art { animation: specialFlare 0.5s ease-out; }
 @keyframes specialFlare { 0% { filter: brightness(2) drop-shadow(0 0 22px #ffd76a); transform: scale(1.06); } 100% { filter: none; transform: none; } }
 /* you, stunned */
-.ar-floor .stunmark { position: absolute; top: 2%; left: 50%; transform: translateX(-50%); width: 46px; height: 46px; opacity: 0; color: #ffe46a; pointer-events: none; transition: opacity 0.15s; }
-.ar-floor .stunmark .gi { width: 100%; height: 100%; fill: #ffe46a; filter: drop-shadow(0 0 6px #ffb800); }
-.ar-floor .fighter.me.stunned .stunmark { opacity: 1; animation: stunSpin 1s linear infinite; }
-.ar-floor .fighter.me.stunned .f-art { filter: saturate(0.4) brightness(0.85); }
-@keyframes stunSpin { to { transform: translateX(-50%) rotate(360deg); } }
 
 /* ---------------------------------------------------------------- HUD */
 .hpbar.enemy { position: relative; }
@@ -141,7 +136,7 @@
 .bst-info .ftags { margin: 0 0 6px; }
 .bst-art { height: 170px; display: grid; place-items: center; background: radial-gradient(ellipse 70% 30% at 50% 92%, color-mix(in srgb, var(--rc, #ff5d73) 35%, transparent), transparent 70%); }
 @media (max-width: 900px) { .bst-detail { grid-template-columns: 1fr; } }
-.bst-art .cr, .bst-art .avatar { width: auto; height: 100%; max-width: 100%; }
+.bst-art .cr { width: auto; height: 100%; max-width: 100%; }
 .bst-art .creature { font-size: 110px; }
 .bst-moves li span { display: flex; align-items: center; gap: 6px; }
 .bst-moves li small { color: var(--dim); margin-left: 4px; }
@@ -153,6 +148,5 @@
   .phase-banner b { font-size: 19px; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .cr *, .ar-floor .windmark, .ar-floor .stunmark, .phase-banner { animation: none !important; }
-}
+  .cr *, .ar-floor .windmark, }
 .bst-art.unknown > * { filter: brightness(0) drop-shadow(0 0 1px #555); opacity: 0.7; }

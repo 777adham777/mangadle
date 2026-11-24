@@ -138,7 +138,7 @@ const bankSeenSave = () => { S.ui.bankSeen = [...seenItems]; };
 
 /* =============================================================== routing */
 function normalizeView() {
-  const legacy = { overview: 'home', combat: 'battle', bank: 'hero', shop: 'market', rebirth: 'power', 'hero:avatar': 'character:look' };
+  const legacy = { overview: 'home', combat: 'battle', bank: 'hero', shop: 'market', rebirth: 'power', 'hero:avatar': 'character', 'character:look': 'character' };
   let v = legacy[S.ui.view] || S.ui.view || 'home';
   if (v.startsWith('skill:')) {
     const s = v.split(':')[1];
@@ -454,7 +454,7 @@ VIEWS.home = () => {
       ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
     ${gateHTML() ? '' : nextUnlockHTML('win ov-next')}</div>
   <section class="win adv-win">${hdr('Adventurer')}
-    ${featureOpen('avatar') ? `<button class="adv-av" data-nav="character:look" title="Customize your avatar">${avatarSVG(null, { ctx: 'auto' })}</button>` : ''}<div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Character', 'Lv ' + charLv())}${stat('Techniques', `${Object.keys(S.tech.lv).length} / ${Object.keys(TECHNIQUES).length}`)}</div>
+    <div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Character', 'Lv ' + charLv())}${stat('Techniques', `${Object.keys(S.tech.lv).length} / ${Object.keys(TECHNIQUES).length}`)}</div>
   </section>`;
 };
 
@@ -597,7 +597,6 @@ function rareTiles(skill) {
 VIEWS.battle = () => {
   const C = S.combat;
   const foods = Object.keys(S.items).filter((k) => ITEMS[k].type === 'food');
-  const cskill = (k) => `<div class="cskill"><span class="cs-ic">${ic('skill', k)}</span><span class="cs-main"><span><b>${SKILLS[k].name}</b><em>Lv <span data-lv="${k}">${skillLv(k)}</span></em></span><span class="xpbar thin"><i data-xpbar="${k}"></i></span></span></div>`;
   let lastRealm = null, groups = '';
   bestZoneI = bestZone();
   ZONES.forEach((z, i) => {
@@ -613,28 +612,83 @@ VIEWS.battle = () => {
   });
   const z = C.zone != null ? ZONES[C.zone] : null;
   return `
-  ${ptitle('Battlefield', z ? z.name : 'Choose a stage', `<div class="cskills">${cskill('character')}</div>`)}
-  <div class="battle-layout">
-    <div class="battle-main">
-      <section id="stage" class="arena ${C.zone != null ? 'fighting' : ''}">${stageHTML()}</section>
-      ${z ? battleStrip() : ''}
-      <div class="battle-row">
-        <section class="win controls">
-          ${hdr('Tactics')}
-          <div class="ctrl"><label>Auto-eat</label><div class="food-pick">${C.food && count(C.food) ? tile(C.food, null, { cls: 'xs' }) : `<span class="tile r0 xs"><span class="tile-art">${ui('food')}</span></span>`}
-            <select data-food>${foods.length ? (C.food ? '' : '<option value="" selected>No food equipped</option>') : '<option value="">No food — cook some first</option>'}${foods.map((f) => `<option value="${f}" ${C.food === f ? 'selected' : ''}>${ITEMS[f].name} ×${fmt(count(f))} (+${foodHeal(f)} HP)</option>`).join('')}</select></div></div>
-          <div class="muted small">Eats below ${pct(autoEatThreshold())} HP.</div>
-        </section>
-        <section class="win char-stats">${hdr('Character', `Lv ${charLv()}`)}${charStatsHTML()}</section>
-        ${uix('battleSide')}
-        <section class="win log-win">${hdr('Battle log')}<div class="log" id="clog">${logHTML()}</div></section>
-      </div>
-      ${UIX.battleBottom ? uix('battleBottom') : ''}
-      <section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), synergiesFrom('character'))}</section>
+  <div class="gs" style="--rc:${rc(z ? z.realm : 'combat')}">
+    ${gsTopHTML(z)}
+    <section id="stage" class="arena gs-stage ${C.zone != null ? 'fighting' : ''}">${stageHTML()}</section>
+    ${gsDockHTML(foods)}
+  </div>
+  <div class="gs-below">
+    <section class="win stages" id="gs-stages">${hdr('Stages')}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section>
+    <div class="gs-side">
+      ${uix('battleSide')}
+      <section class="win char-stats">${hdr('Character', `Lv ${charLv()}`)}${charStatsHTML()}</section>
+      <section class="win log-win">${hdr('Battle log')}<div class="log" id="clog">${logHTML()}</div></section>
     </div>
-    <section class="win stages">${hdr('Stages')}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section>
-  </div>`;
+  </div>
+  ${UIX.battleBottom ? uix('battleBottom') : ''}
+  <section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), synergiesFrom('character'))}</section>`;
 };
+// "Grand Stage" (2026-11-24): no hero on screen. The top bar says where you fight and what it opens,
+// the stage shows the foe (arena.js stageHTML), the command dock under it is you.
+const zoneOpen = (i) => i >= 0 && i < ZONES.length && realmOpen(ZONES[i].realm) && zoneUnlocked(i);
+function gsNextInfo() {
+  const C = S.combat, i = C.zone, nz = ZONES[i + 1];
+  if (i == null || !nz || !realmOpen(nz.realm)) return null;
+  if (zoneUnlocked(i + 1)) return { name: nz.name, open: true };
+  const z = ZONES[i], need = z.boss ? 1 : 10, have = Math.min(need, C.kills[z.id] || 0);
+  return { name: nz.name, need, have, boss: z.boss };
+}
+function gsTopHTML(z) {
+  const C = S.combat, i = C.zone;
+  let prev = -1, next = -1;
+  if (z) { for (let k = i - 1; k >= 0; k--) if (zoneOpen(k)) { prev = k; break; } for (let k = i + 1; k < ZONES.length; k++) if (zoneOpen(k)) { next = k; break; } }
+  const arrow = (k, ch, t) => `<button class="gs-arr" ${k >= 0 ? `data-zone="${k}" title="${esc(t + ': ' + ZONES[k].name)}"` : 'disabled'}>${ch}</button>`;
+  const N = gsNextInfo(), [dl, dc] = z ? zoneDanger(i) : ['', ''];
+  const prog = !N ? '' : N.open ? `<div class="gs-prog open"><small>Next stage open</small><b>${esc(N.name)}</b></div>`
+    : `<div class="gs-prog"><small>Next stage · ${esc(N.name)}</small><span class="xpbar thin gold"><i data-gsnext style="width:${(N.have / N.need) * 100}%"></i></span><b data-gsnexttxt>${N.boss ? (N.have ? 'Boss defeated' : 'Defeat the boss') : `${N.have} / ${N.need} kills`}</b></div>`;
+  return `<div class="gs-top">
+    ${z ? arrow(prev, '‹', 'Previous stage') : ''}
+    <div class="gs-where"><span class="gs-ric">${z ? ic('realm', z.realm) : ui('battle')}</span><span><small>${z ? esc(REALMS[z.realm].name) : 'Battlefield'}</small><b>${z ? esc(z.name) : 'Choose a stage'}</b></span>${z ? `<span class="danger ${dc}">${dl}</span>` : ''}</div>
+    ${z ? arrow(next, '›', 'Next stage') : ''}
+    ${prog}
+    <div class="gs-acts">${gbtn('Stages', 'map', 'data-gostages', 'dark sm')}${z ? gbtn('Retreat', 'stop', 'data-stopcombat', 'sm hot') : ''}</div>
+  </div>`;
+}
+function gsTechHTML() {
+  if (typeof techOn !== 'function' || !techOn()) return '';
+  const slots = openSlots();
+  return `<div class="gs-techs">${slots.map((sl) => {
+    const id = S.tech.slots[sl.id];
+    if (!id || !techLv(id)) return `<button class="gs-tech empty" data-nav="techniques" title="${esc(sl.name)}: empty. Equip a technique">${ui(TECH_CATS[sl.cat].icon)}</button>`;
+    const pas = TECHNIQUES[id].cat === 'passive';
+    return `<button class="gs-tech ${pas ? 'pas' : ''}" ${pas ? '' : `data-gstech="${id}"`} data-nav="techniques" title="${esc(TECHNIQUES[id].name)} · Lv ${techLv(id)}${pas ? ' · passive' : ''}">${ic('technique', id)}<em>${esc(TECHNIQUES[id].name)}</em><s></s></button>`;
+  }).join('')}</div>`;
+}
+function gsDockHTML(foods) {
+  const C = S.combat, b = xpInfo('character');
+  return `<div class="gs-dock">
+    <div class="gs-me" data-portrait="player">
+      <span class="gs-lv" title="Character level"><small>Lv</small><b data-lv="character">${b.L}</b><span class="xpbar thin"><i data-xpbar="character" style="width:${b.p * 100}%"></i></span></span>
+      <div class="gs-mebars">
+        <div class="gs-mename"><b>You</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(pMaxHit())}</span><span title="Defense">${ui('def')}${fmt(pDef())}</span><span title="Attack speed">${ui('spd')}${pSpeed().toFixed(1)}s</span>${pDodge() ? `<span title="Dodge">${ui('dodge')}${pct(pDodge())}</span>` : ''}</span></div>
+        <div class="hpbar"><i data-php></i><span data-phptext></span></div><div class="atkbar"><i data-patk></i></div>
+        <div class="stchips" data-pst></div>${uix('stageMe')}
+      </div>
+      <div class="stunmark">${gi('circle-sparks')}</div>
+    </div>
+    ${gsTechHTML()}
+    <div class="gs-food" title="Eaten when your HP drops below ${pct(autoEatThreshold())}">
+      ${C.food && count(C.food) ? tile(C.food, `<span data-count="${C.food}">${fmt(count(C.food))}</span>`, { cls: 'xs' }) : `<span class="tile r0 xs"><span class="tile-art">${ui('food')}</span></span>`}
+      <span class="gs-fsel"><small>Food · eats below ${pct(autoEatThreshold())}</small>
+      <select data-food>${foods.length ? (C.food ? '' : '<option value="" selected>No food equipped</option>') : '<option value="">No food: cook some first</option>'}${foods.map((f) => `<option value="${f}" ${C.food === f ? 'selected' : ''}>${ITEMS[f].name} ×${fmt(count(f))} (+${foodHeal(f)} HP)</option>`).join('')}</select></span>
+    </div>
+  </div>`;
+}
+document.addEventListener('click', (ev) => {
+  if (!ev.target.closest('[data-gostages]')) return;
+  const el = $('#gs-stages');
+  if (el) el.scrollIntoView({ behavior: calmMotion() ? 'auto' : 'smooth', block: 'start' });
+});
 // One tier switch for every world (2026-11-24): each world takes the chosen tier, or its highest unlocked one
 // below it (its header then names the tier it really plays). uix('stagesTop') (the Hardcore switch) now sits
 // under the list, away from the stage rows.
@@ -671,14 +725,6 @@ function bestZone() {
     if (x > bx) { bx = x; best = i; }
   });
   return best;
-}
-// Arena first: HP lives on the fighters (stageHTML); the rates sit once, in one strip under the arena.
-function battleStrip() {
-  const c = combatRates(), food = S.combat.food;
-  const cell = (k, v) => `<div><small>${k}</small><b>${v}</b></div>`;
-  return `<div class="bstrip" style="--rc:${rc('combat')}">${cell('Kills / hour', '≈' + fmt(c.kph))}${cell('XP / hour', '≈' + fmt(c.xph))}${cell('Gold / hour', '≈' + fmt(c.goldh))}
-    ${cell('Food left', food && count(food) ? `<span data-count="${food}">${fmt(count(food))}</span>` : '<span class="bad">None</span>')}
-    <div class="bs-act">${gbtn('Retreat', 'stop', 'data-stopcombat', 'dark sm')}</div></div>`;
 }
 // The five character stats: base value (level + gear) and what it does once every multiplier applies.
 function charStatsHTML() {

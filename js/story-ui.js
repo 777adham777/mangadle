@@ -4,27 +4,24 @@
    - the quest tracker (sidebar + Overview): the chapter, the guide's portrait and
      line, the quest, its progress and everything it pays
    - a chapter card when a chapter starts (its guide, its opening) and when one ends
-     (the closing line, the rewards, the outfit and haircut earned)
+     (the closing line, the rewards)
    - the story log: every chapter so far, re-readable
    Loaded after ui.js.
    ========================================================================== */
 
 /* ---------------------------------------------------------------- portraits */
-const NPC_ART = {};
+// A guide's portrait: their initial on a badge in their world's colour (the drawn figures left with the
+// avatar, 2026-11-24); the big one also carries the world's emblem.
+const NPC_REALM = {};
+for (const ch of CHAPTERS) for (const id of ch.cast) if (!NPC_REALM[id]) NPC_REALM[id] = ch.realm;
 function npcArt(id, big) {
-  const k = id + (big ? ':b' : '');
-  if (!NPC_ART[k]) {
-    const N = NPCS[id];
-    try { NPC_ART[k] = avatarSVG(Object.assign({ hat: 'none', back: 'none', aura: 'none', stance: 'relaxed' }, N.look), { still: true, pose: 'relaxed', cls: 'npc-av' }); }
-    catch (e) { NPC_ART[k] = ui('hero'); }
-  }
-  return `<span class="npc-face${big ? ' big' : ''}">${NPC_ART[k]}</span>`;
+  const N = NPCS[id], r = NPC_REALM[id] || 'shinobi', letter = (N ? N.name.split(' ').pop() : '?')[0];
+  return `<span class="npc-face mono${big ? ' big' : ''}" style="--rc:${rc(r)}"><b>${esc(letter)}</b>${big ? `<i>${ic('realm', r)}</i>` : ''}</span>`;
 }
 
 /* ---------------------------------------------------------------- the tracker */
-function rewardTiles(gold, items, cos) {
-  return `${gold ? `<span class="q-reward">${ui('gold')}<b>${fmt(gold)}</b></span>` : ''}${Object.entries(items || {}).map(([k, n]) => tile(k, n > 1 ? fmt(n) : null, { cls: 'xs' })).join('')}`
-    + (cos || []).map(([s, id]) => { const c = COSMETICS[s] && COSMETICS[s].find((x) => x.id === id); return c ? `<span class="q-cos" title="${esc(c.name)} (${s === 'hair' ? 'haircut' : 'outfit'})">${ui('avatar')}</span>` : ''; }).join('');
+function rewardTiles(gold, items) {
+  return `${gold ? `<span class="q-reward">${ui('gold')}<b>${fmt(gold)}</b></span>` : ''}${Object.entries(items || {}).map(([k, n]) => tile(k, n > 1 ? fmt(n) : null, { cls: 'xs' })).join('')}`;
 }
 goalHTML = function () {
   const st = goalState();
@@ -37,7 +34,7 @@ goalHTML = function () {
     <button class="q-say" data-storylog title="Story log">${npcArt(id)}<span><small>${esc(npc.name)}</small><p>${esc(q.s)}</p></span></button>
     <button class="q-main" data-nav="${g.go}" title="Go to this quest"><span class="q-ic">${ic('goal', i)}</span><span class="q-text">${g.text}</span></button>
     <div class="q-prog"><span class="xpbar thin gold"><i data-goalbar style="width:${(cur / g.n) * 100}%"></i></span><span data-goaltxt>${fmt(cur)} / ${fmt(g.n)}</span></div>
-    <div class="q-rew">${rewardTiles(g.reward, q.i)}${last ? `<span class="q-chap" title="Chapter reward">${ui('crown')}</span>${rewardTiles(0, ch.reward.items, ch.reward.cos)}` : ''}</div>
+    <div class="q-rew">${rewardTiles(g.reward, q.i)}${last ? `<span class="q-chap" title="Chapter reward">${ui('crown')}</span>${rewardTiles(0, ch.reward.items)}` : ''}</div>
     <div class="q-foot">${done ? gbtn('Claim', 'check', 'data-claim', 'sm glow') : gbtn('Go', 'play', `data-nav="${g.go}"`, 'dark sm')}</div></div>`;
 };
 
@@ -51,8 +48,7 @@ function scPage(p) {
     const R = ch.reward;
     return `<div class="sc-card end" style="--rc:${rc(ch.realm)}"><small class="sc-kick">Chapter ${ch.n} complete</small><h2>${esc(ch.title)}</h2>
       <p class="sc-txt">${esc(ch.end)}</p>
-      <div class="sc-rew"><small>Chapter reward</small><div>${rewardTiles(0, R.items)}</div>
-      ${R.cos.length ? `<ul>${R.cos.map(([s, cid]) => { const c = COSMETICS[s] && COSMETICS[s].find((x) => x.id === cid); return c ? `<li>${ui('avatar')}<span>${s === 'hair' ? 'Haircut' : 'Outfit'}: <b>${esc(c.name)}</b></span></li>` : ''; }).join('')}</ul><small class="muted">Wear them in Character → Customize.</small>` : ''}</div>
+      <div class="sc-rew"><small>Chapter reward</small><div>${rewardTiles(0, R.items)}</div></div>
       <button class="gbtn glow" data-scnext>${ui('play')}<span>Continue</span></button></div>`;
   }
   return `<div class="sc-card start" style="--rc:${rc(ch.realm)}">

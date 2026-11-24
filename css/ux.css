@@ -221,7 +221,3 @@ html.calm *, html.calm *::before, html.calm *::after { animation-duration: 0.01m
   .craft-stage .ws-cats > * { flex: 0 0 auto; }
 }
 
-/* Pixel hero test (js/pixel-hero.js): the vector fighter hides under its pixel copy */
-.ar-floor svg.avatar.px-hidden { visibility: hidden; }
-.ar-floor canvas.pxhero { position: absolute; z-index: 2; pointer-events: none; image-rendering: pixelated; visibility: hidden; }
-.ar-floor canvas.pxhero.ready { visibility: visible; }

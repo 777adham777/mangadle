@@ -11,8 +11,6 @@
    Each page has one list of actions beside or under it (skillpage-ui.js, workshop-ui.js, spot-ui.js);
    lists carry no progress bar, and the activity bar drops its own while you are on that page.
    Farming and Voyaging have none: their plots and harbour already are the focus.
-   The old scene code (shinobi-ui, soul-ui, ...) only draws when a .spot element is on the page,
-   which no longer happens.
    Loaded last, after every *-ui.js file.
    ========================================================================== */
 
@@ -225,7 +223,7 @@ on('action', (d) => {
   const el = $(`[data-focus="${d.skill}"]`);
   if (!el) return;
   if (d.skill === 'archaeology' && typeof gridHTML === 'function') { const box = $('.fo-grid', el); if (box) box.innerHTML = gridHTML(d.act.id); }
-  if (typeof avCalm === 'function' && avCalm()) return;
+  if (calmMotion()) return;
   const out = focusOut(d.act), n = out ? Object.keys(d.gains).filter((k) => baseOf(k) === out).reduce((t, k) => t + d.gains[k], 0) : 0;
   const box = $('[data-fopops]', el), tl = $('.fo-tile', el);
   if (tl) retrigger(tl, 'fo-hit');

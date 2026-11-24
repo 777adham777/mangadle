@@ -1,4 +1,4 @@
-/* Animations — combat (2026-11-22 animation pass). js/arena.js choreographs; poses in js/avatar.js. */
+/* Animations — combat (2026-11-22 animation pass). js/arena.js choreographs. */
 
 /* ui.js flashes the whole fighter the instant damage is dealt; arena.js now does it on the contact frame instead. */
 @keyframes hitFlash { from { opacity: 1; } to { opacity: 1; } }
@@ -12,7 +12,6 @@
 @keyframes cbMote { 0% { opacity: 0; transform: translate(0, 0) scale(0.6); } 15% { opacity: 0.7; } 70% { opacity: 0.45; } 100% { opacity: 0; transform: translate(var(--sx, 10px), -190px) scale(1.1); } }
 .ar-floor .cb-amb .cb-dust { position: absolute; bottom: 15%; width: 120px; height: 16px; margin-left: -60px; border-radius: 50%;
   background: radial-gradient(ellipse, color-mix(in srgb, var(--rc) 22%, rgba(255, 255, 255, 0.12)), transparent 70%); animation: cbHaze 3.4s ease-in-out infinite; }
-.ar-floor .cb-amb .cb-dust.me { left: calc(12% + 100px); }
 .ar-floor .cb-amb .cb-dust.foe { right: calc(12% + 100px); margin: 0 -60px 0 0; animation-delay: -1.7s; }
 @keyframes cbHaze { 50% { transform: scaleX(1.25); opacity: 0.55; } }
 .ar-floor .fighter { z-index: 1; }
@@ -112,9 +111,6 @@
 }
 
 /* ---------------------------------------------------------------- KO */
-/* a stick foe collapses (its pose), then fades and sinks; beasts keep their squash (foes.css), a moment later */
-.ar-floor .fighter.enemy.foe-stick.down .f-art { animation: cbStickDown 1.1s ease-in forwards; transform-origin: 50% 92%; }
-@keyframes cbStickDown { 0%, 55% { opacity: 1; filter: none; transform: none; } 70% { filter: brightness(1.8) saturate(0.4); } 100% { opacity: 0; transform: translateY(8px); filter: brightness(2.2) saturate(0); } }
 .ar-floor .ko { animation-delay: 0.3s; }
 .cbko { position: absolute; width: 0; height: 0; pointer-events: none; z-index: 3; }
 .cbko s { position: absolute; left: -90px; top: -18px; width: 180px; height: 36px; border-radius: 50%; text-decoration: none;
@@ -130,7 +126,6 @@
   .cr, .cr.cb-coil { transition: none; transform: none; }
   .cbfx svg, .cbfx .cb-ring, .cbring i, .cbring b, .cbdomain { animation: cbCalmFade 0.4s ease-out forwards !important; }
   .cbring i + i { display: none; }
-  .ar-floor .fighter.enemy.foe-stick.down .f-art { animation: cbCalmFade 1.1s ease-in forwards; }
   #fx .float.cb-heavy { animation: none !important; transform: translate(-50%, -30px); }
 }
 @keyframes cbCalmFade { 0%, 40% { opacity: 1; } 100% { opacity: 0; } }

@@ -1,61 +1,4 @@
 /* ==========================================================================
-   TRI-REALM IDLE — big moments: the drawn catch and its showcase (catch-fx.js)
-   ========================================================================== */
-
-/* ---------------------------------------------------------------- the drawn fish */
-.fs-fish { position: absolute; z-index: 3; aspect-ratio: 160 / 96; pointer-events: none; transform: translate(-50%, -50%); will-change: transform, left, top; }
-.fs-fish .fart { position: relative; z-index: 1; width: 100%; height: 100%; display: block; overflow: visible; filter: drop-shadow(0 4px 3px rgba(0, 0, 0, 0.45)); }
-.fs-fish.shiny .fart { filter: drop-shadow(0 0 6px #ffe27a) drop-shadow(0 0 14px rgba(255, 210, 63, 0.8)) drop-shadow(0 4px 3px rgba(0, 0, 0, 0.4)); }
-.fs-fish.big.hold .fart { filter: drop-shadow(0 0 10px #fff) drop-shadow(0 0 22px rgba(160, 230, 255, 0.85)); }
-.fs-fish.shiny.hold .fart { filter: drop-shadow(0 0 10px #fff6c8) drop-shadow(0 0 26px #ffd23f) drop-shadow(0 0 40px rgba(255, 150, 240, 0.6)); }
-.fs-fish.out { animation: fsOut 0.28s ease-in forwards; }
-@keyframes fsOut { to { opacity: 0; filter: brightness(2); } }
-.fs-fish .fa-lure { animation: fsLure 0.6s ease-in-out infinite alternate; }
-@keyframes fsLure { to { opacity: 0.5; } }
-
-/* light behind the fish at the top of its leap */
-.fs-rays { position: absolute; z-index: 0; left: 50%; top: 50%; width: 330%; aspect-ratio: 1; transform: translate(-50%, -50%) scale(0); opacity: 0; border-radius: 50%;
-  background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.55) 0 7deg, rgba(255, 255, 255, 0) 7deg 20deg);
-  -webkit-mask: radial-gradient(circle, #000 18%, transparent 68%); mask: radial-gradient(circle, #000 18%, transparent 68%); }
-.fs-fish.shiny .fs-rays { background: repeating-conic-gradient(from 0deg, rgba(255, 226, 122, 0.75) 0 6deg, rgba(159, 243, 255, 0.25) 6deg 11deg, rgba(255, 154, 240, 0) 11deg 20deg); }
-.fs-fish.hold .fs-rays { animation: fsRays 0.8s ease-out forwards; }
-@keyframes fsRays { 0% { transform: translate(-50%, -50%) scale(0.2) rotate(0); opacity: 0; } 25% { opacity: 1; } 100% { transform: translate(-50%, -50%) scale(1) rotate(40deg); opacity: 0.9; } }
-
-/* ---------------------------------------------------------------- the fight */
-.spot.fs-fight > .spot-bg, .spot.fs-fight > .spot-av { animation: fsShake 0.09s linear infinite alternate; }
-@keyframes fsShake { from { transform: translate(-1.2px, 0.6px); } to { transform: translate(1.2px, -0.6px); } }
-.spot.fs-hold::after { content: ''; position: absolute; inset: 0; z-index: 2; pointer-events: none; background: radial-gradient(ellipse at 42% 32%, transparent 20%, rgba(0, 0, 0, 0.42) 80%); animation: spFadeIn 0.2s; }
-.spot .spot-hud, .spot .fc-hud { transition: opacity 0.25s; }
-.spot.fs-hold .spot-hud, .spot.fs-hold .fc-hud { opacity: 0; }
-.spop.fs-glow { width: 16%; aspect-ratio: 3 / 1; border-radius: 50%; background: radial-gradient(ellipse, rgba(255, 255, 255, 0.7), rgba(160, 230, 255, 0.25) 45%, transparent 70%); animation: fsGlow 0.35s ease-in-out infinite alternate; }
-.spop.fs-glow.gold { background: radial-gradient(ellipse, rgba(255, 246, 200, 0.95), rgba(255, 210, 63, 0.5) 40%, transparent 70%); }
-@keyframes fsGlow { from { transform: translate(-50%, -50%) scale(0.8); opacity: 0.6; } to { transform: translate(-50%, -50%) scale(1.25); opacity: 1; } }
-.spop.fs-bang { font: 900 clamp(20px, 3.6vw, 38px) var(--display); color: #ffe14d; text-shadow: 0 0 2px #000, 0 3px 0 #6a4200, 0 0 18px rgba(255, 210, 63, 0.8); animation: fsBang 0.35s ease-in-out infinite alternate; }
-@keyframes fsBang { from { transform: translate(-50%, -50%) scale(0.9) rotate(-6deg); } to { transform: translate(-50%, -60%) scale(1.15) rotate(6deg); } }
-
-/* the burst: a column of water */
-.spop.fs-geyser { width: 9%; height: 52%; transform-origin: 50% 100%; translate: 0 -40%;
-  background: linear-gradient(to top, rgba(255, 255, 255, 0.95), rgba(220, 245, 255, 0.75) 40%, rgba(255, 255, 255, 0) 100%);
-  clip-path: polygon(30% 100%, 0 40%, 14% 30%, 22% 8%, 38% 22%, 50% 0, 62% 20%, 78% 6%, 86% 30%, 100% 42%, 70% 100%);
-  animation: fsGeyser 0.95s ease-out forwards; }
-.spop.fs-geyser.gold { background: linear-gradient(to top, rgba(255, 255, 255, 0.95), rgba(255, 226, 122, 0.8) 40%, rgba(255, 210, 63, 0) 100%); }
-@keyframes fsGeyser { 0% { transform: translate(-50%, -50%) scaleY(0.1) scaleX(0.6); opacity: 1; } 30% { transform: translate(-50%, -50%) scaleY(1) scaleX(1); opacity: 1; } 100% { transform: translate(-50%, -50%) scaleY(0.7) scaleX(1.5); opacity: 0; } }
-
-/* the banner: what you caught and how heavy it is */
-.spop.fs-banner { display: flex; flex-direction: column; align-items: center; gap: 2px; animation: spBanner 2.6s ease-out forwards; z-index: 4; }
-.fs-banner .fsb-t { display: inline-flex; align-items: center; gap: 8px; font: 900 clamp(20px, 3.8vw, 40px) var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: #fff;
-  text-shadow: 0 0 2px #000, 0 3px 0 #1a3a5a, 0 0 22px rgba(160, 230, 255, 0.9); }
-.fs-banner .fsb-t .gi { width: 0.9em; height: 0.9em; fill: currentColor; display: inline-block; }
-.fs-banner.shiny .fsb-t { color: #ffe27a; text-shadow: 0 0 2px #3a2400, 0 3px 0 #6a4200, 0 0 24px rgba(255, 210, 63, 0.95); }
-.fs-banner .fsb-n { font: 700 clamp(12px, 1.6vw, 16px) var(--display); color: #fff; padding: 2px 10px; background: rgba(8, 10, 16, 0.62); border: 1px solid rgba(255, 255, 255, 0.2); }
-.fs-banner.shiny .fsb-n { border-color: #ffd75e; color: #ffe8a0; }
-.fs-banner .fsb-sub { display: flex; align-items: center; gap: 8px; }
-.fs-banner .fsb-sub > b { font: 800 clamp(15px, 2.4vw, 24px) var(--display); color: #fff; text-shadow: 0 2px 0 #000, 0 0 10px rgba(0, 0, 0, 0.6); font-variant-numeric: tabular-nums; }
-.fs-banner .fsb-sub small { font: 700 clamp(10px, 1.3vw, 13px) var(--display); color: #9fe6c8; text-shadow: 0 1px 0 #000; }
-
-@media (prefers-reduced-motion: reduce) { .spot.fs-fight > *, .fs-rays, .spop.fs-glow, .spop.fs-bang { animation: none !important; } }
-
-/* ==========================================================================
    The rare drop reveal (reveal.js)
    ========================================================================== */
 .rv-wrap { position: fixed; inset: 0; z-index: 400; display: grid; place-items: center; pointer-events: auto; cursor: pointer; }
@@ -140,9 +83,13 @@
    The story (story-ui.js)
    ========================================================================== */
 .npc-face { position: relative; flex-shrink: 0; width: 40px; height: 40px; overflow: hidden; border-radius: 50%; background: radial-gradient(circle at 50% 35%, color-mix(in srgb, var(--rc, #ffc04a) 35%, #2a2d3a), #14161e); border: 2px solid color-mix(in srgb, var(--rc, #ffc04a) 70%, #000); }
-.npc-face svg.avatar { position: absolute; width: 300%; height: auto; left: -98%; top: -44%; }
-.npc-face.big { width: 150px; height: auto; aspect-ratio: 156 / 218; border-radius: 0; border: 0; background: none; overflow: visible; }
-.npc-face.big svg.avatar { width: 100%; height: 100%; left: 0; top: 0; filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.6)); }
+.npc-face.mono { display: grid; place-items: center; }
+.npc-face.mono b { font: 800 19px/1 var(--display); color: #fff; text-shadow: 0 1px 3px rgba(0, 0, 0, 0.7); }
+.npc-face.big { width: 132px; height: 132px; border-width: 3px; box-shadow: 0 8px 22px rgba(0, 0, 0, 0.55), 0 0 30px color-mix(in srgb, var(--rc, #ffc04a) 30%, transparent); }
+.npc-face.big b { font-size: 64px; }
+.npc-face.big i { position: absolute; bottom: 12px; left: 50%; transform: translateX(-50%); display: grid; place-items: center; }
+.npc-face.big i .gi { width: 22px; height: 22px; fill: color-mix(in srgb, var(--rc, #ffc04a) 70%, #fff); opacity: 0.9; }
+.nav-quest .npc-face.mono b, .coo-ally .npc-face.mono b { font-size: 15px; }
 .quest.story .q-say { display: flex; gap: 9px; align-items: flex-start; width: 100%; margin: 0 0 9px; padding: 7px 8px; text-align: left; background: rgba(255, 255, 255, 0.04); border-left: 3px solid color-mix(in srgb, var(--rc, #ffc04a) 80%, #fff); cursor: pointer; }
 .quest.story .q-say:hover { background: rgba(255, 255, 255, 0.07); }
 .quest.story .q-say small { display: block; font: 700 11px var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: color-mix(in srgb, var(--rc, #ffc04a) 75%, #fff); }
@@ -150,8 +97,8 @@
 .quest.story .q-title b { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
 .quest.story .q-rew { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; margin: 0 0 9px; }
 .quest.story .q-rew .q-reward { margin-right: 4px; }
-.q-chap, .q-cos { display: inline-grid; place-items: center; width: 26px; height: 26px; background: rgba(255, 190, 70, 0.14); border: 1px solid rgba(255, 190, 70, 0.5); }
-.q-chap .gi, .q-cos .gi { width: 15px; height: 15px; fill: var(--gold); }
+.q-chap { display: inline-grid; place-items: center; width: 26px; height: 26px; background: rgba(255, 190, 70, 0.14); border: 1px solid rgba(255, 190, 70, 0.5); }
+.q-chap .gi { width: 15px; height: 15px; fill: var(--gold); }
 .nav-quest .quest.story .q-say { padding: 5px 6px; margin-bottom: 6px; }
 .nav-quest .quest.story .q-say p { font-size: 12px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
 .nav-quest .npc-face { width: 32px; height: 32px; }
@@ -201,106 +148,7 @@
 
 
 /* ==========================================================================
-   Soul City: the mine and the forge (soul-ui.js)
-   ========================================================================== */
-.spot .mn-rock.hit { animation: wcShake 0.22s; }
-.spot .sx-flick { animation: spFlicker 0.9s ease-in-out infinite alternate; }
-.sx-meter { position: absolute; z-index: 6; left: 12px; bottom: 10px; display: flex; align-items: center; gap: 8px; padding: 4px 10px; background: rgba(8, 10, 16, 0.66); border: 1px solid rgba(255, 255, 255, 0.14); pointer-events: none; }
-.sx-meter small { font: 700 10px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: rgba(255, 255, 255, 0.62); }
-.sx-meter .sx-bar { width: clamp(70px, 12vw, 130px); height: 7px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
-.sx-meter .sx-bar i { display: block; height: 100%; width: 0; background: linear-gradient(90deg, #6fb8ff, #bfe8ff); transition: width 0.25s; }
-.sp-forge .sx-meter .sx-bar i { background: linear-gradient(90deg, #c8341a, #ff8a2a, #ffd75e); }
-.sx-meter b { font: 700 12.5px var(--display); color: #fff; min-width: 34px; }
-.sx-meter.hot { border-color: #ffd75e; box-shadow: 0 0 14px rgba(255, 215, 94, 0.5); }
-.sx-meter.hot .sx-bar i { background: linear-gradient(90deg, #ffd75e, #fff6c8); }
-.sx-meter.hot b { color: #ffe08a; }
-.spot.sp-forge .fg-mouth { animation: spFlicker 0.5s ease-in-out infinite alternate; }
-.spot.sp-forge .fg-glowc { animation: spFlicker 1.3s ease-in-out infinite alternate; }
-.spot.sp-forge.white .fg-mouth { fill: #fff; filter: drop-shadow(0 0 12px #fff); }
-.spot.sp-forge.white .fg-glowc { fill: url(#fg-white); opacity: 0.8; }
-.spot.sp-forge.white::after { content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 2; background: radial-gradient(ellipse at 78% 62%, rgba(255, 255, 255, 0.28), transparent 60%); animation: spFlicker 0.4s ease-in-out infinite alternate; }
-.spop.sx-raybox { width: 46%; aspect-ratio: 1; }
-.spop.sx-raybox .sx-rays { position: absolute; inset: 0; border-radius: 50%; background: repeating-conic-gradient(from 0deg, rgba(255, 255, 255, 0.6) 0 6deg, transparent 6deg 18deg);
-  -webkit-mask: radial-gradient(circle, #000 12%, transparent 66%); mask: radial-gradient(circle, #000 12%, transparent 66%); animation: sxRays 1.8s ease-out forwards; }
-.spop.sx-raybox.gold .sx-rays { background: repeating-conic-gradient(from 0deg, rgba(255, 226, 122, 0.8) 0 6deg, rgba(159, 243, 255, 0.3) 6deg 11deg, transparent 11deg 18deg); }
-@keyframes sxRays { 0% { transform: scale(0.2) rotate(0); opacity: 0; } 20% { opacity: 1; } 100% { transform: scale(1) rotate(50deg); opacity: 0; } }
-@media (prefers-reduced-motion: reduce) { .spot .mn-rock.hit, .spot .sx-flick, .spot.sp-forge .fg-mouth, .spot.sp-forge .fg-glowc, .spop.sx-raybox .sx-rays { animation: none; } }
-
-
-/* ==========================================================================
-   Kaio Planet: the gravity chamber and the farm (kaio-ui.js)
-   ========================================================================== */
-.spot .gv-g { font: 900 17px var(--display); }
-.spot .gv-gs { font: 700 6.5px var(--display); letter-spacing: 0.2em; }
-.spot .gv-led { animation: spFlicker 0.5s ease-in-out infinite alternate; }
-.gv-aura { position: absolute; z-index: 1; width: 26%; aspect-ratio: 1 / 1.3; transform: translate(-50%, -50%); border-radius: 50%; pointer-events: none; opacity: 0;
-  background: radial-gradient(ellipse, color-mix(in srgb, var(--gc) 55%, transparent), transparent 65%); transition: opacity 0.4s; }
-.spot.sp-grav.on .gv-aura { opacity: 0.7; animation: gvAura 0.35s ease-in-out infinite alternate; }
-.gv-aura.flare { animation: gvFlare 1.4s ease-out !important; background: radial-gradient(ellipse, rgba(255, 246, 200, 0.95), rgba(255, 210, 63, 0.6) 40%, transparent 70%); opacity: 1; }
-@keyframes gvAura { from { transform: translate(-50%, -50%) scale(0.92, 0.96); } to { transform: translate(-50%, -52%) scale(1.04, 1.08); } }
-@keyframes gvFlare { 0% { transform: translate(-50%, -50%) scale(0.6); } 25% { transform: translate(-50%, -55%) scale(1.6, 1.9); } 100% { transform: translate(-50%, -50%) scale(1); } }
-.spop.gv-wave { width: 7%; aspect-ratio: 1; border: 3px solid rgba(255, 255, 255, 0.9); border-radius: 50%; animation: gvWave 0.55s ease-out forwards; }
-@keyframes gvWave { from { transform: translate(-50%, -50%) scale(0.2); opacity: 1; } to { transform: translate(-50%, -50%) scale(2.2); opacity: 0; } }
-.spot .fm-sway { animation: fmSway 1.6s ease-in-out infinite alternate; }
-@keyframes fmSway { from { transform: rotate(-4deg); } to { transform: rotate(4deg); } }
-.spot .fm-glow { animation: spFlicker 1s ease-in-out infinite alternate; }
-.spot .fm-lbl { font: 700 11px var(--display); fill: #fff; stroke: #2a1a0a; stroke-width: 3px; paint-order: stroke fill; }
-.spot .fm-lbl.ready { fill: #ffe14d; }
-@media (prefers-reduced-motion: reduce) { .spot .gv-led, .spot.sp-grav.on .gv-aura, .spot .fm-sway, .spot .fm-glow { animation: none; } }
-
-
-/* ==========================================================================
-   Shinjuku: the exorcism (hex-ui.js)
-   ========================================================================== */
-.spot .hx-neon { animation: spFlicker 2.2s steps(2) infinite alternate; }
-.spot .hx-seal { animation: spFlicker 1.2s ease-in-out infinite alternate; }
-.hx-rain { position: absolute; inset: 0; z-index: 4; pointer-events: none; opacity: 0.35;
-  background: repeating-linear-gradient(105deg, transparent 0 14px, rgba(190, 210, 255, 0.55) 14px 15px, transparent 15px 40px); background-size: 200% 200%; animation: hxRain 0.6s linear infinite; }
-@keyframes hxRain { from { background-position: 0 0; } to { background-position: -40px 120px; } }
-.hx-slot { position: absolute; inset: 0; z-index: 2; pointer-events: none; }
-.hx-curse { position: absolute; width: 24%; aspect-ratio: 240 / 200; transform: translate(-50%, -50%) scale(var(--sc)); animation: hxFloat 2.4s ease-in-out infinite alternate; }
-.hx-curse .cr { width: 100%; height: 100%; overflow: visible; filter: drop-shadow(0 0 10px color-mix(in srgb, var(--gc) 60%, transparent)); }
-.hx-curse.g-g1 .cr { filter: drop-shadow(0 0 14px #c48cff) saturate(1.3) brightness(0.85); }
-.hx-curse.g-sp .cr { filter: drop-shadow(0 0 16px #ff4a5a) drop-shadow(0 0 30px #ff4a5a) saturate(1.5) hue-rotate(-30deg); }
-.hx-grade { position: absolute; left: 50%; top: -6%; transform: translate(-50%, -100%) scale(calc(1 / var(--sc))); padding: 2px 9px; white-space: nowrap; font: 800 12px var(--display); letter-spacing: 0.08em; text-transform: uppercase;
-  color: #fff; background: rgba(8, 10, 16, 0.75); border: 1px solid var(--gc); box-shadow: 0 0 10px color-mix(in srgb, var(--gc) 50%, transparent); }
-.hx-curse.g-sp .hx-grade { color: #ffe08a; background: #4a0a12; animation: spFlicker 0.4s ease-in-out infinite alternate; }
-@keyframes hxFloat { from { margin-top: -4px; } to { margin-top: 6px; } }
-.hx-curse.hit { animation: hxHit 0.3s; }
-@keyframes hxHit { 0% { filter: brightness(3); translate: 6px 0; } 40% { translate: -5px 0; } 100% { filter: none; translate: 0 0; } }
-.hx-curse.rise { animation: hxRise 0.6s ease-out, hxFloat 2.4s 0.6s ease-in-out infinite alternate; }
-@keyframes hxRise { from { opacity: 0; transform: translate(-50%, -20%) scale(calc(var(--sc) * 0.6)); } }
-@media (prefers-reduced-motion: reduce) { .hx-rain, .hx-curse, .spot .hx-neon, .spot .hx-seal { animation: none; } }
-
-
-/* ==========================================================================
-   Green Island: the hunt (hunt-ui.js)
-   ========================================================================== */
-.spot.sp-hunt.on:not(.beast) .hn-far { animation: hnScroll 26s linear infinite; }
-.spot.sp-hunt.on:not(.beast) .hn-near, .spot.sp-hunt.on:not(.beast) .hn-prints { animation: hnScroll 7s linear infinite; }
-@keyframes hnScroll { to { transform: translateX(-800px); } }
-.hn-prey { position: absolute; z-index: 2; left: 70%; top: 62%; width: 22%; aspect-ratio: 240 / 200; transform: translate(-50%, -50%) translateX(60%); opacity: 0; transition: opacity 0.35s, transform 0.5s cubic-bezier(.2, .8, .3, 1); pointer-events: none; }
-.hn-prey .cr { width: 100%; height: 100%; overflow: visible; transform: scaleX(-1); }
-.hn-prey.show { opacity: 1; transform: translate(-50%, -50%); }
-.hn-prey.caught { animation: hnCaught 0.5s ease-in forwards; }
-@keyframes hnCaught { 0% { opacity: 1; filter: brightness(2.4); transform: translate(-50%, -50%) scale(1.1); } 100% { opacity: 0; transform: translate(-50%, -50%) scale(0.4); } }
-.spot.sp-hunt.prime .hn-prey .cr { filter: drop-shadow(0 0 8px #ffe27a) drop-shadow(0 0 18px #ffd23f) saturate(1.3); }
-.spot.sp-hunt.prime .hn-prey.show { transform: translate(-50%, -50%) scale(1.25); }
-.hn-trap { position: absolute; z-index: 2; width: 6%; aspect-ratio: 1; transform: translate(-50%, -50%); }
-.hn-trap .gi { width: 100%; height: 100%; fill: #c9a46a; stroke: #0a0c11; stroke-width: 26px; paint-order: stroke fill; }
-.hn-beast { position: absolute; z-index: 2; left: 76%; top: 60%; width: 13%; aspect-ratio: 1; transform: translate(-50%, -50%); animation: hnCircle 3.2s ease-in-out infinite; }
-.hn-beast .gi { width: 100%; height: 100%; fill: #f2eee4; stroke: #0a0c11; stroke-width: 22px; paint-order: stroke fill; filter: drop-shadow(0 3px 2px rgba(0, 0, 0, 0.4)); }
-.hn-beast.caught { animation: hnCaught 0.6s ease-in; }
-@keyframes hnCircle { 0%, 100% { translate: 0 0; } 25% { translate: 6% -4%; } 50% { translate: -8% 0; } 75% { translate: 4% 3%; } }
-.beast.shiny { box-shadow: 0 0 0 1px #ffe08a, 0 0 14px rgba(255, 214, 94, 0.45); }
-.beast.shiny b .gi { width: 13px; height: 13px; fill: #ffe08a; display: inline-block; margin-right: 3px; vertical-align: -1px; }
-@media (prefers-reduced-motion: reduce) { .spot.sp-hunt .hn-far, .spot.sp-hunt .hn-near, .spot.sp-hunt .hn-prints, .hn-beast { animation: none !important; } }
-/* an icon inside a scene tag stays small */
-.spop.tag > .gi { width: 16px; height: 16px; display: block; fill: currentColor; margin-bottom: 2px; }
-
-
-/* ==========================================================================
-   Echo Quarter: the dig, the workshop, the Echo (echo-ui.js)
+   Echo Quarter: the dig grid (echo-ui.js gridHTML, shown in the focus panel)
    ========================================================================== */
 .dg-grid { position: absolute; z-index: 6; right: 12px; bottom: 10px; padding: 6px 8px; background: rgba(8, 10, 16, 0.7); border: 1px solid rgba(255, 255, 255, 0.16); pointer-events: none; }
 .dg-grid small { display: block; margin-bottom: 4px; font: 700 10px var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: rgba(255, 255, 255, 0.7); }
@@ -312,10 +160,3 @@
 .dg-cells i.o.intact { background: #6a4a10; box-shadow: 0 0 8px #ffd75e; }
 .dg-cells i.pop { animation: dgPop 0.5s ease-out; }
 @keyframes dgPop { 0% { transform: scale(1.8); filter: brightness(2); } 100% { transform: scale(1); } }
-.ec-slot { position: absolute; z-index: 1; width: 22%; aspect-ratio: 156 / 218; pointer-events: none; }
-.ec-ghost { width: 100%; height: 100%; opacity: var(--solid); animation: ecFloat 3s ease-in-out infinite alternate; filter: drop-shadow(0 0 10px var(--ec)) drop-shadow(0 0 24px var(--ec)) saturate(0.4) brightness(1.4); mix-blend-mode: screen; }
-.ec-ghost svg.avatar { width: 100%; height: 100%; }
-.spot.sp-bond.rush .ec-ghost { opacity: 1; animation: ecFloat 0.6s ease-in-out infinite alternate; filter: drop-shadow(0 0 14px var(--ec)) drop-shadow(0 0 40px var(--ec)) brightness(1.7); }
-@keyframes ecFloat { from { transform: translate(0, 0); } to { transform: translate(-4px, -10px); } }
-.spot .ec-pulse { animation: spFlicker 2s ease-in-out infinite alternate; }
-@media (prefers-reduced-motion: reduce) { .ec-ghost, .spot .ec-pulse { animation: none !important; } }

@@ -1,11 +1,10 @@
 'use strict';
 /* ==========================================================================
    TRI-REALM — expeditions interface: the harbour (ships at sea, trip length,
-   provisions, repeat), destination cards, and the voyage scene. Engine: expeditions.js.
+   provisions, repeat) and destination cards. Engine: expeditions.js.
    ========================================================================== */
 
 const durName = (d) => (EXP_DURS.find((x) => x[0] === d) || [0, fmtTime(d)])[1];
-const shipAct = () => (S.exped.ships[0] ? findAction('voyaging', S.exped.ships[0].id) : null);
 
 function harbourHTML() {
   const E = S.exped, n = shipSlots();
@@ -50,22 +49,6 @@ function expCard(a) {
   </button>`;
 }
 
-// The voyage scene follows your first ship.
-{
-  const base = spotHTML, baseStats = spotStats;
-  spotHTML = function (skill, o) {
-    if (skill !== 'voyaging') return base(skill, o);
-    const saved = S.action, a = shipAct();
-    S.action = a ? { skill: 'voyaging', id: a.id, prog: 0 } : null;   // let the scene draw this ship at sea
-    try { return base(skill); } finally { S.action = saved; }
-  };
-  spotStats = function (skill) {
-    if (skill !== 'voyaging') return baseStats(skill);
-    const sh = S.exped.ships[0];
-    if (!sh) return `<div class="spot-idle">${ui('play')}<span>Pick a destination below to send a ship. It sails while you do anything else.</span></div>`;
-    return `<div class="spot-run"><span class="pbar"><i data-shipfill="0" style="width:${100 * (1 - sh.left / sh.dur)}%"></i></span><span class="fm-time" data-shipleft="0">${fmtTime(Math.max(0, sh.left))}</span></div>`;
-  };
-}
 UPD.push(() => {
   S.exped.ships.forEach((sh, i) => {
     for (const el of $$(`[data-shipleft="${i}"]`)) setText(el, fmtTime(Math.max(0, sh.left)));

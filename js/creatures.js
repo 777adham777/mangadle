@@ -6,7 +6,7 @@
    Parts sit in groups the stylesheet animates: .cr-breath, .cr-head, .cr-jaw,
    .cr-tail, .cr-wing, .cr-float, .cr-sway. The arena adds .atk / .winding.
    CREATURES maps an enemy name to its plan and palette.
-   Loaded after avatar.js (uses shade()), before arena.js.
+   Loaded after draw-util.js (uses shade()), before arena.js.
    ========================================================================== */
 
 const CR_INK = '#15161c';

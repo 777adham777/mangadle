@@ -243,8 +243,6 @@
 .pst-friends li span { display: grid; min-width: 0; }
 .pst-friends b { font: 600 13px var(--display); }
 .pst-friends small { font-size: 11px; color: var(--dim); }
-.pst-fav { width: 40px; height: 40px; overflow: hidden; position: relative; background: #2a2230; }
-.pst-fav svg.avatar { position: absolute; width: 300%; height: auto; left: -98%; top: -44%; }
 .coo-hbtn { display: flex; gap: 6px; flex-wrap: wrap; justify-content: flex-end; }
 .coo-ally.friend small { color: var(--gold); }
 .ch-poster .gi { color: #e8c98a; }
