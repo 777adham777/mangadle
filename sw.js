@@ -2,7 +2,7 @@
    Bump VERSION on every deploy so players get the new files. */
 importScripts('./js/item-images.js', './js/monster-art.js');
 
-const VERSION = 'tri-realm-v145';
+const VERSION = 'tri-realm-v146';
 const ITEM_ICON_URLS = Object.values(ITEM_IMAGE_PATHS).map((path) => './' + path);
 const BACKGROUND_URLS = [
   'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
@@ -34,6 +34,7 @@ const SHELL = [
   './css/battle.css',
   './css/scrolls.css',
   './css/dungeons.css',
+  './css/quests.css',
   './js/data.js',
   './js/worlds.js',
   './js/lore.js',
@@ -78,6 +79,7 @@ const SHELL = [
   './js/builds.js',
   './js/dungeons.js',
   './js/economy.js',
+  './js/trials.js',
   './js/story.js',
   './js/guide.js',
   './js/ui.js',
@@ -108,7 +110,7 @@ const SHELL = [
   './js/reveal.js',
   './js/chest-fx.js',
   './js/builds-ui.js',
-  './js/story-ui.js',
+  './js/quests-ui.js',
   './js/missions-ui.js',
   './js/report-ui.js',
   './js/huntlist-ui.js',

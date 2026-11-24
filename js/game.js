@@ -49,7 +49,7 @@ function defaultState() {
     stats: { kills: 0, actions: 0, playtime: 0, deaths: 0, bossKills: 0, made: {}, voyages: 0, opened: 0 },
     found: {},                          // collection log: item id -> 1 once ever obtained
     pets: {},                           // pet id -> 1
-    goal: 0,
+    goal: 0, goalV: 2,
     hero: { name: '' },                 // the name on your Wanted poster (poster.js)
     unlocked: {},                       // unlock id -> 1 (see UNLOCKS)
     gates: {},                          // world id -> 1 once its gate is opened (see GATES)
@@ -858,6 +858,8 @@ function loadFrom(json) {
     for (const k in d.quality.log) if (re.test(k) && d.quality.log[k] > 0) C[k] = 1;
     d.quality.cv = 2;
   }
+  // The path was rewritten on 2026-11-25 (steps added): the old index becomes the same step in the new path.
+  if ((d.goalV || 1) < 2) { const id = OLD_GOAL_IDS[d.goal]; d.goal = id != null && GOAL_BY[id] != null ? GOAL_BY[id] : d.goal >= OLD_GOAL_IDS.length ? GOALS.length : 0; d.goalV = 2; }
   // The avatar was removed (2026-11-24): only its name (the poster's) is kept.
   if (d.avatar) { if (!d.hero && d.avatar.name) d.hero = { name: String(d.avatar.name) }; delete d.avatar; }
   S = mergeDefaults(d, defaultState());

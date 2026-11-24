@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — daily and weekly objectives on the Overview. Engine: tasks.js.
+   TRI-REALM — daily and weekly objectives, on the Quests page (since 2026-11-25). Engine: tasks.js.
    ========================================================================== */
 
 function taskText(t) {
@@ -22,7 +22,7 @@ function taskRow(t, i) {
       <span class="pbar"><i style="width:${(p / t.n) * 100}%"></i></span></span>
     <span class="tk-cta">${t.claimed ? `<em class="ok">${ui('check')}Done</em>` : done ? gbtn('Claim', 'check', `data-task="${t.weekly ? 'w' : 'd'}:${i}"`, 'sm glow') : `<small>${fmt(p)} / ${fmt(t.n)}</small>${gbtn('Go', 'play', `data-nav="${taskGo(t)}"`, 'dark sm')}`}</span></div>`;
 }
-UIX.homeTop.push(() => {
+UIX.questsBottom.push(() => {
   if (!tasksOn()) return '';
   const T = S.tasks;
   return `<section class="win tasks">${hdr('Daily objectives', `new ones in ${fmtTime((nextDay() - Date.now()) / 1000)}`)}

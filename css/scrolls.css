@@ -19,7 +19,7 @@
 
 /* menu badge (quick nav) */
 .nq { position: relative; }
-.nq-badge { position: absolute; top: 1px; left: 19px; min-width: 17px; height: 17px; padding: 0 4px; display: grid; place-items: center; font: 700 10.5px/1 var(--display); font-style: normal;
+.nq-badge { position: absolute; top: 1px; left: 1px; min-width: 17px; height: 17px; padding: 0 4px; display: grid; place-items: center; font: 700 10.5px/1 var(--display); font-style: normal;
   color: #1b1405; background: var(--gold); border-radius: 9px; box-shadow: 0 0 0 2px #111216, 0 0 10px rgba(244, 198, 106, 0.5); animation: nqPulse 2.4s ease-in-out infinite; }
 @keyframes nqPulse { 50% { box-shadow: 0 0 0 2px #111216, 0 0 2px rgba(244, 198, 106, 0.2); } }
 

@@ -31,7 +31,7 @@ function icName(kind, id) {
   return n && GI[n] ? n : (ICONS.ui && GI[ICONS.ui.info] ? ICONS.ui.info : null);
 }
 // Technique icons carry data-ttip: hovering one anywhere shows the technique's tooltip (tooltips.js).
-const ic = (kind, id, cls) => (kind === 'item' ? itemIc(id, cls) : gi(icName(kind, id), cls, kind === 'technique' ? `data-ttip="${id}"` : ''));
+const ic = (kind, id, cls) => (kind === 'item' ? itemIc(id, cls) : gi(icName(kind, kind === 'goal' && typeof id === 'number' && GOALS[id] ? GOALS[id].id : id), cls, kind === 'technique' ? `data-ttip="${id}"` : ''));
 const ui = (k, cls) => ic('ui', k, cls);
 // Item art: the item's own glyph in its own colour (ICON_COLOR, icons.js); schematics are drawn as blueprints.
 function itemIc(id, cls) {
@@ -427,7 +427,7 @@ function farmPanel() {
 const VIEWS = {};
 // Extension points filled by ui-systems.js: each entry returns HTML (or '').
 // realmScene: an animated scene under a skill's banner (seas-ui.js); when one is shown it carries the farm numbers.
-const UIX = { bagTop: [], quick: [], homeTop: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [], nowbar: [], colDetail: [], stagesTop: [] };
+const UIX = { bagTop: [], quick: [], homeTop: [], questsBottom: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [], nowbar: [], colDetail: [], stagesTop: [] };
 const uix = (k, ...a) => UIX[k].map((f) => f(...a) || '').join('');
 
 /* ------------------------------------------------------------- overview */

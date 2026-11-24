@@ -522,17 +522,25 @@ const ICONS = {
     skull: 'death-skull',
   },
 };
-// GOALS has no ids: mapped by index.
-ICONS.goal = [
-  'wood-log', 'level-end-flag', 'broad-dagger', 'broadsword', 'herbs-bundle', 'medicine-pills', 'island', 'target-dummy', 'concentration-orb',
-  'scroll-unfurled', 'shop', 'smoking-orb', 'meditation', 'battery-100', 'tied-scroll', 'fox', 'portal',
-  'fishing-pole', 'level-end-flag', 'cooking-pot', 'fish-cooked', 'salt-shaker', 'sailboat', 'broadsword', 'round-star', 'coral', 'sparkles', 'pirate-captain', 'paper-lantern',
-  'war-pick', 'spooky-house', 'katana', 'shining-sword', 'recycle', 'trophy', 'drama-masks', 'stone-throne',
-  'biceps', 'plant-roots', 'cog', 'aura', 'crown', 'portal',
-  'smoking-orb', 'magic-swirl', 'yin-yang', 'oni', 'portal',
-  'paw', 'wolf-howl', 'notebook', 'claw', 'portal',
-  'stone-block', 'spark-spirit', 'all-seeing-eye', 'open-book', 'stone-tower', 'vortex',
-  'falling-star', 'shiny-apple', 'third-eye', 'war-axe', 'bookshelf'];
+// Path icons, by goal id.
+ICONS.goal = {
+  chop10: 'wood-log', wc5: 'level-end-flag', sword: 'broad-dagger', equip_sword: 'broadsword', pills5: 'medicine-pills', food: 'herbs-bundle',
+  training10: 'target-dummy', tech1: 'scroll-unfurled', char10: 'concentration-orb', market: 'shop', mist10: 'smoking-orb', wear3: 'chest-armor',
+  techup: 'meditation', char20: 'biceps', energy: 'battery-100', arts20: 'hand-saw', schem: 'tied-scroll', ravine25: 'fangs',
+  fox: 'fox', gate_seas: 'portal', minnow10: 'fishing-pole', fish5: 'level-end-flag', cook5: 'cooking-pot', cook10: 'fish-cooked',
+  season5: 'salt-shaker', voyage3: 'sailboat', shoals10: 'broadsword', perfect: 'round-star', reef10: 'coral', storm10: 'big-wave',
+  shiny: 'sparkles', admiral: 'pirate-captain', gate_soul: 'paper-lantern', ore20: 'war-pick', ingot10: 'spooky-house', districts10: 'skull-mask',
+  katana: 'katana', desert10: 'tombstone', refine1: 'shining-sword', awaken: 'recycle', spire10: 'stone-tower', reiatsu10: 'aura',
+  renown25: 'trophy', sovereign: 'drama-masks', gate_ki: 'stone-throne', gravity10: 'biceps', crop1: 'plant-roots', plains10: 'stone-pile',
+  tool: 'cog', canyon10: 'stone-block', chamber1h: 'hourglass', transform: 'aura', citadel10: 'stone-throne', tyrant: 'crown',
+  gate_hex: 'portal', hex10: 'smoking-orb', alleys10: 'paper-lantern', domain: 'magic-swirl', shrine10: 'totem-mask', vow30: 'yin-yang',
+  veil10: 'ghost', matriarch: 'oni', gate_hunter: 'portal', hunt10: 'paw', thicket10: 'plant-roots', companion: 'wolf-howl',
+  cliffs10: 'wing-cloak', contracts3: 'notebook', ruins10: 'rune-stone', chimera: 'claw', gate_echo: 'portal', arch10: 'stone-block',
+  plaza10: 'drama-masks', echo_awaken: 'spark-spirit', museum10: 'stone-tablet', echo_task: 'all-seeing-eye', artifact: 'open-book', pillars10: 'stone-tower',
+  pillar: 'stone-tower', gate_rift: 'vortex', shenron: 'falling-star', fruit: 'shiny-apple', emperor: 'third-eye', cleaver: 'war-axe',
+  col75: 'bookshelf',
+};
+for (const d of ['archive', 'wreck', 'catacombs', 'pit', 'womb', 'nest', 'tomb']) ICONS.goal['dg_' + d] = 'locked-chest';
 /* Woodcutting (Leaf Village): drawn for this game. */
 Object.assign(GI, {
   'wood-log': 'M64 160H292V352H64Q20 256 64 160ZM128 160l-16-50h34l14 50ZM104 214v14h140v-14ZM132 286v14h132v-14ZM292 256A96 96 0 1 1 484 256A96 96 0 1 1 292 256ZM310 256A78 78 0 1 0 466 256A78 78 0 1 0 310 256ZM332 256A56 56 0 1 1 444 256A56 56 0 1 1 332 256ZM352 256A36 36 0 1 0 424 256A36 36 0 1 0 352 256ZM374 256A14 14 0 1 1 402 256A14 14 0 1 1 374 256Z',
