@@ -55,6 +55,7 @@ function zoneKph(zi) {
 function huntSources(id) {
   const out = [], lm = luckMult();
   ZONES.forEach((z, zi) => {
+    if (z.dungeon) return;
     if (!realmOpen(z.realm)) return;
     let p = 0;
     z.enemies.forEach((e0, i) => {

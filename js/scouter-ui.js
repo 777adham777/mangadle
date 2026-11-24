@@ -17,7 +17,7 @@ function scoutZoneDefault() {
   const lost = st.last ? ZONES.findIndex((z) => z.id === st.last) : -1;
   if (lost >= 0 && scoutSeen(lost)) return lost;
   if (S.combat.zone != null && scoutSeen(S.combat.zone)) return S.combat.zone;
-  const seen = ZONES.map((_, i) => i).filter(scoutSeen);
+  const seen = ZONES.map((_, i) => i).filter((i) => !ZONES[i].dungeon && scoutSeen(i));
   return seen.length ? seen[seen.length - 1] : null;
 }
 function scanStart(zi) {
@@ -63,7 +63,7 @@ function scoutResultHTML() {
 }
 function scoutWinHTML() {
   if (!scoutOn()) return '';
-  const seen = ZONES.map((z, i) => [z, i]).filter(([, i]) => scoutSeen(i));
+  const seen = ZONES.map((z, i) => [z, i]).filter(([z, i]) => !z.dungeon && scoutSeen(i));
   const zi = scoutZoneDefault();
   if (SC.zi == null && zi != null && !SC.running) SC.zi = zi;
   return `<section class="win scout-win" id="scouter">${hdr('Scouter', 'Plays the fight out before you take it')}

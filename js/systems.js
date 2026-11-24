@@ -427,7 +427,7 @@ function rollContract() {
   for (let tries = 0; tries < 20; tries++) {
     const kind = pick(kinds);
     if (kind === 'kill') {
-      const zs = ZONES.filter((z, i) => z.realm === r && !z.boss && zoneUnlocked(i));
+      const zs = ZONES.filter((z, i) => z.realm === r && !z.boss && !z.dungeon && zoneUnlocked(i));
       if (!zs.length) continue;
       const z = pick(zs), n = randInt(3, 8) * 10;
       return { kind, realm: r, target: z.id, n, base: S.combat.kills[z.id] || 0, stars: 1 + (worldIndex(r) >= 3 ? 1 : 0) };
@@ -485,7 +485,7 @@ hook('tick', () => { if (contractsOn() && (!S.contracts.next || Date.now() >= S.
 const CARDS = {};      // id -> { realm, name, kind ('foe' | 'relic'), ref }
 function buildCards() {
   for (const r of WORLD_ORDER) {
-    const foes = [...new Set(ZONES.filter((z) => z.realm === r).flatMap((z) => z.enemies.map((e) => e.name)))];
+    const foes = [...new Set(ZONES.filter((z) => z.realm === r && !z.dungeon).flatMap((z) => z.enemies.map((e) => e.name)))];
     foes.forEach((n, i) => { CARDS[`card_${r}_f${i}`] = { realm: r, name: n, kind: 'foe', ref: n }; });
     relicsOf(r).forEach((k, i) => { CARDS[`card_${r}_r${i}`] = { realm: r, name: ITEMS[k].name, kind: 'relic', ref: k }; });
   }
@@ -617,7 +617,7 @@ function updateTear() {
   TEAR.until = (hour + 1) * 3600000;
   TEAR.name = `Rift Tear: ${REALMS[TEAR.worlds[0]].name} × ${REALMS[TEAR.worlds[1]].name}`;
   TEAR.enemies = TEAR.worlds.map((r, i) => {
-    const pool = ZONES.filter((z) => z.realm === r && !z.boss).flatMap((z) => z.enemies);
+    const pool = ZONES.filter((z) => z.realm === r && !z.boss && !z.dungeon).flatMap((z) => z.enemies);
     const e = pool[(hour * 7 + i * 3) % pool.length];
     const drops = e.drops.filter(([d]) => !(ITEMS[d] && ITEMS[d].type === 'schematic')).map(([d, ch, q]) => [d, Math.min(1, ch * 2), q]);
     const rl = relicsOf(r); if (rl.length) drops.push([rl[0], 0.2, [1, 2]]);

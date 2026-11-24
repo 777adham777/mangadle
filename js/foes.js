@@ -215,7 +215,7 @@ kit('The Unbound', 'boss', { weak: 'drain', resist: 'fire', lore: 'What was seal
   [PH('It wakes', { shield: 0.15 }), PH('Unbound', { haste: 1, add: mv('Devour Light', { heal: 0.06 }) })]);
 
 const FIRST_SPECIAL = 2, EVERY = 3;
-const kitOf = (e) => (e ? FOE_KITS[e.base || e.name] || null : null);
+const kitOf = (e) => (e ? FOE_KITS[e.kitId] || FOE_KITS[e.base || e.name] || null : null);   // kitId: a dungeon's copy (dungeons.js)
 
 /* ------------------------------------------------------------ power-neutral scaling */
 // Expected extra damage (in normal swings) and extra toughness of a kit, over a nominal fight

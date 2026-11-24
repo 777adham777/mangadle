@@ -34,7 +34,7 @@ function rollTask(weekly, taken) {
     const kind = pick(kinds), r = pick(worlds), [lo, hi] = TASK_N[kind];
     let t = null;
     if (kind === 'kill') {
-      const zs = ZONES.filter((z, i) => z.realm === r && !z.boss && zoneUnlocked(i));
+      const zs = ZONES.filter((z, i) => z.realm === r && !z.boss && !z.dungeon && zoneUnlocked(i));
       if (zs.length) { const z = pick(zs); t = { kind, realm: r, target: z.id }; }
     } else if (kind === 'boss') {
       const zs = ZONES.filter((z) => z.realm === r && z.boss && (S.combat.kills[z.id] || 0) > 0);

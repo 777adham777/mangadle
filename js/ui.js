@@ -600,7 +600,7 @@ VIEWS.battle = () => {
   let lastRealm = null, groups = '';
   bestZoneI = bestZone();
   ZONES.forEach((z, i) => {
-    if (REALMS[z.realm].hidden && !zoneUnlocked(i)) return;
+    if (z.dungeon || (REALMS[z.realm].hidden && !zoneUnlocked(i))) return;
     const sealed = !realmOpen(z.realm);
     if (z.realm !== lastRealm) {
       lastRealm = z.realm;
@@ -618,7 +618,8 @@ VIEWS.battle = () => {
     ${gsDockHTML(foods)}
   </div>
   <div class="gs-below">
-    <section class="win stages" id="gs-stages">${hdr('Stages')}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section>
+    <div class="gs-left">${typeof dungeonsWinHTML === 'function' ? dungeonsWinHTML() : ''}
+    <section class="win stages" id="gs-stages">${hdr('Stages')}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section></div>
     <div class="gs-side">
       ${uix('battleSide')}
       <section class="win char-stats">${hdr('Character', `Lv ${charLv()}`)}${charStatsHTML()}</section>
@@ -630,7 +631,7 @@ VIEWS.battle = () => {
 };
 // "Grand Stage" (2026-11-24): no hero on screen. The top bar says where you fight and what it opens,
 // the stage shows the foe (arena.js stageHTML), the command dock under it is you.
-const zoneOpen = (i) => i >= 0 && i < ZONES.length && realmOpen(ZONES[i].realm) && zoneUnlocked(i);
+const zoneOpen = (i) => i >= 0 && i < ZONES.length && !ZONES[i].dungeon && realmOpen(ZONES[i].realm) && zoneUnlocked(i);
 function gsNextInfo() {
   const C = S.combat, i = C.zone, nz = ZONES[i + 1];
   if (i == null || !nz || !realmOpen(nz.realm)) return null;
@@ -721,7 +722,7 @@ function zoneXph(zi) {
 function bestZone() {
   let best = -1, bx = 0;
   ZONES.forEach((z, i) => {
-    if (!realmOpen(z.realm) || !zoneUnlocked(i) || !['easy', 'fair'].includes(zoneDanger(i)[1])) return;
+    if (z.dungeon || !realmOpen(z.realm) || !zoneUnlocked(i) || !['easy', 'fair'].includes(zoneDanger(i)[1])) return;
     const x = zoneXph(i);
     if (x > bx) { bx = x; best = i; }
   });
@@ -817,7 +818,7 @@ function inspectorHTML() {
   else if (it.type === 'scroll' && typeof scrollInspect === 'function') { const x = scrollInspect(selItem); body.push(x.body); acts.push(...x.acts); }
   else if (it.type === 'chest') {
     const tot = it.loot.reduce((a, l) => a + l[1], 0);
-    body.push(`${hdr('Contents', `${fmt(it.gold[0])}–${fmt(it.gold[1])} gold + one of`)}<ul class="srcs">${it.loot.map(([id, w, q]) => `<li><span><i>${itemIc(id)}</i>${esc(fruitLabel(id))}${q[1] > 1 ? ` ×${q[0]}–${q[1]}` : ''}</span><b>${fmtRate(w / tot)}</b></li>`).join('')}</ul>`);
+    body.push(`${hdr('Contents', `${fmt(it.gold[0])}–${fmt(it.gold[1])} gold + ${it.rolls > 1 ? it.rolls + ' of' : 'one of'}`)}<ul class="srcs">${it.loot.map(([id, w, q]) => `<li><span><i>${itemIc(id)}</i>${esc(fruitLabel(id))}${q[1] > 1 ? ` ×${q[0]}–${q[1]}` : ''}</span><b>${fmtRate(w / tot)}</b></li>`).join('')}</ul>`);
     acts.push(gbtn('Open 1', 'open', `data-open="${selItem}:1"`));
     if (n > 1) acts.push(gbtn(`Open all ×${fmt(Math.min(n, 1000))}`, 'open', `data-open="${selItem}:all"`));
   } else {
@@ -1191,7 +1192,7 @@ on('kill', (d) => {
     const f = $('.fighter.enemy');
     if (f) { const s = document.createElement('div'); s.className = 'ko'; s.textContent = 'Defeated'; f.appendChild(s); floatAt($('[data-portrait="enemy"]', f), `+${fmt(d.gold)}${ui('gold')}`, 'gold', 0, 30); }
   }
-  const unlocked = ZONES.filter((z, i) => zoneUnlocked(i)).length;
+  const unlocked = ZONES.filter((z, i) => !z.dungeon && zoneUnlocked(i)).length;
   if (unlocked > lastUnlocked) {
     lastUnlocked = unlocked;
     const z = ZONES[unlocked - 1];
@@ -1581,7 +1582,7 @@ function boot() {
   }
   S.last = Date.now();
   lastTick = Date.now();
-  lastUnlocked = ZONES.filter((z, i) => zoneUnlocked(i)).length;
+  lastUnlocked = ZONES.filter((z, i) => !z.dungeon && zoneUnlocked(i)).length;
   lastGold = Math.floor(S.gold);
   // Older saves never stored what the Bank showed: everything counts as seen once.
   (Array.isArray(S.ui.bankSeen) ? S.ui.bankSeen : Object.keys(S.items)).forEach((k) => seenItems.add(k));

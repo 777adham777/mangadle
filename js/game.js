@@ -501,9 +501,11 @@ function openChest(id, n) {
   const res = { gold: 0, items: {}, n };
   for (let i = 0; i < n; i++) {
     res.gold += Math.floor(randInt(it.gold[0], it.gold[1]) * goldMult());
-    const [lid, , q] = it.loot[weightedIndex(it.loot)];
-    const real = lid === 'FRUIT' ? pick(FRUITS) : lid === 'GEM' ? rollWeighted(GEM_TABLE) : lid;
-    res.items[real] = (res.items[real] || 0) + randInt(q[0], q[1]);
+    for (let k = 0; k < (it.rolls || 1); k++) {   // rolls: a dungeon chest gives three
+      const [lid, , q] = it.loot[weightedIndex(it.loot)];
+      const real = lid === 'FRUIT' ? pick(FRUITS) : lid === 'GEM' ? rollWeighted(GEM_TABLE) : lid;
+      res.items[real] = (res.items[real] || 0) + randInt(q[0], q[1]);
+    }
   }
   S.gold += res.gold;
   for (const k in res.items) addItem(k, res.items[k]);
@@ -527,6 +529,7 @@ function giveDrop(id, n, announce) {
 
 /* ------------------------------------------------------------- combat */
 function zoneUnlocked(zi) {
+  if (ZONES[zi].dungeon) return typeof dgOpen === 'function' && dgOpen(ZONES[zi].dungeon);   // dungeons.js
   if (!realmOpen(ZONES[zi].realm)) return false;   // other worlds wait behind their gate
   if (zi === 0) return true;
   const prev = ZONES[zi - 1];
@@ -534,6 +537,7 @@ function zoneUnlocked(zi) {
 }
 function startCombat(zi) {
   if (!ZONES[zi] || !zoneUnlocked(zi) || !isUnlocked('feature:battle')) return;
+  if (ZONES[zi].dungeon && !(S.dungeon && S.dungeon.id === ZONES[zi].dungeon)) return;   // a dungeon takes a key (dgEnter)
   const C = S.combat;
   if (C.zone === zi) return;
   S.action = null;
@@ -577,7 +581,7 @@ function tickCombat(dt) {
   const max = pMaxHp();
   if (C.hp > max) C.hp = max;
   if (C.zone == null) { C.hp = Math.min(max, C.hp + max * 0.03 * dt); return; }
-  C.hp = Math.min(max, C.hp + max * 0.008 * dt);
+  if (!ZONES[C.zone].dungeon) C.hp = Math.min(max, C.hp + max * 0.008 * dt);   // no breather in a dungeon
   if (C.enemy == null) {
     C.respawn -= dt;
     if (C.respawn <= 0) spawnEnemy();
@@ -598,9 +602,9 @@ function tickCombat(dt) {
 let playerHeld = () => false;
 function spawnEnemy() {
   const C = S.combat, z = ZONES[C.zone];
-  C.enemy = Math.floor(Math.random() * z.enemies.length);
+  C.enemy = z.dungeon ? dgRoom() : Math.floor(Math.random() * z.enemies.length);   // a dungeon: its rooms in order
   C.rank = 0;
-  if (!z.boss && !z.tear) {
+  if (!z.boss && !z.tear && !z.dungeon) {
     C.spawns = (C.spawns || 0) + 1;
     if (C.spawns % 50 === 0) { C.rank = 2; C.enemy = z.enemies.length - 1; }
     else if (Math.random() < 0.05) C.rank = 1;

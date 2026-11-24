@@ -663,6 +663,8 @@ const UNLOCKS = [
     hint: () => 'Brew 5 Soldier Pills', why: 'Armed and with pills in your pouch, the instructors let you train with real opponents.' },
   { id: 'feature:techniques', name: 'Techniques',      need: () => Object.keys(S.tech.lv).length > 0 || !!S.stats.scrollFound,
     hint: () => 'Find a technique scroll in battle', why: 'A defeated foe dropped a scroll. Read it from the Techniques page when you are ready. Techniques fire on their own in battle: equip them in their slots, and level them up with fragments from duplicate scrolls.' },
+  { id: 'feature:dungeons',   name: 'Dungeons',        need: () => (S.combat.kills.fox || 0) >= 1,
+    hint: () => 'Defeat the Ashen Fox Beast', why: "Behind the Fox's den, a stair leads under the Hokage rock. Every world hides a dungeon: five rooms in a row, no rest, a chest and a set at the end. Its guardian gives you the first key." },
   { id: 'feature:collection', name: 'Collection Log',  need: () => Object.keys(S.found).length >= 12,
     hint: () => 'Discover 12 different items', why: 'You start keeping a journal of everything you find.' },
   { id: 'feature:market',     name: 'Market',          need: () => S.gold >= 500 || Object.keys(S.shop).length > 0,

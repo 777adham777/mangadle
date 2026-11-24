@@ -64,7 +64,7 @@ function msOptions() {
     if (opts.length) groups.push([REALMS[r].name, opts]);
   }
   if (isUnlocked('feature:battle')) {
-    const zs = ZONES.map((z, i) => [z, i]).filter(([, i]) => zoneUnlocked(i)).map(([z]) => [`z|${z.id}`, `${z.boss ? 'Boss · ' : ''}${z.name}`]);
+    const zs = ZONES.map((z, i) => [z, i]).filter(([z, i]) => !z.dungeon && zoneUnlocked(i)).map(([z]) => [`z|${z.id}`, `${z.boss ? 'Boss · ' : ''}${z.name}`]);
     if (zs.length) groups.push(['Battlefield', zs]);
   }
   return groups;

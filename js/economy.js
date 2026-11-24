@@ -272,6 +272,8 @@ function gearRecipe(id) {
 }
 
 /* ------------------------------------------------------------ apply */
+// dungeon set pieces (dungeons.js) are priced like every other piece
+if (typeof DUNGEON_TIERS !== 'undefined') Object.assign(GEAR_TIERS, DUNGEON_TIERS);
 (function applyEconomy() {
   // stats first: the recipe costs read the new values
   for (const id in GEAR_TIERS) {

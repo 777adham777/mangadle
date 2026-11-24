@@ -80,7 +80,8 @@ function unlockContent() {
   for (const r of GATE_ORDER) S.gates[r] = 1;
   for (const u of UNLOCKS) S.unlocked[u.id] = 1;
   // every stage reachable: the kills that open the next one (the last stage stays untouched)
-  ZONES.forEach((z, i) => { if (i < ZONES.length - 1) S.combat.kills[z.id] = Math.max(S.combat.kills[z.id] || 0, z.boss ? 1 : 10); });
+  const lastStage = ZONES.map((z) => !z.dungeon).lastIndexOf(true);
+  ZONES.forEach((z, i) => { if (i < lastStage && !z.dungeon) S.combat.kills[z.id] = Math.max(S.combat.kills[z.id] || 0, z.boss ? 1 : 10); });
   for (const id in ITEMS) if (ITEMS[id].type === 'schematic') learnSchematic(id, true);
 }
 function maxSystems() {

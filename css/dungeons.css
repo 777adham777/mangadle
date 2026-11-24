@@ -1,0 +1,71 @@
+/* ==========================================================================
+   Dungeons (js/dungeons-ui.js, 2026-11-25)
+   The Dungeons window on the Battlefield, the dungeon top bar, the room tag on the foe.
+   ========================================================================== */
+
+.gs-left { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.gs-left > .stages, .gs-left > .dgs { min-width: 0; scroll-margin-top: calc(var(--hud-h) + 12px); }
+
+/* window */
+.dgs { border-left: 3px solid #e8a040; }
+.dg-cards { display: flex; flex-direction: column; gap: 8px; }
+.dg-card { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; background: linear-gradient(100deg, color-mix(in srgb, var(--rc) 14%, var(--panel2)), var(--panel2) 55%); border: 1px solid var(--line); border-left: 3px solid var(--rc); }
+.dg-card.inside { border-color: color-mix(in srgb, var(--act) 60%, var(--line)); box-shadow: inset 0 0 0 1px rgba(111, 207, 69, 0.25); }
+.dg-card.locked { opacity: 0.62; background: var(--panel2); }
+.dg-head { display: flex; align-items: center; gap: 10px; }
+.dg-ric { width: 30px; height: 30px; display: grid; place-items: center; flex-shrink: 0; }
+.dg-ric .gi { width: 26px; height: 26px; fill: var(--rc); }
+.dg-tt { flex: 1; min-width: 0; }
+.dg-tt small { display: block; font: 600 10.5px var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--dim); }
+.dg-tt b { display: block; font: 700 18px/1.1 var(--display); color: #fff; }
+.dg-lock .gi { width: 18px; height: 18px; fill: var(--mute); }
+.dg-blurb { margin: 0; font-size: 12.5px; color: var(--dim); font-style: italic; }
+.dg-blurb b { color: var(--text); font-style: normal; }
+.dg-rows { display: grid; gap: 5px; }
+.dg-row { display: grid; grid-template-columns: 92px minmax(0, 1fr); align-items: center; gap: 8px; }
+.dg-row > small { font: 600 10.5px var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); }
+.dg-key, .dg-set, .dg-rec { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 13px; }
+.dg-rec b { color: #fff; }
+.dg-rec em { display: inline-flex; align-items: center; gap: 3px; font-style: normal; color: var(--ok); }
+.dg-rec em .gi { width: 12px; height: 12px; }
+.dg-set > b { margin-left: 4px; font: 700 13px var(--display); color: var(--dim); }
+.dg-link { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; font: 600 11.5px var(--display); color: var(--dim); background: rgba(255, 255, 255, 0.04); border: 1px solid var(--line2); cursor: pointer; }
+.dg-link:hover { color: #fff; border-color: var(--sel); }
+.dg-link .gi { width: 12px; height: 12px; }
+.dg-cta { display: flex; align-items: center; gap: 10px; justify-content: flex-end; }
+.dg-cta small { font-size: 11.5px; }
+.dg-auto { display: flex; align-items: center; gap: 8px; margin-top: 10px; font-size: 13px; color: var(--dim); cursor: pointer; }
+.dg-auto input { accent-color: var(--act); width: 16px; height: 16px; }
+
+/* top bar inside a run */
+.gs-top.dg-top { border-left-color: #e8a040; background: linear-gradient(90deg, rgba(232, 160, 64, 0.12), var(--panel) 40%); }
+.dg-pips { display: flex; align-items: center; gap: 6px; margin-left: 10px; }
+.dg-pips i { width: 16px; height: 16px; transform: rotate(45deg); background: #1b1c22; border: 1px solid var(--line2); }
+.dg-pips i.done { background: var(--act); border-color: #2a4a1a; }
+.dg-pips i.on { background: #e8a040; border-color: #ffd28a; box-shadow: 0 0 10px rgba(232, 160, 64, 0.7); animation: dgPip 1.2s ease-in-out infinite; }
+.dg-pips i.lord { width: 20px; height: 20px; margin-left: 4px; }
+.dg-pips i.lord.on { background: #e0475a; border-color: #ffb0b8; box-shadow: 0 0 12px rgba(224, 71, 90, 0.8); }
+@keyframes dgPip { 50% { box-shadow: 0 0 2px rgba(232, 160, 64, 0.3); } }
+.dg-clock { display: grid; margin-left: 14px; }
+.dg-clock small { font: 600 10px var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+.dg-clock b { font: 700 18px/1 var(--display); font-variant-numeric: tabular-nums; color: #fff; }
+.dg-clock em { font-style: normal; font-size: 11px; color: var(--mute); }
+.dg-keys { margin-left: 6px; }
+
+/* the room tag on the foe's plate */
+.boss-tag.dg { background: #3a2a14; color: #ffd28a; border-color: #8a6a2a; }
+
+@media (max-width: 700px) {
+  .dg-row { grid-template-columns: 74px minmax(0, 1fr); }
+  .gs-top.dg-top { flex-wrap: wrap; row-gap: 8px; }
+  .dg-top .gs-where { flex: 1 1 100%; }
+  .dg-pips { order: 2; margin: 0; }
+  .dg-clock { order: 3; margin-left: auto; text-align: right; }
+  .dg-keys { order: 4; }
+  .dg-top .gs-acts { order: 5; flex-basis: 100%; }
+}
+@media (prefers-reduced-motion: reduce) { .dg-pips i.on { animation: none; } }
+
+/* the clear reward, beside the foe's drops */
+.gs-drops .dg-clear { display: flex; align-items: center; gap: 4px; margin-left: 4px; padding-left: 8px; border-left: 1px solid rgba(255, 255, 255, 0.1); }
+.gs-drops .dg-clear small { display: block; font: 600 10px var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: #e8a040; }

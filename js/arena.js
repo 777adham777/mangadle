@@ -80,13 +80,13 @@ function stageHTML() {
   else {
     const boss = z.boss, K = kitOf(e), n = e.base || e.name, sp = foeSprite(e), cr = !sp && creatureOf(n);
     const ticks = K && K.phases ? '<s style="left:66%"></s><s style="left:33%"></s>' : '';
-    const rank = boss ? '<span class="boss-tag">Boss</span>' : e.rank ? `<span class="boss-tag ${e.rank === 2 ? '' : 'elite'}">${e.rank === 2 ? 'Mini-boss' : 'Elite'}</span>` : '';
+    const rank = e.dg ? `<span class="boss-tag ${e.lord ? '' : 'dg'}">${e.lord ? 'Dungeon lord' : `Room ${e.room} / ${DG_ROOMS}`}</span>` : boss ? '<span class="boss-tag">Boss</span>' : e.rank ? `<span class="boss-tag ${e.rank === 2 ? '' : 'elite'}">${e.rank === 2 ? 'Mini-boss' : 'Elite'}</span>` : '';
     plate = `<div class="gs-plate fhud enemy ${boss ? 'boss' : ''}">
       <div class="gs-name">${rank}<b>${esc(e.name)}</b><span class="f-stats"><span title="Max hit">${ui('atk')}${fmt(e.atk)}</span><span title="Defense">${ui('def')}${fmt(e.def)}</span><span title="Attack speed">${ui('spd')}${e.spd}s</span></span></div>
       <div class="hpbar enemy"><i data-ehp></i><b class="shieldbar" data-eshield></b>${ticks}<span data-ehptext></span></div>
       <div class="castbar" data-ecast><div class="atkbar enemy"><i data-eatk></i></div><span data-ecastname></span></div>
       <div class="ftags">${foeTagsHTML(e)}</div><div class="stchips foe" data-est></div></div>`;
-    side = `<div class="gs-drops"><small>Drops</small><div class="drops">${e.drops.map(([id, ch]) => tile(id, fmtRate(ch < 0.2 ? ch * luckMult() : ch), { cls: 'xs ' + (id !== 'FRUIT' && !S.found[id] ? 'dim' : '') })).join('')}${tile(null, fmt(e.gold[0]) + '+', { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}</div></div>`;
+    side = `<div class="gs-drops"><small>Drops</small><div class="drops">${e.drops.map(([id, ch]) => tile(id, fmtRate(ch < 0.2 ? ch * luckMult() : ch), { cls: 'xs ' + (id !== 'FRUIT' && !S.found[id] ? 'dim' : '') })).join('')}${tile(null, fmt(e.gold[0]) + '+', { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}${z.dungeon ? `<span class="dg-clear" title="Clear all five rooms: the chest, and a chance at a set piece"><small>Clear</small>${tile(dgChest(z.dungeon), null, { cls: 'xs' })}${dgPieces(z.dungeon).map((p) => tile(p, null, { cls: 'xs', unknown: !S.found[p] })).join('')}</span>` : ''}</div></div>`;
     const size = cr && cr[1].size ? cr[1].size : 1;
     const kind = sp ? 'foe-png' : cr ? 'foe-cr' : 'foe-beast';
     foe = `<div class="fighter enemy enter ${boss ? 'boss' : ''} ${kind} ${e.rank ? 'rank' + e.rank : ''}" style="--sz:${size}${sp ? `;--mh:${sp.h};--ma:${sp.a}` : ''}"><div class="f-art" data-portrait="enemy">${foeArtHTML(e, realm)}</div><div class="windmark">!</div></div>`;
@@ -96,7 +96,7 @@ function stageHTML() {
       <div class="cb-amb" aria-hidden="true">${CB_AMB}</div>
       ${foe}
     </div>
-    ${plate}${z && e ? gsRatesHTML() : ''}${side}`;
+    ${plate}${z && e && !z.dungeon ? gsRatesHTML() : ''}${side}`;
 }
 
 /* ------------------------------------------------------------- live HUD */

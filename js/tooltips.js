@@ -38,7 +38,7 @@ function tipEffect(id) {
       break;
     case 'chest':
       if (it.gold) rows.push(['gold', 'Gold', `${fmt(it.gold[0])}–${fmt(it.gold[1])}`]);
-      if (it.loot) text = `Open it for gold and one of ${it.loot.length} rewards.`;
+      if (it.loot) text = `Open it for gold and ${it.rolls > 1 ? it.rolls : 'one'} of ${it.loot.length} rewards.`;
       break;
     case 'wish':
       text = 'One of seven. Gather all seven to make a wish.';
