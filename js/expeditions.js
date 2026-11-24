@@ -4,13 +4,13 @@
    SKILLS.voyaging.actions (data.js); a card no longer starts an action: it sends a ship.
    - A ship sails 10 min, 1 h, 4 h or 8 h in parallel with whatever you do (offline too).
    - It needs wood for the hull (the destination's log); a dish is optional: +30% loot.
-   - On return it brings one haul per minute at sea (longer trips and Voyaging speed add more):
+   - On return it brings one haul per 2 minutes at sea (longer trips and Voyaging speed add more):
      gold, the destination's table, its rare finds and cargo, Voyaging XP and mastery.
    - 1 ship at first, a 2nd at Voyaging 30. "Repeat" sends it out again on its own.
    ========================================================================== */
 
 const EXP_DURS = [[600, '10 min', 0], [3600, '1 hour', 0.05], [14400, '4 hours', 0.10], [28800, '8 hours', 0.15]];
-const EXP_HAUL = 60;            // seconds at sea per haul
+const EXP_HAUL = 120;           // seconds at sea per haul
 const EXP_FOOD = 0.3;           // provisions: +30% hauls
 const EXP_XP = 2;               // Voyaging XP per haul = 2 × the destination's base XP
 const expOn = () => skillOpen('voyaging');

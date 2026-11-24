@@ -228,7 +228,10 @@ function oldCore(id, k) {
 // A recipe costs about the same TIME at every stage, a little more as you go: the budget is a
 // number of "gathering actions" split in shares, and each material counts for how many of it one
 // action or one victory brings (a log: 1 per chop; an ingot: 2 ores and a smelt; a 15% drop: 0.15).
-const RECIPE_ACTIONS = (s) => 8 + 4 * s;
+// RECIPE_PACE (pace pass 2026-11-24): a new piece of gear costs twice the work it used to, and its
+// craft pays that many times the Crafting XP, so the Crafting level still keeps up with the recipes.
+const RECIPE_PACE = 2;
+const RECIPE_ACTIONS = (s) => RECIPE_PACE * (8 + 4 * s);
 let ECO_YIELD = null;
 function ecoYield(k) {
   if (!ECO_YIELD) {
@@ -274,7 +277,7 @@ function gearRecipe(id) {
     else if (ARTS_LEVELS[id] != null) lv = ARTS_LEVELS[id];
     if (lv == null) continue;
     a.level = lv;
-    a.xp = xpFor(lv, a.time, true);
+    a.xp = xpFor(lv, a.time, true) * (GEAR_TIERS[id] && GEAR_RECIPES[id] ? RECIPE_PACE : 1);
   }
   arts.sort((x, y) => x.level - y.level);
 })();

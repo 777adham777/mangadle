@@ -241,8 +241,9 @@ const SKILLS = {
 
 // One knob for the whole XP economy: XP per second of work grows smoothly with the level an action unlocks at.
 // Crafting pays a bonus because it consumes materials. Tuned with a time-to-99 simulation:
-// gathering ~0.5h to Lv25, ~3.5h to Lv50, ~18h to Lv75, ~90h to Lv99.
-const XP_RATE = 2.6, XP_GROWTH = 1.03, CRAFT_BONUS = 1.4;
+// gathering ~1h to Lv25, ~8h to Lv50, ~40h to Lv75, ~230h to Lv99 (pace pass 2026-11-24: was 2.6,
+// twice as fast, so levels came too cheaply to feel earned).
+const XP_RATE = 1.3, XP_GROWTH = 1.03, CRAFT_BONUS = 1.4;
 const xpFor = (level, time, craft) => Math.round(time * XP_RATE * Math.pow(XP_GROWTH, level) * (craft ? CRAFT_BONUS : 1));
 
 const gather = (item, level, time) => ({ id: item, name: ITEMS[item].name, level, time, xp: xpFor(level, time), out: { [item]: 1 } });

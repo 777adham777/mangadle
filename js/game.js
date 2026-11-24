@@ -278,7 +278,7 @@ function skillSpeed(skillId, actId) {
 }
 const actionTime = (skillId, act) => act.time / skillSpeed(skillId, act.id);
 function doubleChance(skillId, actId) {
-  let c = 0.002 * masteryLv(skillId, actId);
+  let c = 0.001 * masteryLv(skillId, actId);
   if (SKILLS[skillId].type === 'gather') c += 0.05 * (S.shop.abundance || 0);
   c += milestoneFx(skillId).dbl;
   c += synergyBonus('double', skillId);

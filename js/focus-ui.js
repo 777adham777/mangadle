@@ -118,7 +118,7 @@ function focusHTML(skill) {
     body += focusNotes(skill, a);
     if (skill === 'cooking' && typeof fcSpiceHTML === 'function') body += fcSpiceHTML();
     body += focusGaugeHTML(skill, a);
-    body += `<div class="fo-mast" title="Mastery: each level makes this action 0.3% faster and adds 0.2% chance to double">${ui('mastery')}<span>Mastery <b data-mlv="${skill}:${a.id}">${masteryLv(skill, a.id)}</b></span><span class="bar"><i data-mfill="${skill}:${a.id}"></i></span></div>`;
+    body += `<div class="fo-mast" title="Mastery: each level makes this action 0.3% faster and adds 0.1% chance to double">${ui('mastery')}<span>Mastery <b data-mlv="${skill}:${a.id}">${masteryLv(skill, a.id)}</b></span><span class="bar"><i data-mfill="${skill}:${a.id}"></i></span></div>`;
   }
   const last = SPOT['last_' + skill];
   const cta = run ? `<button class="fo-cta stop" data-stop>${ui('stop')}<span>Stop</span></button>`

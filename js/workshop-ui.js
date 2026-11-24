@@ -173,7 +173,7 @@ function wsDetail(skill, a) {
       <span title="Items per hour">${ui('spd')}<b>${fmt(f.itemsh || f.per)}</b><small>per hour</small></span>
     </div>
     ${ing}${notes.join('')}
-    <div class="ws-mast" title="Mastery: each level makes this recipe 0.3% faster and adds 0.2% chance to double">${ui('mastery')}<span>Mastery <b data-mlv="${skill}:${a.id}">${ml}</b></span><span class="bar"><i data-mfill="${skill}:${a.id}"></i></span></div>
+    <div class="ws-mast" title="Mastery: each level makes this recipe 0.3% faster and adds 0.1% chance to double">${ui('mastery')}<span>Mastery <b data-mlv="${skill}:${a.id}">${ml}</b></span><span class="bar"><i data-mfill="${skill}:${a.id}"></i></span></div>
     <button class="ws-cta" data-act="${skill}:${a.id}" data-wsgo><span class="ws-cta-l" data-cta2>${ctaLabel(skill, a, st)}</span><span class="ws-dprog"><i data-cardfill></i></span></button>
   </section>`;
 }

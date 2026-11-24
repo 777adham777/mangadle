@@ -537,7 +537,7 @@ function actCard(skill, a) {
     <div class="ac-stats"><span title="Time per action">${ui('time')}<b>${fmtTime(f.T)}</b></span><span title="XP per action">${ui('xp')}<b>${fmt(a.xp)}</b> xp</span><span title="XP per hour"><b>${fmt(f.xph)}</b> xp/h</span></div>
     ${lines.join('')}
     <div class="ac-foot">${it ? `<span class="ac-own">Owned <b data-count="${outId}">${fmt(count(outId))}</b></span>` : `<span class="ac-own">${fmt(f.per)} / hour</span>`}
-      <span class="ac-m" title="Mastery: each level makes this action 0.3% faster and adds 0.2% chance to double">${ui('mastery')}<b data-mlv="${skill}:${a.id}">${ml}</b><span class="bar mini"><i data-mfill="${skill}:${a.id}"></i></span></span></div>
+      <span class="ac-m" title="Mastery: each level makes this action 0.3% faster and adds 0.1% chance to double">${ui('mastery')}<b data-mlv="${skill}:${a.id}">${ml}</b><span class="bar mini"><i data-mfill="${skill}:${a.id}"></i></span></span></div>
     <span class="ac-prog"><i data-cardfill></i></span>
   </button>`;
 }
