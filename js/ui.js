@@ -176,7 +176,7 @@ function setView(v) {
   viewChanged = true;
   dirty = true;
 }
-let viewChanged = true;
+let viewChanged = true, navAnchor = null;
 const skillView = (k) => (SKILLS[k].realm === 'combat' ? 'battle' : `realm:${SKILLS[k].realm}:${k}`);
 function viewAccent() {
   const [name, realm] = S.ui.view.split(':');
@@ -1320,6 +1320,8 @@ function render() {
   main.dataset.view = name;
   main.innerHTML = VIEWS[name](a1, a2);
   main.scrollTop = scroll;
+  // a link that names a section ('battle#gs-dungeons'): bring it into view once
+  if (navAnchor) { const el = document.getElementById(navAnchor); navAnchor = null; if (el) el.scrollIntoView({ block: 'start' }); }
   if (foc && $('#' + foc[0])) { const el = $('#' + foc[0]); el.focus({ preventScroll: true }); try { el.setSelectionRange(foc[1], foc[2]); } catch (e) { /* not a text field */ } }
   if (boxVal !== null && $('#savebox')) $('#savebox').value = boxVal;
   if (name === 'hero') { bankSig = Object.keys(S.items).join(','); setTimeout(() => { Object.keys(S.items).forEach((k) => seenItems.add(k)); bankSeenSave(); }, 0); }
@@ -1456,7 +1458,7 @@ document.addEventListener('click', (ev) => {
   else if ('toggletips' in d) { S.ui.noTips = S.ui.noTips ? 0 : 1; coachOk = {}; if (S.ui.noTips) clearCoach(); dirty = true; }
   else if ('reintro' in d) { S.ui.introSeen = {}; S.ui.hintOff = {}; toast('The page cards will show again.', 'good'); dirty = true; }
   else if ('journal' in d) openModal(journalHTML(), 'Close');
-  else if (d.nav) setView(d.nav);
+  else if (d.nav) { const [v, anchor] = d.nav.split('#'); setView(v); navAnchor = anchor || null; }
   else if (d.act) {
     const [s, id] = d.act.split(':');
     const st = actState(s, findAction(s, id));

@@ -176,3 +176,11 @@ document.addEventListener('change', (ev) => {
   const d = ev.target.dataset;
   if (d.techslot !== undefined) { equipTech(d.techslot, ev.target.value); ev.target.blur(); }
 });
+// A scroll that drops mid-fight (or gets read): the battle dock and the menu badge follow.
+let scrollSeen = -1;
+UPD.push(() => {
+  const n = scrollsOwned();
+  if (n === scrollSeen) return;
+  if (scrollSeen >= 0) { sideDirty = true; if (inBattleView() || S.ui.view === 'techniques') dirty = true; }
+  scrollSeen = n;
+});

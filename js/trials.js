@@ -35,9 +35,9 @@ const T = (id, realm, text, n, prog, items, how, go) => ({ id, realm, text, n, p
 const guardTrial = (r, zone, name, items) => T(`${r}_clean`, r, `Defeat ${name} without eating`, 1, tClean(zone), items,
   'Unequip your food (Character → Food) and win anyway: gear, techniques and levels.', 'battle');
 const fastTrial = (r, d, sec, items) => T(`${r}_fast`, r, `Clear ${DG_BY[d].name} in under ${clock(sec)}`, 1, tFast(d, sec), items,
-  'Your best time counts. More damage clears faster.', 'battle');
+  'Your best time counts. More damage clears faster.', 'battle#gs-dungeons');
 const setTrial = (r, d, items) => T(`${r}_set`, r, `Collect the ${DG_BY[d].set.name} set`, 3, tSet(d), items,
-  `Its pieces come from ${DG_BY[d].name}: the first clear gives one, then one clear in five or so.`, 'battle');
+  `Its pieces come from ${DG_BY[d].name}: the first clear gives one, then one clear in five or so.`, 'battle#gs-dungeons');
 const TRIALS = [
   // Leaf Village
   T('shinobi_wc', 'shinobi', 'Reach Woodcutting level 30', 30, tLv('woodcutting'), { sealed_scroll: 2 }, 'New trees at 15, 25 and 30. Mastery of a tree makes it faster.', 'realm:shinobi:woodcutting'),

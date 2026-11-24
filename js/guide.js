@@ -55,7 +55,7 @@ function guideBusy(G) {
 }
 // The last thing the player did, or the last time the step moved.
 let pokeT = performance.now(), pokeSig = '';
-['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((t) => addEventListener(t, () => { pokeT = performance.now(); }, { passive: true }));
+if (typeof addEventListener === 'function') ['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach((t) => addEventListener(t, () => { pokeT = performance.now(); }, { passive: true }));
 function stuck() {
   const st = goalState(), sig = st ? `${S.goal}:${st.cur}:${S.ui.view}` : '';
   if (sig !== pokeSig) { pokeSig = sig; pokeT = performance.now(); }
@@ -162,7 +162,7 @@ function updateCoach(force) {
   if (side === 'right') { arrow.style.left = '-6px'; arrow.style.top = Math.max(10, Math.min(bh - 20, r.top + r.height / 2 - y - 6)) + 'px'; }
   else { arrow.style.top = side === 'below' ? '-6px' : bh - 6 + 'px'; arrow.style.left = Math.max(12, Math.min(bw - 24, r.left + r.width / 2 - x - 6)) + 'px'; }
 }
-document.addEventListener('click', (ev) => {
+if (typeof document !== 'undefined') document.addEventListener('click', (ev) => {
   if (!ev.target.closest('[data-hintoff]')) return;
   const g = GOALS[S.goal];
   if (g) { S.ui.hintOff = S.ui.hintOff || {}; S.ui.hintOff[g.id] = 1; }
@@ -219,7 +219,7 @@ function introCardHTML(id) {
 }
 // kept for older callers: no window any more, the card shows on the page
 function showIntro() {}
-document.addEventListener('click', (ev) => {
+if (typeof document !== 'undefined') document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-introok]');
   if (!t) return;
   S.ui.introSeen = S.ui.introSeen || {};
