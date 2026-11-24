@@ -382,7 +382,7 @@ function sourcesHTML(id) {
 /* =============================================================== farm numbers */
 function farmRates(skill, a) {
   const T = actionTime(skill, a), per = 3600 / T;
-  const r = { T, per, xph: per * a.xp * skillXpMult(skill) };
+  const r = { T, per, xph: per * a.xp * skillXpMult(skill) * earlyXp(skill) };
   if (a.out) r.itemsh = per * Object.values(a.out)[0] * (1 + doubleChance(skill, a.id));
   if (a.in) { r.can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(stock(k) / n))); r.runout = r.can * T; }
   return r;
@@ -469,7 +469,7 @@ function closestLevel() {
     if (!need) continue;
     for (const a of s.actions) {
       if (actState(k, a) !== 'ready' || !a.xp) continue;
-      const t = (need / (a.xp * skillXpMult(k))) * actionTime(k, a);
+      const t = (need / (a.xp * skillXpMult(k) * earlyXp(k))) * actionTime(k, a);
       if (!best || t < best.t) best = { k, a, t, L: skillLv(k) };
     }
   }
@@ -1315,7 +1315,7 @@ function update() {
     const a = findAction(S.action.skill, S.action.id), T = actionTime(S.action.skill, a), b = xpInfo(S.action.skill);
     for (const el of $$('[data-nowfill]')) el.style.width = Math.min(100, (S.action.prog / T) * 100) + '%';
     for (const el of $$('[data-nowtime]')) setText(el, `${Math.max(0, T - S.action.prog).toFixed(1)}s`);
-    const nl = b.need ? fmtTime((b.need / (a.xp * skillXpMult(S.action.skill))) * T) : 'MAX';
+    const nl = b.need ? fmtTime((b.need / (a.xp * skillXpMult(S.action.skill) * earlyXp(S.action.skill))) * T) : 'MAX';
     for (const el of $$('[data-nextlv]')) setText(el, nl);
     if (a.in) {
       const can = Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(stock(k) / n)));

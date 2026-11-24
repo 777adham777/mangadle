@@ -192,9 +192,16 @@ function skPerk(skill, k) {
   return v;
 }
 const skillXpMult = (id) => xpMult() * (hasPetFor(id) ? 1.05 : 1) * (1 + synergyBonus('xp', id)) * hmul('xp', id) * (1 + skPerk(id, 'xp'));
+// Onboarding (2026-11-24): the first levels of every skill go faster. Below level EARLY_LV each XP gain counts
+// ×EARLY_XP, only up to the level-5 threshold (the rest of a gain that crosses it counts normally), so level 5 costs
+// a third less effort and nothing from level 5 on changes (the 5→6 step stays the same).
+const EARLY_LV = 5, EARLY_XP = 1.5;
+const earlyXp = (id) => (skillLv(id) < EARLY_LV ? EARLY_XP : 1);   // for "next level in" estimates
 function addXp(id, amt) {
-  const before = skillLv(id);
-  S.skills[id].xp += amt * skillXpMult(id);
+  const before = skillLv(id), x = S.skills[id].xp, cap = XP_TABLE[EARLY_LV];
+  let gain = amt * skillXpMult(id);
+  if (x < cap) gain = Math.min(gain * EARLY_XP, cap - x) + Math.max(0, gain - (cap - x) / EARLY_XP);
+  S.skills[id].xp += gain;
   const after = skillLv(id);
   if (after > before) { emit('levelup', { skill: id, level: after }); dirty = true; }
 }

@@ -111,7 +111,7 @@ function focusHTML(skill) {
       <span title="Time per action"><small>Each</small><b>${fmtTime(f.T)}</b></span>
       ${per ? `<span title="Per hour, doubles included"><small>Per hour</small><b>${fmt(per)}</b></span>` : ''}
       <span title="XP per hour"><small>XP / hour</small><b>${fmt(f.xph)}</b></span>
-      <span title="Time to the next level at this pace"><small>Next level</small><b ${run ? 'data-nextlv' : ''}>${need ? fmtTime((need / (a.xp * skillXpMult(skill))) * f.T) : 'MAX'}</b></span>
+      <span title="Time to the next level at this pace"><small>Next level</small><b ${run ? 'data-nextlv' : ''}>${need ? fmtTime((need / (a.xp * skillXpMult(skill) * earlyXp(skill))) * f.T) : 'MAX'}</b></span>
       ${a.in ? `<span title="How many you can make with what you have"><small>Can make</small><b data-wscan="${skill}:${a.id}">${fmt(wsCan(a))}</b></span>` : ''}
     </div>`;
     if (run && FC.includes(skill)) body += `<div class="fo-sess" data-fcsess="${skill}">${fcSessHTML(skill)}</div>`;
