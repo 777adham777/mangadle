@@ -5,8 +5,10 @@
 .ch-layout {
   display: grid; gap: 14px; align-items: start;
   grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr);
-  grid-template-areas: "doll stats" "list stats";
+  grid-template-rows: auto auto minmax(0, 1fr);
+  grid-template-areas: "hero stats" "doll stats" "list stats";
 }
+.ch-hero { grid-area: hero; }
 .ch-doll { grid-area: doll; padding: 0; overflow: hidden; }
 .ch-list { grid-area: list; min-width: 0; }
 .ch-stats { grid-area: stats; min-width: 0; }
@@ -96,7 +98,7 @@
 
 /* ---------- responsive */
 @media (max-width: 1380px) {
-  .ch-layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "doll" "stats" "list"; }
+  .ch-layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "hero" "doll" "stats" "list"; }
   .ch-layout > .ch-stats { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); column-gap: 14px; align-content: start; }
   .ch-layout > .ch-stats > .hdr, .ch-layout > .ch-stats > .ch-build { grid-column: 1 / -1; }
   .ch-layout > .ch-stats > .ch-sts { grid-row: span 4; }
@@ -108,7 +110,7 @@
   .hero-layout.bank-layout > .detail { position: static; max-height: none; }
 }
 @media (max-width: 860px) {
-  .ch-layout { grid-template-areas: "doll" "list" "stats"; }
+  .ch-layout { grid-template-areas: "hero" "doll" "list" "stats"; }
   .ch-layout > .ch-stats { display: block; }
   .ch-stage { grid-template-columns: minmax(0, 1fr); padding: 10px; gap: 6px; }
   .ch-slot { flex-direction: row; align-items: center; padding: 8px; }
@@ -122,3 +124,42 @@
   .ch-nums { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .ch-st em { font-size: 22px; }
 }
+
+/* ---------- the hero (2026-11-25): level ring, name, build, Power */
+.ch-hero { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; gap: 16px; align-items: center; padding: 14px 16px;
+  background: linear-gradient(100deg, rgba(232, 153, 44, 0.12), var(--panel) 55%); border-left: 3px solid var(--sel); }
+.chh-lv { --p: 0; width: 76px; height: 76px; border-radius: 50%; display: grid; place-items: center;
+  background: conic-gradient(var(--sel) calc(var(--p) * 360deg), rgba(255, 255, 255, 0.08) 0); }
+.chh-lv > span { width: 64px; height: 64px; border-radius: 50%; display: grid; place-content: center; text-align: center; background: #15161b; box-shadow: inset 0 0 0 1px var(--line2); }
+.chh-lv b { font: 800 26px/1 var(--display); color: #fff; }
+.chh-lv small { font: 600 9px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+.chh-main { min-width: 0; display: grid; gap: 6px; }
+.chh-name { display: inline-flex; align-items: center; gap: 6px; max-width: 100%; justify-self: start; cursor: text; }
+.chh-name input { min-width: 4ch; width: 100%; field-sizing: content; max-width: 320px; padding: 0 2px; font: 800 26px/1.1 var(--display); color: #fff; background: transparent; border: 0; border-bottom: 1px dashed transparent; outline: none; }
+.chh-name:hover input, .chh-name input:focus { border-bottom-color: var(--line2); }
+.chh-name .gi { width: 14px; height: 14px; fill: var(--mute); flex-shrink: 0; }
+.chh-arch { display: flex; flex-wrap: wrap; gap: 6px; }
+.chh-arch .pill .gi { width: 13px; height: 13px; }
+.chh-arch .pill.dim { opacity: 0.8; }
+.chh-xp { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 10px; align-items: center; }
+.chh-xp small { font-size: 11.5px; color: var(--dim); white-space: nowrap; }
+.chh-xp .xpbar i { background: var(--sel); }
+.chh-power { text-align: right; padding: 6px 12px; background: rgba(0, 0, 0, 0.25); border: 1px solid var(--line); }
+.chh-power small { display: block; font: 600 10px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+.chh-power b { font: 800 28px/1 var(--display); color: var(--gold); font-variant-numeric: tabular-nums; }
+.chh-btns { display: flex; flex-direction: column; gap: 6px; }
+.chd.pw { font-weight: 800; }
+.ch-cmp { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.ch-cmp > small { width: 100%; font: 600 10.5px var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
+@media (max-width: 700px) {
+  .ch-hero { grid-template-columns: auto minmax(0, 1fr); gap: 10px 12px; padding: 12px; }
+  .chh-lv { width: 62px; height: 62px; } .chh-lv > span { width: 52px; height: 52px; } .chh-lv b { font-size: 21px; }
+  .chh-name input { font-size: 21px; }
+  .chh-power { grid-column: 1; text-align: center; padding: 4px 6px; }
+  .chh-power b { font-size: 22px; }
+  .chh-btns { grid-column: 2; flex-direction: row; justify-content: flex-end; }
+}
+
+/* Page titles (2026-11-25): their controls (Bank | Collection, counters) follow the title instead of
+   sitting in the top-right corner, where the notifications appear and covered them. */
+.ptitle { justify-content: flex-start; column-gap: 28px; }

@@ -1,8 +1,10 @@
 'use strict';
 /* ==========================================================================
    TRI-REALM IDLE — the Character view (#character)
+   - The hero (2026-11-25): your level, your name (the poster's, editable), your build and your
+     Power, one number for damage and staying power together
    - Equipment: one card per slot (no figure since 2026-11-24: the avatar was removed);
-     click a slot, its owned candidates are listed with the stat change vs what you wear
+     click a slot, its owned candidates are listed with the Power change first, then each stat
    - Stats: the five stats big, combat + fortune numbers, the build (builds-ui.js through UIX.equipBottom)
    Loaded before ui-systems.js (it boots the game and the saved view must exist by then).
    ========================================================================== */
@@ -14,9 +16,19 @@ const chFoodOn = () => featureOpen('battle');
 const chFruitOn = () => !!S.fruit || chBagOf('fruit').length > 0;
 const chSlotIds = () => [...CH_GEAR.map((x) => x[0]), ...(chFoodOn() ? ['food'] : []), ...(chFruitOn() ? ['fruit'] : [])];
 
+/* ------------------------------------------------------------ Power */
+// One number for how strong you are: damage per second (crits counted) times how much you can take,
+// square-rooted so it grows like your other numbers. Gear swaps and the hero header read it.
+function heroPower() {
+  const crit = typeof critChance === 'function' ? critChance() : 0, cm = typeof critMult === 'function' ? critMult() : 1.5;
+  const dps = 0.75 * pMaxHit() * (1 + crit * (cm - 1)) / pSpeed();
+  const ehp = pMaxHp() / mitig(pDef()) / Math.max(0.2, 1 - pDodge());
+  return Math.round(Math.sqrt(dps * ehp));
+}
+
 /* ------------------------------------------------------------ stat change of a swap */
 function chSnap() {
-  return { atk: pMaxHit(), def: pDef(), hp: pMaxHp(), spd: pSpeed(), crit: typeof critChance === 'function' ? critChance() : 0, dodge: pDodge(), luck: statLuck(), gold: goldMult() };
+  return { power: heroPower(), atk: pMaxHit(), def: pDef(), hp: pMaxHp(), spd: pSpeed(), crit: typeof critChance === 'function' ? critChance() : 0, dodge: pDodge(), luck: statLuck(), gold: goldMult() };
 }
 // Your numbers with `cand` in `slot` (weapon: a copy, else an item id; null = empty). Nothing is kept.
 function chWith(slot, cand) {
@@ -40,15 +52,18 @@ const CH_DELTA = [
   ['gold', 'gold', (d) => sgnAbs(d, pct), 1, 0.0005, 1],
 ];
 const CH_TIP = { atk: 'Max hit', def: 'Defense', hp: 'Max HP', spd: 'Attack speed', crit: 'Crit chance', dodge: 'Dodge', luck: 'Luck', gold: 'Gold bonus' };
+// Better or worse, said once: the Power change leads (it weighs damage and toughness together),
+// then each stat that moves. Luck and gold (not in Power) add a little to the score.
 function chDiff(base, next) {
-  let score = 0;
+  const pd = base.power ? (next.power - base.power) / base.power : 0;
+  let score = pd;
   const chips = [];
+  if (Math.abs(pd) >= 0.005) chips.push(`<span class="chd pw ${pd > 0 ? 'up' : 'dn'}" title="Power: damage and staying power together">${ui('battle')}Power ${pd > 0 ? '+' : '−'}${pct(Math.abs(pd))}</span>`);
   for (const [k, icn, f, dir, eps, w] of CH_DELTA) {
     const d = next[k] - base[k];
     if (Math.abs(d) < eps) continue;
-    const good = d * dir > 0;
-    score += (d * dir) * (w === 'rel' ? 1 / Math.max(Math.abs(base[k]), k === 'def' ? 10 : 1) : w);
-    chips.push(`<span class="chd ${good ? 'up' : 'dn'}" title="${CH_TIP[k]}">${ui(icn)}${f(d)}</span>`);
+    if (w !== 'rel') score += (d * dir) * w;
+    chips.push(`<span class="chd ${d * dir > 0 ? 'up' : 'dn'}" title="${CH_TIP[k]}">${ui(icn)}${f(d)}</span>`);
   }
   return { score, html: chips.length ? chips.join('') : '<span class="chd eq">No change</span>' };
 }
@@ -128,18 +143,29 @@ function chSlotBtn(s, up) {
     <span class="chs-tile">${t}${up ? `<i class="ch-up" title="Upgrade available">${ui('xp')}</i>` : ''}</span>
     <span class="chs-t"><small>${CH_LABEL[s]}</small><b>${name ? esc(name) : '<em>Empty</em>'}</b>${worn ? `<span class="es-st">${chSlotLine(s)}</span>` : ''}</span></button>`;
 }
-// Buttons beside your level (poster-ui.js adds the Wanted poster).
+// Buttons beside your name (poster-ui.js adds the Wanted poster).
 function chDollBtns() { return ''; }
-function chDollHTML(ups) {
+// The hero: who you are now that there is no figure to look at.
+function chHeroHTML() {
   const b = xpInfo('character');
   const arch = typeof buildArch === 'function' && featureOpen('battle') ? buildArch() : [];
+  const name = typeof heroName === 'function' ? heroName() : 'Wanderer';
+  const rank = typeof BOUNTY_RANKS !== 'undefined' ? BOUNTY_RANKS[bountyRank()][1] : '';
+  return `<section class="win ch-hero">
+    <div class="chh-lv" data-xpring="character" style="--p:${b.p}" title="Character level"><span><b data-lv="character">${b.L}</b><small>Level</small></span></div>
+    <div class="chh-main">
+      <label class="chh-name" title="Your name (also on your Wanted poster)"><input data-heroname value="${esc(name)}" maxlength="20" spellcheck="false" autocomplete="off" aria-label="Your name">${gi('quill-ink')}</label>
+      <div class="chh-arch">${arch.length ? arch.map((a) => `<span class="pill">${ui('arch_' + a)}${ARCHES[a].name}</span>`).join('') : `<span class="pill">${ui('battle')}Balanced</span>`}${rank ? `<span class="pill dim" title="Bounty rank">${ui('bounty')}${esc(rank)}</span>` : ''}</div>
+      <div class="chh-xp"><span class="xpbar"><i data-xpbar="character" style="width:${b.p * 100}%"></i></span><small data-xptext="character">${xpText(b)}</small></div>
+    </div>
+    <div class="chh-power" title="Power: your damage per second and how much you can take, together. Gear swaps show how it changes."><small>Power</small><b data-heropower>${fmt(heroPower())}</b></div>
+    ${chDollBtns() ? `<div class="chh-btns">${chDollBtns()}</div>` : ''}
+  </section>`;
+}
+function chDollHTML(ups) {
   return `<section class="win ch-doll">
     ${hdr('Equipment', `${chSlotIds().filter((s) => chWornTile(s)).length} / ${chSlotIds().length} worn`)}
     <div class="ch-stage">${chSlotIds().map((s) => chSlotBtn(s, ups[s])).join('')}</div>
-    <div class="ch-id">
-      <span class="ch-lvb"><small>Lv</small><b data-lv="character">${b.L}</b></span>
-      <span class="ch-idt"><b>${arch.length ? esc(arch.map((a) => ARCHES[a].name).join(' · ')) : 'Wanderer'}</b><span class="xpbar"><i data-xpbar="character" style="width:${b.p * 100}%"></i></span><small data-xptext="character">${xpText(b)}</small></span>${chDollBtns()}
-    </div>
   </section>`;
 }
 
@@ -222,6 +248,7 @@ VIEWS.character = (tab) => {
   return `
   ${ptitle('Hero', 'Character')}
   <div class="ch-layout">
+    ${chHeroHTML()}
     ${chDollHTML(ups)}
     ${chStatsHTML()}
     ${chListHTML(chSlot, lists[chSlot])}
@@ -232,6 +259,8 @@ VIEWS.character = (tab) => {
 let chSig = '';
 UPD.push(() => {
   if (!S.ui.view.startsWith('character')) { chSig = ''; return; }
+  const pw = $('[data-heropower]');
+  if (pw) setText(pw, fmt(heroPower()));
   const sig = Object.keys(S.items).filter((k) => ITEMS[k] && ['equip', 'food', 'fruit'].includes(ITEMS[k].type)).join() + '|' + S.arms.length + '|' + S.equipU + '|' + Object.values(S.equip).join() + '|' + S.combat.food + '|' + S.fruit;
   if (chSig && sig !== chSig) dirty = true;
   chSig = sig;
@@ -253,4 +282,18 @@ document.addEventListener('click', (ev) => {
     selItem = t.dataset.chinspect; selArm = null;
     setView('hero');
   }
+});
+document.addEventListener('change', (ev) => {
+  if (!ev.target.matches('[data-heroname]')) return;
+  S.hero = S.hero || {};
+  S.hero.name = ev.target.value.trim().slice(0, 20).replace(/[<>&"']/g, '') || '';
+  ev.target.value = S.hero.name || 'Wanderer';
+  ev.target.blur();
+});
+// The Bank inspector of armor or an accessory you don't wear: what wearing it would change.
+UIX.inspector.push((id) => {
+  const it = ITEMS[id];
+  if (!it || it.type !== 'equip' || it.slot === 'weapon' || S.equip[it.slot] === id || !count(id)) return '';
+  const d = chDiff(chSnap(), chWith(it.slot, id));
+  return `<div class="ch-cmp"><small>If you wear it</small>${d.html}</div>`;
 });
