@@ -1,0 +1,115 @@
+/* UX review 2026-11-24 ("10 things", approved: 1 as top-right fading notices, 2, 3, 4, 7, 8, 9, 10).
+   Loaded after ux.css. */
+
+/* ---------- 01 · Le Fil: top right, under the top bar; rows fade on their own (ui.js FEED_LIFE) */
+#feed { top: calc(var(--hud-h, 64px) + 10px); bottom: auto; flex-direction: column-reverse; justify-content: flex-end; width: 280px; }
+#feed .ob-row { opacity: 0.96; }
+#feed .ob-row.col .ob-ic { background: #26272d; color: #bff09f; font-size: 15px; }
+@media (max-width: 860px) {
+  #feed { top: calc(var(--hud-h, 54px) + 6px + env(safe-area-inset-top)); bottom: auto; left: auto; right: 8px; width: min(280px, calc(100% - 16px)); }
+}
+
+/* ---------- 02 · compact skill header: ring = level + XP, one line of buffs and Path / Rare finds / Synergies */
+.sk-banner.sk-slim { min-height: 0; padding: 6px 0 12px; gap: 16px; align-items: center; }
+.sk-slim .sk-ring { width: 74px; height: 74px; }
+.sk-slim .sk-ring b { font-size: 30px; }
+.sk-slim .sk-ring small { font-size: 8.5px; }
+.sk-slim .sk-main { gap: 4px; }
+.sk-slim .sk-main > small { font-size: 11px; }
+.sk-slim .sk-line { display: flex; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; min-width: 0; }
+.sk-slim h1 { font-size: 30px; line-height: 1; margin: 0; }
+.sk-slim .sk-xpt { font-size: 13px; color: var(--text); }
+.sk-slim .sk-chips { align-items: center; margin-top: 2px; }
+.sk-slim .pills, .sk-slim .sk-info-btns { display: flex; gap: 6px; flex-wrap: wrap; margin: 0; }
+.sk-slim .sk-info-btn { height: 28px; padding: 0 10px; }
+.sk-slim .pill { height: 28px; }
+@media (max-width: 860px) {
+  .sk-banner.sk-slim { padding: 4px 0 2px; gap: 10px; }
+  .sk-slim .sk-ring { width: 54px; height: 54px; }
+  .sk-slim .sk-ring b { font-size: 20px; }
+  .sk-slim h1 { font-size: 24px; }
+  .sk-slim .sk-xpt { display: none; }
+  .sk-slim .sk-chips { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+  .sk-slim .sk-chips::-webkit-scrollbar { display: none; }
+  .sk-slim .pills, .sk-slim .sk-info-btns { flex-wrap: nowrap; }
+  .sk-slim .pill, .sk-slim .sk-info-btn { height: 26px; }
+}
+
+/* ---------- 03 · switching says what it stops; Queue next when the running task ends by itself */
+.fo-ctas { display: inline-flex; gap: 8px; margin-left: auto; flex-wrap: wrap; justify-content: flex-end; }
+.fo-foot .fo-last:not([hidden]) + .fo-ctas { margin-left: 0; }
+.fo-cta.sw > span, .fo-cta.q > span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; }
+.fo-cta.sw small, .fo-cta.q small { font: 500 11px var(--body, 'Saira', sans-serif); letter-spacing: 0; text-transform: none; opacity: 0.85; margin-top: 2px; }
+.fo-cta.q { background: var(--panel3); border-top-color: var(--line2); min-width: 150px; }
+@media (max-width: 860px) { .fo-ctas { width: 100%; } .fo-ctas .fo-cta { flex: 1 1 140px; } }
+
+/* ---------- 04 · Bank: NEW row on top, summary when nothing is selected */
+.bag-new { margin-bottom: 12px; padding: 8px; background: color-mix(in srgb, #e8992c 8%, transparent); border: 1px solid color-mix(in srgb, #e8992c 35%, var(--line)); }
+.bn-head { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.bn-head small { font: 700 11px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: #e8992c; }
+.bn-seen { width: auto; padding: 0 10px; font: 600 11.5px var(--display); letter-spacing: 0.06em; text-transform: uppercase; }
+.bank-sum { display: grid; gap: 10px; }
+.bs-nums { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.bs-lab { font: 700 10.5px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--mute); }
+.bs-top { display: grid; gap: 4px; }
+.bs-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 10px; padding: 4px 8px 4px 4px; background: var(--panel2); border: 1px solid var(--line); color: var(--text); text-align: left; cursor: pointer; }
+.bs-row:hover { border-color: var(--line2); }
+.bs-row span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 13px; }
+.bs-row b { display: inline-flex; align-items: center; gap: 4px; font: 600 13px var(--display); color: var(--gold); }
+.bs-hint { display: flex; align-items: center; gap: 6px; margin: 0; }
+
+/* ---------- 07 · idle Overview: one-click picks */
+.idle-picks .hdr { margin-top: 0; }
+.ip-note { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; }
+.ip-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px; }
+.ip-card { display: grid; gap: 8px; align-content: space-between; padding: 10px 12px; background: var(--panel2); border: 1px solid var(--line); border-top: 2px solid var(--ipc, var(--line2)); }
+.ip-card.resume { --ipc: #6fcf45; }
+.ip-card.goal { --ipc: #e8992c; }
+.ip-card.level { --ipc: #4fb3e8; }
+.ip-card > small { font: 700 10.5px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--ipc); }
+.ip-main { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.ip-main > span:last-child { display: grid; min-width: 0; }
+.ip-main b { font: 600 15px var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ip-main em { font-style: normal; font-size: 12px; color: var(--dim); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ip-ic { width: 40px; height: 40px; flex: none; display: grid; place-items: center; font-size: 22px; color: var(--ipc); background: #1c1d22; border: 1px solid var(--line2); }
+.ip-ic .tile { --ts: 40px; }
+.ip-card .gbtn { justify-self: stretch; justify-content: center; }
+@media (max-width: 860px) {
+  /* Phones: the objective already has its own window under this one; each pick is one row */
+  .ip-card.goal { display: none; }
+  .ip-grid { grid-template-columns: minmax(0, 1fr); gap: 6px; }
+  .ip-card { grid-template-columns: minmax(0, 1fr) auto; align-items: center; gap: 4px 10px; padding: 8px 10px; }
+  .ip-card > small { grid-column: 1 / -1; }
+  .ip-card .gbtn { justify-self: end; }
+}
+
+/* ---------- 08 · folded worlds: full name on line 1, chips on line 2, XP along each chip */
+.nav-group.folded { flex-direction: column; align-items: stretch; flex-wrap: nowrap; gap: 2px; padding-bottom: 5px; }
+.nav-group.folded button.nav-sec { flex: none; width: 100%; padding: 6px 8px 2px; }
+.nav-group.folded button.nav-sec span { white-space: nowrap; overflow: visible; text-overflow: clip; }
+.nav-group.folded .nav-chips { margin-left: 0; padding: 0 8px 0 26px; flex-wrap: wrap; gap: 4px; }
+.nav-group.folded .nchip { position: relative; height: 24px; padding: 0 7px 0 5px; overflow: hidden; }
+.nc-xp { position: absolute; left: 0; right: 0; bottom: 0; height: 2px; background: rgba(255, 255, 255, 0.08); }
+.nc-xp i { position: absolute; inset: 0 auto 0 0; background: var(--rc); }
+.nchip.goal::after { content: ''; position: absolute; top: 2px; right: 2px; width: 6px; height: 6px; border-radius: 50%; background: #ffcf5a; box-shadow: 0 0 5px #ffcf5a; }
+
+/* ---------- 09 · unknown finds: a silhouette in its rarity frame */
+.tile.sil .tile-art > .gi, .tile.sil .tile-art > img { filter: brightness(0) opacity(0.72) !important; stroke: none; }
+.tile.sil .tile-art { box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--rgc, #888) 60%, transparent); }
+.fo-extra small em { font-style: normal; color: var(--text); margin-left: 4px; }
+
+/* ---------- 10 · stages: one tier switch, best stage marked, Hardcore under the list */
+.tier-sw { display: grid; grid-template-columns: repeat(4, 1fr); margin: 0 0 10px; border: 1px solid var(--line2); background: var(--panel2); }
+.tier-sw button { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 7px 2px; border: 0; background: none; color: var(--dim); font: 700 11px var(--display); letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; white-space: nowrap; }
+.tier-sw button + button { border-left: 1px solid var(--line); }
+.tier-sw button:hover:not(:disabled) { color: #fff; }
+.tier-sw button.on { color: #120c02; background: #e8992c; }
+.tier-sw button.t2.on { background: #ffcf5a; }
+.tier-sw button.t3.on { background: #ff6fd8; color: #fff; }
+.tier-sw button.locked { color: var(--mute); cursor: not-allowed; }
+.tier-sw button .gi { width: 11px; height: 11px; }
+.chapter .asc-tag { margin-left: auto; margin-right: 0; }
+.zrow.best { border-color: color-mix(in srgb, #6fcf45 70%, var(--line)); background: linear-gradient(90deg, rgba(111, 207, 69, 0.1), transparent 70%); }
+.z-best { display: inline-flex; align-items: center; gap: 3px; font-style: normal; color: #8fe06a; }
+.z-best .gi { width: 11px; height: 11px; }
+.stages .hc-row { margin: 12px 0 0; border-color: #6a2a31; background: #1d1013; }

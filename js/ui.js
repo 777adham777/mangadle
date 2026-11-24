@@ -132,6 +132,9 @@ const stat = (label, val, attrs) => `<div class="stat"><small>${label}</small><b
 
 let selItem = null;
 const seenItems = new Set();
+let bankNew = null;   // the Bank's "New since your last visit" row, fixed for the whole visit
+// What the Bank has shown you is saved (S.ui.bankSeen), so drops from offline time still say NEW.
+const bankSeenSave = () => { S.ui.bankSeen = [...seenItems]; };
 
 /* =============================================================== routing */
 function normalizeView() {
@@ -215,7 +218,8 @@ function renderRail() {
     const head = `<button class="nav-sec ${fold ? 'fold' : ''}" ${fold ? `data-railfold="${r}" aria-expanded="${open}"` : 'tabindex="-1"'} style="--rc:${rc(r)}">${fold ? `<i class="ns-chev">${open ? '⌄' : '›'}</i>` : ''}${ic('realm', r)}<span>${REALMS[r].name}</span>${!open && busy ? '<i class="ns-busy" title="An activity runs here"></i>' : ''}</button>`;
     groups.push(open ? `<div class="nav-group">${head}
       ${ks.map((k) => navRow(`realm:${r}:${k}`, ic('skill', k), SKILLS[k].name, { skill: k, color: rc(r), busy: S.action && S.action.skill === k })).join('')}</div>`
-      : `<div class="nav-group folded">${head}<div class="nav-chips">${ks.map((k) => `<button class="nchip ${S.action && S.action.skill === k ? 'busy' : ''}" data-nav="realm:${r}:${k}" style="--rc:${rc(r)}" title="${SKILLS[k].name}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b></button>`).join('')}</div></div>`);
+      // Folded: the world's full name, then one chip per skill (icon, level, XP filling along its bottom edge).
+      : `<div class="nav-group folded">${head}<div class="nav-chips">${ks.map((k) => `<button class="nchip ${S.action && S.action.skill === k ? 'busy' : ''} ${k === guideSkill() ? 'goal' : ''}" data-nav="realm:${r}:${k}" style="--rc:${rc(r)}" title="${SKILLS[k].name} · Lv ${skillLv(k)}${k === guideSkill() ? ' · current objective' : ''}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><i class="nc-xp"><i data-xpbar="${k}"></i></i></button>`).join('')}</div></div>`);
   }
   // Combat sits under the starting world: you fish and cook before you fight.
   if (featureOpen('battle')) groups.splice(Math.min(2, groups.length), 0, `<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
@@ -439,8 +443,7 @@ VIEWS.home = () => {
   return `
   ${ptitle('Tri-Realm Idle', 'Overview')}
   <div class="ov-top">
-    <section class="win">${farm || (() => { const re = resumeInfo(); return `<div class="idle-big">${ui('sleep')}<div><b>Nothing is farming</b><p class="muted">Idle games only progress while an activity runs. Pick a skill in the menu, or follow the objective.</p>
-      ${re ? gbtn('Resume: ' + esc(re.name), 'play', re.attr, 'sm go') : ''}</div></div>`; })()}</section>
+    <section class="win">${farm || idlePicksHTML()}</section>
     <section class="win quest-win phone-only">${goalHTML()}</section>
   </div>
   ${gateHTML()}
@@ -455,6 +458,41 @@ VIEWS.home = () => {
   </section>`;
 };
 
+// Idle Overview: up to three one-click picks (resume, the objective, the closest level-up) instead of an explanation.
+// The "how idle games work" line stays only until the first objective is done.
+function closestLevel() {
+  let best = null;
+  for (const k of Object.keys(SKILLS)) {
+    const s = SKILLS[k];
+    if (s.realm === 'combat' || !skillOpen(k) || !s.actions.length || FOCUS_NONE_IDLE[s.type]) continue;
+    const need = xpInfo(k).need;
+    if (!need) continue;
+    for (const a of s.actions) {
+      if (actState(k, a) !== 'ready' || !a.xp) continue;
+      const t = (need / (a.xp * skillXpMult(k))) * actionTime(k, a);
+      if (!best || t < best.t) best = { k, a, t, L: skillLv(k) };
+    }
+  }
+  return best;
+}
+const FOCUS_NONE_IDLE = { voyage: 1, farm: 1 };
+function idlePicksHTML() {
+  const re = resumeInfo(), st = goalState(), cl = closestLevel(), picks = [];
+  const card = (cls, kick, icon, name, sub, btn) => `<div class="ip-card ${cls}"><small>${kick}</small><div class="ip-main"><span class="ip-ic">${icon}</span><span><b>${name}</b><em>${sub}</em></span></div>${btn}</div>`;
+  if (re) {
+    const L = S.ui.last, z = L[0] === 'z', a = !z && findAction(L[1], L[2]);
+    picks.push(card('resume', 'Resume', z ? ic('enemy', ZONES[L[1]].enemies[ZONES[L[1]].enemies.length - 1].name) : tile(null, null, { r: actRarity(a), icon: actIc(L[1], a), cls: 'xs' }),
+      esc(re.name), z ? 'Battlefield' : `${SKILLS[L[1]].name} ${skillLv(L[1])}`, gbtn('Resume', 'play', re.attr, 'sm go')));
+  }
+  if (st && !st.done) picks.push(card('goal', 'Objective', ic('goal', S.goal), st.g.text, `${fmt(st.cur)} / ${fmt(st.g.n)}`, gbtn('Go', 'play', `data-nav="${st.g.go}"`, 'sm dark')));
+  else if (st && st.done) picks.push(card('goal', 'Objective', ic('goal', S.goal), st.g.text, 'Done: claim the reward', gbtn('Claim', 'check', 'data-claim', 'sm glow')));
+  if (cl && !(re && S.ui.last[1] === cl.k && S.ui.last[2] === cl.a.id)) picks.push(card('level', 'Closest level-up', ic('skill', cl.k), `${SKILLS[cl.k].name} → ${cl.L + 1}`, `${esc(cl.a.name)} · ${fmtTime(cl.t)}`, gbtn('Start', 'play', `data-act="${cl.k}:${cl.a.id}"`, 'sm dark')));
+  const first = S.goal < 1;
+  return `<div class="idle-picks">${hdr('Nothing is running', picks.length ? 'pick one' : '')}
+    ${first ? `<p class="muted ip-note">${ui('sleep')}Idle games only progress while an activity runs.</p>` : ''}
+    ${picks.length ? `<div class="ip-grid">${picks.join('')}</div>` : '<p class="muted ip-note">Pick a skill in the menu.</p>'}</div>`;
+}
+
 /* ------------------------------------------------------------- skill page */
 // The skill's title banner: icon, name, XP bar, speed / XP / luck modifiers, level ring.
 function skBannerHTML(realm, skill) {
@@ -462,12 +500,13 @@ function skBannerHTML(realm, skill) {
   const mods = [`<span class="pill" title="Action speed">${ui('spd')} Speed ×${skillSpeed(skill).toFixed(2)}</span>`, `<span class="pill" title="XP multiplier">${ui('xp')} XP ×${skillXpMult(skill).toFixed(2)}</span>`];
   if (rareMult(skill) > 1) mods.push(`<span class="pill" title="Rare find multiplier">${ui('rare')} Luck ×${rareMult(skill).toFixed(2)}</span>`);
   if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Devil Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
-  return `<section class="sk-banner" style="--rc:${rc(realm)}">
-    <div class="sk-ic">${ic('skill', skill)}</div>
-    <div class="sk-main"><small>${R.name}</small><h1>${s.name}</h1>
-      <div class="sk-xp"><span class="pbar"><i data-xpbar="${skill}"></i></span><span class="sk-xpt" data-xptext="${skill}">${xpText(b)}</span></div>
-      <div class="pills">${mods.join('')}</div>${typeof skInfoBtns === 'function' && s.realm !== 'combat' ? skInfoBtns(skill) : ''}</div>
+  // Compact (2026-11-24): the level ring is the XP bar, and the buffs and Path / Rare finds / Synergies share one
+  // line, so the focus panel's button stays above the fold at 860 px.
+  return `<section class="sk-banner sk-slim" style="--rc:${rc(realm)}">
     <div class="sk-ring" data-xpring="${skill}" style="--p:${b.p}" title="Progress to the next level"><span><b data-lv="${skill}">${b.L}</b><small>Level</small></span></div>
+    <div class="sk-main"><small>${R.name}</small>
+      <div class="sk-line"><h1>${s.name}</h1><span class="sk-xpt" data-xptext="${skill}">${xpText(b)}</span></div>
+      <div class="sk-line sk-chips"><div class="pills">${mods.join('')}</div>${typeof skInfoBtns === 'function' && s.realm !== 'combat' ? skInfoBtns(skill) : ''}</div></div>
   </section>`;
 }
 VIEWS.realm = (realm, skill) => {
@@ -560,6 +599,7 @@ VIEWS.battle = () => {
   const foods = Object.keys(S.items).filter((k) => ITEMS[k].type === 'food');
   const cskill = (k) => `<div class="cskill"><span class="cs-ic">${ic('skill', k)}</span><span class="cs-main"><span><b>${SKILLS[k].name}</b><em>Lv <span data-lv="${k}">${skillLv(k)}</span></em></span><span class="xpbar thin"><i data-xpbar="${k}"></i></span></span></div>`;
   let lastRealm = null, groups = '';
+  bestZoneI = bestZone();
   ZONES.forEach((z, i) => {
     if (REALMS[z.realm].hidden && !zoneUnlocked(i)) return;
     const sealed = !realmOpen(z.realm);
@@ -567,7 +607,7 @@ VIEWS.battle = () => {
       lastRealm = z.realm;
       groups += sealed
         ? `<div class="chapter sealed" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ui('lock')}</span><b>${REALMS[z.realm].name}</b><small>Sealed · ${GATES[z.realm] ? esc(GATES[z.realm].name) : ''}</small></div>`
-        : `<div class="chapter" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ic('realm', z.realm)}</span><b>${REALMS[z.realm].name}</b>${ascPicker(z.realm)}</div>`;
+        : `<div class="chapter" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ic('realm', z.realm)}</span><b>${REALMS[z.realm].name}</b>${ascTier(z.realm) ? `<em class="asc-tag t${ascTier(z.realm)}">${ASC[ascTier(z.realm)].name}</em>` : ''}</div>`;
     }
     if (!sealed) groups += zoneRow(z, i);
   });
@@ -592,9 +632,46 @@ VIEWS.battle = () => {
       ${UIX.battleBottom ? uix('battleBottom') : ''}
       <section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), synergiesFrom('character'))}</section>
     </div>
-    <section class="win stages">${hdr('Stages')}${uix('stagesTop')}<div class="stage-list">${groups}</div></section>
+    <section class="win stages">${hdr('Stages')}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section>
   </div>`;
 };
+// One tier switch for every world (2026-11-24): each world takes the chosen tier, or its highest unlocked one
+// below it (its header then names the tier it really plays). uix('stagesTop') (the Hardcore switch) now sits
+// under the list, away from the stage rows.
+function tierSwitchHTML() {
+  const realms = [...new Set(ZONES.map((z) => z.realm))].filter((r) => realmOpen(r));
+  const top = Math.max(0, ...realms.map((r) => maxAsc(r)));
+  if (!top) return '';
+  const cur = S.ui.ascAll != null ? S.ui.ascAll : Math.max(0, ...realms.map((r) => ascTier(r)));
+  return `<nav class="tier-sw" title="Ascension: replay every world's stages harder for more XP, gold, Renown and relics">${[0, 1, 2, 3].map((t) => t > top
+    ? `<button class="locked t${t}" disabled title="Reach Renown ${[0, 25, 50, 75][t]} in a world">${ui('lock')}${ASC[t].name}</button>`
+    : `<button class="${t === cur ? 'on' : ''} t${t}" data-ascall="${t}">${t ? ASC[t].name : 'Normal'}</button>`).join('')}</nav>`;
+}
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest('[data-ascall]');
+  if (!t) return;
+  const v = +t.dataset.ascall;
+  S.ui.ascAll = v;
+  for (const r of new Set(ZONES.map((z) => z.realm))) if (realmOpen(r) && maxAsc(r)) setAsc(r, v);
+  dirty = true;
+});
+// The stage with the most XP per hour that you clear safely (Easy or Fair): marked in the list.
+let bestZoneI = -1;
+function zoneXph(zi) {
+  const z = ZONES[zi], n = z.enemies.length;
+  let t = 0, x = 0;
+  for (let j = 0; j < n; j++) { const e = enemyAt(zi, j); t += timeToKill(e); x += e.xp; }
+  return (3600 / (t / n + (z.boss ? BOSS_RESPAWN : 1.2))) * (x / n);
+}
+function bestZone() {
+  let best = -1, bx = 0;
+  ZONES.forEach((z, i) => {
+    if (!realmOpen(z.realm) || !zoneUnlocked(i) || !['easy', 'fair'].includes(zoneDanger(i)[1])) return;
+    const x = zoneXph(i);
+    if (x > bx) { bx = x; best = i; }
+  });
+  return best;
+}
 // Arena first: HP lives on the fighters (stageHTML); the rates sit once, in one strip under the arena.
 function battleStrip() {
   const c = combatRates(), food = S.combat.food;
@@ -621,9 +698,9 @@ function zoneRow(z, i) {
     return `<div class="zrow locked"><span class="z-ic">${ui('lock')}</span><span class="z-main"><b>${z.name}</b><small>${prev.boss ? `Defeat ${prev.enemies[0].name}` : `Defeat ${need} foes in ${prev.name}`} · ${have}/${need}</small></span></div>`;
   }
   const [dl, dc] = zoneDanger(i);
-  return `<button class="zrow ${z.boss ? 'boss' : ''} ${C.zone === i ? 'on' : ''}" data-zone="${i}" style="--rc:${rc(z.realm)}">
+  return `<button class="zrow ${z.boss ? 'boss' : ''} ${C.zone === i ? 'on' : ''} ${i === bestZoneI ? 'best' : ''}" data-zone="${i}" style="--rc:${rc(z.realm)}">
     <span class="z-ic">${ic('enemy', z.enemies[z.enemies.length - 1].name)}</span>
-    <span class="z-main"><b>${ascTier(z.realm) ? `<em class="asc-tag t${ascTier(z.realm)}">${ASC[ascTier(z.realm)].name}</em>` : ''}${z.name}</b><small>${z.boss ? 'Boss · ' : ''}Rec. Lv ${z.rec} · ${z.enemies.map((e) => e.name).join(' · ')}</small></span>
+    <span class="z-main"><b>${z.name}</b><small>${i === bestZoneI ? `<em class="z-best">${ui('star')}Best XP/h for you</em> · ` : ''}${z.boss ? 'Boss · ' : ''}Rec. Lv ${z.rec} · ${z.enemies.map((e) => e.name).join(' · ')}</small></span>
     <span class="z-tail"><span class="danger ${dc}">${dl}</span><span class="z-k">${ui('skull')}<b data-kills="${z.id}">${fmt(C.kills[z.id] || 0)}</b></span></span></button>`;
 }
 // stageHTML(): the battle arena lives in arena.js
@@ -642,9 +719,14 @@ VIEWS.hero = (tab) => {
   const q = (S.ui.bankq || '').trim().toLowerCase(), order = Object.keys(S.items), sort = S.ui.bankSort || 'rarity';
   const SORTS = { rarity: (a, b) => rarity(b) - rarity(a) || ITEMS[b].value - ITEMS[a].value, qty: (a, b) => S.items[b] - S.items[a],
     new: (a, b) => order.indexOf(b) - order.indexOf(a), value: (a, b) => ITEMS[b].value * S.items[b] - ITEMS[a].value * S.items[a] };
-  const ids = order.filter((k) => (S.ui.bank === 'all' || itemKind(k) === S.ui.bank) && (!q || ITEMS[k].name.toLowerCase().includes(q)))
+  const ids = order.filter((k) => count(k) > 0 && (S.ui.bank === 'all' || itemKind(k) === S.ui.bank) && (!q || ITEMS[k].name.toLowerCase().includes(q)))
     .sort(SORTS[sort] || SORTS.rarity);
   const worth = Object.keys(S.items).reduce((a, k) => a + ITEMS[k].value * S.items[k], 0);
+  // NEW means new: what arrived since your last visit gets its own row on top (kept for this visit, saved across reloads).
+  if (!bankNew) bankNew = order.filter((k) => count(k) > 0 && !seenItems.has(k)).reverse();
+  const fresh = bankNew.filter((k) => count(k) > 0), fset = new Set(fresh);
+  const bt = (k) => tile(k, `<span data-count="${k}">${fmt(count(k))}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: (S.locked && S.locked[k] ? `<span class="lockb" title="Locked">${ui('lock')}</span>` : '') + (fset.has(k) ? '<span class="new">New</span>' : '') });
+  const newRow = fresh.length && !q ? `<div class="bag-new"><div class="bn-head"><small>New since your last visit · ${fresh.length}</small><button class="mini-btn bn-seen" data-bankseen>Mark seen</button></div><div class="bag-grid">${fresh.map(bt).join('')}</div></div>` : '';
   return `
   ${ptitle('Hero', 'Bank', heroTabs(tab))}
   <div class="hero-layout bank-layout">
@@ -652,10 +734,10 @@ VIEWS.hero = (tab) => {
       <nav class="bag-tabs">${BAG_TABS.map(([k, icn, l]) => `<button class="${S.ui.bank === k ? 'on' : ''}${KINDS[k] ? ' k-' + k : ''}" data-bankf="${k}" title="${l}">${ui(icn)}<span>${l}</span></button>`).join('')}</nav>
       <div class="bag-tools"><label class="bag-q">${ui('search')}<input id="bank-q" type="search" data-bankq placeholder="Search the bank" value="${esc(S.ui.bankq || '')}" autocomplete="off"></label>
         <nav class="bag-sort">${[['rarity', 'Rarity'], ['qty', 'Qty'], ['new', 'Newest'], ['value', 'Value']].map(([k, l]) => `<button class="${sort === k ? 'on' : ''}" data-banksort="${k}">${l}</button>`).join('')}</nav></div>
-      ${uix('bagTop')}<div class="bag-grid">${ids.length ? ids.map((k) => tile(k, `<span data-count="${k}">${fmt(S.items[k])}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: (S.locked && S.locked[k] ? `<span class="lockb" title="Locked">${ui('lock')}</span>` : '') + (seenItems.has(k) ? '' : '<span class="new">New</span>') })).join('') : '<div class="empty-note">' + (q ? 'No item matches.' : 'Nothing here yet.') + '</div>'}</div>
+      ${uix('bagTop')}${newRow}<div class="bag-grid">${ids.length ? ids.map(bt).join('') : '<div class="empty-note">' + (q ? 'No item matches.' : 'Nothing here yet.') + '</div>'}</div>
       <div class="bag-foot"><span>${Object.keys(S.items).length} item types</span><span>Bank value ${ui('gold')} ${fmt(worth)}</span></div>
     </section>
-    <section class="win detail">${armDetailHTML() || inspectorHTML()}</section>
+    <section class="win detail">${armDetailHTML() || inspectorHTML() || bankSummaryHTML()}</section>
   </div>`;
 };
 function itemHead(id, unknown) {
@@ -663,8 +745,18 @@ function itemHead(id, unknown) {
   return `<div class="dt-hero r${r}"><div class="dt-name"><small>${unknown ? 'Undiscovered' : `<span class="rar r${r}">${RARITY_NAME[r] || ''}</span> · <span class="kind-lab k-${itemKind(id)}">${ui('k-' + itemKind(id))}${KINDS[itemKind(id)].one}</span>${typeLabel(id) !== KINDS[itemKind(id)].one ? ' · ' + typeLabel(id) : ''}`}</small><h2>${unknown ? '???' : esc(it.name)}</h2>${unknown ? '' : stars(r)}${!unknown && (it.base ? ITEMS[it.base] : it).lore ? `<p class="lore dt-lore">${esc((it.base ? ITEMS[it.base] : it).lore)}</p>` : ''}</div>
     <div class="dt-art">${unknown ? '<b class="q">?</b>' : itemIc(id)}</div></div>`;
 }
+// The detail panel with nothing selected: what is in the bank, at a glance (click a line to open that item).
+function bankSummaryHTML() {
+  const ids = Object.keys(S.items).filter((k) => count(k) > 0);
+  const total = ids.reduce((a, k) => a + count(k), 0), locked = ids.filter((k) => S.locked && S.locked[k]).length;
+  const top = ids.slice().sort((a, b) => ITEMS[b].value * count(b) - ITEMS[a].value * count(a)).slice(0, 5);
+  return `<div class="bank-sum">${hdr('Bank', `${fmt(ids.length)} item types`)}
+    <div class="bs-nums">${stat('Items', fmt(total))}${stat('Locked', fmt(locked))}</div>
+    ${top.length ? `<small class="bs-lab">Most valuable stacks</small><div class="bs-top">${top.map((k) => `<button class="bs-row" data-sel="${k}">${tile(k, null, { cls: 'xs' })}<span>${esc(ITEMS[k].name)}</span><b>${ui('gold')}${fmt(ITEMS[k].value * count(k))}</b></button>`).join('')}</div>` : ''}
+    <p class="muted small bs-hint">${ui('info')}Select an item for its details.</p></div>`;
+}
 function inspectorHTML() {
-  if (!selItem || (!count(selItem) && !Object.values(S.equip).includes(selItem))) return `<div class="empty-note big">${ui('info')}<span>Select an item to see its details.</span></div>`;
+  if (!selItem || (!count(selItem) && !Object.values(S.equip).includes(selItem))) return '';
   const it = ITEMS[selItem], n = count(selItem), equipped = !n;
   const body = [], acts = [];
   if (it.type === 'equip') { body.push(attrList(statRows(Object.fromEntries(Object.keys(it.stats).map((k) => [k, itemStat(selItem, k)]))))); body.push(uix('inspector', selItem)); if (!equipped) acts.push(gbtn('Equip', 'check', `data-equip="${selItem}"`));
@@ -881,7 +973,10 @@ function journalAdd(icon, text, n, cls) {
   JOURNAL.unshift({ t: Date.now(), icon, text, n: n || 0, cls: cls || '' });
   if (JOURNAL.length > 120) JOURNAL.length = 120;
 }
-const FEED_MAX = () => (matchMedia('(max-width: 860px)').matches ? 2 : 4);
+const FEED_MAX = () => (matchMedia('(max-width: 860px)').matches ? 2 : 3);
+// Rows fade on their own: a drop that keeps coming bumps its row, but a row never stays past FEED_LIFE.
+const FEED_LIFE = 6000, FEED_IDLE = 3500;
+const feedLeft = (f) => Math.max(600, Math.min(FEED_IDLE, FEED_LIFE - (Date.now() - f.born)));
 const fedAt = {};   // item name -> last time it reached the feed (the Collection message checks it)
 // Settings → Notifications: 'all' (default), 'new' (new items, rare and messages), 'rare' (rare and warnings only).
 function feedShows(kind, r) {
@@ -915,11 +1010,11 @@ function feedAdd(icon, name, n, cls, r) {
     el.className = `ob-row r${r || 1} ${cls || ''}`;
     el.innerHTML = `<span class="ob-ic">${icon}</span><span class="ob-name">${esc(name)}</span><b>${n > 0 ? '+' : ''}${fmt(n)}</b>`;
     box.appendChild(el);
-    f = { name, cls: cls || '', n, el, icon };
+    f = { name, cls: cls || '', n, el, icon, born: Date.now() };
     feedRows.push(f);
     feedTrim();
   }
-  f.t = setTimeout(() => feedDrop(f), 4200);
+  f.t = setTimeout(() => feedDrop(f), feedLeft(f));
   return f;
 }
 function feedDrop(f) {
@@ -938,11 +1033,11 @@ function feedMsg(msg, cls) {
     el.innerHTML = `<span class="ob-ic">${ui(TOAST_IC[cls] || 'info')}</span><span class="ob-name"></span><b></b>`;
     el.querySelector('.ob-name').textContent = msg;
     box.appendChild(el);
-    f = { msg, k: 1, el, name: null, cls: 'msg' };
+    f = { msg, k: 1, el, name: null, cls: 'msg', born: Date.now() };
     feedRows.push(f);
     feedTrim();
   }
-  f.t = setTimeout(() => feedDrop(f), cls === 'bad' || cls === 'rare' ? 5200 : 4200);
+  f.t = setTimeout(() => feedDrop(f), cls === 'bad' || cls === 'rare' ? 5000 : feedLeft(f));
 }
 const freshItems = new Set();
 const feedItem = (id, n) => {
@@ -1082,7 +1177,12 @@ on('newitem', (id) => {
   setTimeout(() => freshItems.delete(id), 1500);
   if (!featureOpen('collection') || ITEMS[id].variant) return;   // beginners: no Collection menu yet · variants have their own log
   // Le Fil: the item's own row already carries the NEW tag; only a find with no row gets a message.
-  setTimeout(() => { if (!rareThisTick.has(id) && !(Date.now() - (fedAt[ITEMS[id].name] || 0) < 1500)) toast(`New in your Collection: ${ITEMS[id].name}`, 'good'); }, 0);
+  // Several finds at once share one row that counts up ("New in your Collection +3"); the Journal keeps each name.
+  setTimeout(() => {
+    if (rareThisTick.has(id) || Date.now() - (fedAt[ITEMS[id].name] || 0) < 1500) return;
+    journalAdd(ui('check'), `New in your Collection: ${ITEMS[id].name}`, 0, 'msg good');
+    if (feedShows('msg')) feedAdd(ui('collection'), 'New in your Collection', 1, 'msg good col', 3);
+  }, 0);
 });
 on('schematic', (id) => {
   const rec = schemRecipe(id), it = ITEMS[ITEMS[id].teaches];
@@ -1161,7 +1261,8 @@ function render() {
   main.scrollTop = scroll;
   if (foc && $('#' + foc[0])) { const el = $('#' + foc[0]); el.focus({ preventScroll: true }); try { el.setSelectionRange(foc[1], foc[2]); } catch (e) { /* not a text field */ } }
   if (boxVal !== null && $('#savebox')) $('#savebox').value = boxVal;
-  if (name === 'hero') { bankSig = Object.keys(S.items).join(','); setTimeout(() => Object.keys(S.items).forEach((k) => seenItems.add(k)), 0); }
+  if (name === 'hero') { bankSig = Object.keys(S.items).join(','); setTimeout(() => { Object.keys(S.items).forEach((k) => seenItems.add(k)); bankSeenSave(); }, 0); }
+  else bankNew = null;
   viewChanged = false;
   lastLogVer = -1;
   renderSide();
@@ -1306,6 +1407,7 @@ document.addEventListener('click', (ev) => {
   else if (d.asc) { const [r, t] = d.asc.split(':'); setAsc(r, +t); }
   else if ('stopcombat' in d) stopCombat();
   else if (d.sel) { selItem = d.sel; dirty = true; }
+  else if (t.hasAttribute('data-bankseen')) { bankNew = []; dirty = true; }
   else if (d.bankf) { S.ui.bank = d.bankf; dirty = true; }
   else if (d.railfold) { const r = d.railfold; S.ui.railOpen = S.ui.railOpen || {}; S.ui.railOpen[r] = t.getAttribute('aria-expanded') === 'true' ? 0 : 1; renderRail(); update(); }
   else if (d.banksort) { S.ui.bankSort = d.banksort; dirty = true; }
@@ -1433,7 +1535,9 @@ function boot() {
   lastTick = Date.now();
   lastUnlocked = ZONES.filter((z, i) => zoneUnlocked(i)).length;
   lastGold = Math.floor(S.gold);
-  Object.keys(S.items).forEach((k) => seenItems.add(k));
+  // Older saves never stored what the Bank showed: everything counts as seen once.
+  (Array.isArray(S.ui.bankSeen) ? S.ui.bankSeen : Object.keys(S.items)).forEach((k) => seenItems.add(k));
+  bankSeenSave();
   render();
   if (isFreshSave()) showWelcome();
 

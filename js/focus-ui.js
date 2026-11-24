@@ -87,8 +87,10 @@ function focusHTML(skill) {
   if (!a) return '';
   const run = !!(S.action && S.action.skill === skill && S.action.id === a.id), st = actState(skill, a), r = actRarity(a), out = focusOut(a);
   const it = out && ITEMS[out], locked = wsLocked(st);
-  const busy = S.action && !run ? (S.action.skill === skill ? findAction(skill, S.action.id).name : SKILLS[S.action.skill].name) : '';
-  const kick = run ? FOCUS_VERB[skill] || 'Working' : locked ? 'Locked' : busy ? `Busy with ${esc(busy)}` : 'Ready';
+  // What starting this would stop: the button says it (and offers the queue when the running task ends by itself).
+  const busy = S.action && !run ? (S.action.skill === skill ? findAction(skill, S.action.id).name : SKILLS[S.action.skill].name)
+    : S.combat.zone != null ? 'Battle' : '';
+  const kick = run ? FOCUS_VERB[skill] || 'Working' : locked ? 'Locked' : 'Ready';
   const sub = [it ? typeLabel(out) : a.kind || '', `Lv ${a.level}`].filter(Boolean).join(' · ');
   // Owned: gathering skills already list it in their picker beside the panel.
   const own = out && (s.type === 'craft' || FC.includes(skill)) ? `<span class="fo-own"><small>Owned</small><b data-fam="${out}">${fmt(familyCount(out))}</b></span>` : '';
@@ -114,7 +116,7 @@ function focusHTML(skill) {
     </div>`;
     if (run && FC.includes(skill)) body += `<div class="fo-sess" data-fcsess="${skill}">${fcSessHTML(skill)}</div>`;
     body += ing + gets;
-    if (a.extra && a.extra.length) body += `<div class="fo-ing fo-extra"><small>Can find</small>${a.extra.map(([k, ch]) => tile(k, fmtRate(Math.min(1, ch * extraMult(skill))), { cls: 'xs', unknown: !S.found[k] })).join('')}</div>`;
+    if (a.extra && a.extra.length) body += focusFindsHTML(skill, a, f.T);
     body += focusNotes(skill, a);
     if (skill === 'cooking' && typeof fcSpiceHTML === 'function') body += fcSpiceHTML();
     body += focusGaugeHTML(skill, a);
@@ -123,7 +125,9 @@ function focusHTML(skill) {
     body += `<div class="fo-mast" title="Mastery: each level makes this action 0.3% faster and adds 0.1% chance to double">${ui('mastery')}<span>Mastery <b data-mlv="${skill}:${a.id}">${masteryLv(skill, a.id)}</b></span><span class="bar"><i data-mfill="${skill}:${a.id}"></i></span></div>`;
   }
   const last = SPOT['last_' + skill];
+  const go = FC.includes(skill) ? FC_TXT[skill].go : s.type === 'voyage' ? 'Set sail' : s.type === 'craft' ? 'Craft' : 'Start';
   const cta = run ? `<button class="fo-cta stop" data-stop>${ui('stop')}<span>Stop</span></button>`
+    : st === 'ready' && busy ? focusSwitchHTML(skill, a, go, busy)
     : `<button class="fo-cta" data-act="${skill}:${a.id}" ${locked || st === 'missing' ? 'disabled' : ''}>${st === 'ready' && FC.includes(skill) ? `${ui('play')}${FC_TXT[skill].go}` : ctaLabel(skill, a, st)}</button>`;
   return `<section class="win fo-win ${run ? 'on' : ''}" data-focus="${skill}" style="--rc:${rc(s.realm)}">
     <div class="fo-bg" data-skill-bg="${skill}" aria-hidden="true"></div>
@@ -141,6 +145,37 @@ function focusHTML(skill) {
       </div>
     </div>
   </section>`;
+}
+
+// Something else runs: "Craft now · stops Woodcutting", and "Queue next" when the running task ends by itself
+// (a sized queue task, or a recipe that runs out of materials). An endless gather would never hand over.
+function focusSwitchHTML(skill, a, go, busy) {
+  const M = typeof msOn === 'function' && msOn() ? msState() : null;
+  const runA = S.action && findAction(S.action.skill, S.action.id);
+  const ends = M && ((M.cur && M.cur.n) || (runA && runA.in));
+  const q = ends && msFree() > 0 ? `<button class="fo-cta q" data-qnext="${skill}:${a.id}" title="Task Queue: starts when ${esc(M.cur ? msName(M.cur) : runA.name)} ends">${ui('missions')}<span>Queue next<small>after ${esc(M.cur ? msName(M.cur) : runA.name)}</small></span></button>` : '';
+  return `<span class="fo-ctas"><button class="fo-cta sw" data-act="${skill}:${a.id}">${ui('play')}<span>${go} now<small>stops ${esc(busy)}</small></span></button>${q}</span>`;
+}
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest('[data-qnext]');
+  if (!t) return;
+  const [skill, id] = t.dataset.qnext.split(':');
+  if (postMission({ k: 'act', skill, id, n: 0 }, 0)) toast(`Queued next: ${findAction(skill, id).name}.`, 'good');
+});
+// "Can find": the by-products you have not found yet show as a dark silhouette in their rarity frame, with a
+// hint (rarity, kind, one line of lore) and about how long one takes at this speed.
+function focusFindsHTML(skill, a, T) {
+  const got = a.extra.filter(([k]) => S.found[k]).length;
+  const tiles = a.extra.map(([k, ch]) => {
+    const p = Math.min(1, ch * extraMult(skill)), it = ITEMS[k], r = rarity(k), known = S.found[k];
+    const every = p > 0 && p < 1 ? ` · about 1 every ${fmtTime(T / p)}` : '';
+    if (known) return tile(k, fmtRate(p), { cls: 'xs' });
+    const lore = ((it.base ? ITEMS[it.base] : it).lore || it.desc || '').split(/(?<=\.)\s/)[0];
+    const tip = `Unknown ${RARITY_NAME[r] || ''} ${typeLabel(k).toLowerCase()}${every}${lore ? `\n"${lore}"` : ''}`;
+    // The icon without its data-tip, so hovering never names it.
+    return tile(k, fmtRate(p), { cls: 'xs sil', r, icon: itemIc(k).replace(/\sdata-tip="[^"]*"/, ''), mark: '', title: tip });
+  }).join('');
+  return `<div class="fo-ing fo-extra"><small>Rare finds <em>${got} / ${a.extra.length}</em></small>${tiles}</div>`;
 }
 
 /* ---------------------------------------------------------------- wiring */
