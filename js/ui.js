@@ -157,9 +157,18 @@ function normalizeView() {
   if (!VIEWS[v.split(':')[0]]) v = 'home';
   S.ui.view = v;
 }
+// The menu key of an unlock (for its NEW mark): a skill's page, or a menu's view.
+function navKeyOf(uid) {
+  const [kind, ref] = uid.split(':');
+  if (kind === 'skill' && SKILLS[ref]) return skillView(ref);
+  if (kind !== 'feature') return null;
+  const k = Object.keys(VIEW_FEATURE).find((v) => VIEW_FEATURE[v] === ref);
+  return k || (VIEWS[ref] ? ref : null);
+}
 function setView(v) {
   S.ui.view = v;
   normalizeView();
+  if (S.ui.fresh && S.ui.fresh[S.ui.view]) { delete S.ui.fresh[S.ui.view]; sideDirty = true; }
   const [name, realm, skill] = S.ui.view.split(':');
   if (name === 'realm') S.ui.tab[realm] = skill;
   $('#main').scrollTop = 0;
@@ -197,7 +206,7 @@ function navRow(key, icon, label, o) {
   return `<button class="nav-row ${on ? 'on' : ''} ${o.sub ? 'sub' : ''}" data-nav="${key}" style="--rc:${o.color || rc('hub')}" title="${label}">
     <span class="nr-ic">${icon}</span><span class="nr-name">${label}</span>
     ${o.skill ? `<span class="nr-lv" data-lv="${o.skill}">${skillLv(o.skill)}</span><span class="nr-xp"><i data-xpbar="${o.skill}"></i></span>` : ''}
-    ${o.busy ? '<i class="nr-busy"></i>' : ''}${o.skill && o.skill === guideSkill() && !o.busy ? '<i class="nr-goal" title="Current objective">!</i>' : ''}</button>`;
+    ${o.busy ? '<i class="nr-busy"></i>' : ''}${S.ui.fresh && S.ui.fresh[key] ? '<em class="nr-new">New</em>' : o.skill && o.skill === guideSkill() && !o.busy ? '<i class="nr-goal" title="Current objective">!</i>' : ''}</button>`;
 }
 function renderRail() {
   const groups = [];
@@ -205,7 +214,7 @@ function renderRail() {
   groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => {
     const f = featureOfView(k);
     if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
-    return `<button class="nq ${isOn(k) ? 'on' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}${k === 'techniques' && typeof scrollsOwned === 'function' && scrollsOwned() ? `<em class="nq-badge" title="Scrolls to read">${fmt(scrollsOwned())}</em>` : ''}</button>`;
+    return `<button class="nq ${isOn(k) ? 'on' : ''} ${S.ui.fresh && S.ui.fresh[k] ? 'fresh' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}${k === 'techniques' && typeof scrollsOwned === 'function' && scrollsOwned() ? `<em class="nq-badge" title="Scrolls to read">${fmt(scrollsOwned())}</em>` : ''}</button>`;
   }).join('')}</div>`);
   // Le menu qui tient: from 3 worlds on, the worlds you are not in fold to one line of skill chips (icon + level,
   // one click each). Open: the world on screen, the one working, the newest, and any you unfolded yourself.
@@ -219,7 +228,7 @@ function renderRail() {
     groups.push(open ? `<div class="nav-group">${head}
       ${ks.map((k) => navRow(`realm:${r}:${k}`, ic('skill', k), SKILLS[k].name, { skill: k, color: rc(r), busy: S.action && S.action.skill === k })).join('')}</div>`
       // Folded: the world's full name, then one chip per skill (icon, level, XP filling along its bottom edge).
-      : `<div class="nav-group folded">${head}<div class="nav-chips">${ks.map((k) => `<button class="nchip ${S.action && S.action.skill === k ? 'busy' : ''} ${k === guideSkill() ? 'goal' : ''}" data-nav="realm:${r}:${k}" style="--rc:${rc(r)}" title="${SKILLS[k].name} · Lv ${skillLv(k)}${k === guideSkill() ? ' · current objective' : ''}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><i class="nc-xp"><i data-xpbar="${k}"></i></i></button>`).join('')}</div></div>`);
+      : `<div class="nav-group folded">${head}<div class="nav-chips">${ks.map((k) => `<button class="nchip ${S.action && S.action.skill === k ? 'busy' : ''} ${k === guideSkill() ? 'goal' : ''} ${S.ui.fresh && S.ui.fresh[`realm:${r}:${k}`] ? 'fresh' : ''}" data-nav="realm:${r}:${k}" style="--rc:${rc(r)}" title="${SKILLS[k].name} · Lv ${skillLv(k)}${k === guideSkill() ? ' · current objective' : ''}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><i class="nc-xp"><i data-xpbar="${k}"></i></i></button>`).join('')}</div></div>`);
   }
   // Combat sits under the starting world: you fish and cook before you fight.
   if (featureOpen('battle')) groups.splice(Math.min(2, groups.length), 0, `<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
@@ -429,6 +438,9 @@ const VIEWS = {};
 // realmScene: an animated scene under a skill's banner (seas-ui.js); when one is shown it carries the farm numbers.
 const UIX = { bagTop: [], quick: [], homeTop: [], questsBottom: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [], nowbar: [], colDetail: [], stagesTop: [] };
 const uix = (k, ...a) => UIX[k].map((f) => f(...a) || '').join('');
+// The quiet guide (guide.js): the first line of help on Woodcutting, and each skill's card on its first visit.
+UIX.realmTop.push((realm, skill) => firstHintHTML(realm, skill) + introCardHTML('skill:' + skill) + (skill === 'cooking' ? introCardHTML('feature:spices') : ''));
+UIX.battleTop.push(() => introCardHTML('feature:battle') + introCardHTML('feature:dungeons'));
 
 /* ------------------------------------------------------------- overview */
 VIEWS.home = () => {
@@ -617,6 +629,7 @@ VIEWS.battle = () => {
     <section id="stage" class="arena gs-stage ${C.zone != null ? 'fighting' : ''}">${stageHTML()}</section>
     ${gsDockHTML(foods)}
   </div>
+  ${uix('battleTop')}
   <div class="gs-below">
     <div class="gs-left">${typeof dungeonsWinHTML === 'function' ? dungeonsWinHTML() : ''}
     <section class="win stages" id="gs-stages">${hdr('Stages')}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section></div>
@@ -944,8 +957,8 @@ VIEWS.settings = () => `
     <span class="upg-t"><b>Play it like an app</b><small>Install Tri-Realm on your phone or computer: full screen, its own icon, works offline.${installPrompt ? '' : ' iPhone / iPad: Share → Add to Home Screen. Android / desktop: browser menu → Install app.'}</small></span>
     ${installPrompt ? gbtn('Install', 'check', 'data-install') : ''}</section>`}
   <section class="win">${hdr('Help')}
-    <div class="btn-row">${gbtn(S.ui.noTips ? 'Turn beginner tips on' : 'Turn beginner tips off', 'info', 'data-toggletips', 'dark')}${gbtn('Show welcome screen', 'hero', 'data-rewelcome', 'dark')}</div>
-    <p class="muted small">Beginner tips point at the next thing to click for the first ${GUIDE.length} objectives.</p></section>
+    <div class="btn-row">${gbtn(S.ui.noTips ? 'Turn hints on' : 'Turn hints off', 'info', 'data-toggletips', 'dark')}${gbtn('Show the page cards again', 'hero', 'data-reintro', 'dark')}</div>
+    <p class="muted small">During your first ${GUIDE_N} steps, a small hint points at the next click if nothing moves for a while. Each new skill or menu explains itself once, at the top of its page.</p></section>
   <section class="win">${hdr('Save data', 'autosaves every 10 seconds')}
     <div class="btn-row">${gbtn('Save now', 'check', 'data-save', 'dark')}${gbtn('Export', 'log', 'data-export', 'dark')}${gbtn('Import', 'open', 'data-import', 'dark')}${gbtn('Hard reset', 'close', 'data-wipe', 'danger')}</div>
     <textarea id="savebox" rows="5" placeholder="Export puts your save here. To import, paste a save here and press Import."></textarea>
@@ -1243,7 +1256,7 @@ on('renown', (d) => {
   if (d.level % 25 === 0) burst('Ascension unlocked', `${REALMS[d.realm].name} · ${ASC[d.level / 25].name} stages`, ic('realm', d.realm), rc(d.realm));
   else if (d.level % 10 === 0) toast(`${REALMS[d.realm].name} Renown ${d.level}: +3% speed, damage and defense there.`, 'rare');
 });
-on('goal', (g) => { burst('Quest complete', `${g.text} · +${fmt(g.reward)} gold`, ic('goal', GOALS.indexOf(g)), 'var(--gold)'); });
+on('goal', (g) => { toast(`Done: ${g.text} · +${fmt(g.reward)} gold`, 'good'); });
 
 /* =============================================================== unlock announcements */
 // New worlds get a full reveal; skills and menus get a banner. Waits for any open modal to close.
@@ -1255,15 +1268,14 @@ function pollUnlocks() {
   if (!pendingUnlocks.length || $('#modal').classList.contains('show')) return;
   const list = pendingUnlocks.splice(0);
   const realms = list.filter((u) => u.id.startsWith('realm:')).map((u) => u.id.slice(6));
-  const intro = SIM ? null : list.find((u) => INTRO[u.id]);
   for (const u of list) {
     const [kind, ref] = u.id.split(':');
-    if (kind === 'realm' || (kind === 'skill' && realms.includes(SKILLS[ref].realm)) || u === intro) continue;
-    burst(unlockKind(u), u.name, unlockIcon(u), kind === 'skill' ? rc(SKILLS[ref].realm) : 'var(--gold)');
-    toast(`${unlockKind(u)}: ${u.name}. ${u.why || ''}`, 'rare');
+    const key = navKeyOf(u.id);
+    if (key) { S.ui.fresh = S.ui.fresh || {}; S.ui.fresh[key] = 1; sideDirty = true; }
+    if (kind === 'realm' || (kind === 'skill' && realms.includes(SKILLS[ref].realm))) continue;
+    toast(`New ${kind === 'skill' ? 'skill' : 'in the menu'}: ${u.name}`, 'rare');
   }
   if (realms.length) showRealmOpen(realms[0]);
-  else if (intro) showIntro(intro.id);
   for (const r of realms.slice(1)) toast(`New world unlocked: ${REALMS[r].name}`, 'rare');
 }
 function showRealmOpen(r) {
@@ -1442,7 +1454,7 @@ document.addEventListener('click', (ev) => {
   else if ('coachok' in d) { coachOk[S.goal] = 1; updateCoach(true); }
   else if ('skiptips' in d) { S.ui.noTips = 1; clearCoach(); toast('Tips turned off. Turn them back on anytime in Settings.', 'good'); dirty = true; }
   else if ('toggletips' in d) { S.ui.noTips = S.ui.noTips ? 0 : 1; coachOk = {}; if (S.ui.noTips) clearCoach(); dirty = true; }
-  else if ('rewelcome' in d) showWelcome();
+  else if ('reintro' in d) { S.ui.introSeen = {}; S.ui.hintOff = {}; toast('The page cards will show again.', 'good'); dirty = true; }
   else if ('journal' in d) openModal(journalHTML(), 'Close');
   else if (d.nav) setView(d.nav);
   else if (d.act) {

@@ -36,6 +36,8 @@ const CHAPTERS = [
   { id: 'rift', n: 8, realm: 'rift', title: 'The Rift', guard: 'convergence', cast: ['carto'], reward: { items: { rift_shard: 1 } } },
 ];
 for (const c of CHAPTERS) c.from = GOALS.findIndex((g) => g.ch === c.id);
+// the first weapon's name comes from lore.js (it is no longer called Wooden Sword)
+for (const g of GOALS) g.text = g.text.replace('Wooden Sword', ITEMS.training_kunai.name);
 // stage steps name their stage now that every world has added its zones
 for (const g of GOALS) if (g.zone) { const z = ZONES.find((x) => x.id === g.zone); if (z) g.text = `Defeat ${g.n} foes in ${z.name.replace(/^The /, 'the ')}`; }
 // drop rewards for items that do not exist (content changes) rather than break a claim

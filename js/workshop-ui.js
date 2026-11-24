@@ -60,7 +60,7 @@ function wsState(skill) {
 // The recipe the tutorial points at always stays in the list, whatever the filters.
 function wsGuideId(skill) {
   if (typeof guideOn !== 'function' || !guideOn()) return null;
-  const G = GUIDE[S.goal];
+  const G = curGuide();
   if (G && G.act && G.act.split(':')[0] === skill) return G.act.split(':')[1];
   if (G && G.skill === skill) { const best = SKILLS[skill].actions.filter((a) => actState(skill, a) === 'ready').pop(); return best ? best.id : null; }
   return null;

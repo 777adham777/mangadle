@@ -122,7 +122,7 @@ VIEWS.techniques = () => {
     <section class="win" style="--rc:${rc(r)}">${hdr(`${REALMS[r].name} · ${esc(scrollName(r))}`, `${TECH_POOLS[r].filter(techLv).length} / ${TECH_POOLS[r].length} learned`)}
       <div class="tcards">${TECH_POOLS[r].map(techCardHTML).join('')}</div></section>`).join('');
   return `${ptitle('Your build', 'Techniques', `<span class="pill">${known} / ${ids.length} learned</span>`)}
-  ${scrollShelfHTML()}
+  ${introCardHTML('feature:techniques')}${scrollShelfHTML()}
   <section class="win">${hdr('Slots', 'one technique per slot, matched by type · they fire in this order')}
     <div class="tslots wide">${TECH_SLOTS.map(techSlotHTML).join('')}</div></section>
   <p class="muted small tc-help">Every foe drops its world's scroll now and then (bosses often); it waits in your Bank until you read it. A scroll teaches a random technique of that world; unknown ones come up 3× as often.
