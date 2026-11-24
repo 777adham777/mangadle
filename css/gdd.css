@@ -4,10 +4,6 @@
    ========================================================================== */
 
 /* sidebar: one Character row instead of three combat skills */
-.nav-cskills { grid-template-columns: 1fr; }
-.ncs { grid-template-columns: auto 1fr auto; }
-.ncs span:not(.nr-xp) { font-size: 12px; color: var(--dim); text-align: left; }
-.ncs .nr-xp { grid-column: 1 / 4; }
 
 /* Battlefield: the five stats */
 .cstats { display: grid; gap: 4px; padding: 8px 10px 10px; }
@@ -16,7 +12,6 @@
 .cstat b { font: 600 13px var(--display); letter-spacing: .02em; }
 .cstat em { font: 700 15px var(--display); font-style: normal; color: var(--text); text-align: right; }
 .cstat small { grid-column: 2 / 4; font-size: 11px; color: var(--dim); }
-
 
 /* Techniques: typed slots + collection */
 .tslot .tcd { grid-column: 2; height: 3px; margin-top: 4px; background: rgba(255, 255, 255, .08); }
@@ -50,7 +45,6 @@
 .train.locked .tr-ic { color: var(--mute); }
 .en-help { margin: 8px 2px 0; }
 
-
 /* Expeditions: harbour + destination cards */
 .ships { display: grid; gap: 6px; padding: 8px 10px; }
 .ship-row { display: grid; grid-template-columns: auto 1fr auto auto; align-items: center; gap: 10px; padding: 6px 8px; background: var(--panel2); border: 1px solid var(--line); }
@@ -65,7 +59,6 @@
 .exp-last small { display: block; margin-bottom: 4px; font-size: 11.5px; color: var(--dim); }
 .exp-last .tiles { display: flex; flex-wrap: wrap; gap: 4px; }
 .acard.exp[data-state="blocked"] .ac-cta { color: var(--mute); }
-
 
 /* Weapons: rack in the Bank + forge panel */
 .arm-rack { padding: 8px 10px 4px; border-bottom: 1px solid var(--line); }
@@ -88,7 +81,6 @@
 .chamber-row { display: flex; align-items: center; gap: 10px; padding: 8px 10px 0; }
 .chamber-row .pbar { flex: 1; }
 .chamber p { padding: 0 10px 10px; margin: 6px 0 0; }
-
 
 /* Elites */
 .boss-tag.elite { background: #6b4fd8; }

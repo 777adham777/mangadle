@@ -2,7 +2,6 @@
    Battlefield "Drops" window (js/drops-ui.js): history, session, what this stage drops.
    ========================================================================== */
 .drops-win { --rc: #ffb627; margin-top: 16px; }
-.battle-main > .drops-win { margin-top: 0; }
 .dw-grid { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: 16px; }
 .dw-col { min-width: 0; display: flex; flex-direction: column; gap: 8px; }
 .dw-sub { display: flex; align-items: center; gap: 8px; min-height: 28px; }

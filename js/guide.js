@@ -120,7 +120,6 @@ function resolveTarget(sels) {
   return null;
 }
 let coachEl = null, coachHTML = '', coachLast = 0;
-const coachOk = {};   // kept for older callers
 function clearCoach() {
   if (coachEl) coachEl.classList.remove('coach-soft');
   coachEl = null;
@@ -176,7 +175,6 @@ function showWelcome() {
   S.ui.welcomed = 1;
   setView('realm:shinobi:woodcutting');
 }
-const welcomeChoice = () => showWelcome();   // older callers
 function firstHintHTML(realm, skill) {
   if (skill !== 'woodcutting' || (S.stats.actions || 0) > 0 || S.action) return '';
   return `<div class="first-hint"><span class="fh-ic">${ic('skill', 'woodcutting')}</span><p><b>Leaf Village, at dawn. You have a hatchet.</b>
@@ -217,8 +215,6 @@ function introCardHTML(id) {
     ${I.points ? `<ul>${I.points.map(([icn, b, t]) => `<li><i>${icn()}</i><span><b>${b}.</b> ${t}</span></li>`).join('')}</ul>` : ''}</div>
     <button class="ic-ok" data-introok="${id}" title="Got it">Got it</button></section>`;
 }
-// kept for older callers: no window any more, the card shows on the page
-function showIntro() {}
 if (typeof document !== 'undefined') document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-introok]');
   if (!t) return;

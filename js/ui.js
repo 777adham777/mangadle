@@ -1452,10 +1452,8 @@ document.addEventListener('click', (ev) => {
   const d = t.dataset;
   if ('menu' in d) { document.body.classList.toggle('menu-open'); updateCoach(true); }
   else if (d.locked) { retrigger(t, 'shake'); toast(lockedNote(d.locked), 'bad'); }
-  else if (d.welcome) welcomeChoice(d.welcome === 'go');
-  else if ('coachok' in d) { coachOk[S.goal] = 1; updateCoach(true); }
   else if ('skiptips' in d) { S.ui.noTips = 1; clearCoach(); toast('Tips turned off. Turn them back on anytime in Settings.', 'good'); dirty = true; }
-  else if ('toggletips' in d) { S.ui.noTips = S.ui.noTips ? 0 : 1; coachOk = {}; if (S.ui.noTips) clearCoach(); dirty = true; }
+  else if ('toggletips' in d) { S.ui.noTips = S.ui.noTips ? 0 : 1; S.ui.hintOff = {}; if (S.ui.noTips) clearCoach(); dirty = true; }
   else if ('reintro' in d) { S.ui.introSeen = {}; S.ui.hintOff = {}; toast('The page cards will show again.', 'good'); dirty = true; }
   else if ('journal' in d) openModal(journalHTML(), 'Close');
   else if (d.nav) { const [v, anchor] = d.nav.split('#'); setView(v); navAnchor = anchor || null; }

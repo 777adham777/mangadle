@@ -22,5 +22,4 @@
 .arena-art-bg[data-combat-bg="hunter"] { background-image: url('../assets/backgrounds/combat/hunter.webp'); }
 .arena-art-bg[data-combat-bg="echo"] { background-image: url('../assets/backgrounds/combat/echo.webp'); }
 .arena-art-bg[data-combat-bg="rift"] { background-image: url('../assets/backgrounds/combat/rift.webp'); }
-.ar-hud { z-index: 2; }
 .ar-floor { z-index: 1; background: linear-gradient(180deg, transparent 0 72%, rgba(8, 10, 16, 0.42) 100%); }

@@ -60,14 +60,6 @@
 
 /* ---------------------------------------------------------------- away recap */
 .coo { width: 100%; display: grid; gap: 12px; text-align: left; max-height: calc(88dvh - 70px); overflow-y: auto; overscroll-behavior: contain; padding-right: 2px; }
-.coo-mast { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding-bottom: 10px; border-bottom: 3px double #b9a27a; }
-.coo-bird { width: 46px; height: 46px; display: grid; place-items: center; background: #e9dcc0; color: #3a2a14; border: 1px solid #b9a27a; }
-.coo-bird .gi { width: 30px; height: 30px; }
-.coo-mast small { font: 600 11px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: #cdbb96; }
-.coo-mast h2 { font: 800 30px var(--display); letter-spacing: 0.06em; text-transform: uppercase; color: #f3ead6; line-height: 1; }
-.coo-away { text-align: right; display: grid; }
-.coo-away small { font: 600 10px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
-.coo-away b { font: 700 20px var(--display); color: #fff; }
 .coo-head { display: grid; grid-template-columns: auto 1fr auto; gap: 14px; align-items: center; padding: 12px 14px; background: radial-gradient(120% 160% at 0% 50%, #3d2a12, #1d1812 65%); border: 1px solid #7a5a26; }
 .coo-head.r5 { background: radial-gradient(120% 160% at 0% 50%, #5a3a0c, #22180c 65%); border-color: var(--gold); box-shadow: 0 0 24px -8px #f4c66a88; }
 .coo-head.quiet { grid-template-columns: 1fr auto; background: var(--panel2); border-color: var(--line2); }
@@ -104,9 +96,6 @@
 .coo-haul .ob-grid { justify-content: flex-start; }
 .coo-more { align-self: center; font: 600 12px var(--display); color: var(--dim); padding: 0 8px; }
 @media (max-width: 600px) {
-  .coo-mast { grid-template-columns: auto 1fr; }
-  .coo-away { grid-column: 1 / -1; text-align: left; grid-auto-flow: column; justify-content: start; gap: 8px; align-items: baseline; }
-  .coo-mast h2 { font-size: 24px; }
   .coo-head { grid-template-columns: auto 1fr; }
   .coo-head > .gbtn { grid-column: 1 / -1; }
 }
@@ -190,7 +179,6 @@
 .sc-fix small { font-size: 11px; color: var(--dim); }
 .sc-fixes em { font: 800 16px var(--display); font-style: normal; }
 .sc-foot { grid-column: 1 / -1; font-size: 11px; color: var(--mute); }
-
 
 /* ---------------------------------------------------------------- Opportunities */
 .omen { --left: 1; position: fixed; z-index: 70; display: grid; justify-items: center; gap: 4px; transform: translate(-50%, -50%); background: none; border: 0; padding: 0; cursor: pointer; animation: omenIn 0.45s ease-out, omenBob 2.4s ease-in-out 0.45s infinite; }

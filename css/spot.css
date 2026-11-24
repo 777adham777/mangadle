@@ -4,14 +4,6 @@
    --sel orange = selected). --dc is the tint of a spot (its sea) or a dish (its colour).
    ========================================================================== */
 
-.fc-stage { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, 360px); gap: 14px; align-items: start; }
-.fc-left { min-width: 0; display: flex; flex-direction: column; gap: 14px; }
-.fc-right { min-width: 0; position: sticky; top: 12px; }
-@media (max-width: 1100px) {
-  .fc-stage { grid-template-columns: minmax(0, 1fr); }
-  .fc-right { position: static; }
-}
-
 /* ---------------------------------------------------------------- last result icon (focus panel) */
 .sh-ic { grid-row: 1 / 4; width: 34px; height: 34px; display: grid; place-items: center; border-radius: 2px; background: rgba(255, 255, 255, 0.08); }
 .sh-ic .gi { width: 26px; height: 26px; fill: #f2f6ff; stroke: #0a0c11; stroke-width: 26px; paint-order: stroke fill; }
@@ -81,22 +73,6 @@
 @keyframes fcRun { to { box-shadow: inset 0 0 0 1px var(--act), 0 0 4px rgba(111, 207, 69, 0.15); } }
 
 /* ---------------------------------------------------------------- loadout */
-.fc-load { padding: 0 !important; overflow: hidden; border-top: 3px solid var(--dc) !important; }
-.fcl-head { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 12px; padding: 14px 14px 12px;
-  background: radial-gradient(ellipse 70% 120% at 12% 0%, color-mix(in srgb, var(--dc) 34%, transparent), transparent 70%), linear-gradient(180deg, #1b1c21, #15161a); border-bottom: 1px solid var(--line); }
-.fcl-head .fcl-tile { --ts: 76px; }
-.fcl-t { min-width: 0; }
-.fcl-t small { font: 700 10.5px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: color-mix(in srgb, var(--dc) 70%, #fff); }
-.fcl-t h2 { margin: 1px 0 0; font: 700 22px/1.1 var(--display); color: #fff; }
-.fcl-own { display: flex; flex-direction: column; align-items: flex-end; align-self: start; line-height: 1.1; }
-.fcl-own small { font: 600 10px var(--display); letter-spacing: 0.1em; text-transform: uppercase; color: var(--mute); }
-.fcl-own b { font: 700 20px var(--display); color: var(--cream); }
-
-.fcl-stats { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1px; background: var(--line); border-bottom: 1px solid var(--line); }
-.fcl-stats span { display: grid; grid-template-columns: auto 1fr; grid-template-rows: auto auto; column-gap: 8px; align-items: center; padding: 8px 12px; background: #141519; }
-.fcl-stats .gi { grid-row: 1 / 3; width: 18px; height: 18px; fill: var(--mute); }
-.fcl-stats b { font: 700 17px/1.1 var(--display); color: #fff; }
-.fcl-stats small { font-size: 11px; color: var(--mute); text-transform: uppercase; letter-spacing: 0.06em; }
 
 .fcl-q { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; padding: 10px 12px; border-bottom: 1px solid var(--line);
   background: linear-gradient(90deg, rgba(255, 215, 94, 0.08), transparent 70%); }
@@ -114,14 +90,6 @@
 .fcq-log .gi { width: 12px; height: 12px; fill: currentColor; }
 .fcq-log.got { color: #ffd75e; border-color: rgba(255, 215, 94, 0.45); }
 button.fcq-log.ready { color: #2a1a00; background: linear-gradient(180deg, #ffe08a, #d9a030); border-color: #ffd75e; cursor: pointer; animation: qlReady 1.2s ease-in-out infinite alternate; }
-
-.fcl-ingw { padding: 10px 12px; border-bottom: 1px solid var(--line); }
-.fcl-ingw h4 { display: flex; align-items: baseline; justify-content: space-between; margin: 0 0 8px; font: 700 11.5px var(--display); letter-spacing: 0.12em; text-transform: uppercase; color: var(--dim); }
-.fcl-ingw h4 span { font: 600 12px var(--display); letter-spacing: 0.04em; text-transform: none; color: var(--mute); }
-.fcl-ingw h4 b { color: var(--cream); font-size: 14px; }
-.fcl-ing { display: flex; flex-wrap: wrap; gap: 6px; }
-.fcl-ing .tile { --ts: 50px; }
-.fcl-ing.locked { padding: 10px 12px; border-bottom: 1px solid var(--line); opacity: 0.6; }
 
 .fcl-spice { padding: 10px 12px; border-bottom: 1px solid var(--line); }
 .fcl-spice.off { display: flex; align-items: center; gap: 10px; color: var(--dim); }
@@ -144,32 +112,6 @@ button.fcq-log.ready { color: #2a1a00; background: linear-gradient(180deg, #ffe0
 .fcs.locked { opacity: 0.45; border-style: dashed; cursor: default; }
 .fcs.shake { animation: shake 0.28s; }
 
-.fcl-req { list-style: none; margin: 0; padding: 10px 12px; display: flex; flex-direction: column; gap: 5px; border-bottom: 1px solid var(--line); }
-.fcl-req li { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dim); }
-.fcl-req li .gi { width: 14px; height: 14px; fill: #e0505c; }
-.fcl-req li.ok .gi { fill: var(--act); }
-.fcl-req li em { margin-left: auto; font: 600 12.5px var(--display); font-style: normal; color: var(--mute); }
-.fc-load > .ac-note, .fc-load > .ac-io { padding: 8px 12px; margin: 0; border-bottom: 1px solid var(--line); }
-
-.fcl-mast { display: flex; align-items: center; gap: 8px; padding: 9px 12px; font-size: 12.5px; color: var(--dim); }
-.fcl-mast .gi { width: 15px; height: 15px; fill: var(--gold); }
-.fcl-mast b { color: #fff; font-family: var(--display); }
-.fcl-mast .bar { flex: 1; height: 5px; background: var(--panel3); overflow: hidden; }
-.fcl-mast .bar i { display: block; height: 100%; width: 0; background: var(--gold); }
-
-.fcl-cta { position: relative; display: block; width: 100%; height: 52px; overflow: hidden; color: #fff; cursor: pointer;
-  background: linear-gradient(180deg, #5f8c3e, #3f6627); border: 0; border-top: 1px solid #86c25a; transition: filter 0.12s; }
-.fcl-cta:hover:not(:disabled) { filter: brightness(1.15); }
-.fcl-cta:active:not(:disabled) { filter: brightness(0.92); }
-.fcl-cta-l { position: relative; z-index: 1; display: inline-flex; align-items: center; justify-content: center; gap: 9px; width: 100%; font: 800 17px var(--display); letter-spacing: 0.16em; text-transform: uppercase; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.5); }
-.fcl-cta-l .gi { width: 18px; height: 18px; fill: currentColor; }
-.fcl-cta-p { position: absolute; inset: 0; }
-.fcl-cta-p i { display: block; height: 100%; width: 0; background: rgba(255, 255, 255, 0.14); }
-.fc-load[data-state="active"] .fcl-cta { background: linear-gradient(180deg, #3d4048, #2a2c32); border-top-color: var(--act); }
-.fc-load[data-state="active"] .fcl-cta-p i { background: linear-gradient(90deg, rgba(111, 207, 69, 0.15), rgba(111, 207, 69, 0.4)); }
-.fc-load[data-state="missing"] .fcl-cta, .fc-load[data-state="blocked"] .fcl-cta { background: #2a1d20; border-top-color: #7a2a34; color: #e0505c; }
-.fcl-cta:disabled { background: #1a1b1f; border-top-color: var(--line2); color: var(--mute); cursor: default; }
-
 /* ---------------------------------------------------------------- small screens */
 @media (max-width: 720px) {
   .sh-ic { width: 26px; height: 26px; }
@@ -182,8 +124,6 @@ button.fcq-log.ready { color: #2a1a00; background: linear-gradient(180deg, #ffe0
   .fcc-q { position: absolute; top: 4px; right: 4px; }
   .fc-card[data-state="active"] .fcc-run { display: none; }
   .fcc-mats { display: none; }
-  .fcl-head .fcl-tile { --ts: 60px; }
-  .fcl-t h2 { font-size: 19px; }
 }
 @media (prefers-reduced-motion: reduce) {
   .fc-card, .fcc-q.ready .gi, button.fcq-log.ready { animation: none !important; }

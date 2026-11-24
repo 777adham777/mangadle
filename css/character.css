@@ -40,15 +40,6 @@
 @media (prefers-reduced-motion: reduce) { .ch-up { animation: none; } }
 
 /* level band under the slots */
-.ch-id { display: flex; align-items: center; gap: 12px; padding: 10px 14px 12px; border-top: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); }
-.ch-lvb { flex-shrink: 0; width: 54px; height: 54px; display: grid; place-content: center; text-align: center; background: linear-gradient(160deg, #2c2d33, #17181c); box-shadow: inset 0 0 0 1px var(--line2), inset 0 1px 0 rgba(255, 255, 255, 0.12); }
-.ch-lvb small { font: 600 9.5px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
-.ch-lvb b { font: 700 24px/1 var(--display); color: #fff; }
-.ch-idt { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
-.ch-idt > b { font: 700 15px var(--display); letter-spacing: 0.04em; color: #f0f0f2; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.ch-idt .xpbar i { background: var(--sel); }
-.ch-idt small { font-size: 11.5px; color: var(--dim); }
-.ch-idt small em { font-style: normal; color: var(--mute); }
 
 /* ---------- the slot panel: what you wear, then every candidate */
 .ch-worn { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 10px; margin-bottom: 10px;

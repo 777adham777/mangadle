@@ -55,48 +55,19 @@
 .jr-new { font: 700 10px/16px var(--display); letter-spacing: 0.1em; text-transform: uppercase; font-style: normal; color: #2a1a00; background: #ffd75e; padding: 0 5px; margin-right: 6px; vertical-align: 1px; }
 
 /* ---------- 04 · arena first: rates once, in a strip under the arena */
-.bstrip { display: flex; flex-wrap: wrap; gap: 1px; background: var(--line); border: 1px solid var(--line); border-left: 3px solid var(--rc); }
-.bstrip > div { flex: 1 1 110px; background: rgba(20, 21, 25, 0.92); padding: 8px 12px; display: grid; gap: 3px; align-content: center; }
-.bstrip small { font: 600 10.5px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--mute); }
-.bstrip b { font: 700 17px/1 var(--display); font-variant-numeric: tabular-nums; }
-.bstrip b .bad { color: #ff7a88; }
-.bstrip .bs-act { flex: 0 0 auto; place-items: center; }
-@media (max-width: 860px) {
-  .bstrip > div { flex: 1 1 40%; padding: 6px 10px; }
-  .bstrip .bs-act { flex: 1 1 100%; }
-}
 
 /* ---------- 01 · the first minute: one sentence, one button */
 .welcome.first { width: min(460px, 100%); gap: 12px; padding: 30px 26px 18px; background: radial-gradient(120% 110% at 50% 0%, #2b2a1c, var(--panel) 62%); }
 .welcome.first h2 { font-size: 30px; line-height: 1.1; }
 .welcome.first .wl-cta .gbtn { font-size: 15px; padding: 0 22px; height: 46px; }
-.wl-skip { margin-top: 2px; font-size: 13px; color: var(--mute); text-decoration: underline; text-underline-offset: 3px; }
-.wl-skip:hover { color: var(--dim); }
 /* Old Ren's bubble: never blocks, never covers the feed (bottom right) */
-.npc-say { position: fixed; z-index: 46; right: max(18px, env(safe-area-inset-right)); bottom: 200px; width: min(440px, calc(100vw - var(--nav-w, 236px) - 40px));
-  display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 12px; padding: 12px 14px 12px 12px; background: rgba(18, 19, 23, 0.97); border: 1px solid var(--line2); border-left: 3px solid var(--rc, var(--gold));
-  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.55); animation: nsIn 0.35s ease-out; transition: opacity 0.3s, transform 0.3s; }
-.npc-say.out { opacity: 0; transform: translateY(12px); }
-.ns-art { width: 64px; height: 64px; }
-.ns-art > * { display: block; width: 100%; height: 100%; }
-.ns-body { display: grid; gap: 6px; min-width: 0; }
-.ns-body small { font: 600 11px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--rc, var(--gold)); }
-.ns-body p { margin: 0; font-size: 13.5px; line-height: 1.4; color: var(--text); }
-.ns-body p + p { color: var(--dim); font-style: italic; }
-.ns-btns { display: flex; gap: 6px; margin-top: 2px; }
+
 @keyframes nsIn { from { opacity: 0; transform: translateY(14px); } }
-@media (max-width: 860px) {
-  .npc-say { left: 8px; right: 8px; width: auto; bottom: auto; top: calc(var(--hud-h, 54px) + 8px + env(safe-area-inset-top)); grid-template-columns: 48px minmax(0, 1fr); }
-  .ns-art { width: 48px; height: 48px; }
-}
-@media (prefers-reduced-motion: reduce) { .npc-say { animation: none; } }
 
 /* ---------- 07 · phones: the action in the first screen */
 @media (max-width: 860px) {
   .sk-banner { padding: 4px 0 2px; gap: 10px; min-height: 0; align-items: center; }
-  .sk-banner .sk-ic { display: none; }
   .sk-banner h1 { font-size: 24px; line-height: 1; }
-  .sk-banner .sk-xp { display: none; }
   .sk-banner .sk-main { min-width: 0; gap: 6px; }
   .sk-banner .pills, .sk-banner .sk-info-btns { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; gap: 5px; margin: 0; }
   .sk-banner .pills::-webkit-scrollbar, .sk-banner .sk-info-btns::-webkit-scrollbar { display: none; }
@@ -108,7 +79,6 @@
   .fhud .drops, .fhud.enemy .drops { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; justify-content: flex-start; }
   .fhud .drops .tile { --ts: 34px; flex: none; }
   .fhud .ftags { margin-top: 2px; }
-  .ar-hud, .ar-hud > * { min-width: 0; max-width: 100%; }
   .fhud.me .atkbar, .fhud .stchips:empty { margin-top: 2px; }
   /* Focus panel: a smaller ring so the action list starts in the first screen */
   .fo-art { --box: 132px; margin-bottom: 6px; }
@@ -180,7 +150,6 @@ html.calm *, html.calm *::before, html.calm *::after { animation-duration: 0.01m
 .nav-group.folded { flex-wrap: wrap; }
 .nav-group.folded button.nav-sec { flex: 1 1 108px; letter-spacing: 0.05em; gap: 5px; }
 .nav-group.folded .nav-chips { margin-left: auto; padding-bottom: 3px; }
-.nav-quest .q-say p { -webkit-line-clamp: 1; line-clamp: 1; }
 
 /* ---------- mobile polish (PC first, phones must still look good) */
 @media (max-width: 860px) {
