@@ -40,7 +40,7 @@ hook('action', (skill, act, mult, gains) => {
     emit('prime', { act, item: vid });
     return;
   }
-  H.scent = Math.min(100, H.scent + SCENT_STEP);
+  H.scent = Math.min(100, H.scent + SCENT_STEP * (1 + skPerk('tracking', 'scent')));
   if (H.scent >= 100) emit('scent', { act });
 });
 // Shiny beasts: on capture, or by hunting one you already have.
@@ -50,7 +50,7 @@ hook('action', (skill, act) => {
   if (!B || B.shiny) return;
   const fresh = B.xp === 0 && !B.seen;
   B.seen = 1;
-  if (Math.random() < (fresh ? SHINY_BEAST : SHINY_REHUNT) * luckMult()) {
+  if (Math.random() < (fresh ? SHINY_BEAST : SHINY_REHUNT) * luckMult() * (1 + skPerk('tracking', 'shiny'))) {
     B.shiny = 1;
     S.stats.shinyBeasts = (S.stats.shinyBeasts || 0) + 1;
     emit('shinybeast', { id: act.beast });

@@ -72,16 +72,20 @@ function skStageHTML(skill, scene, top) {
 
 // Banner buttons (top of the page): each opens its panel in a window.
 const SK_INFO = {
-  milestones: { label: 'Milestones', icon: 'milestone', html(realm, skill) {
-    const L = xpInfo(skill).L;
-    return `<section class="win">${hdr('Milestones', `${MILESTONES.filter((m) => L >= m.lv).length} / ${MILESTONES.length} reached`)}<div class="ms-row">${MILESTONES.map((m) => `<div class="msc ${L >= m.lv ? 'on' : ''}" style="--rc:${rc(realm)}" title="${m.name}: ${m.desc}"><b><i>${m.lv}</i></b><span><em>${m.name}</em><small>${m.desc}</small></span></div>`).join('')}</div></section>`;
+  // The skill's path: the generic milestones and its own perks (depth.js), in level order.
+  milestones: { label: 'Path', icon: 'milestone', html(realm, skill) {
+    const L = xpInfo(skill).L, steps = skillPath(skill), nx = steps.find((m) => L < m.lv);
+    return `<section class="win">${hdr('Path', `${steps.filter((m) => L >= m.lv).length} / ${steps.length} reached`)}<div class="path-list">${steps.map((m) => `<div class="msc ${L >= m.lv ? 'on' : ''} ${m.perk ? 'perk' : ''} ${m === nx ? 'next' : ''}" style="--rc:${rc(realm)}" title="${esc(m.name)}: ${esc(m.desc)}"><b><i>${m.lv}</i></b><span><em>${m.perk ? ui('star') : ''}${esc(m.name)}</em><small>${esc(m.desc)}</small></span>${m === nx ? '<strong>Next</strong>' : ''}</div>`).join('')}</div></section>`;
   } },
   rare: { label: 'Rare finds', icon: 'rare', html: (realm, skill) => `<section class="win">${hdr('Rare finds', `per action${rareMult(skill) > 1 ? ` · luck ×${rareMult(skill).toFixed(2)}` : ''}`)}<div class="tiles rare-row">${rareTiles(skill).join('')}</div></section>` },
   synergies: { label: 'Synergies', icon: 'star', html: (realm, skill) => `<section class="win syn-win" style="--rc:${rc(realm)}">${synergyHTML(synergiesInto(skill), synergiesFrom(skill))}</section>` },
 };
+// Milestones (every skill) and the skill's own perks, sorted by level.
+const skillPath = (skill) => MILESTONES.map((m) => Object.assign({ perk: false }, m))
+  .concat((SKILL_PERKS[skill] || []).map((p) => Object.assign({ perk: true }, p))).sort((a, b) => a.lv - b.lv);
 function skInfoBtns(skill) {
-  const L = xpInfo(skill).L, n = MILESTONES.filter((m) => L >= m.lv).length;
-  const sub = { milestones: `${n}/${MILESTONES.length}` };
+  const L = xpInfo(skill).L, steps = skillPath(skill), n = steps.filter((m) => L >= m.lv).length;
+  const sub = { milestones: `${n}/${steps.length}` };
   return `<div class="sk-info-btns">${Object.entries(SK_INFO).map(([k, d]) => `<button class="sk-info-btn" data-skinfo="${skill}:${k}">${ui(d.icon)}<span>${d.label}</span>${sub[k] ? `<em>${sub[k]}</em>` : ''}</button>`).join('')}</div>`;
 }
 function openSkInfo(skill, key) {

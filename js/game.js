@@ -182,7 +182,16 @@ function findAction(skill, id) { return SKILLS[skill].actions.find((a) => a.id =
 
 /* ------------------------------------------------------------- levels */
 const skillLv = (id) => levelOf(S.skills[id].xp, maxLv(id));
-const skillXpMult = (id) => xpMult() * (hasPetFor(id) ? 1.05 : 1) * (1 + synergyBonus('xp', id)) * hmul('xp', id);
+// Skill perks (depth.js SKILL_PERKS): the sum of one effect over the perks this skill has reached.
+function skPerk(skill, k) {
+  const P = SKILL_PERKS[skill];
+  if (!P || !S || !S.skills[skill]) return 0;
+  const L = skillLv(skill);
+  let v = 0;
+  for (const p of P) if (L >= p.lv && p.fx[k]) v += p.fx[k];
+  return v;
+}
+const skillXpMult = (id) => xpMult() * (hasPetFor(id) ? 1.05 : 1) * (1 + synergyBonus('xp', id)) * hmul('xp', id) * (1 + skPerk(id, 'xp'));
 function addXp(id, amt) {
   const before = skillLv(id);
   S.skills[id].xp += amt * skillXpMult(id);
@@ -194,7 +203,7 @@ function addXp(id, amt) {
 // World systems (systems.js) plug in here instead of editing the core engine.
 // Multiplier hooks return a factor (1 = no change); 'double' hooks return an added chance.
 const HOOKS = { dmg: [], hp: [], def: [], gold: [], xp: [], speed: [], double: [], rare: [], taken: [], dodge: [], edef: [],
-                tick: [], combat: [], action: [], kill: [], spawn: [], block: [], energy: [],
+                tick: [], combat: [], action: [], kill: [], spawn: [], block: [], energy: [], keep: [], extra: [],
                 haste: [], heal: [], eat: [], shiny: [], perfect: [], spdStat: [], luckStat: [], espd: [] };
 // Why an action cannot run right now ('' = it can). Systems add reasons (max rank reached, no free plot...).
 const actionBlock = (skill, act) => { for (const f of HOOKS.block) { const r = f(skill, act); if (r) return r; } return ''; };
@@ -243,7 +252,7 @@ const isRare = (id) => !ITEMS[id] || (ITEMS[id].rarity || 1) >= 3;
 // (+100% every DRY_FREE more kills) until one drops.
 const DRY_FREE = 800;
 const dryMult = () => 1 + Math.max(0, (S.stats.dry || 0) - DRY_FREE) / DRY_FREE;
-const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult() * (1 + synergyBonus('rare', skill)) * hmul('rare', skill);
+const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult() * (1 + synergyBonus('rare', skill)) * hmul('rare', skill) * (1 + skPerk(skill, 'rare'));
 // Shiny / perfect / seasoned variants have their own logs (quality.js): they do not count here.
 function collectionPct() {
   const real = (k) => ITEMS[k] && !ITEMS[k].variant;
@@ -273,6 +282,7 @@ function skillSpeed(skillId, actId) {
   if (hasPetFor(skillId)) m *= 1.05;
   m *= 1 + synergyBonus('speed', skillId);
   m *= hmul('speed', skillId);
+  m *= 1 + skPerk(skillId, 'speed');
   if (skillId === 'fishing' && S.fruit) m *= 0.6;
   return m;
 }
@@ -283,6 +293,7 @@ function doubleChance(skillId, actId) {
   c += milestoneFx(skillId).dbl;
   c += synergyBonus('double', skillId);
   c += hadd('double', skillId);
+  c += skPerk(skillId, 'dbl');
   return Math.min(1, c);
 }
 
@@ -414,8 +425,17 @@ function tickAction(dt) {
   }
 }
 
+// Perks and tonics: a craft may use no materials; by-products may come more often.
+const keepChance = (skill, act) => Math.min(0.5, skPerk(skill, 'keep') + hadd('keep', skill, act));
+const extraMult = (skill) => (1 + skPerk(skill, 'extra')) * hmul('extra', skill);
+// The node one step up (Root of the World, Heart of the Mountain...): plain gathering actions only.
+function nextNode(skill, act) {
+  if (act.in || !act.out) return null;
+  return SKILLS[skill].actions.filter((a) => !a.in && a.out && a.level > act.level).sort((a, b) => a.level - b.level)[0] || null;
+}
 function completeAction(skill, act) {
-  if (act.in) for (const k in act.in) takeStock(k, act.in[k]);
+  const kept = act.in && Math.random() < keepChance(skill, act);
+  if (act.in && !kept) for (const k in act.in) takeStock(k, act.in[k]);
   const mult = Math.random() < doubleChance(skill, act.id) ? 2 : 1;
   const gains = {};
   if (act.out) for (const k in act.out) {
@@ -424,7 +444,10 @@ function completeAction(skill, act) {
     S.stats.made[k] = (S.stats.made[k] || 0) + n;
   }
   // secondary outputs: [[item, chance, [min, max]]], e.g. what an exorcised spirit leaves behind
-  for (const [k, ch, q] of act.extra || []) if (Math.random() < ch) { const n = randInt(q[0], q[1]) * mult; addItem(k, n); gains[k] = (gains[k] || 0) + n; }
+  const xm = act.extra ? extraMult(skill) : 1;
+  for (const [k, ch, q] of act.extra || []) if (Math.random() < ch * xm) { const n = randInt(q[0], q[1]) * mult; addItem(k, n); gains[k] = (gains[k] || 0) + n; }
+  const up = skPerk(skill, 'up'), nx = up && nextNode(skill, act);
+  if (nx && Math.random() < up) { const o = Object.keys(nx.out)[0]; addItem(o, 1); gains[o] = (gains[o] || 0) + 1; }
   let gold = 0;
   if (act.loot) { gold = rollLoot(act.loot, mult, gains); S.stats.voyages++; }
   rollRareFinds(skill, act, gains);
@@ -433,7 +456,7 @@ function completeAction(skill, act) {
   S.mastery[key] = (S.mastery[key] || 0) + 1;
   S.stats.actions++;
   hrun('action', skill, act, mult, gains);
-  emit('action', { skill, act, gains, gold, xp: act.xp * skillXpMult(skill), double: mult > 1 });
+  emit('action', { skill, act, gains, gold, xp: act.xp * skillXpMult(skill), double: mult > 1, kept });
 }
 
 function rollRareFinds(skill, act, gains) {

@@ -27,7 +27,8 @@ Q_TIERS.exorcism = [
 const HEX = () => { if (!S.hex) S.hex = { grade: 'g4' }; return S.hex; };
 // Special Grade gets likelier with Luck; the other grades keep their share.
 function rollGrade() {
-  const t = GRADES_HEX.map((g) => [g.id, g.id === 'sp' ? g.w * luckMult() : g.w]);
+  const up = 1 + skPerk('exorcism', 'grade');   // Grade Reader / Six Eyes
+  const t = GRADES_HEX.map((g) => [g.id, (g.id === 'sp' ? g.w * luckMult() : g.w) * (['g2', 'g1', 'sp'].includes(g.id) ? up : 1)]);
   return rollWeighted(t);
 }
 const curGrade = () => GRADE_BY[HEX().grade] || GRADE_BY.g4;

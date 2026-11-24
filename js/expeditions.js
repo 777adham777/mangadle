@@ -14,7 +14,7 @@ const EXP_HAUL = 120;           // seconds at sea per haul
 const EXP_FOOD = 0.3;           // provisions: +30% hauls
 const EXP_XP = 2;               // Voyaging XP per haul = 2 × the destination's base XP
 const expOn = () => skillOpen('voyaging');
-const shipSlots = () => (expOn() ? 1 + (skillLv('voyaging') >= 30 ? 1 : 0) : 0);
+const shipSlots = () => (expOn() ? 1 + (skillLv('voyaging') >= 30 ? 1 : 0) + skPerk('voyaging', 'ship') : 0);
 const durBonus = (d) => (EXP_DURS.find((x) => x[0] === d) || [0, '', 0])[2];
 const hullOf = (a) => Object.keys(a.in).find((k) => ITEMS[k].type !== 'food');
 const dishOf = (a) => Object.keys(a.in).find((k) => ITEMS[k].type === 'food');

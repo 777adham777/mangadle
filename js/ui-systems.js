@@ -44,8 +44,9 @@ on('reforge', (d) => toast(`${ITEMS[d.id].name} reforged to tier ${d.tier}.`, 'r
 
 /* ============================================================ shared: labels */
 Object.assign(TYPE_LABEL, { scroll: 'Technique scroll', seed: 'Seed', meal: 'Buff meal', tool: 'Tool', wish: 'Dragon Ball', trap: 'Trap', artifact: 'Artifact' });
-COL_GROUPS.push(['seed', 'Seeds'], ['meal', 'Buff meals'], ['wish', 'Dragon Balls']);
-const BUFF_NAME = { speed: 'skill speed', xp: 'XP', dmg: 'damage', gold: 'gold', rare: 'rare finds', all: 'everything' };
+COL_GROUPS.push(['seed', 'Seeds'], ['meal', 'Buff meals'], ['tonic', 'Tonics'], ['wish', 'Dragon Balls']);
+const BUFF_NAME = { speed: 'skill speed', xp: 'XP', dmg: 'damage', gold: 'gold', rare: 'rare finds', all: 'everything',
+  dbl: 'double output', keep: 'free crafts', extra: 'by-products' };
 SYN_KIND.buff = 'meal duration';
 const mmss = (s) => (s >= 3600 ? fmtTime(s) : `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`);
 
@@ -92,9 +93,9 @@ on('tool', (d) => burst('Tool built', `${ITEMS[d.id].name} · ${SKILLS[ITEMS[d.i
 /* ============================================================ KI: MEALS */
 UIX.inspectorAny.push((id) => {
   const it = ITEMS[id];
-  if (it.type !== 'meal' || !count(id)) return '';
-  const b = it.buff, mins = Math.round(b.mins * (1 + synergyBonus('buff', 'cooking')));
-  return `${attrList([['star', 'Buff', `+${pct(b.val)} ${BUFF_NAME[b.stat]}`], ['time', 'Duration', `${mins} min`]])}<div class="dt-cta">${gbtn('Eat', 'eat', `data-meal="${id}"`)}</div>`;
+  if ((it.type !== 'meal' && it.type !== 'tonic') || !count(id)) return '';
+  const b = it.buff, mins = Math.round(b.mins * (it.type === 'meal' ? 1 + synergyBonus('buff', 'cooking') : 1));
+  return `${attrList([['star', 'Buff', `+${pct(b.val)} ${BUFF_NAME[b.stat]}`], ['time', 'Duration', `${mins} min`]])}<div class="dt-cta">${gbtn(it.type === 'tonic' ? 'Drink' : 'Eat', 'eat', `data-meal="${id}"`)}</div>`;
 });
 const buffsHTML = () => {
   const ks = Object.keys(S.buffs);

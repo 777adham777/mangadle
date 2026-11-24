@@ -4,6 +4,7 @@
     python tools/slice_icon_sheet.py 3               # only sheet-3.png
     python tools/slice_icon_sheet.py path.png 3      # any file, as batch 3
     python tools/slice_icon_sheet.py --check         # are all 53 armory icons there, 256x256 RGBA, registered?
+    python tools/slice_icon_sheet.py --depth [n]     # the skill-depth sheets (art-incoming/depth/, docs/DEPTH-ICONS.md)
     options: --dry (preview only)  --holes (on a white/grey background, also clear enclosed pockets of it)
 
 Batch <n> lists the 6 item ids in reading order (left to right, top row first): docs/ARMORY-ICONS.md
@@ -45,6 +46,18 @@ WORLD = {
     "echo": ["nichirin_blade", "fox_warding_mask", "slayer_uniform", "stopped_watch", "steel_balls", "checkered_haori", "stand_arrow", "hanafuda_earrings"],
     "rift": ["torn_mask", "rift_mantle", "crossover_blade"],
 }
+# --depth: the skill-depth items (js/depth.js, docs/DEPTH-ICONS.md), sheets in art-incoming/depth/.
+DEPTH_WORLD = {
+    "leaf": ["chakra_sap", "fossil_amber", "living_wood", "divine_root", "living_idol", "divine_relief",
+             "abundance_tonic_1", "abundance_tonic_2", "abundance_tonic_3", "thrift_tonic_1", "thrift_tonic_2", "thrift_tonic_3",
+             "forager_tonic_1", "forager_tonic_2", "forager_tonic_3", "amber_pendant", "tool_woodcutting_4", "divine_bow"],
+    "seas": ["fish_oil", "thunder_catfish", "coral_dragonet", "catfish_hotpot", "oil_tempura", "dragonet_sashimi",
+             "thunder_harpoon", "tool_fishing_4"],
+    "soul": ["reishi_dust", "sekki_stone", "kido_quartz", "sekki_ingot", "kido_ingot", "frostvoid_alloy", "sunstar_alloy",
+             "sekki_bracers", "living_wood_mail", "frostvoid_scythe", "sunstar_plate", "kido_focus", "tool_mining_4"],
+}
+if "--depth" in sys.argv:
+    WORLD, INCOMING = DEPTH_WORLD, ROOT / "art-incoming" / "depth"
 FOLDER = {i: ("soul" if w == "rift" else w) for w, ids in WORLD.items() for i in ids}   # Rift gear sits with the Eye of the Rift
 ORDER = [i for ids in WORLD.values() for i in ids]
 BATCHES = {n + 1: ORDER[k:k + 6] for n, k in enumerate(range(0, len(ORDER), 6))}
@@ -267,7 +280,7 @@ def check():
             corners = [im.convert("RGBA").getpixel(xy)[3] for xy in ((0, 0), (SIZE - 1, 0), (0, SIZE - 1), (SIZE - 1, SIZE - 1))]
             if im.size != (SIZE, SIZE) or im.mode != "RGBA" or max(corners) > 0:
                 bad.append("%s (%s %s, corner alpha %s)" % (i, im.size, im.mode, max(corners)))
-    print("armory icons: %d / %d ok, map size %d" % (len(ORDER) - len(bad), len(ORDER), len(entries)))
+    print("icons: %d / %d ok, map size %d" % (len(ORDER) - len(bad), len(ORDER), len(entries)))
     for b in bad:
         print("  BAD", b)
     return not bad

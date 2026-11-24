@@ -27,9 +27,10 @@ function tipEffect(id) {
       text = 'Eaten automatically in battle when HP gets low. Also packs as expedition provisions.';
       break;
     case 'meal':
+    case 'tonic':
       if (it.buff) {
         rows.push(['star', 'Buff', `+${pct(it.buff.val)} ${typeof BUFF_NAME !== 'undefined' ? BUFF_NAME[it.buff.stat] || it.buff.stat : it.buff.stat}`]);
-        rows.push(['time', 'Duration', `${Math.round(it.buff.mins * (1 + synergyBonus('buff', 'cooking')))} min`]);
+        rows.push(['time', 'Duration', `${Math.round(it.buff.mins * (it.type === 'meal' ? 1 + synergyBonus('buff', 'cooking') : 1))} min`]);
       }
       break;
     case 'fruit':

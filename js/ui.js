@@ -1023,6 +1023,8 @@ on('levelup', (d) => {
   const unlocked = s.actions.find((a) => a.level === d.level);
   if (unlocked) toast(`New in ${s.name}: ${unlocked.name}${unlocked.schem && !S.known[unlocked.schem] ? ' (needs its schematic)' : ''}`, 'good');
   if (MILESTONES.some((m) => m.lv === d.level) && s.realm !== 'combat') toast(`${s.name} milestone reached: ${MILESTONES.find((m) => m.lv === d.level).name}`, 'rare');
+  const pk = (SKILL_PERKS[d.skill] || []).find((p) => p.lv === d.level);
+  if (pk && !SIM) bannerBurst('New perk', `${s.name} · ${pk.name}: ${pk.desc}`, ic('skill', d.skill), rc(s.realm), 'lvup');
   dirty = true;
 });
 on('hit', (d) => {

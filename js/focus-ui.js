@@ -114,10 +114,12 @@ function focusHTML(skill) {
     </div>`;
     if (run && FC.includes(skill)) body += `<div class="fo-sess" data-fcsess="${skill}">${fcSessHTML(skill)}</div>`;
     body += ing + gets;
-    if (a.extra && a.extra.length) body += `<div class="fo-ing fo-extra"><small>Can find</small>${a.extra.map(([k, ch]) => tile(k, fmtRate(ch < 0.2 ? ch * rareMult(skill) : ch), { cls: 'xs', unknown: !S.found[k] })).join('')}</div>`;
+    if (a.extra && a.extra.length) body += `<div class="fo-ing fo-extra"><small>Can find</small>${a.extra.map(([k, ch]) => tile(k, fmtRate(Math.min(1, ch * extraMult(skill))), { cls: 'xs', unknown: !S.found[k] })).join('')}</div>`;
     body += focusNotes(skill, a);
     if (skill === 'cooking' && typeof fcSpiceHTML === 'function') body += fcSpiceHTML();
     body += focusGaugeHTML(skill, a);
+    const np = (SKILL_PERKS[skill] || []).find((p) => xpInfo(skill).L < p.lv);
+    if (np) body += `<button class="fo-perk" data-skinfo="${skill}:milestones" title="Open this skill's path">${ui('star')}<span><small>Next perk · Lv ${np.lv}</small><b>${esc(np.name)}</b><em>${esc(np.desc)}</em></span></button>`;
     body += `<div class="fo-mast" title="Mastery: each level makes this action 0.3% faster and adds 0.1% chance to double">${ui('mastery')}<span>Mastery <b data-mlv="${skill}:${a.id}">${masteryLv(skill, a.id)}</b></span><span class="bar"><i data-mfill="${skill}:${a.id}"></i></span></div>`;
   }
   const last = SPOT['last_' + skill];

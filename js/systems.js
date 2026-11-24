@@ -189,9 +189,9 @@ const buffVal = (stat) => { const b = S.buffs[stat]; return b && b.t > 0 ? b.v :
 const buffAll = () => buffVal('all');
 function eatMeal(id) {
   const it = ITEMS[id];
-  if (!it || it.type !== 'meal' || count(id) < 1) return false;
+  if (!it || (it.type !== 'meal' && it.type !== 'tonic') || count(id) < 1) return false;
   removeItem(id, 1);
-  const mins = it.buff.mins * (1 + synergyBonus('buff', 'cooking'));
+  const mins = it.buff.mins * (it.type === 'meal' ? 1 + synergyBonus('buff', 'cooking') : 1);
   S.buffs[it.buff.stat] = { v: it.buff.val, t: mins * 60 };
   dirty = true;
   return true;
@@ -202,6 +202,10 @@ hook('xp', () => 1 + buffVal('xp') + buffAll());
 hook('dmg', () => 1 + buffVal('dmg') + buffAll());
 hook('gold', () => 1 + buffVal('gold') + buffAll());
 hook('rare', () => 1 + buffVal('rare') + buffAll());
+// Tonics (Crafting, depth.js): double output, free crafts, more by-products.
+hook('double', () => buffVal('dbl'));
+hook('keep', () => buffVal('keep'));
+hook('extra', () => 1 + buffVal('extra'));
 
 /* ================================================================ KI: FARMING */
 // Plots grow in real time, in parallel with whatever you are doing. 3 plots, +1 per 20 Farming levels.
@@ -240,7 +244,7 @@ hook('tick', (dt) => {
     const c = CROP_BY[p.crop];
     if (!c) { S.farm.plots[i] = null; return; }
     const was = p.t < c.mins * 60;
-    p.t = Math.min(c.mins * 60, p.t + dt * hmul('speed', 'farming'));
+    p.t = Math.min(c.mins * 60, p.t + dt * hmul('speed', 'farming') * (1 + skPerk('farming', 'grow')));
     if (p.t >= c.mins * 60) { if (S.farm.auto && autoTendOn()) harvest(i); else if (was) dirty = true; }
   });
 });

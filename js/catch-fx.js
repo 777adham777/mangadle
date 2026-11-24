@@ -22,6 +22,8 @@ const FISH_ART = {
   tidal_eel:     { kind: 'eel', c: ['#3a6a7a', '#c8e0c0', '#5a9aa0', '#21404a'], s: ['#c8a020', '#fff0a0', '#ffe060', '#7a5a08'], size: 128 },
   giant_octopus: { kind: 'octo', c: ['#c8485a', '#f39aa8', '#a83040', '#7a1828'], s: ['#7a3ad8', '#d8b0ff', '#a070ff', '#3a1478'], size: 116 },
   abyss_angler:  { kind: 'angler', L: 80, H: 56, c: ['#2e2c48', '#56527a', '#3e3a62', '#8ff3ff'], s: ['#e8f4ff', '#ffffff', '#bfe6ff', '#ff7af0'], size: 92 },
+  thunder_catfish: { kind: 'fish', L: 104, H: 34, c: ['#6a5a2a', '#f2e2a0', '#8a7a3a', '#ffd23f'], s: ['#3a9aff', '#d8f0ff', '#7fc8ff', '#ffffff'], size: 96, mouth: 1 },
+  coral_dragonet:  { kind: 'fish', L: 88, H: 40, c: ['#e8487a', '#ffd0dc', '#ff7f9f', '#7a1838'], s: ['#2ad8b8', '#d0fff4', '#6ff0d8', '#0a6a5a'], size: 84, stripes: 3 },
   sea_king:      { kind: 'king', c: ['#1f8a7a', '#f2d26a', '#2fb89e', '#0e4a40'], s: ['#d83a2a', '#ffd84a', '#ff7040', '#6a1008'], size: 210 },
 };
 const INK = '#0a0c11';

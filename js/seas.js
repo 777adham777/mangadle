@@ -81,7 +81,7 @@ hook('haste', () => 1 + spiceV('haste'));
 const BYCATCH = [['sea_salt', 0.2, [1, 2], 1], ['sea_kelp', 0.12, [1, 1], 20]];
 hook('action', (skill, act, mult, gains) => {
   if (skill !== 'fishing' || !spicesOpen()) return;
-  for (const [id, ch, q, lv] of BYCATCH) if (act.level >= lv && Math.random() < ch) { const n = randInt(q[0], q[1]); addItem(id, n); gains[id] = (gains[id] || 0) + n; }
+  for (const [id, ch, q, lv] of BYCATCH) if (act.level >= lv && Math.random() < ch * extraMult('fishing')) { const n = randInt(q[0], q[1]); addItem(id, n); gains[id] = (gains[id] || 0) + n; }
 });
 (() => {
   const foe = (name) => { for (const z of ZONES) for (const e of z.enemies) if (e.name === name) return e; throw new Error('No foe ' + name); };
@@ -107,7 +107,7 @@ hook('action', (skill, act, mult, gains) => {
 
 /* ------------------------------------------------------------ catch weights */
 // Typical weight (kg) of each fish. Every catch rolls a size around it; mastery grows the fish a little.
-const FISH_KG = { minnow: 0.06, reef_bass: 1.4, sea_crab: 0.9, blue_marlin: 95, tidal_eel: 7, giant_octopus: 48, abyss_angler: 14, sea_king: 680 };
+const FISH_KG = { minnow: 0.06, reef_bass: 1.4, sea_crab: 0.9, blue_marlin: 95, tidal_eel: 7, giant_octopus: 48, abyss_angler: 14, sea_king: 680, thunder_catfish: 12, coral_dragonet: 30 };
 function gauss() { let u = 0, v = 0; while (!u) u = Math.random(); while (!v) v = Math.random(); return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v); }
 // A catch this many times the usual weight is a trophy.
 const TROPHY_KG = 1.6;
@@ -117,7 +117,7 @@ hook('action', (skill, act, mult, gains) => {
   const fish = Object.keys(act.out)[0], kg0 = FISH_KG[fish];
   if (!kg0) return;
   const shiny = !!gains[variantId(fish, 's')];
-  const kg = kg0 * Math.exp(gauss() * 0.25 + masteryLv(skill, act.id) / 400) * (shiny ? 1.25 : 1);
+  const kg = kg0 * Math.exp(gauss() * 0.25 + masteryLv(skill, act.id) / 400) * (shiny ? 1.25 : 1) * (1 + skPerk('fishing', 'kg'));
   const R = S.quality.rec, best = R[fish] || 0, trophy = kg >= kg0 * TROPHY_KG;
   if (kg > best) R[fish] = Math.round(kg * 1000) / 1000;
   // A trophy is worth landing: it brings a second fish up with it and triple XP.

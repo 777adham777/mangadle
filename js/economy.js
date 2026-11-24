@@ -65,6 +65,9 @@ const GEAR_TIERS = {
   ripple_gloves: [24.5, 'epic'], ancient_fog_cleaver: [25, 'relic'], ancient_stormcaller: [26.5, 'relic'],
   ancient_ferryman_robe: [25.5, 'relic'], sunlit_armor: [27.5, 'epic'],
   star_badge: [24, 'schem', 'hyb'], stone_mask: [25, 'epic', 'hyb'], ancient_gravity_bracer: [27, 'relic', 'hyb'],
+  // ---- Skill depth (depth.js): placed where their skill level is realistically reached
+  amber_pendant: [5, 'craft', 'def'], thunder_harpoon: [9, 'craft'], sekki_bracers: [12.5, 'craft', 'def'], living_wood_mail: [13, 'craft'],
+  frostvoid_scythe: [15, 'craft'], sunstar_plate: [23, 'craft'], kido_focus: [24.5, 'craft'], divine_bow: [28.5, 'craft'],
   // ---- The Rift (28+)
   rift_cleaver: [28.5, 'legend'], rift_eye: [29, 'legend', 'hyb'],
   // ---- The manga armory (armory.js), world by world
@@ -153,6 +156,15 @@ const GEAR_RECIPES = {
   fox_warding_mask: { bronze_fragment: 0.4, jade_fragment: 0.3, spirit_oak: 0.3 },
   checkered_haori:  { pillar_fragment: 0.4, gold_fragment: 0.3, phantom_silk: 0.3 },
   rift_mantle:      { lord_visage: [1], rift_ingot: 0.4, echo_soul: 0.3, chimera_mane: 0.3 },
+  // Skill depth (depth.js): the new nodes, by-products and alloys
+  amber_pendant:    { fossil_amber: [1], chakra_sap: 0.5, cedar_log: 0.3, moonpetal: 0.2 },
+  thunder_harpoon:  { thunder_catfish: 0.4, fish_oil: 0.2, ironwood: 0.2, silver_ingot: 0.2 },
+  sekki_bracers:    { sekki_ingot: 0.5, reishi_dust: 0.3, ki_orb: 0.2 },
+  living_wood_mail: { living_wood: 0.5, sekki_ingot: 0.2, ki_spark: 0.15, chakra_sap: 0.15 },
+  frostvoid_scythe: { frostvoid_alloy: [3], ki_core: 0.4, husk_mask: 0.3, living_wood: 0.3 },
+  sunstar_plate:    { sunstar_alloy: [3], lynx_pelt: 0.4, hex_void: 0.3, reishi_dust: 0.3 },
+  kido_focus:       { kido_ingot: 0.5, bronze_fragment: 0.3, chakra_sap: 0.2 },
+  divine_bow:       { divine_root: 0.5, sunstar_alloy: [2], kido_ingot: 0.3, echo_soul: 0.2 },
 };
 // Other Crafting recipes, moved to the world whose materials they use (level only).
 const ARTS_LEVELS = {
@@ -163,6 +175,7 @@ const ARTS_LEVELS = {
   tool_exorcism_1: 73, tool_exorcism_2: 76, tool_exorcism_3: 79,
   tool_tracking_1: 80, tool_tracking_2: 83, tool_tracking_3: 86,
   tool_archaeology_1: 88, tool_archaeology_2: 91, tool_archaeology_3: 94,
+  tool_woodcutting_4: 92, tool_fishing_4: 92, tool_mining_4: 93,
   // hunting gear (Green Island)
   fish_bait: 78, scent_lure: 79, snare: 78, net_trap: 80, cage_trap: 82, spirit_trap: 84, wyrm_trap: 86, chimera_trap: 89,
   // curses and the Fox's fire

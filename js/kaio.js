@@ -58,12 +58,14 @@ hook('action', (skill, act) => {
   S.stats.breakthroughs = (S.stats.breakthroughs || 0) + 1;
   emit('breakthrough', { limit: K.limit, act });
 });
-hook('dmg', () => 1 + LIMIT_FX * (S.ki.limit || 0));
-hook('hp', () => 1 + LIMIT_FX * (S.ki.limit || 0));
+// Zenkai / Limit Breaker (Gravity perks) make every breakthrough worth more.
+const limitFx = () => LIMIT_FX * (1 + skPerk('gravity', 'limit')) * (S.ki.limit || 0);
+hook('dmg', () => 1 + limitFx());
+hook('hp', () => 1 + limitFx());
 
 /* ------------------------------------------------------------ Farming: giant crops and mutations */
 const MUTATE = 0.08;
-const giantChance = () => QUALITY.farming.base * luckMult() * (1 + qFx('shiny')) * hmul('shiny', 'farming');
+const giantChance = () => QUALITY.farming.base * luckMult() * (1 + qFx('shiny')) * hmul('shiny', 'farming') * (1 + skPerk('farming', 'giant'));
 {
   const base = harvest;
   harvest = function (i) {
@@ -81,7 +83,7 @@ const giantChance = () => QUALITY.farming.base * luckMult() * (1 + qFx('shiny'))
       emit('giant', { crop: c.id, plot: i, n: res.n });
     }
     const nx = CROPS[CROPS.indexOf(c) + 1];
-    if (nx && Math.random() < MUTATE * luckMult()) { addItem(nx.seed, 1); res.mut = nx.seed; emit('mutation', { from: c.id, seed: nx.seed, plot: i }); }
+    if (nx && Math.random() < MUTATE * luckMult() * (1 + skPerk('farming', 'mutate'))) { addItem(nx.seed, 1); res.mut = nx.seed; emit('mutation', { from: c.id, seed: nx.seed, plot: i }); }
     return res;
   };
 }

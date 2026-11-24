@@ -57,7 +57,7 @@ hook('action', (skill, act, mult, gains) => {
     S.stats.made[ore] = (S.stats.made[ore] || 0) + n;
     O.lode--;
     if (!O.lode) emit('lodeend', { ore });
-  } else if (Math.random() < LODE_CHANCE * luckMult() * (1 + O.vein.d / 100)) {
+  } else if (Math.random() < LODE_CHANCE * luckMult() * (1 + O.vein.d / 100) * (1 + skPerk('mining', 'lode'))) {
     O.lode = LODE_N;
     S.stats.lodes = (S.stats.lodes || 0) + 1;
     emit('lode', { ore });
@@ -79,8 +79,8 @@ hook('action', (skill, act, mult, gains) => {
     if (!O.white) emit('whiteend', {});
     return;
   }
-  O.heat = Math.min(100, O.heat + HEAT_STEP);
-  if (O.heat >= 100) { O.heat = 0; O.white = WHITE_N; S.stats.whiteHeats = (S.stats.whiteHeats || 0) + 1; emit('whiteheat', { ingot }); }
+  O.heat = Math.min(100, O.heat + HEAT_STEP * (1 + skPerk('smithing', 'heat')));
+  if (O.heat >= 100) { O.heat = 0; O.white = WHITE_N + skPerk('smithing', 'white'); S.stats.whiteHeats = (S.stats.whiteHeats || 0) + 1; emit('whiteheat', { ingot }); }
 });
 // The forge cools down while you do something else (fully in about 3 minutes).
 hook('tick', (dt) => {

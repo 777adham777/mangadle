@@ -71,7 +71,7 @@ Q_TIERS.restoration = [
   [1,    { xp: 0.1 },       '+10% Restoration XP'],
 ];
 const FLAWLESS = 0.25, FLAWLESS_FX = 1.5;
-const flawlessChance = (act) => Math.min(0.75, FLAWLESS + 0.003 * masteryLv('restoration', act.id) + 0.004 * Math.max(0, skillLv('restoration') - act.level));
+const flawlessChance = (act) => Math.min(0.75, FLAWLESS + skPerk('restoration', 'flawless') + 0.003 * masteryLv('restoration', act.id) + 0.004 * Math.max(0, skillLv('restoration') - act.level));
 // systems.js puts a restored artifact in the museum (S.museum[id] = 1); Flawless makes it 2.
 hook('action', (skill, act) => {
   const o = act.out && Object.keys(act.out)[0];
