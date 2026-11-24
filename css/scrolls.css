@@ -74,3 +74,7 @@
   .scr-ready { grid-column: 2 / -1; justify-self: start; }
 }
 @media (prefers-reduced-motion: reduce) { .nq-badge, .gs-tech.gs-scrolls, .scr-new::after { animation: none; } }
+
+/* a long label in a tile (a rare drop chance such as 0.035%): a little smaller so it fits whole */
+.tile-n.tight { letter-spacing: -0.03em; }
+.tile.xs .tile-n.tight { font-size: 9.5px; padding-inline: 1px; }

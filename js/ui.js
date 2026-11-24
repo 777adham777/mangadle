@@ -114,7 +114,7 @@ function tile(id, n, o) {
   const tip = real ? `data-tip="${id}"` : o.tip ? o.tip : `title="${esc(o.title || (o.unknown ? 'Undiscovered' : id ? fruitLabel(id) : ''))}"`;
   return `<${tag} class="tile r${r} ${o.cls || ''}" ${o.attrs || ''} ${tip}>`
     + `<span class="tile-art">${art}${o.corner || ''}</span>`
-    + `${n == null || n === '' ? '' : `<span class="tile-n" ${o.nattrs || ''}>${n}</span>`}</${tag}>`;
+    + `${n == null || n === '' ? '' : `<span class="tile-n${String(n).replace(/<[^>]*>/g, '').length >= 6 ? ' tight' : ''}" ${o.nattrs || ''}>${n}</span>`}</${tag}>`;
 }
 function petTile(pt, o) {
   o = o || {};
@@ -344,7 +344,14 @@ function statRows(st) {
 const statInline = (st) => statRows(st).map(([icn, , v]) => `<span>${ui(icn)}${v}</span>`).join('');
 const attrList = (rows) => `<div class="attrs">${rows.map(([icn, l, v, attrs]) => `<div class="attr"><i>${ui(icn)}</i><span>${l}</span><b ${attrs || ''}>${v}</b></div>`).join('')}</div>`;
 // Drop rates: common ones as %, rare ones as "1/N" (easier to read for long odds).
-const fmtRate = (p) => (p >= 0.1 ? pct(Math.min(1, p)) : '1/' + Math.max(1, Math.round(1 / p)).toLocaleString('en-US'));
+// Every chance reads as a percentage (2026-11-25, no more "1/200" beside "20%"): two significant digits
+// below 10% so rare odds stay readable and comparable: 25%, 15.9%, 4.5%, 0.67%, 0.067%.
+const fmtRate = (p) => {
+  p = Math.max(0, Math.min(1, p || 0));
+  if (p >= 0.1) return pct(p);
+  const v = p * 100;
+  return (v >= 1 ? Math.round(v * 10) / 10 : Number(v.toPrecision(2))).toLocaleString('en-US', { maximumFractionDigits: 6 }) + '%';
+};
 
 // Where every item comes from, with rates. Built once from the data tables.
 let SOURCES = null;
