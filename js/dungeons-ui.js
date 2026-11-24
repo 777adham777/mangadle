@@ -35,12 +35,14 @@ function dgCardHTML(d) {
       <div class="dg-row"><small>${esc(d.set.name)} set</small><span class="dg-set">${pieces}<b>${dgOwned(d.id)} / 3</b></span></div>
     </div>
     <div class="dg-cta">${inside ? `<span class="pill on">${ui('battle')}Inside · room ${dgRoom() + 1} / ${DG_ROOMS}</span>`
-      : gbtn('Enter', 'play', `data-dgenter="${d.id}" ${block ? `disabled title="${esc(block)}"` : ''}`, 'sm')}${!inside && block && keys ? `<small class="muted">${esc(block)}</small>` : ''}</div></div>`;
+      : gbtn('Enter', 'play', `data-dgenter="${d.id}" ${block ? `disabled title="${esc(block)}"` : ''}`, 'sm')}${!inside && block ? `<small class="muted">${esc(block)}${!keys && recipe ? ` Craft one (Crafting Lv ${recipe.level}).` : ''}</small>` : ''}</div></div>`;
 }
 function dungeonsWinHTML() {
   if (!dgOn()) return '';
   const open = DUNGEONS.filter((d) => dgOpen(d.id)), next = DUNGEONS.find((d) => !dgOpen(d.id) && realmOpen(d.realm));
-  const list = open.slice().reverse().concat(next ? [next] : []);
+  // the ones you hold a key for first (newest first), then the others, then the next one to open
+  const rank = (d) => (count(dgKey(d.id)) ? 0 : 1);
+  const list = open.slice().reverse().sort((a, b) => rank(a) - rank(b)).concat(next ? [next] : []);
   return `<section class="win dgs" id="gs-dungeons">${hdr('Dungeons', 'five rooms in a row · no rest · a chest and a set at the end')}
     <div class="dg-cards">${list.map(dgCardHTML).join('')}</div>
     <label class="dg-auto"><input type="checkbox" data-dgauto ${S.dgAuto ? 'checked' : ''}><span>Run again while I have keys</span></label></section>`;

@@ -1,0 +1,65 @@
+/* ==========================================================================
+   Review fixes (2026-11-25): what the full PC + phone audit found after the rework.
+   Loaded last on purpose; each rule says what it fixes.
+   ========================================================================== */
+
+/* Crafting: the ingredient row's "Get it / Queue first" buttons went past the focus panel */
+.fo-get { grid-template-columns: auto minmax(0, 1fr); }
+.fo-get-b { grid-column: 2; flex-wrap: wrap; min-width: 0; }
+.fo-get-b .gbtn { min-width: 0; }
+
+/* Battle dock: technique names were cut ("Shadow St…"); the icon and the cooldown say enough,
+   the full name is in the tooltip */
+.gs-tech:not(.gs-scrolls) em { display: none; }
+
+/* Battlefield below the stage: dungeons beside techniques/stats/log, then every stage across the
+   full width (in two columns when there is room), so neither side runs on alone */
+.gs-below { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas: "st side"; }
+.gs-below.has-dg { grid-template-areas: "dg side" "st st"; }
+.gs-below > .dgs { grid-area: dg; min-width: 0; scroll-margin-top: calc(var(--hud-h) + 12px); }
+.gs-below > .stages { grid-area: st; min-width: 0; }
+.gs-below > .gs-side { grid-area: side; }
+@media (min-width: 1200px) {
+  .gs-below.has-dg > .stages .stage-list { display: block; column-count: 2; column-gap: 16px; }
+  .gs-below.has-dg > .stages .stage-list > * { break-inside: avoid; margin-bottom: 5px; }
+}
+@media (max-width: 980px) {
+  .gs-below, .gs-below.has-dg { grid-template-columns: minmax(0, 1fr); grid-template-areas: "st" "side"; }
+  .gs-below.has-dg { grid-template-areas: "dg" "st" "side"; }
+}
+
+/* Techniques page: an even slot grid, selects at the same height */
+.tslots.wide { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); align-items: start; }
+
+/* Quests: the trial tabs line up in an even grid; daily/weekly rows align with their header */
+.tr-tabs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+.tr-tabs button { justify-content: flex-start; }
+.qs-main .tasks .task-list { padding-inline: 0; }
+
+/* Character: the poster button's icon and the rename pen were nearly invisible */
+.ch-custom .gi { fill: #10131b; color: #10131b; }
+.chh-name .gi { fill: var(--dim); }
+.chh-name:hover .gi { fill: var(--gold); }
+/* an empty slot with nothing to wear: one short note instead of "Empty" twice */
+.ch-list.bare .ch-cands { margin: 0; }
+.ch-list.bare .empty-note { padding: 10px; text-align: left; }
+
+/* Energy: the -/+ row sits at the same height in every card, whatever the description length */
+.train .xpbar { margin-top: auto; }
+
+@media (max-width: 700px) {
+  /* every page: the bottom of the page can scroll clear of the activity bar and the tab bar */
+  #main { padding-bottom: calc(140px + env(safe-area-inset-bottom, 0px)); }
+  /* battle: the stage header already says what you fight, so the activity bar steps aside
+     and the dock (your HP, techniques, food) shows on the first screen */
+  body:has(#main[data-view="battle"]) #nowbar { display: none; }
+  #main[data-view="battle"] { padding-bottom: calc(86px + env(safe-area-inset-bottom, 0px)); }
+  #stage.gs-stage { height: min(380px, 48dvh); }
+  /* Bank: every tab visible (Scrolls was off-screen) */
+  .bag-tabs { flex-wrap: wrap; overflow: visible; }
+  /* skill pages: the header chips wrap instead of being cut */
+  .sk-slim .sk-chips, .sk-banner .pills, .sk-banner .sk-info-btns { flex-wrap: wrap; overflow: visible; }
+  /* Techniques: slots use the panel's own padding once */
+  .tslots.wide { padding-inline: 0; grid-template-columns: minmax(0, 1fr); }
+  .tr-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}

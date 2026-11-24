@@ -3,8 +3,6 @@
    The Dungeons window on the Battlefield, the dungeon top bar, the room tag on the foe.
    ========================================================================== */
 
-.gs-left { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.gs-left > .stages, .gs-left > .dgs { min-width: 0; scroll-margin-top: calc(var(--hud-h) + 12px); }
 
 /* window */
 .dgs { border-left: 3px solid #e8a040; }

@@ -115,8 +115,8 @@ function trialsHTML() {
 VIEWS.quests = () => `
   ${ptitle('Your journey', 'Quests')}
   <div class="qs-layout">
-    <div class="qs-main">${pathHTML()}</div>
-    <div class="qs-side">${trialsHTML()}${uix('questsBottom')}</div>
+    <div class="qs-main">${pathHTML()}${uix('questsBottom')}</div>
+    <div class="qs-side">${trialsHTML()}</div>
   </div>`;
 
 // The Overview keeps one line of it (one information, one place): what waits on the Quests page.

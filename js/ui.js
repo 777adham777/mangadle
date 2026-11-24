@@ -637,9 +637,9 @@ VIEWS.battle = () => {
     ${gsDockHTML(foods)}
   </div>
   ${uix('battleTop')}
-  <div class="gs-below">
-    <div class="gs-left">${typeof dungeonsWinHTML === 'function' ? dungeonsWinHTML() : ''}
-    <section class="win stages" id="gs-stages">${hdr('Stages')}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section></div>
+  ${(() => { const dg = typeof dungeonsWinHTML === 'function' ? dungeonsWinHTML() : ''; return `<div class="gs-below ${dg ? 'has-dg' : ''}">
+    ${dg}
+    <section class="win stages" id="gs-stages">${hdr('Stages')}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section>`; })()}
     <div class="gs-side">
       ${uix('battleSide')}
       <section class="win char-stats">${hdr('Character', `Lv ${charLv()}`)}${charStatsHTML()}</section>
@@ -672,7 +672,7 @@ function gsTopHTML(z) {
     <div class="gs-where"><span class="gs-ric">${z ? ic('realm', z.realm) : ui('battle')}</span><span><small>${z ? esc(REALMS[z.realm].name) : 'Battlefield'}</small><b>${z ? esc(z.name) : 'Choose a stage'}</b></span>${z ? `<span class="danger ${dc}">${dl}</span>` : ''}</div>
     ${z ? arrow(next, '›', 'Next stage') : ''}
     ${prog}
-    <div class="gs-acts">${gbtn('Stages', 'map', 'data-gostages', 'dark sm')}${z ? gbtn('Retreat', 'stop', 'data-stopcombat', 'sm hot') : ''}</div>
+    <div class="gs-acts">${typeof dgOn === 'function' && dgOn() ? gbtn('Dungeons', 'chest', 'data-nav="battle#gs-dungeons"', 'dark sm') : ''}${gbtn('Stages', 'map', 'data-gostages', 'dark sm')}${z ? gbtn('Retreat', 'stop', 'data-stopcombat', 'sm hot') : ''}</div>
   </div>`;
 }
 function gsTechHTML() {
@@ -794,7 +794,7 @@ VIEWS.hero = (tab) => {
   if (!bankNew) bankNew = order.filter((k) => count(k) > 0 && !seenItems.has(k)).reverse();
   const fresh = bankNew.filter((k) => count(k) > 0), fset = new Set(fresh);
   const bt = (k) => tile(k, `<span data-count="${k}">${fmt(count(k))}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: (S.locked && S.locked[k] ? `<span class="lockb" title="Locked">${ui('lock')}</span>` : '') + (fset.has(k) ? '<span class="new">New</span>' : '') });
-  const newRow = fresh.length && !q ? `<div class="bag-new"><div class="bn-head"><small>New since your last visit · ${fresh.length}</small><button class="mini-btn bn-seen" data-bankseen>Mark seen</button></div><div class="bag-grid">${fresh.map(bt).join('')}</div></div>` : '';
+  const newRow = fresh.length && !q && fresh.length < 0.6 * order.filter((k) => count(k) > 0).length ? `<div class="bag-new"><div class="bn-head"><small>New since your last visit · ${fresh.length}</small><button class="mini-btn bn-seen" data-bankseen>Mark seen</button></div><div class="bag-grid">${fresh.map(bt).join('')}</div></div>` : '';
   return `
   ${ptitle('Hero', 'Bank', heroTabs(tab))}
   <div class="hero-layout bank-layout">
@@ -1209,6 +1209,8 @@ on('kill', (d) => {
   for (const id in d.loot) feedItem(id, d.loot[id]);
   feedGold(d.gold);
   if (inBattleView()) {
+    const eh = $('[data-ehp]');
+    if (eh) { eh.style.width = '0%'; setText($('[data-ehptext]'), `0 / ${fmt(d.enemy.hp)}`); }
     const f = $('.fighter.enemy');
     if (f) { const s = document.createElement('div'); s.className = 'ko'; s.textContent = 'Defeated'; f.appendChild(s); floatAt($('[data-portrait="enemy"]', f), `+${fmt(d.gold)}${ui('gold')}`, 'gold', 0, 30); }
   }
@@ -1216,7 +1218,7 @@ on('kill', (d) => {
   if (unlocked > lastUnlocked) {
     lastUnlocked = unlocked;
     const z = ZONES[unlocked - 1];
-    burst('New stage', z.name, ic('zone', z.id), rc(z.realm));
+    toast(`New stage open: ${z.name}`, 'rare');
     dirty = true;
   }
   if (d.boss) burst('Boss defeated', d.enemy.name, ic('enemy', d.enemy.name), 'var(--gold)');
