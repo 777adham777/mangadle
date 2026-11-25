@@ -255,6 +255,29 @@ function equipBestNow(zi) {
     }
   }
 }
+// The world's armour and accessory for a guardian: the best crafted pieces of the stages between the
+// previous guardian and this one. worldGearEat: your auto-eat line (and defense) if you wore them.
+function worldGear(zi) {
+  const lo = ZONES.slice(0, zi).map((z, i) => (z.boss && !z.dungeon ? i : -1)).filter((i) => i >= 0).pop();
+  const best = {};
+  for (const id in PROD) {
+    const it = ITEMS[id];
+    if (!it || it.type !== 'equip' || !['armor', 'accessory'].includes(it.slot) || it.stage == null) continue;
+    if (it.stage > zi + 0.7 || it.stage < (lo == null ? 0 : lo)) continue;
+    if (!PROD[id].some((p) => SKILLS[p.skill].type === 'craft')) continue;
+    const v = (it.stats.hp || 0) + 4 * (it.stats.def || 0);
+    if (!best[it.slot] || v > best[it.slot].v) best[it.slot] = { id, v };
+  }
+  return { armor: best.armor && best.armor.id, accessory: best.accessory && best.accessory.id };
+}
+function worldGearEat(zi) {
+  const g = worldGear(zi), keep = { armor: S.equip.armor, accessory: S.equip.accessory };
+  if (g.armor) S.equip.armor = g.armor;
+  if (g.accessory) S.equip.accessory = g.accessory;
+  const r = { eat: autoEatThreshold() * pMaxHp(), def: pDef(), taken: hmul('taken'), gear: g };
+  S.equip.armor = keep.armor; S.equip.accessory = keep.accessory;
+  return r;
+}
 function gearProject(zi) {
   const cur = zoneRatio(zi);
   let best = null, bg = 0.04;
@@ -306,6 +329,11 @@ function combatGoal(zi) {
   if (ZONES[zi].boss && zoneUnlocked(zi) && frate(zi).blow < eatLine()) {
     const bf = ownedFood() || bestFood();
     if (bf) { const n = Math.ceil(frate(zi).worstFight / Math.max(1, foodHeal(bf)) * 1.2); if (foodStock() < n) { const t = needTask(bf, n); if (t) return Object.assign(t, { forFood: true }); } }
+  }
+  // a guardian whose blow you cannot stand yet: its world's armour and accessory first
+  if (ZONES[zi].boss && frate(zi).blow >= eatLine()) {
+    const g = worldGear(zi);
+    for (const slot of ['armor', 'accessory']) { const id = g[slot]; if (id && S.equip[slot] !== id && count(id) < 1 && !(P.noProj[id] > simH())) { const t = needTask(id, 1); if (t) return t; P.noProj[id] = simH() + 6; } }
   }
   return powerUp(zi);
 }
@@ -379,16 +407,16 @@ function questTask() {
     for (const a of acts) { if (canAfford(a.in)) return { kind: 'act', skill: 'tracking', id: a.id }; for (const k in a.in) { const t = needTask(k, a.in[k]); if (t) return t; } }
     return trainTask('tracking');
   }
-  if (/contracts/.test(txt)) return null;          // contracts are random draws: not modelled
+  if (/contracts/.test(txt)) return { kind: 'unmodelled', why: 'contracts are random draws' };
   if (/Awaken an Echo/.test(txt)) { if (count('awakening_shard') >= 3) return { kind: 'act', skill: 'bonding', id: 'awaken' }; return needTask('awakening_shard', 3); }
-  if (/Echo a task/.test(txt)) return trainTask('archaeology');
+  if (/Echo a task/.test(txt)) return { kind: 'unmodelled', why: 'Echo tasks are not modelled' };
   if (/Restore an artifact/.test(txt)) {
     const acts = SKILLS.restoration.actions.filter((a) => skillLv('restoration') >= a.level).sort((a, b) => a.level - b.level);
     for (const a of acts) if (canAfford(a.in)) return { kind: 'act', skill: 'restoration', id: a.id };
     for (const a of acts) for (const k in a.in) if (stock(k) < a.in[k]) { const t = needTask(k, a.in[k]); if (t) return t; }
     return trainTask('archaeology');
   }
-  if (/Shenron/.test(txt)) return null;            // the seven balls are random finds: not modelled
+  if (/Shenron/.test(txt)) return { kind: 'unmodelled', why: 'the seven balls are random finds' };
   if (/Devil Fruit/.test(txt)) { const zi = ZONES.map((z, i) => i).filter((i) => ZONES[i].boss && ZONES[i].realm === 'seas' && zoneOk(i, 0.6)).pop(); return zi != null ? Object.assign(fightTask(zi), { key: { id: FRUITS[0], n: 1, fruit: true } }) : null; }
   return null;
 }
@@ -486,6 +514,7 @@ function plan() {
   let t = null;
   try { t = questTask(); } catch (e) { plog('ERR ' + e.message); P.note['planner error: ' + e.message] = (P.note['planner error: ' + e.message] || 0) + 1; }
   // nothing to do for this step: the time goes to the best XP fight (or the step's own skill)
+  if (t && t.kind === 'unmodelled') return t;
   if (!t || (!t.kind && !t.special)) {
     const st = goalState(), id = st && st.g.id;
     if (id) P.note['no plan: ' + id] = (P.note['no plan: ' + id] || 0) + 1;

@@ -586,10 +586,9 @@ const curEnemy = () => {
 };
 function clog(m, c) { if (SIM) return; const L = S.combat.log; L.unshift({ m, c }); if (L.length > 40) L.pop(); logVer++; }
 
-// Food is what keeps you fighting (2026-11-25): from Orange Town on (where Fishing and Cooking open), no HP
-// comes back while you fight, only food you eat, and rest outside battle (3% a second): a food stock is how
-// long a farm can last. The Leaf Village, the world you learn in, keeps 0.8% a second.
-const combatRegen = (z) => (z && z.realm === 'shinobi' && !z.dungeon ? 0.008 : 0);
+// Food is what keeps you fighting (2026-11-25): no HP comes back while you fight, anywhere, only food you
+// eat, and rest outside battle (3% a second). A food stock is how long a farm can last.
+const combatRegen = () => 0;
 function tickCombat(dt) {
   const C = S.combat;
   const max = pMaxHp();

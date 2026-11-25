@@ -349,16 +349,16 @@ for (const k in SKILLS) {
 }
 const GOLD_PACE = (realm) => { const i = WORLD_ORDER.indexOf(realm); return i <= 0 ? 1 : i === 1 ? 0.4 : i === 2 ? 0.25 : 0.15; };
 const paceGold = (g, m) => [Math.max(1, Math.round(g[0] * m)), Math.max(1, Math.round(g[1] * m))];
-for (const z of ZONES) { const m = GOLD_PACE(z.realm); if (m < 1) for (const e of z.enemies) if (e.gold) e.gold = paceGold(e.gold, m); }
+for (const z of ZONES) { const m = GOLD_PACE(z.realm); if (m < 1 && !z.curved && !z.dungeon) for (const e of z.enemies) if (e.gold) e.gold = paceGold(e.gold, m); }
 // Voyages: the far routes (Voyaging 25+) sail into the late game, so they pay like a late world.
 for (const a of SKILLS.voyaging.actions) if (a.loot && a.loot.gold) a.loot.gold = paceGold(a.loot.gold, a.level >= 25 ? 0.05 : GOLD_PACE('seas'));
 for (const id in ITEMS) { const it = ITEMS[id]; if (it.type === 'chest' && it.gold && typeof homeOf === 'function') { const m = GOLD_PACE(homeOf(id)); if (m < 1) it.gold = paceGold(it.gold, m); } }
 
 /* ======================================================== food that runs out (2026-11-25) */
-// A farm lives on its food stock: past the Leaf Village (its pills keep their heal), every dish heals 40% less,
-// so a night of farming asks for a real stock, cooked during your sessions.
+// A farm lives on its food stock: every food heals 40% less than it used to, so a night of farming asks for
+// a real stock, cooked during your sessions (stage foes are sized against it: js/curve.js).
 const FOOD_HEAL_PACE = 0.6;
 for (const id in ITEMS) {
   const it = ITEMS[id];
-  if (it.type === 'food' && it.heal && !['soldier_pill', 'moon_pill', 'shadow_pill'].includes(it.base || id)) it.heal = Math.max(1, Math.round(it.heal * FOOD_HEAL_PACE));
+  if (it.type === 'food' && it.heal) it.heal = Math.max(1, Math.round(it.heal * FOOD_HEAL_PACE));
 }

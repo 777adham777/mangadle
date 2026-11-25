@@ -621,7 +621,9 @@ function updateTear() {
     const e = pool[(hour * 7 + i * 3) % pool.length];
     const drops = e.drops.filter(([d]) => !(ITEMS[d] && ITEMS[d].type === 'schematic')).map(([d, ch, q]) => [d, Math.min(1, ch * 2), q]);
     const rl = relicsOf(r); if (rl.length) drops.push([rl[0], 0.2, [1, 2]]);
-    return en(`Torn ${e.name}`, '', 160000, Math.round(6800 * ATK_SCALE.rift), 1100, 2.3, 60000, [40000, 70000], drops);
+    // a Torn foe: the last regular stage on the curve (js/curve.js), a third stronger and richer
+    const L = STAGE_CURVE.pillars || { hp: 160000, atk: 6800, xp: 60000, gold: 55000 };
+    return en(`Torn ${e.name}`, '', Math.round(L.hp * 1.3), Math.round(L.atk * 1.3), 1100, 2.3, Math.round(L.xp * 1.3), [Math.round(L.gold * 1.1), Math.round(L.gold * 1.5)], drops);
   });
   TEAR.enemies.forEach((x, i) => { x.base = TEAR.enemies[i].name.replace('Torn ', ''); });
   const C = S && S.combat;

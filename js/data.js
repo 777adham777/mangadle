@@ -545,7 +545,7 @@ const stage10 = (id, zone, name, reward, items, why, n) => Object.assign(gStep(i
 const GOALS = [
   gChapter('leaf'),
   gStep('chop10', 'Chop 10 Pine Logs', 'realm:shinobi:woodcutting', 10, gMade('pine_log'), 20, { healing_leaf: 6 }, 'Wood starts everything here. It keeps going while you are away.'),
-  gStep('wc5', 'Reach Woodcutting level 5', 'realm:shinobi:woodcutting', 5, gLvl('woodcutting'), 25, { bird_nest: 1 }, 'Level 5 opens Crafting.'),
+  gStep('wc5', 'Reach Woodcutting level 3', 'realm:shinobi:woodcutting', 3, gLvl('woodcutting'), 25, { bird_nest: 1 }, 'Level 3 opens Crafting.'),
   gStep('sword', 'Carve a Wooden Sword', 'realm:shinobi:arts', 1, gMade('training_kunai'), 30, { soldier_pill: 3 }, 'Crafting turns wood into gear. This is your first weapon.'),
   gStep('equip_sword', 'Equip your Wooden Sword', 'character', 1, () => [S.equip.weapon ? 1 : 0], 30, { chakra_shard: 10 }, 'Gear does nothing in the Bank: wear it.'),
   gStep('pills5', 'Brew 5 Soldier Pills', 'realm:shinobi:arts', 5, gMade('soldier_pill'), 40, { soldier_pill: 5 }, 'Pills heal you in battle. Five of them open the Battlefield.'),
@@ -698,8 +698,8 @@ const worldUnlock = (r, name) => ({ id: 'realm:' + r, name, need: () => !!S.gate
 const UNLOCKS = [
   { id: 'realm:shinobi',      name: 'Leaf Village',   need: () => true },
   { id: 'skill:woodcutting',  name: 'Woodcutting',     need: () => true },
-  { id: 'skill:arts',         name: 'Crafting',        need: () => skillLv('woodcutting') >= 5 || usedSkill('arts'),
-    hint: () => 'Reach Woodcutting level 5', why: 'The village carpenter shows you how to carve your own sword.' },
+  { id: 'skill:arts',         name: 'Crafting',        need: () => skillLv('woodcutting') >= 3 || usedSkill('arts'),
+    hint: () => 'Reach Woodcutting level 3', why: 'The village carpenter shows you how to carve your own sword.' },
   { id: 'feature:battle',     name: 'Battlefield',     need: () => (S.stats.made.soldier_pill || 0) >= 5 || S.stats.kills > 0,
     hint: () => 'Brew 5 Soldier Pills', why: 'Armed and with pills in your pouch, the instructors let you train with real opponents.' },
   { id: 'feature:techniques', name: 'Techniques',      need: () => Object.keys(S.tech.lv).length > 0 || !!S.stats.scrollFound,

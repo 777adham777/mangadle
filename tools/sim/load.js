@@ -5,7 +5,7 @@
 const fs = require('fs'), vm = require('vm'), path = require('path');
 
 const ROOT = path.resolve(__dirname, '../..') + '/';
-const ENGINE = ['data', 'worlds', 'lore', 'armory', 'depth', 'tiers', 'loot', 'game', 'systems', 'techniques', 'expeditions', 'weapons',
+const ENGINE = ['data', 'curve', 'worlds', 'lore', 'armory', 'depth', 'tiers', 'loot', 'game', 'systems', 'techniques', 'expeditions', 'weapons',
   'chamber', 'tasks', 'missions', 'report', 'huntlist', 'scouter', 'hardcore', 'omens', 'poster', 'quality', 'seas', 'soul', 'kaio', 'hex',
   'hunt', 'echo', 'leaf', 'foes', 'builds', 'dungeons', 'economy', 'trials', 'story', 'guide'];
 const SIM = ['model', 'planner', 'macro'];
@@ -28,7 +28,7 @@ function load(opts) {
   ctx.window = ctx; ctx.globalThis = ctx;
   vm.createContext(ctx);
   let src = '';
-  for (const f of ENGINE) src += `\n// ==== js/${f}.js\n` + fs.readFileSync(ROOT + 'js/' + f + '.js', 'utf8').replace(/^'use strict';/, '');
+  for (const f of ENGINE) { if (!fs.existsSync(ROOT + 'js/' + f + '.js')) continue; src += `\n// ==== js/${f}.js\n` + fs.readFileSync(ROOT + 'js/' + f + '.js', 'utf8').replace(/^'use strict';/, ''); }
   for (const f of SIM) src += `\n// ==== tools/sim/${f}.js\n` + fs.readFileSync(path.join(__dirname, f + '.js'), 'utf8').replace(/^'use strict';/, '');
   if (opts.patch) src += '\n;' + opts.patch;   // knob overrides for experiments, run after everything
   vm.runInContext(src, ctx, { filename: 'sim-bundle.js' });
