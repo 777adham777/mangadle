@@ -57,9 +57,6 @@
 /* ---------- 04 · arena first: rates once, in a strip under the arena */
 
 /* ---------- 01 · the first minute: one sentence, one button */
-.welcome.first { width: min(460px, 100%); gap: 12px; padding: 30px 26px 18px; background: radial-gradient(120% 110% at 50% 0%, #2b2a1c, var(--panel) 62%); }
-.welcome.first h2 { font-size: 30px; line-height: 1.1; }
-.welcome.first .wl-cta .gbtn { font-size: 15px; padding: 0 22px; height: 46px; }
 /* Old Ren's bubble: never blocks, never covers the feed (bottom right) */
 
 @keyframes nsIn { from { opacity: 0; transform: translateY(14px); } }

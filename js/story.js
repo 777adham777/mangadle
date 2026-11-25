@@ -33,7 +33,7 @@ const CHAPTERS = [
   { id: 'hex', n: 5, realm: 'hex', title: 'Shinjuku', guard: 'matriarch', cast: ['yuki'], reward: { items: { paper_blade: 1, cursed_box: 2 } } },
   { id: 'hunt', n: 6, realm: 'hunter', title: 'Green Island', guard: 'chimera', cast: ['nett'], reward: { items: { chimera_fang: 1, hunters_cache: 2 } } },
   { id: 'echo', n: 7, realm: 'echo', title: 'Echo Quarter', guard: 'pillar', cast: ['selene'], reward: { items: { stone_mask: 1, echo_reliquary: 1 } } },
-  { id: 'rift', n: 8, realm: 'rift', title: 'The Rift', guard: 'convergence', cast: ['carto'], reward: { items: { rift_shard: 1 } } },
+  { id: 'rift', n: 8, realm: 'rift', title: 'The Rift', guard: 'convergence', step: 'emperor', cast: ['carto'], reward: { items: { rift_shard: 1 } } },
 ];
 for (const c of CHAPTERS) c.from = GOALS.findIndex((g) => g.ch === c.id);
 // the first weapon's name comes from lore.js (it is no longer called Wooden Sword)

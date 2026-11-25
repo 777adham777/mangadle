@@ -9,7 +9,6 @@
    ========================================================================== */
 
 EXTRA_USES.push(...DUNGEONS.map((d) => [dgKey(d.id), `Opens ${d.name} (Battlefield) for one run`]));
-const dgClock = (t) => { t = Math.max(0, Math.round(t)); return `${Math.floor(t / 60)}:${String(t % 60).padStart(2, '0')}`; };
 
 // How hard a run is for you now: the share of your HP the five rooms take, with no regeneration.
 function dgDanger(id) {
@@ -74,7 +73,7 @@ UPD.push(() => {
 /* ---------------------------------------------------------------- moments */
 on('dgclear', (d) => {
   const D = DG_BY[d.id];
-  bannerBurst('Dungeon cleared', `${D.name} · ${dgClock(d.t)}${d.best === Math.round(d.t) ? ' · new best' : ''}`, ic('realm', D.realm), rc(D.realm), 'lvup');
+  bannerBurst('Dungeon cleared', `${D.name} · ${dgClock(d.t)}${d.newBest ? ' · new best' : ''}`, ic('realm', D.realm), rc(D.realm), 'lvup');
   feedItem(dgChest(d.id), 1);
   if (d.piece) { feedItem(d.piece, 1); if (!(typeof dropReveal === 'function' && dropReveal(d.piece, D.name))) toast(`${ITEMS[d.piece].name}: a piece of the ${D.set.name} set`, 'rare'); }
   dirty = true;

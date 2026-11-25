@@ -29,7 +29,7 @@ const foeSize = (n) => { for (const k in FOE_SIZE) if (n.includes(k)) return FOE
 function foeSprite(e) {
   const n = e.base || e.name, m = typeof MONSTER_ART !== 'undefined' && MONSTER_ART[n];
   if (!m) return null;
-  const torn = !m.boss && e.name !== n && /^Torn /.test(e.name), v = torn ? '-torn' : e.hard ? '-hard' : '';
+  const torn = !m.boss && e.name !== n && /^Torn /.test(e.name), v = torn ? '-torn' : e.hard || e.lord ? '-hard' : '';
   const px = m.boss ? BOSS_PX * m.h : FOE_PX * m.h * SIZE_K[foeSize(n)];
   return { src: `assets/monsters/${m.p}${v}.webp`, h: Math.round(px), a: m.a };
 }

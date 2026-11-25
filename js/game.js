@@ -859,6 +859,12 @@ function loadFrom(json) {
     d.quality.cv = 2;
   }
   // The path was rewritten on 2026-11-25 (steps added): the old index becomes the same step in the new path.
+  // dungeons arrived with a free first key on the guardian's first kill: older saves get theirs here
+  if (!d.dgV && typeof DUNGEONS !== 'undefined') {
+    d.items = d.items || {};
+    for (const D of DUNGEONS) if (d.combat && (d.combat.kills[D.guard] || 0) > 0 && !(d.dg || {})[D.id] && !d.items[dgKey(D.id)]) d.items[dgKey(D.id)] = 1;
+    d.dgV = 1;
+  }
   if ((d.goalV || 1) < 2) { const id = OLD_GOAL_IDS[d.goal]; d.goal = id != null && GOAL_BY[id] != null ? GOAL_BY[id] : d.goal >= OLD_GOAL_IDS.length ? GOALS.length : 0; d.goalV = 2; }
   // The avatar was removed (2026-11-24): only its name (the poster's) is kept.
   if (d.avatar) { if (!d.hero && d.avatar.name) d.hero = { name: String(d.avatar.name) }; delete d.avatar; }

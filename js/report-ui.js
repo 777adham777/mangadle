@@ -19,7 +19,8 @@ function cooScore(e) {
   if (e.k === 'rare') return 20 + 20 * rarity(e.id);
   if (e.k === 'hunt') return 130;
   if (e.k === 'pet') return 95;
-  if (e.k === 'tech') return 62;
+  if (e.k === 'dg') return e.piece ? 90 : 40;
+  if (e.k === 'scroll') return 30;
   if (e.k === 'schem') return 58;
   if (e.k === 'boss') return 50;
   if (e.k === 'card') return 46;
@@ -31,7 +32,8 @@ function cooHeadline(e) {
   if (e.k === 'rare') return { title: `${ITEMS[e.id].name} found`, sub: e.source ? `Pulled from ${e.source}` : 'A rare find', art: tile(e.id, null, {}), replay: rarity(e.id) >= 4 ? e.id : null, r: rarity(e.id) };
   if (e.k === 'hunt') return { title: `Hunt complete: ${ITEMS[e.id].name}`, sub: `On your Hunt List for ${fmtTime(e.real || 0)}`, art: tile(e.id, null, {}), replay: rarity(e.id) >= 4 ? e.id : null, r: Math.max(4, rarity(e.id)) };
   if (e.k === 'pet') return { title: `${e.name} joins you`, sub: 'A new companion', art: tile(null, null, { r: 5, icon: ic('pet', e.id) }), r: 5 };
-  if (e.k === 'tech') return { title: `New technique: ${TECHNIQUES[e.id].name}`, sub: 'Read from a scroll', art: tile(null, null, { r: 4, icon: ic('technique', e.id) }), r: 4 };
+  if (e.k === 'dg') return { title: `${DG_BY[e.id].name} cleared${e.n > 1 ? ` ×${e.n}` : ''}`, sub: e.piece ? `Set piece: ${ITEMS[e.piece].name}` : 'A chest each run', art: tile(e.piece || dgChest(e.id), null, {}), r: e.piece ? 5 : 4 };
+  if (e.k === 'scroll') return { title: `${fmt(e.n)} technique scroll${e.n > 1 ? 's' : ''}`, sub: 'Waiting in your Bank: read them on the Techniques page', art: tile(null, null, { r: 4, icon: gi('tied-scroll') }), r: 4 };
   if (e.k === 'schem') return { title: `${ITEMS[ITEMS[e.id].teaches].name} schematic learned`, sub: 'A new recipe', art: tile(e.id, null, {}), r: 4 };
   if (e.k === 'boss') return { title: `${e.name} falls`, sub: 'A guardian defeated', art: tile(null, null, { r: 5, icon: ic('enemy', e.name) }), r: 4 };
   if (e.k === 'card') return { title: `Card: ${CARDS[e.id] ? CARDS[e.id].name : 'new card'}`, sub: 'Added to the Card Book', art: tile(null, null, { r: 4, icon: ui('rare') }), r: 4 };
@@ -40,20 +42,22 @@ function cooHeadline(e) {
 }
 // The timeline: one line per mission, boss, find; level-ups merged per skill; ships counted.
 function cooLines(rec, leftAt) {
-  const rows = [], lv = {}, boss = {}, rare = {};
+  const rows = [], lv = {}, boss = {}, rare = {}, dgs = {};
   let ships = 0, hauls = 0, shipT = 0;
   for (const e of rec.ev) {
     if (e.k === 'level') { lv[e.skill] = e; continue; }
     if (e.k === 'rare') { if (rare[e.id]) rare[e.id].n++; else rows.push(rare[e.id] = Object.assign({}, e, { n: 1 })); continue; }
     if (e.k === 'ship') { ships++; hauls += e.hauls || 0; shipT = e.t; continue; }
     if (e.k === 'boss') { (boss[e.name] = boss[e.name] || { e, n: 0 }).n++; continue; }
+    // dungeon clears: one line per dungeon, with the set pieces it gave
+    if (e.k === 'dg') { const g = dgs[e.id] || (rows.push(dgs[e.id] = Object.assign({}, e, { n: 0, pieces: [] })), dgs[e.id]); g.n++; if (e.piece) { g.pieces.push(e.piece); g.piece = e.piece; } continue; }
     rows.push(e);
   }
   for (const k in lv) rows.push(lv[k]);
   for (const k in boss) rows.push(Object.assign({}, boss[k].e, { n: boss[k].n }));
   if (ships) rows.push({ k: 'ship', t: shipT, n: ships, hauls });
   // Keep the ten that matter most, then tell them in order.
-  const weight = (e) => ({ hunt: 9, mission: 6, death: 6, boss: 6, pet: 7, tech: 7, schem: 7, card: 5, ship: 4 }[e.k] || (e.k === 'rare' ? rarity(e.id) + (e.n > 1 ? 0 : 0.5) : e.skill === 'character' ? 3 : 2));
+  const weight = (e) => ({ hunt: 9, mission: 6, death: 6, boss: 6, pet: 7, dg: 8, dgfail: 6, scroll: 5, schem: 7, card: 5, ship: 4 }[e.k] || (e.k === 'rare' ? rarity(e.id) + (e.n > 1 ? 0 : 0.5) : e.skill === 'character' ? 3 : 2));
   const kept = rows.sort((a, b) => weight(b) - weight(a) || a.t - b.t).slice(0, 10).sort((a, b) => a.t - b.t);
   const line = (e) => {
     const at = `<time>${clockAt(leftAt + e.t * 1000)}</time>`;
@@ -68,7 +72,9 @@ function cooLines(rec, leftAt) {
     if (e.k === 'ship') return `${at}<span>${ic('skill', 'voyaging')}${e.n} ship${e.n > 1 ? 's' : ''} came back · ${fmt(e.hauls)} hauls</span>`;
     if (e.k === 'pet') return `${at}<span>${ic('pet', e.id)}${esc(e.name)} joined you</span>`;
     if (e.k === 'hunt') return `${at}<span>${itemIc(e.id)}Hunt complete: <b class="rar r${rarity(e.id)}">${esc(ITEMS[e.id].name)}</b></span><em class="ok">hunted</em>`;
-    if (e.k === 'tech') return `${at}<span>${ic('technique', e.id)}Learned ${esc(TECHNIQUES[e.id].name)}</span>`;
+    if (e.k === 'dg') return `${at}<span>${ic('realm', DG_BY[e.id].realm)}${esc(DG_BY[e.id].name)} cleared${e.n > 1 ? ` ×${e.n}` : ''}${e.pieces.length ? ` · ${e.pieces.map((p) => `<b class="rar r${rarity(p)}">${esc(ITEMS[p].name)}</b>`).join(', ')}` : ''}</span><em class="ok">chest</em>`;
+    if (e.k === 'dgfail') return `${at}<span>${ui('skull')}Driven out of ${esc(DG_BY[e.id].name)} (room ${e.room + 1})</span><em class="bad">key spent</em>`;
+    if (e.k === 'scroll') return `${at}<span>${gi('tied-scroll')}${fmt(e.n)} technique scroll${e.n > 1 ? 's' : ''} · waiting in your Bank</span>`;
     if (e.k === 'schem') return `${at}<span>${itemIc(e.id)}Schematic: ${esc(ITEMS[e.id].name)}</span>`;
     if (e.k === 'card') return `${at}<span>${ui('rare')}Card: ${esc(CARDS[e.id] ? CARDS[e.id].name : e.id)}</span>`;
     return '';

@@ -36,7 +36,7 @@ function readiness(ch) {
   return { zi, name: ZONES[zi].enemies[0].name, label, cls, fill, tip, beaten: (S.combat.kills[ch.guard] || 0) > 0 };
 }
 const readyBar = (R, big) => `<div class="rd ${big ? 'big' : ''} ${R.cls}" title="${esc(R.tip)}"><span class="rd-top"><small>${big ? 'Your readiness for' : 'Readiness'} ${big ? `<b>${esc(R.name)}</b>` : ''}</small><em class="danger ${R.cls}">${R.label}</em></span><span class="rd-bar"><i style="width:${Math.round(R.fill * 100)}%"></i></span>${big ? `<small class="rd-tip">${esc(R.tip)}</small>` : ''}</div>`;
-const isGuardStep = (g, ch) => g && ch && g.id === ch.guard;
+const isGuardStep = (g, ch) => g && ch && g.id === (ch.step || ch.guard);
 
 /* ---------------------------------------------------------------- the tracker */
 function rewardTiles(gold, items) {

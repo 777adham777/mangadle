@@ -143,7 +143,7 @@ if (typeof ICONS !== 'undefined') for (const d of DUNGEONS) {
         .map(([id, ch, q]) => [id, Math.min(1, ch * 1.5), q]);
       if (lord) drops.push([dgKey(d.id), 0.2, [1, 1]]);
       return Object.assign(en(name, b.icon, Math.round(G.hp * hp), Math.round(G.atk * atk), Math.round(G.def * df), b.spd, Math.round(G.xp * rw), [Math.round(G.gold[0] * rw), Math.round(G.gold[1] * rw)], drops),
-        { base, dg: d.id, room: k + 1 }, lord ? { lord: true, hard: true } : {});
+        { base, dg: d.id, room: k + 1 }, lord ? { lord: true } : {});
     };
     const enemies = d.rooms.map((n, k) => mk(n, n, k, false)).concat([mk(d.lord[0], d.lord[1], 4, true)]);
     // their moves, minus self-heals and self-shields: at dungeon HP those turn a room into a stalemate.
@@ -188,9 +188,12 @@ function dgBlock(id) {
   if (!count(dgKey(id))) return `You need a ${ITEMS[dgKey(id)].name}.`;
   return '';
 }
+// m:ss for run times (the dungeon window, the trials' texts)
+const dgClock = (s) => { s = Math.max(0, Math.round(s)); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
 function dgEnter(id) {
   if (dgBlock(id)) return false;
   const d = DG_BY[id];
+  if (dgRun()) dgEnd('left');   // the run you were in ends (and counts) before the next one starts
   removeItem(dgKey(id), 1);
   S.dungeon = { id, room: 0, t: 0, ate: 0 };
   dgState(id).runs++;
@@ -206,7 +209,7 @@ function dgEnter(id) {
 // The run ends: cleared, defeated or abandoned. Returns the outcome.
 function dgEnd(why) {
   const r = dgRun();
-  if (!r) return null;
+  if (!r) { S.dungeon = null; return null; }
   S.dungeon = null;
   if (why !== 'clear') { dgState(r.id).fails++; emit('dgend', { id: r.id, why, room: r.room }); }
   dirty = true;
@@ -222,7 +225,8 @@ hook('kill', (e, z) => {
   // cleared
   const d = DG_BY[r.id], st = dgState(r.id), first = !st.clears;
   st.clears++;
-  if (!st.best || r.t < st.best) st.best = Math.round(r.t);
+  const newBest = !st.best || Math.round(r.t) < st.best;
+  if (newBest) st.best = Math.round(r.t);
   if (!r.ate) st.clean = 1;
   addItem(dgChest(r.id), 1);
   let piece = null;
@@ -232,7 +236,7 @@ hook('kill', (e, z) => {
     addItem(piece, 1); st.dry = 0;
   } else st.dry++;
   S.stats.dungeons = (S.stats.dungeons || 0) + 1;
-  emit('dgclear', { id: r.id, t: r.t, ate: r.ate, first, piece, best: st.best });
+  emit('dgclear', { id: r.id, t: r.t, ate: r.ate, first, piece, best: st.best, newBest: newBest && !first });
   const again = S.dgAuto && count(dgKey(r.id)) > 0;
   dgEnd('clear');
   if (again) { removeItem(dgKey(r.id), 1); S.dungeon = { id: r.id, room: 0, t: 0, ate: 0 }; dgState(r.id).runs++; S.combat.hp = pMaxHp(); }

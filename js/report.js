@@ -14,7 +14,7 @@
 
 /* ---------------------------------------------------------------- the away log */
 let AWAY = null;
-const AWAY_KEEP = { rare: 1, pet: 1, levelup: 1, kill: 1, schematic: 1, mission: 1, death: 1, technique: 1, card: 1, expedition: 1, hunted: 1 };
+const AWAY_KEEP = { rare: 1, pet: 1, levelup: 1, kill: 1, schematic: 1, mission: 1, death: 1, card: 1, expedition: 1, hunted: 1, dgclear: 1, dgend: 1 };
 function awayBegin() {
   if (AWAY) return AWAY;
   AWAY = { t: 0, ev: [], since: Date.now() };
@@ -25,14 +25,22 @@ hook('tick', (dt) => { if (AWAY) AWAY.t += dt; });
 EMIT_TAP = (ev, d) => {
   if (!AWAY || !AWAY_KEEP[ev] || AWAY.ev.length > 400) return;
   const t = AWAY.t;
-  if (ev === 'kill') { if (d.boss) AWAY.ev.push({ k: 'boss', t, name: d.enemy.name }); return; }
+  if (ev === 'kill') {
+    if (d.boss) AWAY.ev.push({ k: 'boss', t, name: d.enemy.name });
+    // technique scrolls wait in the Bank: one line counts them
+    let n = 0;
+    for (const id in d.loot || {}) if (ITEMS[id] && ITEMS[id].type === 'scroll') n += d.loot[id];
+    if (n) { if (!AWAY.scroll) AWAY.ev.push(AWAY.scroll = { k: 'scroll', t, n: 0 }); AWAY.scroll.n += n; }
+    return;
+  }
+  if (ev === 'dgclear') { AWAY.ev.push({ k: 'dg', t, id: d.id, piece: d.piece }); return; }
+  if (ev === 'dgend') { if (d.why === 'defeat') AWAY.ev.push({ k: 'dgfail', t, id: d.id, room: d.room }); return; }
   if (ev === 'rare') { AWAY.ev.push({ k: 'rare', t, id: d.id, source: d.source }); return; }
   if (ev === 'pet') { AWAY.ev.push({ k: 'pet', t, id: d.id, name: d.name }); return; }
   if (ev === 'levelup') { AWAY.ev.push({ k: 'level', t, skill: d.skill, level: d.level }); return; }
   if (ev === 'schematic') { AWAY.ev.push({ k: 'schem', t, id: d }); return; }
   if (ev === 'mission') { if (d.why === 'done' || d.why === 'skip' || d.why === 'stopped') AWAY.ev.push({ k: 'mission', t, why: d.why, name: d.name, n: d.m.n, done: d.m.done || 0, reason: d.reason }); return; }
   if (ev === 'death') { if (!d.rank) AWAY.ev.push({ k: 'death', t, name: d.name }); return; }
-  if (ev === 'technique') { if (d.fresh) AWAY.ev.push({ k: 'tech', t, id: d.id }); return; }
   if (ev === 'card') { AWAY.ev.push({ k: 'card', t, id: d.id }); return; }
   if (ev === 'hunted') { AWAY.ev.push({ k: 'hunt', t, id: d.id, real: d.real }); return; }
   if (ev === 'expedition') AWAY.ev.push({ k: 'ship', t, id: d.id, hauls: d.hauls });
