@@ -128,3 +128,12 @@
 .aw-gold .gi { width: 14px; height: 14px; fill: var(--gold); }
 .aw-gold.short b { color: #ff8a8a; }
 @media (max-width: 720px) { .fo-qty { width: 100%; } .fo-qty .fo-cta { flex: 1; width: auto; } }
+
+/* ---------- 09b · every undiscovered thing: black silhouette + "?" on top, never its name */
+.tile.unk .tile-art > .gi, .tile.unk .tile-art > img, .dt-art.sil > .gi, i.sil > .gi { filter: brightness(0) opacity(0.78) !important; stroke: none !important; opacity: 1; }
+.tile.unk .tile-art > .q, .dt-art.sil > .q, i.sil > .q { position: absolute; inset: 0; display: grid; place-items: center; z-index: 2; pointer-events: none;
+  font: 700 calc(var(--ts, 68px) * 0.34) / 1 var(--display); color: rgba(255, 255, 255, 0.9); text-shadow: 0 0 4px #000, 0 1px 2px #000; }
+.tile.unk .tile-art .tile-badge, .tile.unk .tile-art .tile-tag, .tile.unk .tile-art .tile-kind { display: none; }
+.dt-art.sil > .q { font-size: 44px; }
+i.sil { position: relative; display: inline-grid; place-items: center; }
+i.sil > .q { font-size: 11px; }
