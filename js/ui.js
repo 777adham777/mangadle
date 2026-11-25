@@ -1170,7 +1170,8 @@ function inBattleView() { return S.ui.view === 'battle'; }
 
 on('action', (d) => {
   const card = $(`[data-card="${d.skill}:${d.act.id}"]`);
-  const anchor = card ? $('.tile', card) : $('#nowbar .tile');
+  // The numbers rise from the item being made or gathered: the focus panel's big icon, else its card, else the activity bar.
+  const anchor = $(`[data-focus="${d.skill}"] .fo-tile`) || (card ? $('.tile', card) : $('#nowbar .tile'));
   const fast = actionTime(d.skill, d.act) < 0.8;
   if (!fast) {
     let i = 0;

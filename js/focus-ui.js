@@ -137,7 +137,6 @@ function focusHTML(skill) {
         <span class="fo-ring" data-foring="${skill}:${a.id}"></span>
         ${tile(null, null, { r, icon: actIc(skill, a), mark: actMark(a), cls: 'fo-tile', title: a.name })}
         <span class="fo-time" ${run ? 'data-nowtime' : ''}>${run || locked ? '' : fmtTime(actionTime(skill, a))}</span>
-        <div class="fo-pops" data-fopops="${skill}"></div>
       </div>
       <div class="fo-info">
         <div class="fo-head"><div><small class="fo-kick">${kick}</small><h2>${esc(a.name)}</h2><div class="fo-sub">${stars(r)}<span>${esc(sub)}</span></div></div>${own}</div>
@@ -222,19 +221,12 @@ UPD.push(() => {
     if (G.col) g.style.setProperty('--gc', G.col);
   }
 });
-// Each result pops out of the item: what you got, the XP.
+// Each result bumps the item; the +items / +XP numbers rise from it (ui.js 'action' anchors on .fo-tile).
 on('action', (d) => {
   const el = $(`[data-focus="${d.skill}"]`);
   if (!el) return;
   if (d.skill === 'archaeology' && typeof gridHTML === 'function') { const box = $('.fo-grid', el); if (box) box.innerHTML = gridHTML(d.act.id); }
   if (calmMotion()) return;
-  const out = focusOut(d.act), n = out ? Object.keys(d.gains).filter((k) => baseOf(k) === out).reduce((t, k) => t + d.gains[k], 0) : 0;
-  const box = $('[data-fopops]', el), tl = $('.fo-tile', el);
+  const tl = $('.fo-tile', el);
   if (tl) retrigger(tl, 'fo-hit');
-  if (!box || actionTime(d.skill, d.act) < 0.6) return;
-  const p = document.createElement('span');
-  p.className = 'fo-pop' + (d.double ? ' dbl' : '');
-  p.innerHTML = n ? `+${fmt(n)}${d.double ? ' <small>double</small>' : ''}` : `+${fmt(d.xp)} <small>XP</small>`;
-  box.appendChild(p);
-  setTimeout(() => p.remove(), 1200);
 });

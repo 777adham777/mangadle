@@ -33,11 +33,6 @@
 .fo-time { position: absolute; bottom: -14px; left: 50%; transform: translateX(-50%); padding: 1px 9px; border-radius: 2px; background: rgba(8, 9, 13, 0.8);
   border: 1px solid var(--line2); font: 700 12px var(--display); color: var(--dim); letter-spacing: 0.04em; white-space: nowrap; }
 .fo-time:empty { display: none; }
-.fo-pops { position: absolute; inset: 0; pointer-events: none; }
-.fo-pop { position: absolute; left: 50%; top: 34%; transform: translateX(-50%); font: 800 22px var(--display); color: #fff; white-space: nowrap;
-  text-shadow: 0 2px 0 rgba(0, 0, 0, 0.7), 0 0 10px color-mix(in srgb, var(--rc) 80%, transparent); animation: foPop 1.2s ease-out forwards; }
-.fo-pop small { font-size: 12px; color: var(--dim); letter-spacing: 0.08em; text-transform: uppercase; }
-.fo-pop.dbl { color: var(--gold); }
 
 /* what it is, what it gives */
 .fo-info { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
@@ -121,7 +116,6 @@
 #nowbar.here .nb-main { flex: 1; }
 
 @keyframes foHit { 0% { transform: scale(1); } 40% { transform: scale(1.08); } 100% { transform: scale(1); } }
-@keyframes foPop { 0% { opacity: 0; transform: translate(-50%, 8px) scale(0.8); } 15% { opacity: 1; transform: translate(-50%, 0) scale(1.05); } 100% { opacity: 0; transform: translate(-50%, -60px) scale(1); } }
 
 @media (max-width: 720px) {
   .fo-body { grid-template-columns: minmax(0, 1fr); gap: 14px; padding: 16px; }
@@ -132,5 +126,5 @@
   .fo-cta { width: 100%; }
 }
 @media (prefers-reduced-motion: reduce) {
-  .fo-tile.fo-hit, .fo-pop { animation: none; }
+  .fo-tile.fo-hit { animation: none; }
 }
