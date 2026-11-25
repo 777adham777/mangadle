@@ -58,7 +58,7 @@ function defaultState() {
     asc: {},                            // world id -> chosen Ascension tier for its zones
     gear: {},
     arms: [], armSeq: 0, equipU: null,   // weapon copies and the one you wield (weapons.js)                           // equipment id -> { xp, rel, gems: [], tier } (awakening, sockets, reforge)
-    tech: { loadout: [null, null, null, null, null, null], lv: {}, pity: 0, v: 2 },   // techniques.js
+    tech: { loadout: [null, null, null, null, null, null, null], lv: {}, pity: 0, v: 3 },   // techniques.js
     ki: { form: null, stamina: 100 },
     farm: { plots: [], auto: false },
     buffs: {},                          // meal buffs: stat -> { v, t (seconds left) }
@@ -878,8 +878,8 @@ function loadFrom(json) {
   if ((d.goalV || 1) < 2) { const id = OLD_GOAL_IDS[d.goal]; d.goal = id != null && GOAL_BY[id] != null ? GOAL_BY[id] : d.goal >= OLD_GOAL_IDS.length ? GOALS.length : 0; d.goalV = 2; }
   // The avatar was removed (2026-11-24): only its name (the poster's) is kept.
   if (d.avatar) { if (!d.hero && d.avatar.name) d.hero = { name: String(d.avatar.name) }; delete d.avatar; }
-  // Techniques were reworked on 2026-11-25 (scrolls buy levels, six open slots): techniques.js converts the save.
-  if (d.tech && (d.tech.v || 1) < 2 && typeof techMigrateSave === 'function') techMigrateSave(d);
+  // Techniques were reworked on 2026-11-25 (rarity scrolls, 3 Active / 3 Passive / 1 Ultimate): techniques.js converts the save.
+  if (d.tech && (d.tech.v || 1) < 3 && typeof techMigrateSave === 'function') techMigrateSave(d);
   S = mergeDefaults(d, defaultState());
   sanitize();
 }

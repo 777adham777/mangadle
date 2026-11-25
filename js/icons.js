@@ -580,6 +580,7 @@ ICONS.ui.dev = 'dev-code';
 // Technique scrolls
 for (const id in ITEMS) if (ITEMS[id].type === 'scroll') ICONS.item[id] = 'tied-scroll';
 ICONS.technique = { shadow_strike: 'hooded-assassin', kunai_volley: 'triple-needle', healing_palm: 'heart-plus', mist_step: 'fog', iron_skin: 'mailed-fist', sealing_mark: 'yin-yang', fire_lotus: 'fire' };
+Object.assign(ICONS.technique, { chakra_control: 'concentration-orb', observation_haki: 'third-eye', reiatsu_pressure: 'aura' });
 Object.assign(ICONS.ui, { tsup: 'magic-swirl', tpas: 'aura', tult: 'falling-star', frag: 'crystal-shine', technique: 'shuriken', awaken: 'shining-sword', socket: 'gems', reforge: 'anvil-impact', chakra: 'concentration-orb' });
 
 // ---- Kaio Planet

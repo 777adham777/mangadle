@@ -146,14 +146,32 @@ const TECHNIQUES = {
     desc: (L) => `Heal ${30 + 2 * (L - 1)}% of your max HP, then open a domain: drain and heal techniques +50%, take 30% less damage.`,
     tiers: { 5: 'The domain lasts 15s.', 10: 'Regenerate 3% of max HP per second inside it.' } },
 };
+// Passives for the first three worlds (2026-11-25: three Passive slots need something to hold).
+Object.assign(TECHNIQUES, {
+  chakra_control: { name: 'Chakra Control', cat: 'passive', realm: 'shinobi', cd: 0, tags: ['passive'],
+    desc: (L) => `While equipped: techniques deal ${8 + (L - 1)}% more damage.`,
+    tiers: { 5: 'Also +5% max HP.', 10: 'Techniques deal another 10% more.' } },
+  observation_haki: { name: 'Observation Haki', cat: 'passive', realm: 'seas', cd: 0, tags: ['passive', 'haki'],
+    desc: (L) => `While equipped: ${(4 + 0.5 * (L - 1)).toFixed(1)}% chance to dodge every blow.`,
+    tiers: { 5: 'Also +5% defense.', 10: 'Dodge chance +5% more.' } },
+  reiatsu_pressure: { name: 'Spiritual Pressure', cat: 'passive', realm: 'soul', cd: 0, tags: ['passive'],
+    desc: (L) => `While equipped: foes deal ${6 + (L - 1)}% less damage to you.`,
+    tiers: { 5: 'Also +5% damage.', 10: 'Foes deal another 6% less.' } },
+});
+// Rarity of each technique (1 Common … 5 Legendary): a rarer scroll draws rarer techniques more often.
+const TECH_RAR = { shadow_strike: 1, kunai_volley: 1, healing_palm: 2, mist_step: 2, iron_skin: 2, sealing_mark: 3, fire_lotus: 4, chakra_control: 3,
+  iron_fist: 1, foresight: 2, cannon_volley: 3, observation_haki: 3, reaper_slash: 2, soul_ward: 3, spirit_chain: 3, reiatsu_pressure: 4,
+  ki_blast: 2, battle_instinct: 3, iron_body: 3, zen_focus: 4, domain_blaze: 4, domain_storm: 4, domain_garden: 5, domain_shrine: 5,
+  nen_enhance: 2, nen_emit: 3, nen_conjure: 3, nen_manip: 3, nen_trans: 4, nen_special: 5 };
+for (const id in TECHNIQUES) TECHNIQUES[id].rar = TECH_RAR[id] || 2;
 // Technique pools: which world's scroll teaches what. Each world adds its own as it is reworked.
 const TECH_POOLS = {};
 for (const id in TECHNIQUES) (TECH_POOLS[TECHNIQUES[id].realm] = TECH_POOLS[TECHNIQUES[id].realm] || []).push(id);
-// A world's scroll drops from its foes and waits in the Bank: it is that world's technique currency
-// (learn a technique, then level it up). techniques.js.
+// A world's scrolls drop from its foes in four rarities (techniques.js adds Rare, Epic, Legendary) and wait
+// in the Bank: reading one draws a technique of that world, rarer scrolls favour rarer techniques.
 const SCROLL_NAME = { shinobi: 'Leaf Scroll', seas: 'Sea Scroll', soul: 'Soul Scroll', ki: 'Ki Scroll', hex: 'Cursed Scroll', hunter: 'Hunter Scroll' };
 for (const r in TECH_POOLS) defItem('scroll_' + r, SCROLL_NAME[r] || `${REALMS[r].name} Scroll`, '📜', 40, { type: 'scroll', pool: r, desc: 'Technique currency: spend it on the Techniques page to learn or level up a technique of its world.' });
-// Crafting copies a Leaf Scroll from forest materials: a steady way to the next Leaf technique level.
+// Crafting copies a (Common) Leaf Scroll from forest materials.
 SKILLS.arts.actions.push(craft('scroll_shinobi', 10, 6, { chakra_shard: 8, healing_leaf: 6, chakra_orb: 2 }));
 SKILLS.arts.actions.sort((a, b) => a.level - b.level);
 

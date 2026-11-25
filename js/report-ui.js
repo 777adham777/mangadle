@@ -106,7 +106,7 @@ function cooReady() {
   if (typeof msOn === 'function' && msOn() && !msUsed()) out.push(['The Task Queue is empty', gbtn('Queue', 'missions', 'data-msboard', 'sm')]);
   const chests = Object.keys(S.items).filter((k) => ITEMS[k] && ITEMS[k].type === 'chest').reduce((a, k) => a + count(k), 0);
   if (chests) out.push([`${fmt(chests)} chest${chests > 1 ? 's' : ''} to open`, gbtn('Bank', 'open', 'data-nav="hero" data-closemodal', 'sm')]);
-  if (typeof techReady === 'function' && techReady()) out.push(['Scrolls to spend on techniques', gbtn('Techniques', 'technique', 'data-nav="techniques" data-closemodal', 'sm')]);
+  if (typeof techReady === 'function' && techReady()) out.push(['Technique scrolls to read', gbtn('Techniques', 'technique', 'data-nav="techniques" data-closemodal', 'sm')]);
   if (typeof plots === 'function' && skillOpen('farming')) {
     const ripe = plots().filter((p) => p && CROP_BY[p.crop] && p.t >= CROP_BY[p.crop].mins * 60).length;
     if (ripe) out.push([`${ripe} plot${ripe > 1 ? 's' : ''} ready to harvest`, gbtn('Farming', 'play', `data-nav="realm:${SKILLS.farming.realm}:farming" data-closemodal`, 'sm')]);

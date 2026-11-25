@@ -96,7 +96,7 @@ function guideStep() {
   }
   if (G.scroll) {
     if (S.ui.view !== 'techniques') return nav;
-    return { sels: ['.tk-buy:not([disabled])'], text: 'Click <b>Learn</b>: one scroll teaches you that technique.' };
+    return { sels: ['[data-readscroll]'], text: 'Click <b>Read</b>: the scroll teaches you a technique.' };
   }
   return null;
 }
@@ -200,9 +200,9 @@ const INTRO = {
              [() => ui('map'), 'Ten wins open the next stage', 'Every world ends with a guardian.'],
              [() => ui('gold'), 'Loot', 'Gold, gear, scrolls and the materials for new worlds.']] },
   'feature:techniques': { icon: () => ui('technique'), kicker: 'New menu', title: 'Techniques',
-    text: "Foes drop their world's scroll. Spend scrolls here: you choose which technique to learn and level up.",
-    points: [[() => ui('technique'), '1 scroll learns a technique', 'It takes a free slot and fires on its own in battle.'],
-             [() => ui('plus'), 'More scrolls, more levels', 'Levels 5 and 10 change how it works. More slots open as you grow.']] },
+    text: "Foes drop their world's scrolls, in four rarities. Read them here: each one teaches a technique of that world, or levels one you know.",
+    points: [[() => ui('technique'), 'Rarer scroll, rarer technique', 'Common scrolls drop often; Legendary ones are a chase.'],
+             [() => ui('plus'), '3 Active, 3 Passive, 1 Ultimate', 'Slots open as you grow. Actives fire in order; passives are always on.']] },
   'feature:dungeons': { icon: () => ui('map'), kicker: 'New on the Battlefield', title: 'Dungeons',
     text: 'Five rooms in a row and no rest between them. A key per run, a chest and a set at the end.',
     points: [[() => ui('food'), 'Bring food', 'Your HP does not come back between rooms.'],

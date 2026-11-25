@@ -1,150 +1,191 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — techniques (GDD §2.2), DOM-free. Data: TECHNIQUES in worlds.js.
-   Reworked 2026-11-25 so that every step is a choice you can read:
-   - Scrolls are each world's technique currency. Foes of a world drop its scroll (a pity counter
-     guarantees one); quests, objectives, dungeon chests and Crafting give more. They wait in the Bank.
-   - You pick what to buy: learning a technique costs 1 scroll of its world, each level after costs
-     more (TECH_COST). Levels 5 and 10 change how it works. Cursed Fragments pay for a missing scroll
-     of any world (CURSED_PER_SCROLL each).
-   - Six slots, any technique in any slot (one Ultimate at a time). They open with your Character
-     level and your worlds. In battle each equipped technique fires as soon as its cooldown is over,
-     in slot order; defensive ones wait for their moment; passives just work while equipped.
-   State: S.tech = { lv: { id: level }, loadout: [id | null] × 6, pity, v: 2 }.
+   TRI-REALM — techniques (GDD §2.2), DOM-free. Data: TECHNIQUES / TECH_RAR in worlds.js.
+   Reworked twice on 2026-11-25; the user's final rules:
+   - Every technique has a rarity (1 Common … 5 Legendary). Scrolls come in four rarities per world
+     (Common, Rare, Epic, Legendary). Reading one draws a technique of its world: the rarer the scroll,
+     the likelier a rare technique (SCROLL_ODDS). A technique you know goes up one level (max 10);
+     mastered ones leave the draw.
+   - Cursed Fragments are the one sure path: CURSED_PER_LEVEL of them level a technique you choose.
+   - Seven slots by kind: 3 Active (attack, defense, support; they fire in slot order, defensive ones
+     wait for their moment), 3 Passive (always on), 1 Ultimate (fires when ready).
+   State: S.tech = { lv: { id: level }, loadout: [id | null] × 7, pity, v: 3 }.
    ========================================================================== */
 
 const techOn = () => isUnlocked('feature:techniques');
 const techLv = (id) => S.tech.lv[id] || 0;
 const techTier = (id, t) => techLv(id) >= t;
-// Scrolls to go from level L to L+1 (L = 0: learn it). 66 scrolls from nothing to level 10: learning is
-// cheap, mastering one technique is a long goal (about a day of fighting in its world).
-const TECH_COST = [1, 2, 3, 4, 5, 6, 8, 10, 12, 15];
-const techCost = (id) => (techLv(id) >= TECH_MAX ? 0 : TECH_COST[techLv(id)]);
-const CURSED_PER_SCROLL = 3;
-const scrollOf = (id) => 'scroll_' + TECHNIQUES[id].realm;
+const techRar = (id) => (TECHNIQUES[id] && TECHNIQUES[id].rar) || 1;
+const CURSED_PER_LEVEL = 5;
 
 const TECH_CATS = {
-  attack:   { name: 'Attack',   icon: 'atk',  how: 'Fires as soon as it is ready' },
-  defense:  { name: 'Defense',  icon: 'def',  how: 'Fires when you are hurt or before a big blow' },
-  support:  { name: 'Support',  icon: 'tsup', how: 'Fires as soon as it is ready' },
-  passive:  { name: 'Passive',  icon: 'tpas', how: 'Always on while equipped' },
-  ultimate: { name: 'Ultimate', icon: 'tult', how: 'Fires when ready · one equipped at a time' },
+  attack:   { name: 'Attack',   icon: 'atk',  kind: 'active',   how: 'Fires as soon as it is ready' },
+  defense:  { name: 'Defense',  icon: 'def',  kind: 'active',   how: 'Fires when you are hurt or before a big blow' },
+  support:  { name: 'Support',  icon: 'tsup', kind: 'active',   how: 'Fires as soon as it is ready' },
+  passive:  { name: 'Passive',  icon: 'tpas', kind: 'passive',  how: 'Always on while equipped' },
+  ultimate: { name: 'Ultimate', icon: 'tult', kind: 'ultimate', how: 'Fires when ready' },
 };
-// Six slots, open to any technique. They open with your Character level, then with your worlds.
+const SLOT_KINDS = { active: 'Active', passive: 'Passive', ultimate: 'Ultimate' };
+const techKind = (id) => TECH_CATS[TECHNIQUES[id].cat].kind;
+// 3 Active, 3 Passive, 1 Ultimate. They open with your Character level, then with your worlds.
 const TECH_SLOTS = [
-  { open: () => true },
-  { open: () => charLv() >= 8,  hint: 'Character level 8' },
-  { open: () => charLv() >= 20, hint: 'Character level 20' },
-  { open: () => !!S.gates.soul, hint: 'Reach Soul City' },
-  { open: () => !!S.gates.ki,   hint: 'Reach Kaio Planet' },
-  { open: () => !!S.gates.hex,  hint: 'Reach Shinjuku' },
-].map((s, i) => Object.assign(s, { i, name: 'Slot ' + (i + 1) }));
+  { kind: 'active',   open: () => true },
+  { kind: 'active',   open: () => charLv() >= 8,  hint: 'Character level 8' },
+  { kind: 'active',   open: () => charLv() >= 20, hint: 'Character level 20' },
+  { kind: 'passive',  open: () => charLv() >= 12, hint: 'Character level 12' },
+  { kind: 'passive',  open: () => !!S.gates.soul, hint: 'Reach Soul City' },
+  { kind: 'passive',  open: () => !!S.gates.ki,   hint: 'Reach Kaio Planet' },
+  { kind: 'ultimate', open: () => !!S.gates.hex,  hint: 'Reach Shinjuku' },
+].map((s, i, all) => Object.assign(s, { i, name: `${SLOT_KINDS[s.kind]} ${all.slice(0, i + 1).filter((x) => x.kind === s.kind).length}` }));
 const loadout = () => { const L = Array.isArray(S.tech.loadout) ? S.tech.loadout : (S.tech.loadout = []); while (L.length < TECH_SLOTS.length) L.push(null); return L; };
 const slotOpen = (i) => !!(TECH_SLOTS[i] && TECH_SLOTS[i].open());
 const openSlots = () => TECH_SLOTS.filter((s) => s.open());
 const slotOf = (id) => loadout().indexOf(id);
 const isEquipped = (id) => !!id && slotOpen(slotOf(id));
-// What fights: the open slots in order (Narrow Path: only the first two).
-const equipped = () => openSlots().slice(0, typeof pactOn === 'function' && pactOn('narrow') ? 2 : 99).map((s) => loadout()[s.i]).filter((id) => id && techLv(id));
-const freeSlot = () => openSlots().find((s) => !loadout()[s.i]);
+// What fights: actives in slot order (Narrow Path: only the first two), passives, the Ultimate.
+const equipped = () => {
+  const narrow = typeof pactOn === 'function' && pactOn('narrow');
+  let act = 0;
+  return openSlots().filter((s) => s.kind !== 'active' || (!narrow || act++ < 2)).map((s) => loadout()[s.i]).filter((id) => id && techLv(id));
+};
+const freeSlot = (kind) => openSlots().find((s) => s.kind === kind && !loadout()[s.i]);
 
-// Put a technique in slot i (or empty it with id = null). Moved from another slot, the two swap;
-// a new Ultimate replaces the one already equipped.
+// Put a technique in slot i (or empty it with id = null). Slot kinds must match; moved from another
+// slot of the same kind, the two swap.
 function equipTech(i, id) {
-  if (!slotOpen(i) || (id && !techLv(id))) return false;
+  if (!slotOpen(i) || (id && (!techLv(id) || techKind(id) !== TECH_SLOTS[i].kind))) return false;
   const L = loadout();
-  if (id) {
-    const j = L.indexOf(id);
-    if (j >= 0 && j !== i) L[j] = L[i] && slotOpen(j) ? L[i] : null;
-    if (TECHNIQUES[id].cat === 'ultimate') for (let k = 0; k < L.length; k++) if (k !== i && L[k] && TECHNIQUES[L[k]] && TECHNIQUES[L[k]].cat === 'ultimate') L[k] = null;
-  }
+  if (id) { const j = L.indexOf(id); if (j >= 0 && j !== i) L[j] = L[i] && slotOpen(j) ? L[i] : null; }
   L[i] = id || null;
   dirty = true;
   return true;
 }
 function unequipTech(id) { const j = slotOf(id); if (j < 0) return false; loadout()[j] = null; dirty = true; return true; }
-// Move a slot's technique up (-1) or down (+1): the firing order.
+// Move an Active technique up (-1) or down (+1): the firing order.
 function moveTech(i, d) {
-  const j = i + d, L = loadout();
+  const L = loadout();
+  let j = i + d;
+  while (TECH_SLOTS[j] && TECH_SLOTS[j].kind !== TECH_SLOTS[i].kind) j += d;
   if (!slotOpen(i) || !slotOpen(j)) return false;
   [L[i], L[j]] = [L[j], L[i]];
   dirty = true;
   return true;
 }
-// Equip into the first free slot; with none free, the player chooses what to replace.
 function autoEquip(id) {
   if (isEquipped(id)) return true;
-  const s = freeSlot();
-  if (!s) return false;
-  if (TECHNIQUES[id].cat === 'ultimate' && equipped().some((x) => TECHNIQUES[x].cat === 'ultimate')) return false;
-  return equipTech(s.i, id);
+  const s = freeSlot(techKind(id));
+  return s ? equipTech(s.i, id) : false;
 }
 
-/* ------------------------------------------------------------ learning and levels */
-// The price of the next step: { n, scrolls, cursed, ok }. Missing scrolls are paid with Cursed Fragments.
-function techPrice(id) {
-  const n = techCost(id);
-  if (!n) return null;
-  const sc = Math.min(count(scrollOf(id)), n), cursed = (n - sc) * CURSED_PER_SCROLL;
-  return { n, scrolls: sc, cursed, ok: !cursed || count('cursed_fragment') >= cursed };
+/* ------------------------------------------------------------ scrolls and the draw */
+// Scroll rarities: [suffix, rarity, name]. The Common one keeps the old id (quests, chests, Crafting).
+const SCROLL_TIERS = [['', 1, ''], ['_r3', 3, 'Rare '], ['_r4', 4, 'Epic '], ['_r5', 5, 'Legendary ']];
+// Chance weights of a technique's rarity (1-5) for each scroll rarity.
+const SCROLL_ODDS = { 1: [0, 60, 30, 9, 1, 0], 3: [0, 20, 30, 35, 12, 3], 4: [0, 5, 15, 35, 35, 10], 5: [0, 0, 5, 20, 40, 35] };
+const scrollId = (realm, rar) => 'scroll_' + realm + (SCROLL_TIERS.find((t) => t[1] === rar) || SCROLL_TIERS[0])[0];
+const isScroll = (id) => !!(ITEMS[id] && ITEMS[id].type === 'scroll');
+const scrollIds = () => Object.keys(S.items).filter((k) => isScroll(k) && S.items[k] >= 1);
+const scrollsOwned = () => scrollIds().reduce((a, k) => a + Math.floor(S.items[k]), 0);
+// What a scroll can draw now: its world's techniques not yet mastered, with their chance (sums to 1).
+function scrollOdds(id) {
+  const it = ITEMS[id];
+  if (!it || !it.pool) return [];
+  const W = SCROLL_ODDS[it.srar || 1], ids = (TECH_POOLS[it.pool] || []).filter((t) => techLv(t) < TECH_MAX);
+  const tot = ids.reduce((a, t) => a + W[techRar(t)], 0);
+  if (!tot) return ids.map((t) => [t, 1 / ids.length]);
+  return ids.map((t) => [t, W[techRar(t)] / tot]).filter((x) => x[1] > 0);
 }
-const techCanUp = (id) => { const p = techPrice(id); return !!(p && p.ok); };
-// Learn (level 0 → 1) or level up. A new technique takes a free slot if there is one.
-function techUp(id) {
-  const p = techPrice(id);
-  if (!p || !p.ok) return false;
-  if (p.scrolls) removeItem(scrollOf(id), p.scrolls);
-  if (p.cursed) removeItem('cursed_fragment', p.cursed);
+const scrollBlock = (id) => (!isScroll(id) ? 'Not a scroll.' : scrollOdds(id).length ? '' : 'Every technique of this world is mastered.');
+// Learn a technique, or raise it one level. Returns { id, fresh, lv }.
+function gainTech(id, source) {
+  if (!TECHNIQUES[id] || techLv(id) >= TECH_MAX) return null;
   const fresh = !techLv(id);
   S.tech.lv[id] = techLv(id) + 1;
-  S.stats.scrolls = (S.stats.scrolls || 0) + p.n;
-  if (fresh) { autoEquip(id); emit('technique', { id, fresh: true }); } else emit('techup', { id, lv: S.tech.lv[id] });
+  if (fresh) autoEquip(id);
+  const res = { id, fresh, lv: S.tech.lv[id], source };
+  emit(fresh ? 'technique' : 'techup', res);
   dirty = true;
-  return true;
+  return res;
 }
-// How many techniques you could learn or level with the scrolls you hold (the menu badge).
-const techReady = () => (techOn() ? Object.keys(TECHNIQUES).filter((id) => realmOpen(TECHNIQUES[id].realm) && count(scrollOf(id)) > 0 && techCanUp(id)).length : 0);
+// Read n scrolls of one stack ('all' = the whole stack). Returns { id, n, res: [gainTech results] }.
+function readScrolls(id, n) {
+  if (scrollBlock(id)) return null;
+  const k = Math.min(Math.floor(count(id)), n === 'all' ? Infinity : Math.max(1, n | 0));
+  if (!k) return null;
+  const res = [];
+  for (let i = 0; i < k; i++) {
+    const odds = scrollOdds(id);
+    if (!odds.length) break;
+    removeItem(id, 1);
+    let r = Math.random(), pick = odds[odds.length - 1][0];
+    for (const [t, p] of odds) { if (r < p) { pick = t; break; } r -= p; }
+    const g = gainTech(pick, 'read');
+    if (g) res.push(g);
+  }
+  S.stats.scrolls = (S.stats.scrolls || 0) + res.length;
+  emit('scrollsread', { id, n: res.length, res });
+  return { id, n: res.length, res };
+}
+function readAllScrolls() {
+  const out = [];
+  for (const id of scrollIds().sort((a, b) => ITEMS[a].srar - ITEMS[b].srar)) { const r = readScrolls(id, 'all'); if (r && r.n) out.push(r); }
+  return out;
+}
+// The sure path: Cursed Fragments level a technique you already know.
+const infuseCost = () => CURSED_PER_LEVEL;
+function infuseTech(id) {
+  if (!techLv(id) || techLv(id) >= TECH_MAX || count('cursed_fragment') < CURSED_PER_LEVEL) return false;
+  removeItem('cursed_fragment', CURSED_PER_LEVEL);
+  return !!gainTech(id, 'infuse');
+}
+// Scrolls you could read now (the menu badge).
+const techReady = () => (techOn() ? scrollIds().filter((k) => !scrollBlock(k)).reduce((a, k) => a + Math.floor(count(k)), 0) : 0);
 
-/* ------------------------------------------------------------ scrolls */
-const isScroll = (id) => !!(ITEMS[id] && ITEMS[id].type === 'scroll');
-const scrollIds = () => Object.keys(S.items).filter((k) => isScroll(k) && S.items[k] > 0);
-const scrollsOwned = () => scrollIds().reduce((a, k) => a + S.items[k], 0);
-
-// Saves from before the rework: the typed slots fill the six slots in their old order, fragments
-// become scrolls of the technique's world (3 for 1, rounded up) and written scrolls their world's scroll.
+// Older saves. v1 (typed slots + fragments) and v2 (currency, six open slots): techniques keep their
+// level, the loadout fills the new slots by kind, fragments become Common scrolls of their world.
 function techMigrateSave(d) {
   const T = d.tech, items = d.items = d.items || {};
   const lv = {};
   for (const id in T.lv || {}) if (TECHNIQUES[id] && T.lv[id] > 0) lv[id] = Math.min(TECH_MAX, T.lv[id]);
-  const out = [null, null, null, null, null, null];
-  let i = 0;
-  for (const k of ['atk1', 'def', 'atk2', 'atk3', 'sup', 'pas', 'ult']) {
-    const id = T.slots && !Array.isArray(T.slots) ? T.slots[k] : null;
-    if (id && lv[id] && !out.includes(id) && i < out.length) out[i++] = id;
+  const old = Array.isArray(T.loadout) ? T.loadout : ['atk1', 'def', 'atk2', 'atk3', 'sup', 'pas', 'ult'].map((k) => (T.slots && !Array.isArray(T.slots) ? T.slots[k] : null));
+  const out = TECH_SLOTS.map(() => null);
+  for (const id of old) {
+    if (!id || !lv[id] || out.includes(id)) continue;
+    const i = TECH_SLOTS.findIndex((s, k) => s.kind === TECH_CATS[TECHNIQUES[id].cat].kind && !out[k]);
+    if (i >= 0) out[i] = id;
   }
   const give = (k, n) => { if (n > 0) items[k] = (items[k] || 0) + n; };
   for (const id in T.frag || {}) if (TECHNIQUES[id]) give('scroll_' + TECHNIQUES[id].realm, Math.ceil((T.frag[id] || 0) / 3));
   for (const id in TECHNIQUES) { const k = 'scroll_' + id; if (items[k]) { give('scroll_' + TECHNIQUES[id].realm, items[k]); delete items[k]; } }
-  d.tech = { lv, loadout: out, pity: T.pity || 0, v: 2 };
+  d.tech = { lv, loadout: out, pity: T.pity || 0, v: 3 };
 }
 
 /* ------------------------------------------------------------ scroll drops */
-// Every foe of a world with techniques can drop that world's scroll. Bosses drop it often.
-// Pity: 120 kills in a row without one guarantees the next; your very first comes by the 10th kill.
-const SCROLL_RATE = 1 / 80, SCROLL_BOSS = 1 / 6, SCROLL_PITY = 120;
+// Every foe of a world with techniques can drop its scrolls; guardians drop them far more often.
+// Pity (Common): 120 kills in a row without any scroll guarantees one; your very first comes by the 10th kill.
+const SCROLL_RATE = { 1: 1 / 80, 3: 1 / 450, 4: 1 / 2500, 5: 1 / 12000 };
+const SCROLL_BOSS = 8, SCROLL_PITY = 120;
+for (const r in TECH_POOLS) for (const [suf, rar, nm] of SCROLL_TIERS) {
+  const id = 'scroll_' + r + suf;
+  if (!ITEMS[id]) defItem(id, nm + (SCROLL_NAME[r] || `${REALMS[r] ? REALMS[r].name : r} Scroll`), '📜', 40 * rar * rar, { type: 'scroll', pool: r, base: 'scroll_' + r });
+  Object.assign(ITEMS[id], { srar: rar, rarity: rar, pool: r,
+    desc: `Read it to learn a technique of its world, or raise one you know by a level. The rarer the scroll, the likelier a rare technique.` });
+  if (typeof ICONS !== 'undefined' && ICONS.item && !ICONS.item[id]) { ICONS.item[id] = ICONS.item['scroll_' + r]; if (typeof ICON_COLOR !== 'undefined') ICON_COLOR[id] = ICON_COLOR['scroll_' + r]; }
+}
 for (const z of ZONES) {
   if (!TECH_POOLS[z.realm]) continue;
-  for (const e of z.enemies) e.drops.push(['scroll_' + z.realm, z.boss ? SCROLL_BOSS : SCROLL_RATE, [1, 1]]);
+  for (const e of z.enemies) for (const [suf, rar] of SCROLL_TIERS) e.drops.push(['scroll_' + z.realm + suf, Math.min(0.5, SCROLL_RATE[rar] * (z.boss ? SCROLL_BOSS : 1)), [1, 1]]);
 }
 hook('kill', (e, z, loot, dropped) => {
   const sid = 'scroll_' + z.realm;
   if (!TECH_POOLS[z.realm]) return;
   S.tech.pity = (S.tech.pity || 0) + 1;
+  const any = SCROLL_TIERS.some(([suf]) => loot[sid + suf]);
   const first = !Object.keys(S.tech.lv).length && !scrollsOwned() && !S.stats.scrollFound;
-  if (!loot[sid] && (S.tech.pity >= SCROLL_PITY || (first && S.stats.kills >= 9))) {
+  if (!any && (S.tech.pity >= SCROLL_PITY || (first && S.stats.kills >= 9))) {
     addItem(sid, 1); loot[sid] = 1; dropped.push(ITEMS[sid].name);
   }
-  if (!loot[sid]) return;
+  if (!any && !loot[sid]) return;
   S.tech.pity = 0;
   if (!S.stats.scrollFound) { S.stats.scrollFound = 1; emit('firstscroll', sid); }
 });
@@ -154,7 +195,7 @@ hook('kill', (e, z, loot, dropped) => {
 const domainOpen = () => (RT.fx.domain || 0) > 0;
 // A technique sharing an element tag with the open domain is 50% stronger.
 const domainMult = (id) => (id && domainOpen() && RT.domainTags && TECHNIQUES[id].tags.some((t) => t !== 'domain' && RT.domainTags.includes(t)) ? 1.5 : 1);
-const techPower = () => (1 + discFx('tech')) * (typeof armTechMult === 'function' ? armTechMult(RT.casting) : 1) * domainMult(RT.casting)
+const techPower = () => (1 + discFx('tech')) * (pasLv('chakra_control') ? 1 + 0.08 + 0.01 * (pasLv('chakra_control') - 1) + (pasLv('chakra_control') >= 10 ? 0.1 : 0) : 1) * (typeof armTechMult === 'function' ? armTechMult(RT.casting) : 1) * domainMult(RT.casting)
   * (typeof pactOn === 'function' && pactOn('narrow') ? 1 + 0.3 * pactMult() : 1) * ((RT.fx.scarlet || 0) > 0 ? 1.3 + 0.03 * ((isEquipped('nen_special') ? techLv('nen_special') : 1) - 1) : 1);
 // pierce: share of the foe's defense ignored.
 const strike = (e, mult, label, crit, pierce) => dealDamage(e, Math.max(1, Math.round(pMaxHit() * mult * techPower() * mitig(e.def * hmul('edef') * (1 - (pierce || 0))))), !!crit, label);
@@ -263,7 +304,13 @@ hook('taken', () => (fxOn('ward') ? 0.8 : 1) * (fxOn('chain') ? 1 - (0.2 + 0.02 
 hook('dmg', () => (fxOn('chain') && eqLv('spirit_chain') >= 10 ? 1.15 : 1));
 hook('combat', (dt) => { if (fxOn('puppet')) S.combat.eT += dt * (eqLv('nen_manip') >= 10 ? 0.4 : 0.25); });
 // Passive techniques: a bonus while equipped (in an open slot that fights).
-const pasLv = (id) => (equipped().includes(id) ? techLv(id) : 0);
+function pasLv(id) { return isEquipped(id) ? techLv(id) : 0; }   // passives are never cut by Narrow Path (it limits actives)
+// The first three worlds' passives
+hook('hp', () => (pasLv('chakra_control') >= 5 ? 1.05 : 1));
+hook('dodge', () => { const L = pasLv('observation_haki'); return L ? 0.04 + 0.005 * (L - 1) + (L >= 10 ? 0.05 : 0) : 0; });
+hook('def', () => (pasLv('observation_haki') >= 5 ? 1.05 : 1));
+hook('taken', () => { const L = pasLv('reiatsu_pressure'); return L ? 1 - (0.06 + 0.01 * (L - 1) + (L >= 10 ? 0.06 : 0)) : 1; });
+hook('dmg', () => (pasLv('reiatsu_pressure') >= 5 ? 1.05 : 1));
 hook('dmg', () => { const L = pasLv('battle_instinct'); return L ? 1 + 0.05 + 0.01 * (L - 1) : 1; });
 hook('hp', () => { const a = pasLv('battle_instinct'), b = pasLv('iron_body'); return (a >= 5 ? 1.05 : 1) * (b ? 1 + 0.08 + 0.015 * (b - 1) : 1); });
 hook('def', () => (pasLv('iron_body') >= 5 ? 1.05 : 1));

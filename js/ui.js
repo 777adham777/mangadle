@@ -219,7 +219,7 @@ function renderRail() {
   groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => {
     const f = featureOfView(k);
     if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
-    return `<button class="nq ${isOn(k) ? 'on' : ''} ${S.ui.fresh && S.ui.fresh[k] ? 'fresh' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}${k === 'techniques' && typeof techReady === 'function' && techReady() ? `<em class="nq-badge" title="Techniques you can learn or level up">${fmt(techReady())}</em>` : ''}</button>`;
+    return `<button class="nq ${isOn(k) ? 'on' : ''} ${S.ui.fresh && S.ui.fresh[k] ? 'fresh' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}${k === 'techniques' && typeof techReady === 'function' && techReady() ? `<em class="nq-badge" title="Scrolls to read">${fmt(techReady())}</em>` : ''}</button>`;
   }).join('')}</div>`);
   // Le menu qui tient: from 3 worlds on, the worlds you are not in fold to one line of skill chips (icon + level,
   // one click each). Open: the world on screen, the one working, the newest, and any you unfolded yourself.
@@ -683,7 +683,7 @@ function gsTopHTML(z) {
 function gsTechHTML() {
   if (typeof techOn !== 'function' || !techOn()) return '';
   const slots = openSlots(), n = techReady();
-  const buy = n ? `<button class="gs-tech gs-scrolls" data-nav="techniques" title="${n} technique${n > 1 ? 's' : ''} you can learn or level up with your scrolls">${gi('tied-scroll')}<em>${n} ready</em></button>` : '';
+  const buy = n ? `<button class="gs-tech gs-scrolls" data-readscroll="*" title="Read your ${n} scroll${n > 1 ? 's' : ''}">${gi('tied-scroll')}<em>Read ×${fmt(n)}</em></button>` : '';
   return `<div class="gs-techs">${buy}${slots.map((sl) => {
     const id = loadout()[sl.i];
     if (!id || !techLv(id)) return `<button class="gs-tech empty" data-nav="techniques" title="${esc(sl.name)}: empty. Equip a technique">${ui('plus')}</button>`;

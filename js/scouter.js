@@ -60,8 +60,8 @@ function scoutFixes(zi) {
   }
   if (typeof TECH_SLOTS !== 'undefined' && techOn()) {
     // Where a suggested technique goes: a free slot, else the slot of your weakest technique of another kind.
-    const slotFor = (keep) => { const f = freeSlot(); if (f) return f.i;
-      const c = equipped().filter((x) => TECHNIQUES[x].cat !== keep).sort((x, y) => techLv(x) - techLv(y))[0]; return c ? slotOf(c) : -1; };
+    const slotFor = (keep) => { const f = freeSlot('active'); if (f) return f.i;
+      const c = equipped().filter((x) => techKind(x) === 'active' && TECHNIQUES[x].cat !== keep).sort((x, y) => techLv(x) - techLv(y))[0]; return c ? slotOf(c) : -1; };
     const eq = equipped();
     if (!eq.some((x) => TECHNIQUES[x].cat === 'defense')) {
       const t = Object.keys(S.tech.lv).filter((x) => TECHNIQUES[x] && TECHNIQUES[x].cat === 'defense').sort((x, y) => techLv(y) - techLv(x))[0], i = t ? slotFor('defense') : -1;

@@ -345,23 +345,36 @@ function questTask() {
 }
 
 /* ------------------------------------------------------------ housekeeping (deterministic) */
+// Scrolls are read in expectation: each one adds its draw odds to the techniques of its world; a
+// technique gets its levels as the expected count crosses whole numbers. Cursed Fragments level the
+// weakest equipped technique. Then the loadout: best per slot kind.
+const TEV = {};
 function bestTechs() {
+  for (const id of scrollIds()) {
+    const n = Math.floor(count(id)), odds = scrollOdds(id);
+    if (!n || !odds.length) continue;
+    removeItem(id, n);
+    for (const [t, p] of odds) TEV[t] = (TEV[t] || 0) + p * n;
+  }
+  for (const t in TEV) { const L = Math.min(TECH_MAX, Math.floor(TEV[t] + 1e-9)); while (techLv(t) < L) if (!gainTech(t, 'sim')) break; }
   let g = 0;
-  while (g++ < 80) {
-    const ids = Object.keys(TECHNIQUES).filter((id) => realmOpen(TECHNIQUES[id].realm) && techCanUp(id) && (count(scrollOf(id)) >= techCost(id) || isEquipped(id)));
-    if (!ids.length) break;
-    ids.sort((a, b) => (techLv(a) ? 1 : 0) - (techLv(b) ? 1 : 0) || isEquipped(b) - isEquipped(a) || techLv(a) - techLv(b));
-    if (!techUp(ids[0])) break;
+  while (count('cursed_fragment') >= CURSED_PER_LEVEL && g++ < 20) {
+    const t = equipped().filter((x) => techLv(x) < TECH_MAX).sort((x, y) => techLv(x) - techLv(y))[0];
+    if (!t || !infuseTech(t)) break;
+    TEV[t] = Math.max(TEV[t] || 0, techLv(t));
   }
   const known = Object.keys(S.tech.lv).filter((id) => techLv(id));
-  const W = { ultimate: 5, passive: 3, defense: 3.5, support: 2, attack: 2.6 };
-  const best = (cat) => known.filter((x) => TECHNIQUES[x].cat === cat).sort((x, y) => techLv(y) - techLv(x))[0];
-  const pick = [best('ultimate'), best('defense')].filter(Boolean);
-  for (const id of known.slice().sort((x, y) => techLv(y) * W[TECHNIQUES[y].cat] - techLv(x) * W[TECHNIQUES[x].cat])) if (!pick.includes(id) && TECHNIQUES[id].cat !== 'ultimate') pick.push(id);
-  const order = ['ultimate', 'attack', 'support', 'passive', 'defense'];
-  const open = openSlots(), use = pick.slice(0, open.length).sort((x, y) => order.indexOf(TECHNIQUES[x].cat) - order.indexOf(TECHNIQUES[y].cat));
+  const W = { attack: 2.6, defense: 3.5, support: 2 };
+  const by = (kind) => known.filter((x) => techKind(x) === kind);
   const L = loadout();
-  open.forEach((s, k) => { L[s.i] = use[k] || null; });
+  const fill = (kind, ids) => { const open = openSlots().filter((s) => s.kind === kind); open.forEach((s, k) => { L[s.i] = ids[k] || null; }); };
+  const def = by('active').filter((x) => TECHNIQUES[x].cat === 'defense').sort((x, y) => techLv(y) - techLv(x))[0];
+  const act = (def ? [def] : []).concat(by('active').filter((x) => x !== def).sort((x, y) => techLv(y) * W[TECHNIQUES[y].cat] - techLv(x) * W[TECHNIQUES[x].cat]));
+  const nAct = openSlots().filter((s) => s.kind === 'active').length;
+  const pickA = act.slice(0, nAct).sort((x, y) => (TECHNIQUES[x].cat === 'defense') - (TECHNIQUES[y].cat === 'defense'));
+  fill('active', pickA);
+  fill('passive', by('passive').sort((x, y) => techLv(y) - techLv(x)));
+  fill('ultimate', by('ultimate').sort((x, y) => techLv(y) - techLv(x)));
 }
 // Spending: the player keeps a reserve; what could not be bought is noted for the bottleneck report.
 function housekeeping(H) {

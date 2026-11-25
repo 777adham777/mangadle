@@ -47,7 +47,7 @@ function tipEffect(id) {
       if (typeof ARTIFACTS !== 'undefined' && ARTIFACTS[id]) text = `Restore it for the museum: ${ARTIFACTS[id].desc}.`;
       break;
     case 'scroll':
-      if (it.pool) text = `Technique currency: 1 learns a ${REALMS[it.pool] ? REALMS[it.pool].name : ''} technique of your choice, more level it up.`;
+      if (it.pool) text = `Read it: a ${REALMS[it.pool] ? REALMS[it.pool].name : ''} technique, new or one level up. ${RARITY_NAME[it.srar || 1] || ''} scrolls favour ${it.srar >= 4 ? 'rare' : 'common'} techniques.`;
       else if (TECHNIQUES[it.tech]) {
         const T = TECHNIQUES[it.tech], L = Math.max(1, (typeof techLv === 'function' && techLv(it.tech)) || 1);
         rows.push(['technique', TECH_CATS[T.cat] ? TECH_CATS[T.cat].name : 'Technique', T.name]);
@@ -129,12 +129,12 @@ function techTipHTML(id) {
   if (!T) return '';
   const L = techLv(id), cat = TECH_CATS[T.cat], world = REALMS[T.realm];
   const cd = T.cd ? `${typeof techCd === 'function' ? techCd(id) : T.cd}s cooldown` : 'no cooldown';
-  const j = slotOf(id), p = techPrice(id);
-  const src = [[ic('realm', T.realm), `${scrollName(T.realm)} · dropped by ${world ? world.name : ''} foes`, '']];
+  const j = slotOf(id);
+  const src = [[ic('realm', T.realm), `${world ? world.name : ''} scrolls · ${(SCROLL_TIERS.map(([suf, r]) => { const o = (SCROLL_ODDS[r][techRar(id)] || 0); return o ? (RARITY_NAME[r] || '') : ''; }).filter(Boolean)).join(', ')}`, '']];
   const rows = L ? [
     ['star', 'Level', `${L} / ${TECH_MAX}`],
-    p ? ['technique', 'Next level', `${p.n} ${scrollName(T.realm)}${p.n > 1 ? 's' : ''}`] : ['star', 'Next level', 'Mastered'],
-    ['check', 'Slot', j >= 0 && slotOpen(j) ? `Slot ${j + 1}` : 'Not equipped'],
+    ['rare', 'Rarity', RARITY_NAME[techRar(id)] || ''],
+    ['check', 'Slot', j >= 0 && slotOpen(j) ? TECH_SLOTS[j].name : 'Not equipped'],
   ] : [];
   return `<div class="it-card tt" style="--rgc:${rc(T.realm)}"><div class="it-head">${tile(null, null, { r: L ? Math.min(5, 1 + Math.floor(L / 3)) : 0, icon: ic('technique', id), unknown: !L, cls: 's' })}
       <div><b class="it-name">${esc(T.name)}</b><small>${esc(cat.name)} · ${esc(world ? world.name : '')}${L ? ' · ' + cd : ''}</small></div></div>
@@ -142,9 +142,9 @@ function techTipHTML(id) {
       <ul class="it-tiers more">${TECH_TIERS.map((t) => `<li class="${L >= t ? 'got' : ''}"><em>Lv ${t}</em>${esc(T.tiers[t])}</li>`).join('')}</ul>
       <div class="it-rows more">${rows.map(([icn, l, v]) => `<div><i>${ui(icn)}</i><span>${l}</span><b>${esc(v)}</b></div>`).join('')}</div>
       ${T.tags && T.tags.length ? `<div class="it-tags more">${T.tags.map((t) => `<i>${esc(t)}</i>`).join('')}</div>` : ''}`
-    : `<p class="it-text">${T.desc(1)}<span class="more"> Not learned yet: 1 ${esc(scrollName(T.realm))} learns it (Techniques page).</span></p>`}
+    : `<p class="it-text">${T.desc(1)}<span class="more"> Not learned yet: read ${esc(world ? world.name : '')} scrolls (rarer ones draw rarer techniques).</span></p>`}
     <div class="it-src more"><small>Where to get it</small>${src.map(([i, t, v]) => `<div><i>${i}</i><span>${esc(t)}</span>${v ? `<b>${v}</b>` : ''}</div>`).join('')}</div>
-    <div class="it-foot more"><span>You hold <b>${fmt(count(scrollOf(id)))}</b> ${esc(scrollName(T.realm))}${count(scrollOf(id)) === 1 ? '' : 's'}</span></div>${TIP_HINT}</div>`;
+    ${TIP_HINT}</div>`;
 }
 
 (() => {
