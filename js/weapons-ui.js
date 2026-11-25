@@ -1,4 +1,6 @@
 'use strict';
+// A gold price beside the material tiles (refinement, awakening).
+const goldCost = (g) => (g > 0 ? `<span class="aw-gold ${S.gold < g ? 'short' : ''}" title="Gold">${ui('gold')}<b>${fmt(S.gold)}</b>/${fmt(g)}</span>` : '');
 /* ==========================================================================
    TRI-REALM — weapons interface: the weapon rack in the Bank and the forge panel
    of the selected copy (level, refinement, awakening). Engine: weapons.js.
@@ -92,7 +94,7 @@ function armDetailHTML() {
   if (a.ref < REF_MAX) {
     const why = refReason(a);
     out.push(`${hdr('Refinement', `+${a.ref} → +${a.ref + 1} · +10% weapon attack each`)}
-      <div class="aw-cost">${costTiles(refCost(a))}</div>
+      <div class="aw-cost">${costTiles(refCost(a))}${goldCost(refGold(a))}</div>
       ${gbtn(why || `Refine to +${a.ref + 1}`, 'upgrade', `data-refine="${a.u}" ${why ? 'disabled' : ''}`, 'sm')}`);
   } else out.push(`${hdr('Refinement', 'fully refined')}`);
   // awakening
@@ -102,13 +104,13 @@ function armDetailHTML() {
   if (!next) out.push(`${hdr('Awakening', 'fully awakened')}${elLine}${famLine}`);
   else if (a.awk === 0) {
     out.push(`${hdr('Awakening I', `weapon level ${next.lv} · refinement +${next.ref} · pick an element`)}
-      <div class="aw-cost">${costTiles(awkCost(a))}</div>
+      <div class="aw-cost">${costTiles(awkCost(a))}${goldCost(awkGold(a))}</div>
       <div class="awk-els">${Object.entries(ELEMENTS).map(([k, E]) => `<button class="awk-el" data-awk="${a.u}:${k}" ${why ? 'disabled' : ''} title="${esc(E.desc)}">${gi(E.icon)}<b>${E.name}</b><small>${E.desc}</small></button>`).join('')}</div>
       ${why ? `<p class="muted small">${esc(why)}</p>` : ''}`);
   } else {
     out.push(`${hdr('Awakening II', `weapon level ${next.lv} · refinement +${next.ref}`)}${elLine}
       <p class="muted small">Unlocks the passive of its family, <b>${fam.name}</b>: ${fam.desc}</p>
-      <div class="aw-cost">${costTiles(awkCost(a))}</div>
+      <div class="aw-cost">${costTiles(awkCost(a))}${goldCost(awkGold(a))}</div>
       ${gbtn(why || 'Awaken', 'awaken', `data-awk="${a.u}:" ${why ? 'disabled' : ''}`, 'sm')}`);
   }
   return `<div class="arm-detail">${out.join('')}</div>`;

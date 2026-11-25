@@ -234,6 +234,7 @@ function refineTask() {
   const why = refReason(a);
   if (!why) { refine(a.u); return null; }
   if (why === 'Missing materials') { const c = refCost(a); for (const k in c) if (stock(k) < c[k]) return needTask(k, c[k] + 6); }
+  if (why === 'Not enough gold') P.goldWant = { what: 'refine +' + (a.ref + 1), g: refGold(a) };
   return null;
 }
 function powerUp(zi) {
@@ -386,8 +387,9 @@ function housekeeping(H) {
   const fr0 = FRUITS.filter((f) => count(f) >= 1);
   if (fr0.length) { const pref = ['quake_fruit', 'ember_fruit', 'colossus_fruit', 'mist_fruit', 'bloom_fruit', 'gilded_fruit']; if (!S.fruit) eatFruit(pref.find((f) => count(f) >= 1)); else if (count(S.fruit) >= 1 && fruitRank() < FRUIT_RANK_MAX) eatFruit(S.fruit); }
   if (featureOpen('power')) {
-    if (capCost() < S.gold * 0.08) buyCap(); else H.want('energy cap', capCost());
-    if (powCost() < S.gold * 0.08) buyPow(); else H.want('energy power', powCost());
+    // a player buys when it is affordable and keeps a small reserve (energy: half the purse, Market: 80%)
+    if (capCost() < S.gold * 0.5) buyCap(); else H.want('energy cap', capCost());
+    if (powCost() < S.gold * 0.5) buyPow(); else H.want('energy power', powCost());
     const open = TRAININGS.filter(disciplineOpen);
     if (energyIdle() > 0 && open.length) {
       releaseAll(); const per = Math.floor(energyCap() / open.length);
@@ -401,13 +403,16 @@ function housekeeping(H) {
     if (it.id.startsWith('tools_') && !realmOpen(it.id.slice(6))) continue;
     const c = shopCost(it);
     if (c === undefined) continue;
-    if (c < S.gold * 0.25) buyShop(it.id); else H.want('market ' + it.id, c);
+    if (c < S.gold * 0.8) buyShop(it.id); else H.want('market ' + it.id, c);
   }
   bestTechs();
   if (typeof FORMS !== 'undefined' && transformOn()) { const f = FORMS.filter(formOpen).pop(); if (f && S.ki.form !== f.id) chooseForm(f.id); }
   if (typeof BEASTS !== 'undefined' && S.beasts) { const own = Object.keys(S.beasts).sort((a, b) => beastVal(b) - beastVal(a)); for (const id of own.slice(0, compSlots())) if (!isCompanion(id)) setCompanion(id); }
   const a = curArm();
-  if (a && forgeOn()) { if (!refReason(a)) refine(a.u); if (!awkReason(a)) awakenArm(a.u, 'fire'); }
+  if (a && forgeOn()) {
+    if (!refReason(a)) refine(a.u); else if (refReason(a) === 'Not enough gold') H.want('forge refine +' + (a.ref + 1), refGold(a));
+    if (!awkReason(a)) awakenArm(a.u, 'fire'); else if (awkReason(a) === 'Not enough gold') H.want('forge awakening ' + (a.awk + 1), awkGold(a));
+  }
   if (pactsOn()) { const want = goalState() && /Binding Vow/.test(goalState().g.text); if (want !== pactOn('poverty')) togglePact('poverty'); }
   equipBest(S.combat.zone != null ? S.combat.zone : P.lastZone || 0);
   const f = ownedFood() || Object.keys(S.items).find((k) => ITEMS[k] && ITEMS[k].type === 'food' && S.items[k] >= 1); if (f) S.combat.food = f;

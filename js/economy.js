@@ -333,8 +333,8 @@ if (typeof DUNGEON_TIERS !== 'undefined') Object.assign(GEAR_TIERS, DUNGEON_TIER
 // materials in the Bank). Three cuts, all past the first world:
 // - SKILL_PACE: an action takes longer the higher its level (×1 up to level 10, ×1.6 from level 40 on),
 //   for the same XP and the same output: fewer materials and less XP per hour in the mid game.
-// - GOLD_PACE: foes, voyages and chests of later worlds pay less gold (Leaf Village ×1, Orange Town ×0.5,
-//   then ×0.3). The Market's later tiers become a choice, not a formality.
+// - GOLD_PACE: foes, voyages and chests of later worlds pay less gold (Leaf Village ×1, Orange Town ×0.4,
+//   Soul City ×0.25, then ×0.15). The Market's later tiers become a choice, not a formality.
 // - DROP_PACE above now keeps 35% of the plain foes' common drops (was 50%).
 DROP_PACE.chance = 0.35;   // applied above at 0.5: the extra cut is made here (×0.7)
 for (const z of ZONES) if (!z.boss && !z.dungeon) for (const e of z.enemies) for (const d of e.drops) {
@@ -347,8 +347,9 @@ for (const k in SKILLS) {
   if (sk.type === 'voyage' || sk.type === 'combat') continue;
   for (const a of sk.actions || []) if (a.time && a.level > 10) a.time = Math.round(a.time * SKILL_PACE(a.level) * 10) / 10;
 }
-const GOLD_PACE = (realm) => { const i = WORLD_ORDER.indexOf(realm); return i <= 0 ? 1 : i === 1 ? 0.5 : 0.3; };
+const GOLD_PACE = (realm) => { const i = WORLD_ORDER.indexOf(realm); return i <= 0 ? 1 : i === 1 ? 0.4 : i === 2 ? 0.25 : 0.15; };
 const paceGold = (g, m) => [Math.max(1, Math.round(g[0] * m)), Math.max(1, Math.round(g[1] * m))];
 for (const z of ZONES) { const m = GOLD_PACE(z.realm); if (m < 1) for (const e of z.enemies) if (e.gold) e.gold = paceGold(e.gold, m); }
-for (const a of SKILLS.voyaging.actions) if (a.loot && a.loot.gold) a.loot.gold = paceGold(a.loot.gold, GOLD_PACE('seas'));
+// Voyages: the far routes (Voyaging 25+) sail into the late game, so they pay like a late world.
+for (const a of SKILLS.voyaging.actions) if (a.loot && a.loot.gold) a.loot.gold = paceGold(a.loot.gold, a.level >= 25 ? 0.15 : GOLD_PACE('seas'));
 for (const id in ITEMS) { const it = ITEMS[id]; if (it.type === 'chest' && it.gold && typeof homeOf === 'function') { const m = GOLD_PACE(homeOf(id)); if (m < 1) it.gold = paceGold(it.gold, m); } }

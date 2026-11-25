@@ -32,11 +32,14 @@ function addWorld(def) {
 // then on 2026-11-25 ×0.6 in Leaf Village and ×0.4 after it: one night of battle took the bot from level 43 to 67;
 // pace pass 3, same day: 0.05 after the Leaf Village, the mid game was still too generous).
 const BAL = { shinobi: 0.67, seas: 1.6, soul: 3, ki: 13, hex: 100, hunter: 120, echo: 800, rift: 600 };
-const ZONE_BAL = { fox: 0.7, admiral: 0.8, unbound: 1.9, mist: 81, ravine: 81, shoals: 81, reef: 81, storm: 81, districts: 81, desert: 81, spire: 62.4, plains: 81, canyon: 71.7, citadel: 66.3, alleys: 58.8, shrine: 75, veil: 73.8, thicket: 15.6, cliffs: 47.7, ruins: 58.2, plaza: 31.8, museum: 64.2, pillars: 75.9 };
+// Guardians (2026-11-25): tuned by tools/sim/tune-bosses.js so you meet each one at a power ratio of 2 (it
+// would win; 1.5 for the Chimera King, 1.3 for the last two, where your power grows slowly past Character 120):
+// every guardian asks for preparation (levels, gear, techniques, food), it is never a walk-over.
+const ZONE_BAL = { fox: 0.722, admiral: 2.686, sovereign: 0.664, tyrant: 0.457, chimera: 0.221, pillar: 0.259, convergence: 0.653, unbound: 1.9, mist: 81, ravine: 81, shoals: 81, reef: 81, storm: 81, districts: 81, desert: 81, spire: 62.4, plains: 81, canyon: 71.7, citadel: 66.3, alleys: 58.8, shrine: 75, veil: 73.8, thicket: 15.6, cliffs: 47.7, ruins: 58.2, plaza: 31.8, museum: 64.2, pillars: 75.9 };
 const ATK_SCALE = { hex: 4.5, hunter: 9, echo: 30, rift: 30 };
 const HP_SCALE = {};
 for (const r in BAL) { ATK_SCALE[r] = (ATK_SCALE[r] || 1) / Math.sqrt(BAL[r]); HP_SCALE[r] = 1 / Math.sqrt(BAL[r]); }
-const XP_SCALE = { shinobi: 0.054, seas: 0.05, soul: 0.05, ki: 0.05, hex: 0.05, hunter: 0.05, echo: 0.05, rift: 0.05 };
+const XP_SCALE = { shinobi: 0.054, seas: 0.05, soul: 0.05, ki: 0.045, hex: 0.032, hunter: 0.02, echo: 0.016, rift: 0.014 };
 function finalizeWorlds() {
   UNLOCKS.push(...UNLOCK_TAIL);
   for (const z of ZONES) for (const e of z.enemies) {

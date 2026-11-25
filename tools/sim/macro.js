@@ -14,7 +14,7 @@
    Output (simRun): milestones, time per activity, bottlenecks, recipe profitability.
    ========================================================================== */
 
-const MAC = { trace: [], offLog: [], activeT: 0, offT: 0, offIdle: 0, offStopped: 0, offStart: 0, offTask: null, shipDur: 3600, t: 0, it: 0, split: {}, goalAt: {}, events: [], wants: {}, stockouts: {}, deaths: [], skipped: [], stuck: {},
+const MAC = { goldBy: {}, spent: 0, walls: {}, projects: {}, trace: [], offLog: [], activeT: 0, offT: 0, offIdle: 0, offStopped: 0, offStart: 0, offTask: null, shipDur: 3600, t: 0, it: 0, split: {}, goalAt: {}, events: [], wants: {}, stockouts: {}, deaths: [], skipped: [], stuck: {},
   foodT: 0, fightT: 0, recipes: {}, equipBuf: {}, levels: [], night: false, lastGoal: -1, lastGoalT: 0 };
 const Q = { 50: 0.6931, 90: 2.3026 };   // −ln(1 − q): the p50 / p90 waiting time of one Poisson arrival, × 1/λ
 const Z = { 50: 0, 90: 1.2816 };
@@ -185,6 +185,10 @@ function applyJump(R, dtSim) {
   for (const z in R.kills) S.combat.kills[z] = (S.combat.kills[z] || 0) + R.kills[z] * dtSim;
   if (R.fight) S.stats.kills += R.fight.kps * dtSim;
   S.gold += R.gold * dtSim;
+  const gk = R.fight ? 'foes' : R.dungeon ? 'dungeons' : 'other';
+  const shipG = (BG.ships && BG.ships.gold) || 0;
+  MAC.goldBy[gk] = (MAC.goldBy[gk] || 0) + (R.gold - shipG) * dtSim;
+  MAC.goldBy.voyages = (MAC.goldBy.voyages || 0) + shipG * dtSim;
   S.stats.voyages += R.voyages * dtSim; S.stats.harvests = (S.stats.harvests || 0) + R.harvests * dtSim;
   if (R.mkey) { S.mastery[R.mkey] = (S.mastery[R.mkey] || 0) + R.actions * dtSim; S.stats.actions += R.actions * dtSim; }
   if (R.dungeon) {
@@ -325,8 +329,9 @@ function simRun(o) {
     // the stat caches are dropped only when something a stat reads has moved
     const ss = statSig();
     if (ss !== MAC.statSig) { MAC.statSig = ss; EPOCH++; }
-    const hk0 = hkSig();
+    const hk0 = hkSig(), g0 = S.gold, gl0 = S.goal;
     housekeeping(HK);
+    { const dg = S.gold - g0; if (dg < 0) MAC.spent -= dg; else if (S.goal > gl0) MAC.goldBy['quest rewards'] = (MAC.goldBy['quest rewards'] || 0) + dg; else MAC.goldBy['chests & misc'] = (MAC.goldBy['chests & misc'] || 0) + dg; }
     if (hkSig() !== hk0) EPOCH++;   // a purchase, a technique, a fruit, a gate: the stats moved
     if (S.goal >= GOALS.length - 1) break;
     if (OPT.stopAt && GOALS[S.goal].id === OPT.stopAt) break;
@@ -335,6 +340,8 @@ function simRun(o) {
       MAC.lastGoal = S.goal; MAC.lastGoalT = MAC.t;
     }
     const task = plan();
+    { const g = GOALS[S.goal], I = g && introspect(g); const z = I && I.kills && ZONES.find((x) => x.id === I.kills);
+      if (z && z.boss) { let w = MAC.walls[z.id]; if (!w) { const zi = ZONES.indexOf(z); equipBest(zi); w = MAC.walls[z.id] = { start: MAC.t, prep: 0, fight: 0, lv0: charLv(), r0: zoneRatio(zi) }; } MAC.curWall = w; } else MAC.curWall = null; }
     const R = taskRates(task);
     R.taskInp = Object.assign({}, R.inp);
     backgroundRates(R);
@@ -352,6 +359,7 @@ function simRun(o) {
     else MAC.split[R.label] = (MAC.split[R.label] || 0) + dt;
     if (R.fight) MAC.fightT += dt;
     MAC.activeT += dt;
+    if (MAC.curWall) { if (task && task.kind === 'fight' && ZONES[task.zi].boss) MAC.curWall.fight += dt; else MAC.curWall.prep += dt; MAC.curWall.end = MAC.t + dt; MAC.curWall.lv1 = charLv(); }
     if (why === 'session end') {
       const gap = sched(MAC.t + dt + 1).toNext + 1;
       MAC.offTask = planOffline(gap); MAC.offStart = MAC.t + dt; MAC.shipDur = durFor(gap);
@@ -364,6 +372,12 @@ function simRun(o) {
     if (MAC.t - MAC.lastGoalT > OPT.stuckH * 3600) {
       const g = GOALS[S.goal];
       MAC.skipped.push({ goal: S.goal, id: g.id, text: g.text, h: +(MAC.t / 3600).toFixed(1), task: R.label + (task && task.want ? ' → ' + task.want.id : '') });
+      // the step is forced so the rest of the path can be measured: a guardian counts as beaten (with its
+      // sure drops), a gate opens
+      const I = introspect(g), zi = I.kills ? ZONES.findIndex((z) => z.id === I.kills) : -1;
+      if (zi >= 0) { S.combat.kills[I.kills] = Math.max(1, S.combat.kills[I.kills] || 0); for (const [d, ch, q] of ZONES[zi].enemies[0].drops) if (ch >= 0.5 && ITEMS[d]) addItem(d, q[1]); MAC.skipped[MAC.skipped.length - 1].forced = 'beaten (ratio ' + zoneRatio(zi).toFixed(2) + ')'; }
+      if (I.gate) { S.gates[I.gate] = 1; MAC.skipped[MAC.skipped.length - 1].forced = 'gate opened'; }
+      checkUnlocks();
       MAC.goalAt[S.goal] = MAC.t; S.goal++; MAC.lastGoal = S.goal; MAC.lastGoalT = MAC.t;
     }
   }
@@ -401,6 +415,8 @@ function simReport() {
     gold: Math.round(S.gold), bankItems: Math.round(Object.keys(S.items).reduce((a, k) => a + (ITEMS[k] && ITEMS[k].type !== 'equip' ? S.items[k] : 0), 0)),
     milestones, events: MAC.events, split, skipped: MAC.skipped, deaths: MAC.deaths, stockouts: MAC.stockouts, wants,
     food: { foodH: H(MAC.foodT), fightH: H(MAC.fightT), ratio: MAC.fightT ? +(MAC.foodT / MAC.fightT).toFixed(3) : 0 },
+    goldBy: Object.fromEntries(Object.entries(MAC.goldBy).map(([k, v]) => [k, Math.round(v)])), goldSpent: Math.round(MAC.spent),
+    walls: Object.fromEntries(Object.entries(MAC.walls).map(([k, w]) => [k, { r0: +w.r0.toFixed(2), fromH: H(w.start), toH: H(w.end || w.start), prepH: H(w.prep), fightH: H(w.fight), lv: w.lv0 + '→' + (w.lv1 || w.lv0) }])),
     play: { activeH: H(MAC.activeT), offlineH: H(MAC.offT), offlineIdleH: H(MAC.offIdle), offlineStops: MAC.offStopped, sessions: OPT.sessions, offLog: MAC.offLog },
     recipes: recipeCheck(), notes: P.note, medianRolls: __rng.calls, trace: MAC.trace, log: P.log,
   };

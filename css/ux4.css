@@ -116,3 +116,9 @@
 .z-best { display: inline-flex; align-items: center; gap: 3px; font-style: normal; color: #8fe06a; }
 .z-best .gi { width: 11px; height: 11px; }
 .stages .hc-row { margin: 12px 0 0; border-color: #6a2a31; background: #1d1013; }
+
+/* forge: gold price beside the material tiles (weapons-ui.js) */
+.aw-gold { display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; font: 600 12px var(--display); color: var(--dim); border: 1px solid var(--line2); }
+.aw-gold b { color: #ffe08a; }
+.aw-gold .gi { width: 14px; height: 14px; fill: var(--gold); }
+.aw-gold.short b { color: #ff8a8a; }

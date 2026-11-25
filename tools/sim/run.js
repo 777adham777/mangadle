@@ -15,7 +15,7 @@ const C = load({ patch: val('--patch') });
 const t1 = process.hrtime.bigint();
 const SESS = { 2: [[12, 13], [20, 21]], 3: [[8, 9], [13, 14], [20, 21]] };
 const sessions = has('--always-on') ? null : SESS[val('--sessions') || 3];
-const rep = C.simRun({ q: has('--p90') ? 90 : 50, sessions, maxH: +(val('--hours') || 800), trace: +(val('--trace') || 0) });
+const rep = C.simRun({ q: has('--p90') ? 90 : 50, sessions, maxH: +(val('--hours') || 800), stuckH: +(val('--patience') || 72), trace: +(val('--trace') || 0) });
 const t2 = process.hrtime.bigint();
 if (val('--trace')) { console.log(rep.trace.join('\n')); console.log(rep.log.slice(0, 40).join('\n')); }
 const ms = (a, b) => Number(b - a) / 1e6;
@@ -35,14 +35,17 @@ for (const [h, e] of rep.events.filter(([, e]) => /^gate/.test(e))) console.log(
 const P2 = rep.play;
 console.log(`\nPLAY: ${P2.activeH} h in sessions, ${P2.offlineH} h closed (${P2.offlineIdleH} h of it doing nothing: the task stopped ${P2.offlineStops} times)`);
 
+console.log('\nGOLD: earned ' + Object.entries(rep.goldBy).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v.toLocaleString('en')}`).join(' · ') + ` · spent ${rep.goldSpent.toLocaleString('en')}`);
+console.log('\nGUARDIAN WALLS (ratio > 1 on arrival: you cannot win yet · session hours on the step: preparing / fighting it)');
+for (const [z, w] of Object.entries(rep.walls)) console.log(`  ${pad(z, 12)} ${pad(day(w.fromH) + ' → ' + day(w.toH), 30)} ratio ${lpad(w.r0.toFixed(2), 5)} · prep ${lpad(w.prepH.toFixed(1), 5)} h · fight ${lpad(w.fightH.toFixed(1), 5)} h · Character ${w.lv}`);
 console.log('\nTIME SPLIT (hours)');
 const tot = rep.split.reduce((a, [, h]) => a + h, 0);
 for (const [k, h] of rep.split) console.log(`  ${pad(k, 34)} ${lpad(h.toFixed(1), 7)}  ${lpad((100 * h / tot).toFixed(1), 5)}%`);
 
 console.log('\nBOTTLENECKS');
-if (rep.skipped.length) { console.log('  goals stuck > 24 h (skipped):'); for (const s of rep.skipped) console.log(`    #${s.goal} ${s.id} "${s.text}" at ${s.h} h · was doing ${s.task}`); }
+if (rep.skipped.length) { console.log('  goals stuck > 24 h (skipped):'); for (const s of rep.skipped) console.log(`    #${s.goal} ${s.id} "${s.text}" at ${s.h} h · was doing ${s.task}${s.forced ? ' · forced: ' + s.forced : ''}`); }
 const longWaits = rep.wants.filter((w) => w.waitedH >= 6).slice(0, 12);
-if (longWaits.length) { console.log('  gold: purchases waited on (≥ 6 h, the bot spends at most 25% of its gold per buy):'); for (const w of longWaits) console.log(`    ${pad(w.what, 26)} ${lpad(w.cost.toLocaleString('en'), 14)} g · ${w.waitedH} h${w.bought ? '' : ' (never bought)'}`); }
+if (longWaits.length) { console.log('  gold: purchases waited on (≥ 6 h; the bot buys once a price is under 80% of its gold, 50% for energy):'); for (const w of longWaits) console.log(`    ${pad(w.what, 26)} ${lpad(w.cost.toLocaleString('en'), 14)} g · ${w.waitedH} h${w.bought ? '' : ' (never bought)'}`); }
 const stops = P2.offLog.filter((x) => x[2] < x[3] * 0.95);
 if (stops.length) console.log(`  offline farms that could not last the gap: ${stops.length}/${P2.offLog.length} (e.g. ${stops.slice(0, 3).map((x) => x[1] + ' ' + x[2] + 'h/' + x[3] + 'h').join(', ')})`);
 console.log(`  food: ${rep.food.foodH} h making food for ${rep.food.fightH} h of combat (ratio ${rep.food.ratio})`);

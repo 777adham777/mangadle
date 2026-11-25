@@ -155,11 +155,17 @@ function refCost(a) {
   if (REF_GEM[next]) c[REF_GEM[next]] = 1;
   return c;
 }
+// Gold for the forge (balance pass 2026-11-25): gold is what you save up for, not a score. Each refinement
+// costs more than the last, an awakening costs a small fortune; both scale with the weapon's worth.
+const FORGE_GOLD = { ref: 4, awk: [0, 60, 200] };
+const refGold = (a) => Math.round(ITEMS[baseOf(a.id)].value * FORGE_GOLD.ref * (a.ref + 1) * (a.ref + 1));
+const awkGold = (a) => Math.round(ITEMS[baseOf(a.id)].value * (FORGE_GOLD.awk[a.awk + 1] || 0));
 function refReason(a) {
   if (!forgeOn()) return 'Locked';
   if (a.ref >= REF_MAX) return 'Fully refined';
   if (armLv(a) < 5 * (a.ref + 1)) return `Needs weapon level ${5 * (a.ref + 1)}`;
   if (!canAfford(refCost(a))) return 'Missing materials';
+  if (S.gold < refGold(a)) return 'Not enough gold';
   return '';
 }
 function refine(u) {
@@ -167,6 +173,7 @@ function refine(u) {
   if (!a || refReason(a)) return false;
   const c = refCost(a);
   for (const k in c) takeStock(k, c[k]);
+  S.gold -= refGold(a);
   a.ref++;
   emit('refine', { a });
   dirty = true;
@@ -226,6 +233,7 @@ function awkReason(a) {
   if (armLv(a) < next.lv) return `Needs weapon level ${next.lv}`;
   if (a.ref < next.ref) return `Needs refinement +${next.ref}`;
   if (!canAfford(awkCost(a))) return 'Missing materials';
+  if (S.gold < awkGold(a)) return 'Not enough gold';
   return '';
 }
 function awakenArm(u, el) {
@@ -233,6 +241,7 @@ function awakenArm(u, el) {
   if (!a || awkReason(a) || (a.awk === 0 && !ELEMENTS[el])) return false;
   const c = awkCost(a);
   for (const k in c) takeStock(k, c[k]);
+  S.gold -= awkGold(a);
   a.awk++;
   if (a.awk === 1) a.el = el;
   S.stats.awakened = (S.stats.awakened || 0) + 1;
