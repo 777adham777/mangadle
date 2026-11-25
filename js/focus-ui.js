@@ -162,7 +162,7 @@ function focusSwitchHTML(skill, a, go, busy) {
 const craftN = (skill, id) => Math.max(1, Math.min(99999, ((S.ui.craftN || {})[skill + ':' + id]) || 1));
 function craftNHTML(skill, a, go, busy) {
   const n = craftN(skill, a.id), stops = busy ? ` (stops ${esc(busy)})` : '';
-  return `<span class="fo-qty" title="How many to make, then stop${stops}"><input id="fo-n-${skill}-${a.id}" class="fo-n" data-craftq="${skill}:${a.id}" type="text" inputmode="numeric" maxlength="5" value="${n}" aria-label="How many to make"><button class="fo-cta one" data-craftn="${skill}:${a.id}">${ui('play')}<span>${go}</span></button></span>`;
+  return `<span class="fo-qty" title="How many to make, then stop${stops}"><button class="fo-cta one" data-craftn="${skill}:${a.id}">${ui('play')}<span>${go}</span></button><input id="fo-n-${skill}-${a.id}" class="fo-n" data-craftq="${skill}:${a.id}" type="text" inputmode="numeric" maxlength="5" value="${n}" aria-label="How many to make"></span>`;
 }
 function craftNGo(skill, id, field) {
   const raw = parseInt(field ? field.value : '', 10);
