@@ -216,11 +216,11 @@ const CAST = {
     strike(e, 4 + 0.4 * (L - 1), 'Fire Lotus');
     if (L >= 5) { RT.fx.burn = 4; RT.burnT = 0; }
   },
+  // Healing over time, not a burst: food is the burst heal; the palm keeps you standing between bites.
   healing_palm(e, L) {
-    const m = pMaxHp(), h = Math.round(m * (0.15 + 0.02 * (L - 1)) * techPower());
-    S.combat.hp = Math.min(m, S.combat.hp + h);
-    if (L >= 5) RT.fx.regen = 5;
-    emit('tech', { id: 'healing_palm', heal: h });
+    RT.regenRate = (0.03 + 0.0025 * (L - 1)) * techPower();
+    RT.fx.regen = L >= 5 ? 8 : 6;
+    emit('tech', { id: 'healing_palm' });
   },
   mist_step(e, L) { RT.fx.mist = L >= 5 ? 7 : 5; emit('tech', { id: 'mist_step' }); },
   iron_skin(e, L) {
@@ -272,7 +272,7 @@ hook('combat', (dt) => {
 // Defensive techniques wait for their moment.
 // ...or when the foe is winding up a telegraphed move (foes.js).
 const hurt = () => S.combat.hp < 0.85 * pMaxHp() || (typeof foeWinding === 'function' && foeWinding());
-const TECH_WHEN = { healing_palm: () => S.combat.hp < 0.6 * pMaxHp(), mist_step: hurt, iron_skin: hurt, foresight: hurt, nen_conjure: hurt,
+const TECH_WHEN = { healing_palm: hurt, mist_step: hurt, iron_skin: hurt, foresight: hurt, nen_conjure: hurt,
   soul_ward: () => S.combat.hp < 0.7 * pMaxHp() };
 hook('combat', (dt, e) => {
   if (!techOn() || !e || (typeof pactOn === 'function' && pactOn('silence'))) return;
@@ -284,7 +284,7 @@ hook('combat', (dt, e) => {
     while (RT.burnT >= 1 && alive()) { RT.burnT -= 1; strike(e, 0.15, ''); }
     if (!alive()) return;
   }
-  if ((RT.fx.regen || 0) > 0) { const m = pMaxHp(); S.combat.hp = Math.min(m, S.combat.hp + m * 0.02 * dt); }
+  if ((RT.fx.regen || 0) > 0) { const m = pMaxHp(); S.combat.hp = Math.min(m, S.combat.hp + m * (RT.regenRate || 0.03) * dt); }
   for (const id of equipped()) {
     if (playerHeld()) break;                 // stunned: no techniques
     if (TECHNIQUES[id].cat === 'passive' || (RT.cd[id] || 0) > 0 || (TECH_WHEN[id] && !TECH_WHEN[id]())) continue;
