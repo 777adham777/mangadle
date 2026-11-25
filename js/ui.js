@@ -107,6 +107,16 @@ const isFound = (id) => (id === 'FRUIT' ? FRUITS.some((f) => S.found[f]) : id ==
   : !!(S.found[id] || (ITEMS[id] && ITEMS[id].type === 'schematic' && S.known[id])));
 // Silhouette art: the icon stripped of every tooltip hook, drawn black under a "?".
 const silArt = (icon) => (icon || '').replace(/\sdata-t?tip="[^"]*"/g, '').replace(/\stitle="[^"]*"/g, '') + '<b class="q">?</b>';
+// A recipe / action you cannot do yet whose product you never had: a silhouette named "???".
+const actHid = (skill, a) => { const o = a.out && Object.keys(a.out)[0]; return !!(o && ITEMS[o] && ((a.schem && !S.known[a.schem]) || skillLv(skill) < a.level) && !isFound(o)); };
+const actNm = (skill, a) => (actHid(skill, a) ? '???' : a.name);
+function actTile(skill, a, o) {
+  if (actHid(skill, a)) return tile(null, null, Object.assign({}, o, { r: actRarity(a), icon: actIc(skill, a), unknown: true, title: `Undiscovered · ${SKILLS[skill].name} ${a.level}` }));
+  return tile(null, null, Object.assign({ r: actRarity(a), icon: actIc(skill, a), mark: actMark(a), title: a.name }, o));
+}
+// An ingredient: its own art and name once found, else a silhouette and "???".
+const matIc = (k) => (isFound(k) ? itemIc(k) : `<span class="silw">${silArt(itemIc(k))}</span>`);
+const matNm = (k) => (isFound(k) ? ITEMS[k].name : '???');
 // An item tile: art area tinted by rarity + family corner + a light count strip.
 function tile(id, n, o) {
   o = o || {};
@@ -581,20 +591,20 @@ function ctaLabel(skill, a, st) {
 function actCard(skill, a) {
   if (SKILLS[skill].type === 'voyage' && skillLv(skill) >= a.level) return expCard(a);   // expeditions-ui.js
   const st = actState(skill, a), r = actRarity(a), outId = a.out ? Object.keys(a.out)[0] : null, it = outId ? ITEMS[outId] : null;
-  const art = tile(null, null, { r, icon: actIc(skill, a), mark: actMark(a), title: a.name, cls: 's' });
+  const art = actTile(skill, a, { cls: 's' });
   if (st === 'schem') {
     const src = sourcesOf(a.schem)[0];
     return `<div class="acard schem" data-card="${skill}:${a.id}" data-state="schem">
-      <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>${ui('schematic')}Schematic needed · Lv ${a.level}</small></div></div>
+      <div class="ac-head">${art}<div class="ac-name"><b>${esc(actNm(skill, a))}</b><small>${ui('schematic')}Schematic needed · Lv ${a.level}</small></div></div>
       ${src ? `<div class="ac-src">${ic(src.icon[0], src.icon[1])}<span>Drops from <b>${esc(src.text)}</b></span><em>${fmtRate(src.rate * luckMult())}</em></div>` : ''}</div>`;
   }
   if (st === 'locked') {
     return `<div class="acard ${a.schem ? 'learned' : ''}" data-card="${skill}:${a.id}" data-state="locked">
-      <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>${ui('lock')}Requires level ${a.level}${a.schem ? ' · schematic learned' : ''}</small></div></div></div>`;
+      <div class="ac-head">${art}<div class="ac-name"><b>${esc(actNm(skill, a))}</b><small>${ui('lock')}Requires level ${a.level}${a.schem ? ' · schematic learned' : ''}</small></div></div></div>`;
   }
   const f = farmRates(skill, a), ml = masteryLv(skill, a.id);
   const lines = [];
-  if (a.in) lines.push(`<div class="ac-io"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : '') })).join('')}</div>`);
+  if (a.in) lines.push(`<div class="ac-io"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : ''), unknown: !isFound(k), r: rarity(k) })).join('')}</div>`);
   if (a.loot) {
     lines.push(`<div class="ac-io"><small>Loot</small>${tile(null, `${fmt(a.loot.gold[0] * goldMult())}+`, { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}${a.loot.table.map(([k]) => tile(k, null, { cls: 'xs' })).join('')}</div>`);
     lines.push(`<div class="ac-io"><small>Rare</small>${a.loot.rare.map(([k, c]) => tile(k, fmtRate(c * luckMult()), { cls: 'xs', unknown: !isFound(k) })).join('')}</div>`);

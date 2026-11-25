@@ -20,7 +20,7 @@ const WS_SORTS = {
   best: ['Craftable first', (s, a, b) => wsRank(s, b) - wsRank(s, a) || (wsRank(s, a) ? b.level - a.level : a.level - b.level)],
   lvd: ['Level: high to low', (s, a, b) => b.level - a.level],
   lva: ['Level: low to high', (s, a, b) => a.level - b.level],
-  name: ['Name', (s, a, b) => a.name.localeCompare(b.name)],
+  name: ['Name', (s, a, b) => actNm(s, a).localeCompare(actNm(s, b))],
   xph: ['XP / hour', (s, a, b) => farmRates(s, b).xph - farmRates(s, a).xph],
   can: ['Can make', (s, a, b) => Math.min(1e9, wsCan(b)) - Math.min(1e9, wsCan(a)) || b.level - a.level],
   own: ['Owned', (s, a, b) => count(wsOut(b)) - count(wsOut(a)) || b.level - a.level],
@@ -65,7 +65,8 @@ function wsGuideId(skill) {
   if (G && G.skill === skill) { const best = SKILLS[skill].actions.filter((a) => actState(skill, a) === 'ready').pop(); return best ? best.id : null; }
   return null;
 }
-const wsText = (a) => (a.name + ' ' + Object.keys(a.in || {}).map((k) => ITEMS[k].name).join(' ')).toLowerCase();
+// Search never finds what is still hidden (a locked recipe's name, an ingredient you never had).
+const wsText = (skill, a) => (actNm(skill, a) + ' ' + Object.keys(a.in || {}).map(matNm).join(' ')).toLowerCase();
 function wsMatch(skill, a, W, q, o) {
   const st = actState(skill, a);
   if (!o.noSt && W.st !== 'all') {
@@ -73,7 +74,7 @@ function wsMatch(skill, a, W, q, o) {
     if (W.st === 'ready' && st !== 'ready' && st !== 'active') return false;
   }
   if (!o.noCat && W.cat !== 'all' && wsCat(a) !== W.cat) return false;
-  return !q || wsText(a).includes(q);
+  return !q || wsText(skill, a).includes(q);
 }
 function wsRecipes(skill, o) {
   o = o || {};
@@ -96,12 +97,12 @@ const wsGoIc = (st) => ui(st === 'active' ? 'stop' : st === 'missing' ? 'close' 
 // ingredients) is greyed; the ▶ corner button starts it.
 function wsCard(skill, a, selId) {
   const st = actState(skill, a), locked = wsLocked(st), can = wsCan(a);
-  const mats = Object.entries(a.in || {}).map(([m, n]) => `<span class="ws-m ${stock(m) >= n ? 'ok' : ''}" data-wsm="${m}" data-n="${n}">${itemIc(m)}</span>`).join('');
+  const mats = Object.entries(a.in || {}).map(([m, n]) => `<span class="ws-m ${stock(m) >= n ? 'ok' : ''}" data-wsm="${m}" data-n="${n}">${matIc(m)}</span>`).join('');
   const sub = st === 'schem' ? `${ui('schematic')}Lv ${a.level}` : st === 'locked' ? `${ui('lock')}Lv ${a.level}` : `Lv ${a.level}`;
   return `<div class="ws-card ${a.id === selId ? 'sel' : ''}" data-card="${skill}:${a.id}" data-state="${st}">
-    <button class="wc-pick" data-wsel="${skill}:${a.id}" title="${esc(a.name)}">
-      ${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), mark: actMark(a), cls: 'wc-tile', title: a.name })}
-      <b class="wc-nm">${esc(a.name)}</b><small class="wc-sub">${sub}</small>
+    <button class="wc-pick" data-wsel="${skill}:${a.id}" title="${esc(actNm(skill, a))}">
+      ${actTile(skill, a, { cls: 'wc-tile' })}
+      <b class="wc-nm">${esc(actNm(skill, a))}</b><small class="wc-sub">${sub}</small>
       <span class="ws-mats wc-mats">${mats}</span></button>
     ${locked || !a.in ? '' : `<span class="ws-can wc-can ${can ? '' : 'zero'}" data-wscan="${skill}:${a.id}" title="How many you can make with what you have">×${fmt(can)}</span>`}
     ${locked ? '' : `<button class="ws-go wc-go" data-act="${skill}:${a.id}" data-wsgo title="Start / stop">${wsGoIc(st)}</button>`}
@@ -111,8 +112,8 @@ function wsNext(skill) {
   const W = wsState(skill);
   const next = wsActs(skill).filter((a) => wsLocked(actState(skill, a)) && (W.cat === 'all' || wsCat(a) === W.cat)).sort((a, b) => a.level - b.level)[0];
   if (!next) return '';
-  return `<button class="ws-next" data-wsel="${skill}:${next.id}">${tile(null, null, { r: actRarity(next), icon: actIc(skill, next), cls: 'xs', title: next.name })}
-    <span><small>Next unlock</small><b>${esc(next.name)}</b></span><em>${next.schem && !S.known[next.schem] ? ui('schematic') : ui('lock')}Lv ${next.level}</em></button>`;
+  return `<button class="ws-next" data-wsel="${skill}:${next.id}">${actTile(skill, next, { cls: 'xs' })}
+    <span><small>Next unlock</small><b>${esc(actNm(skill, next))}</b></span><em>${next.schem && !S.known[next.schem] ? ui('schematic') : ui('lock')}Lv ${next.level}</em></button>`;
 }
 function wsListHTML(skill) {
   const W = wsState(skill), list = wsRecipes(skill), sel = wsSelected(skill);
@@ -141,19 +142,19 @@ function wsStatusHTML(skill) {
 }
 
 function wsDetail(skill, a) {
-  const st = actState(skill, a), o = wsOut(a), it = o ? ITEMS[o] : null, r = actRarity(a), locked = wsLocked(st), cat = WS_CATS.find((c) => c[0] === wsCat(a));
-  const head = `<div class="ws-dh">${tile(null, null, { r, icon: actIc(skill, a), mark: actMark(a), title: a.name, cls: 'ws-big' })}
-    <div class="ws-dt"><small class="kind-lab k-${cat ? cat[3] : 'res'}">${o ? typeLabel(o) : SKILLS[skill].name}</small><h2>${esc(a.name)}</h2>${stars(r)}</div>
+  const st = actState(skill, a), o = wsOut(a), hid = actHid(skill, a), it = o && !hid ? ITEMS[o] : null, r = actRarity(a), locked = wsLocked(st), cat = WS_CATS.find((c) => c[0] === wsCat(a));
+  const head = `<div class="ws-dh">${actTile(skill, a, { cls: 'ws-big' })}
+    <div class="ws-dt"><small class="kind-lab k-${cat ? cat[3] : 'res'}">${hid ? 'Undiscovered' : o ? typeLabel(o) : SKILLS[skill].name}</small><h2>${esc(actNm(skill, a))}</h2>${stars(r)}</div>
     ${it ? `<span class="ws-own"><small>Owned</small><b data-count="${o}">${fmt(count(o))}</b></span>` : ''}</div>`;
   const notes = [];
   if (it && it.type === 'equip' && it.stats) notes.push(`<div class="ac-note">${statInline(it.stats)}</div>`);
   if (it && it.type === 'food') notes.push(`<div class="ac-note"><span>${ui('hp')}Heals ${foodHeal(o)} HP</span></div>`);
   if (it && it.desc) notes.push(`<p class="ws-desc">${esc(it.desc)}</p>`);
-  notes.push(uix('actLines', skill, a));
+  if (!hid) notes.push(uix('actLines', skill, a));
   const ing = a.in ? `<h4 class="ws-h">Ingredients${locked ? '' : `<span>can make <b data-wscan="${skill}:${a.id}">${fmt(wsCan(a))}</b></span>`}</h4><ul class="ws-ing">${Object.entries(a.in).map(([k, n]) => {
     const src = sourcesOf(k)[0], have = stock(k);
-    return `<li class="${have >= n ? 'ok' : ''}" data-wsi="${k}" data-n="${n}">${tile(k, null, { cls: 'xs' })}
-      <span class="wi-nm"><b>${esc(ITEMS[k].name)}</b><small>${src ? esc(src.text) : '&nbsp;'}</small></span>
+    return `<li class="${have >= n ? 'ok' : ''}" data-wsi="${k}" data-n="${n}">${tile(k, null, { cls: 'xs', unknown: !isFound(k), r: rarity(k) })}
+      <span class="wi-nm"><b>${esc(matNm(k))}</b><small>${src ? esc(src.text) : '&nbsp;'}</small></span>
       <span class="wi-n"><em data-have="${k}" data-n="${n}">${fmt(have)}</em> / ${fmt(n)}</span><span class="wi-bar"><i style="width:${Math.min(100, (have / n) * 100)}%"></i></span></li>`;
   }).join('')}</ul>` : '';
   if (locked) {

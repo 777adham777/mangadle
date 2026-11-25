@@ -84,25 +84,25 @@ function focusHTML(skill) {
   const s = SKILLS[skill], a = focusAct(skill);
   if (!a) return '';
   const run = !!(S.action && S.action.skill === skill && S.action.id === a.id), st = actState(skill, a), r = actRarity(a), out = focusOut(a);
-  const it = out && ITEMS[out], locked = wsLocked(st);
+  const hid = actHid(skill, a), it = out && !hid && ITEMS[out], locked = wsLocked(st);
   // What starting this would stop: the button says it (and offers the queue when the running task ends by itself).
   const busy = S.action && !run ? (S.action.skill === skill ? findAction(skill, S.action.id).name : SKILLS[S.action.skill].name)
     : S.combat.zone != null ? 'Battle' : '';
   const kick = run ? FOCUS_VERB[skill] || 'Working' : locked ? 'Locked' : 'Ready';
-  const sub = [it ? typeLabel(out) : a.kind || '', `Lv ${a.level}`].filter(Boolean).join(' · ');
+  const sub = [hid ? 'Undiscovered' : it ? typeLabel(out) : a.kind || '', `Lv ${a.level}`].filter(Boolean).join(' · ');
   // Owned: gathering skills already list it in their picker beside the panel.
-  const own = out && (s.type === 'craft' || FC.includes(skill)) ? `<span class="fo-own"><small>Owned</small><b data-fam="${out}">${fmt(familyCount(out))}</b></span>` : '';
-  const ing = a.in ? `<div class="fo-ing"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : '') })).join('')}</div>` : '';
+  const own = out && !hid && (s.type === 'craft' || FC.includes(skill)) ? `<span class="fo-own"><small>Owned</small><b data-fam="${out}">${fmt(familyCount(out))}</b></span>` : '';
+  const ing = a.in ? `<div class="fo-ing"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : ''), unknown: !isFound(k), r: rarity(k) })).join('')}</div>` : '';
   // Zéro mémoire: a missing material says who makes it, and one click goes there (or queues it first).
   const gets = a.in && !locked ? Object.entries(a.in).filter(([k, n]) => stock(k) < n).map(([k, n]) => {
     const p = typeof msProducer === 'function' ? msProducer(k) : null;
-    if (!p) return `<div class="fo-get none">${tile(k, null, { cls: 'xs' })}<span><b>${esc(ITEMS[k].name)}</b><small>No skill of yours makes it yet: the Bank says where it drops.</small></span></div>`;
+    if (!p) return `<div class="fo-get none">${tile(k, null, { cls: 'xs', unknown: !isFound(k), r: rarity(k) })}<span><b>${esc(matNm(k))}</b><small>No skill of yours makes it yet: the Bank says where it drops.</small></span></div>`;
     const runs = Math.max(1, Math.ceil((n * 10 - stock(k)) / (p.a.out[k] || 1)));
     const q = typeof msOn === 'function' && msOn() ? `<button class="gbtn sm sel" data-getq="${p.skill}:${p.a.id}:${runs}:${skill}:${a.id}" title="Task Queue: ${esc(p.a.name)} ×${runs} (enough for 10), then this recipe">Queue first</button>` : '';
-    return `<div class="fo-get">${tile(k, null, { cls: 'xs' })}<span><b>${esc(ITEMS[k].name)}</b><small>${esc(SKILLS[p.skill].name)} · ${esc(p.a.name)}</small></span><span class="fo-get-b"><button class="gbtn sm" data-act="${p.skill}:${p.a.id}" title="Start ${esc(p.a.name)}">${ui('play')}<span>Get it</span></button>${q}</span></div>`;
+    return `<div class="fo-get">${tile(k, null, { cls: 'xs', unknown: !isFound(k), r: rarity(k) })}<span><b>${esc(matNm(k))}</b><small>${esc(SKILLS[p.skill].name)} · ${esc(p.a.name)}</small></span><span class="fo-get-b"><button class="gbtn sm" data-act="${p.skill}:${p.a.id}" title="Start ${esc(p.a.name)}">${ui('play')}<span>Get it</span></button>${q}</span></div>`;
   }).join('') : '';
   let body = '';
-  if (locked) body = focusReqHTML(skill, a) + ing + focusNotes(skill, a);
+  if (locked) body = focusReqHTML(skill, a) + ing + (hid ? '' : focusNotes(skill, a));
   else {
     const f = farmRates(skill, a), per = f.itemsh || f.per, need = xpInfo(skill).need;
     body += `<div class="fo-stats">
@@ -135,11 +135,11 @@ function focusHTML(skill) {
     <div class="fo-body">
       <div class="fo-art r${r}">
         <span class="fo-ring" data-foring="${skill}:${a.id}"></span>
-        ${tile(null, null, { r, icon: actIc(skill, a), mark: actMark(a), cls: 'fo-tile', title: a.name })}
+        ${actTile(skill, a, { cls: 'fo-tile' })}
         <span class="fo-time" ${run ? 'data-nowtime' : ''}>${run || locked ? '' : fmtTime(actionTime(skill, a))}</span>
       </div>
       <div class="fo-info">
-        <div class="fo-head"><div><small class="fo-kick">${kick}</small><h2>${esc(a.name)}</h2><div class="fo-sub">${stars(r)}<span>${esc(sub)}</span></div></div>${own}</div>
+        <div class="fo-head"><div><small class="fo-kick">${kick}</small><h2>${esc(actNm(skill, a))}</h2><div class="fo-sub">${stars(r)}<span>${esc(sub)}</span></div></div>${own}</div>
         ${body}
         <div class="fo-foot"><span class="fo-last" data-folast="${skill}" ${last ? '' : 'hidden'}>${last || ''}</span>${cta}</div>
       </div>

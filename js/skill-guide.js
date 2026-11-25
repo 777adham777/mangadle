@@ -110,7 +110,7 @@ const sgActs = (skill) => (typeof wsActs === 'function' ? wsActs(skill) : SKILLS
 const sgOuts = (a) => Object.keys(a.out || {}).concat((a.extra || []).map(([t]) => t)).filter((k) => ITEMS[k]);
 const sgSkillOpen = (k) => SKILLS[k] && skillOpen(k) && (SKILLS[k].realm === 'combat' || realmOpen(SKILLS[k].realm));
 const sgLink = (go, inner, cls, hint) => `<a class="sg-link ${cls || ''}" data-sgo="${go}" role="button" tabindex="0" ${hint ? `title="${esc(hint)}"` : ''}>${inner}</a>`;
-const sgItem = (k) => `<i class="sg-it" data-tip="${k}">${itemIc(k)}</i>`;
+const sgItem = (k) => (isFound(k) ? `<i class="sg-it" data-tip="${k}">${itemIc(k)}</i>` : `<i class="sg-it sil" title="Undiscovered">${silArt(itemIc(k))}</i>`);
 
 /* ---- 2. the loop */
 function sgLoop(skill) {
@@ -146,7 +146,7 @@ function sgLoop(skill) {
 /* ---- 4. your route: actions, perks and milestones on a level track */
 function sgRoute(skill) {
   const L = xpInfo(skill).L, nodes = [];
-  for (const a of sgActs(skill)) nodes.push({ lv: a.level, icon: tile(null, null, { r: actRarity(a), icon: actIc(skill, a), cls: 'xs', title: a.name }), name: a.name, hint: `Lv ${a.level} · ${a.name}: a new ${SKILLS[skill].type === 'craft' ? 'recipe' : 'action'}`, go: a.level <= L ? `act:${skill}:${a.id}` : null });
+  for (const a of sgActs(skill)) nodes.push({ lv: a.level, icon: actTile(skill, a, { cls: 'xs' }), name: actNm(skill, a), hint: `Lv ${a.level} · ${actNm(skill, a)}: a new ${SKILLS[skill].type === 'craft' ? 'recipe' : 'action'}`, go: a.level <= L ? `act:${skill}:${a.id}` : null });
   if (typeof skillPath === 'function') for (const m of skillPath(skill)) nodes.push({ lv: m.lv, perk: true, icon: `<span class="sg-perk">${ui(m.perk ? 'star' : 'milestone')}</span>`, name: m.name, hint: `Lv ${m.lv} · ${m.name}: ${m.desc}` });
   if (!nodes.length) return '';
   nodes.sort((a, b) => a.lv - b.lv || (a.perk ? 1 : -1));

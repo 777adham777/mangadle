@@ -9,8 +9,8 @@ const PICK_TITLE = { woodcutting: 'Trees', mining: 'Ore veins', archaeology: 'Di
 function pickRow(skill, a) {
   const st = actState(skill, a), f = farmRates(skill, a), o = wsOut(a);
   return `<button class="ws-row pk-row" data-act="${skill}:${a.id}" data-card="${skill}:${a.id}" data-state="${st}">
-    ${tile(null, null, { r: actRarity(a), icon: actIc(skill, a), mark: actMark(a), cls: 'xs', title: a.name })}
-    <span class="ws-nm"><b>${esc(a.name)}</b><small>Lv ${a.level} · ${fmtTime(f.T)} · ${fmt(f.xph)} xp/h</small></span>
+    ${actTile(skill, a, { cls: 'xs' })}
+    <span class="ws-nm"><b>${esc(actNm(skill, a))}</b><small>Lv ${a.level} · ${fmtTime(f.T)} · ${fmt(f.xph)} xp/h</small></span>
     ${a.in ? `<span class="pk-own" title="How many you can make with what you have"><small>Can make</small><b data-wscan="${skill}:${a.id}">${fmt(wsCan(a))}</b></span>`
     : o ? `<span class="pk-own" title="Owned"><small>Owned</small><b data-count="${o}">${fmt(count(o))}</b></span>` : ''}
     <span class="ws-go">${wsGoIc(st)}</span><span class="ws-prog"><i data-cardfill></i></span></button>`;
@@ -22,8 +22,8 @@ function pickerHTML(skill) {
   const next = acts.filter((a) => wsLocked(actState(skill, a))).sort((a, b) => a.level - b.level)[0];
   return `<section class="win pick-win">${hdr(PICK_TITLE[skill] || 'Actions', `${open.length} / ${acts.length} · click to start`)}
     <div class="pk-list">${open.map((a) => pickRow(skill, a)).join('')}
-    ${next ? `<div class="ws-next pk-next">${tile(null, null, { r: actRarity(next), icon: actIc(skill, next), cls: 'xs', title: next.name })}
-      <span><small>Next unlock</small><b>${esc(next.name)}</b></span><em>${next.schem && !S.known[next.schem] ? ui('schematic') : ui('lock')}Lv ${next.level}</em></div>` : ''}</div></section>`;
+    ${next ? `<div class="ws-next pk-next">${actTile(skill, next, { cls: 'xs' })}
+      <span><small>Next unlock</small><b>${esc(actNm(skill, next))}</b></span><em>${next.schem && !S.known[next.schem] ? ui('schematic') : ui('lock')}Lv ${next.level}</em></div>` : ''}</div></section>`;
 }
 // Banner buttons (top of the page): each opens its panel in a window.
 const SK_INFO = {
