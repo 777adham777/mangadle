@@ -586,12 +586,17 @@ const curEnemy = () => {
 };
 function clog(m, c) { if (SIM) return; const L = S.combat.log; L.unshift({ m, c }); if (L.length > 40) L.pop(); logVer++; }
 
+// Food is what keeps you fighting (2026-11-25): from Orange Town on (where Fishing and Cooking open), no HP
+// comes back while you fight, only food you eat, and rest outside battle (3% a second): a food stock is how
+// long a farm can last. The Leaf Village, the world you learn in, keeps 0.8% a second.
+const combatRegen = (z) => (z && z.realm === 'shinobi' && !z.dungeon ? 0.008 : 0);
 function tickCombat(dt) {
   const C = S.combat;
   const max = pMaxHp();
   if (C.hp > max) C.hp = max;
   if (C.zone == null) { C.hp = Math.min(max, C.hp + max * 0.03 * dt); return; }
-  if (!ZONES[C.zone].dungeon) C.hp = Math.min(max, C.hp + max * 0.008 * dt);   // no breather in a dungeon
+  const rg = combatRegen(ZONES[C.zone]);
+  if (rg) C.hp = Math.min(max, C.hp + max * rg * dt);
   if (C.enemy == null) {
     C.respawn -= dt;
     if (C.respawn <= 0) spawnEnemy();
@@ -639,11 +644,14 @@ function dealDamage(e, dmg, crit, label, extra) {
   emit('hit', Object.assign({ target: 'enemy', dmg, crit, label }, extra));
   if (C.eHp <= 0) killEnemy(e);
 }
+// A stage you have long outgrown teaches little (2026-11-25): past 10 levels above its recommended level,
+// Character XP drops 4% a level, down to 20%. Progress is where the fights still cost HP, and so food.
+const xpFalloff = (z) => { const over = charLv() - ((z && z.rec) || 0) - 10; return over > 0 ? Math.max(0.2, 1 - 0.04 * over) : 1; };
 function killEnemy(e) {
   const C = S.combat, z = ZONES[C.zone];
   const g = Math.floor(randInt(e.gold[0], e.gold[1]) * goldMult());
   S.gold += g;
-  addXp('character', e.xp * (RESTING ? REST_XP : 1));
+  addXp('character', e.xp * (RESTING ? REST_XP : 1) * xpFalloff(z));
   S.bounty += e.xp * 10;
   const dropped = [], loot = {}, dry = dryMult();
   let epic = false;

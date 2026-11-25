@@ -40,9 +40,19 @@ const ATK_SCALE = { hex: 4.5, hunter: 9, echo: 30, rift: 30 };
 const HP_SCALE = {};
 for (const r in BAL) { ATK_SCALE[r] = (ATK_SCALE[r] || 1) / Math.sqrt(BAL[r]); HP_SCALE[r] = 1 / Math.sqrt(BAL[r]); }
 const XP_SCALE = { shinobi: 0.054, seas: 0.05, soul: 0.05, ki: 0.045, hex: 0.032, hunter: 0.02, echo: 0.016, rift: 0.014 };
+// Food is the fuel of a farm (2026-11-25): stage foes after the Leaf Village last longer and hit harder, so a
+// fight costs HP and a farm costs food; their XP grows to match. Guardians are tuned separately (ZONE_BAL).
+const STAGE_TOUGH = { hp: 4, atk: 4, xp: 3.5 };
+// A guardian's hardest blow is the wall: tools/sim/tune-bosses.js sets each one's attack so that, when you
+// arrive, one blow could drop you from the auto-eat line (×1.3; the Ashen Fox ×0.85, a first taste): more HP
+// and defense first, then a food stock. Its HP goes down by as much, so a fight eats as much food as before
+// (farming a guardian for its drops stays affordable).
+const BOSS_BITE = { fox: 3.171, admiral: 5.815, sovereign: 9.575, tyrant: 14.503, matriarch: 24.862, chimera: 8.499, pillar: 7.969, convergence: 18.12 };
 function finalizeWorlds() {
   UNLOCKS.push(...UNLOCK_TAIL);
   for (const z of ZONES) for (const e of z.enemies) {
+    if (z.boss && BOSS_BITE[z.id]) { e.atk = Math.round(e.atk * BOSS_BITE[z.id]); e.hp = Math.round(e.hp / BOSS_BITE[z.id]); }
+    if (!z.boss && z.realm !== 'shinobi') { e.hp = Math.round(e.hp * STAGE_TOUGH.hp); e.atk = Math.round(e.atk * STAGE_TOUGH.atk); e.xp = Math.round(e.xp * STAGE_TOUGH.xp); }
     if (ATK_SCALE[z.realm]) e.atk = Math.round(e.atk * ATK_SCALE[z.realm]);
     if (HP_SCALE[z.realm]) e.hp = Math.round(e.hp * HP_SCALE[z.realm]);
     if (ZONE_BAL[z.id]) { e.atk = Math.round(e.atk / Math.sqrt(ZONE_BAL[z.id])); e.hp = Math.round(e.hp / Math.sqrt(ZONE_BAL[z.id])); }
@@ -230,7 +240,7 @@ const EXTRA_USES = [];
   for (const c of CROPS) {
     c.seed = 'seed_' + c.id; c.xp = xpFor(c.level, c.mins * 60 * 0.25);
     defItem(c.seed, c.name + ' Seed', '🌱', 10 + c.level * 3, { type: 'seed' });
-    if (c.id === 'vital_bean') defItem(c.id, c.name, '🫘', 60, { type: 'food', heal: 1600 });
+    if (c.id === 'vital_bean') defItem(c.id, c.name, '🫘', 60, { type: 'food', heal: 400 });
     else defItem(c.id, c.name, '🌾', 20 + c.level * 4);
   }
   // meals: Cooking + crops = timed buffs (eat from the Bank)

@@ -14,7 +14,7 @@
    Output (simRun): milestones, time per activity, bottlenecks, recipe profitability.
    ========================================================================== */
 
-const MAC = { goldBy: {}, spent: 0, walls: {}, projects: {}, trace: [], offLog: [], activeT: 0, offT: 0, offIdle: 0, offStopped: 0, offStart: 0, offTask: null, shipDur: 3600, t: 0, it: 0, split: {}, goalAt: {}, events: [], wants: {}, stockouts: {}, deaths: [], skipped: [], stuck: {},
+const MAC = { foodEaten: 0, goldBy: {}, spent: 0, walls: {}, projects: {}, trace: [], offLog: [], activeT: 0, offT: 0, offIdle: 0, offStopped: 0, offStart: 0, offTask: null, shipDur: 3600, t: 0, it: 0, split: {}, goalAt: {}, events: [], wants: {}, stockouts: {}, deaths: [], skipped: [], stuck: {},
   foodT: 0, fightT: 0, recipes: {}, equipBuf: {}, levels: [], night: false, lastGoal: -1, lastGoalT: 0 };
 const Q = { 50: 0.6931, 90: 2.3026 };   // −ln(1 − q): the p50 / p90 waiting time of one Poisson arrival, × 1/λ
 const Z = { 50: 0, 90: 1.2816 };
@@ -86,7 +86,8 @@ function taskRates(t, single) {
 // ships and crops change with levels and seeds, not every jump: cached per stat epoch and night/day
 const BG = { k: null, ships: null, farm: null };
 function backgroundRates(R) {
-  const dur = MAC.shipDur || 3600, k = EPOCH + '|' + dur;
+  // keyed on what changes ships and crops: Voyaging / Farming levels, the trip length, worlds (not every jump)
+  const dur = MAC.shipDur || 3600, k = skillLv('voyaging') + '|' + skillLv('farming') + '|' + dur + '|' + Object.keys(S.gates).length + '|' + Math.floor(MAC.t / 21600);
   if (BG.k !== k) { BG.k = k; BG.ships = shipRates(dur); BG.farm = farmRates(); }
   mergeRates(R, BG.ships);
   mergeRates(R, BG.farm);
@@ -341,7 +342,7 @@ function simRun(o) {
     }
     const task = plan();
     { const g = GOALS[S.goal], I = g && introspect(g); const z = I && I.kills && ZONES.find((x) => x.id === I.kills);
-      if (z && z.boss) { let w = MAC.walls[z.id]; if (!w) { const zi = ZONES.indexOf(z); equipBest(zi); w = MAC.walls[z.id] = { start: MAC.t, prep: 0, fight: 0, lv0: charLv(), r0: zoneRatio(zi) }; } MAC.curWall = w; } else MAC.curWall = null; }
+      if (z && z.boss) { let w = MAC.walls[z.id]; if (!w) { const zi = ZONES.indexOf(z); equipBest(zi); w = MAC.walls[z.id] = { start: MAC.t, prep: 0, fight: 0, lv0: charLv(), r0: zoneRatio(zi), b0: frate(zi).blow / eatLine() }; } MAC.curWall = w; } else MAC.curWall = null; }
     const R = taskRates(task);
     R.taskInp = Object.assign({}, R.inp);
     backgroundRates(R);
@@ -365,7 +366,8 @@ function simRun(o) {
       MAC.offTask = planOffline(gap); MAC.offStart = MAC.t + dt; MAC.shipDur = durFor(gap);
       MAC.offLog.push([+((MAC.t + dt) / 3600).toFixed(1), taskName(MAC.offTask), +(Math.min(99, lastsFor(MAC.offTask) / 3600)).toFixed(1), +(gap / 3600).toFixed(1)]);
     }
-    if (R.want && ITEMS[R.want.id] && ITEMS[R.want.id].type === 'food') MAC.foodT += dt;
+    if ((task && task.forFood) || (R.want && ITEMS[R.want.id] && ITEMS[R.want.id].type === 'food')) MAC.foodT += dt;
+    if (R.fight && R.fight.foodPerS) MAC.foodEaten += R.fight.foodPerS * dt;
     if (R.act && R.act.in) { const rk = R.skill + ':' + R.act.id; MAC.recipes[rk] = (MAC.recipes[rk] || 0) + dt; }
     MAC.t += dt;
     // a goal that drags on: skipped and reported
@@ -414,9 +416,9 @@ function simReport() {
     hours: H(MAC.t), jumps: MAC.it, goal: S.goal, goals: GOALS.length, char: charLv(), avgSkill: +(sk.reduce((a, k) => a + skillLv(k), 0) / sk.length).toFixed(1),
     gold: Math.round(S.gold), bankItems: Math.round(Object.keys(S.items).reduce((a, k) => a + (ITEMS[k] && ITEMS[k].type !== 'equip' ? S.items[k] : 0), 0)),
     milestones, events: MAC.events, split, skipped: MAC.skipped, deaths: MAC.deaths, stockouts: MAC.stockouts, wants,
-    food: { foodH: H(MAC.foodT), fightH: H(MAC.fightT), ratio: MAC.fightT ? +(MAC.foodT / MAC.fightT).toFixed(3) : 0 },
+    food: { cookH: H((MAC.split.cooking || 0) + (MAC.split.fishing || 0)), foodH: H(MAC.foodT), fightH: H(MAC.fightT), ratio: MAC.fightT ? +(MAC.foodT / MAC.fightT).toFixed(3) : 0, eatenPerFightH: MAC.fightT ? Math.round(MAC.foodEaten / (MAC.fightT / 3600)) : 0 },
     goldBy: Object.fromEntries(Object.entries(MAC.goldBy).map(([k, v]) => [k, Math.round(v)])), goldSpent: Math.round(MAC.spent),
-    walls: Object.fromEntries(Object.entries(MAC.walls).map(([k, w]) => [k, { r0: +w.r0.toFixed(2), fromH: H(w.start), toH: H(w.end || w.start), prepH: H(w.prep), fightH: H(w.fight), lv: w.lv0 + '→' + (w.lv1 || w.lv0) }])),
+    walls: Object.fromEntries(Object.entries(MAC.walls).map(([k, w]) => [k, { r0: +w.r0.toFixed(2), b0: +w.b0.toFixed(2), fromH: H(w.start), toH: H(w.end || w.start), prepH: H(w.prep), fightH: H(w.fight), lv: w.lv0 + '→' + (w.lv1 || w.lv0) }])),
     play: { activeH: H(MAC.activeT), offlineH: H(MAC.offT), offlineIdleH: H(MAC.offIdle), offlineStops: MAC.offStopped, sessions: OPT.sessions, offLog: MAC.offLog },
     recipes: recipeCheck(), notes: P.note, medianRolls: __rng.calls, trace: MAC.trace, log: P.log,
   };

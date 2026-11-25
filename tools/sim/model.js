@@ -178,7 +178,7 @@ function fightRates(zi) {
   let cyc = 0, xp = 0, gold = 0, dmg = 0, blow = 0, worstFight = 0, ttkMax = 0, wxp = 0, ren = 0;
   const plain = z.boss || z.tear || z.dungeon, n = z.enemies.length, ed = hmul('edef');
   const add = (e, w, f) => {
-    cyc += w * (f.ttk + respawn); xp += w * e.xp * xm; gold += w * avgQ(e.gold) * gm; dmg += w * f.dmgIn; wxp += w * e.xp;
+    cyc += w * (f.ttk + respawn); xp += w * e.xp * xm * xpFalloff(z); gold += w * avgQ(e.gold) * gm; dmg += w * f.dmgIn; wxp += w * e.xp;
     dropsOf(e, luck, o, w);
   };
   for (let i = 0; i < n; i++) {
@@ -192,7 +192,7 @@ function fightRates(zi) {
     add(el, (49 / 50) * 0.05 / n, { ttk, dmgIn: f.inDps * (el.atk / e.atk) * ttk });
   }
   if (!plain) { const al = rankedEnemy(enemyAt(zi, n - 1), 2); add(al, 1 / 50, foeEval(al, techs)); }
-  const kps = 1 / cyc, max = pMaxHp(), regen = z.dungeon ? 0 : max * 0.008;
+  const kps = 1 / cyc, max = pMaxHp(), regen = max * combatRegen(z);
   // what the engine's kill hooks add: weapon XP, renown
   wxp *= (1 + discFx('wxp')) * kps;
   ren = (z.boss ? 25 : 1) * (1 + (typeof ascTier === 'function' ? ascTier(z.realm) : 0)) * kps;
@@ -207,6 +207,7 @@ function fightRates(zi) {
   if (food) {
     r.safe = blow < thr && worstFight < max * 4;
     r.inp[food] = hpLoss / Math.max(1, heal);
+    r.foodPerS = r.inp[food];
   } else {
     r.safe = blow < max && worstFight < max * 0.9;
     r.deathT = hpLoss > 0 ? max / hpLoss : Infinity;   // seconds until the regen deficit drops you
@@ -216,6 +217,7 @@ function fightRates(zi) {
 }
 
 /* ------------------------------------------------------------ dungeons */
+const foodStockAll = () => Object.keys(S.items).filter((k) => ITEMS[k] && ITEMS[k].type === 'food').reduce((a, k) => a + S.items[k], 0);
 function dungeonRates(id) {
   const d = DG_BY[id], zi = d.zi, z = ZONES[zi], techs = equipped().filter((x) => ['attack', 'ultimate'].includes(TECHNIQUES[x].cat));
   let t = 0, dmg = 0, blow = 0;
@@ -223,8 +225,9 @@ function dungeonRates(id) {
   for (let i = 0; i < rooms; i++) { const f = foeEval(enemyAt(zi, i), techs); t += f.ttk + FOE_RESPAWN; dmg += f.dmgIn; blow = Math.max(blow, f.blow); }
   const max = pMaxHp(), food = S.combat.food && count(S.combat.food) > 0 ? S.combat.food : null, heal = food ? foodHeal(food) : 0;
   const eat = Math.max(0, Math.ceil((dmg - max * (1 - autoEatThreshold())) / Math.max(1, heal)));
-  const ok = blow < autoEatThreshold() * max && (dmg < max * 0.95 || (food && count(food) >= eat));
-  return { id, t, dmg, eat: food ? eat : 0, food, ok };
+  const blowOk = blow < autoEatThreshold() * max;
+  const ok = blowOk && (dmg < max * 0.95 || (food && foodStockAll() * heal >= dmg - max * (1 - autoEatThreshold())));
+  return { id, t, dmg, eat: food ? eat : 0, food, ok, blowOk };
 }
 
 /* ------------------------------------------------------------ background: voyages and crops */

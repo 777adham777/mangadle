@@ -37,7 +37,7 @@ console.log(`\nPLAY: ${P2.activeH} h in sessions, ${P2.offlineH} h closed (${P2.
 
 console.log('\nGOLD: earned ' + Object.entries(rep.goldBy).filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).map(([k, v]) => `${k} ${v.toLocaleString('en')}`).join(' · ') + ` · spent ${rep.goldSpent.toLocaleString('en')}`);
 console.log('\nGUARDIAN WALLS (ratio > 1 on arrival: you cannot win yet · session hours on the step: preparing / fighting it)');
-for (const [z, w] of Object.entries(rep.walls)) console.log(`  ${pad(z, 12)} ${pad(day(w.fromH) + ' → ' + day(w.toH), 30)} ratio ${lpad(w.r0.toFixed(2), 5)} · prep ${lpad(w.prepH.toFixed(1), 5)} h · fight ${lpad(w.fightH.toFixed(1), 5)} h · Character ${w.lv}`);
+for (const [z, w] of Object.entries(rep.walls)) console.log(`  ${pad(z, 12)} ${pad(day(w.fromH) + ' → ' + day(w.toH), 30)} ratio ${lpad(w.r0.toFixed(2), 5)} · blow/eat line ${lpad(w.b0.toFixed(2), 5)} · prep ${lpad(w.prepH.toFixed(1), 5)} h · fight ${lpad(w.fightH.toFixed(1), 5)} h · Character ${w.lv}`);
 console.log('\nTIME SPLIT (hours)');
 const tot = rep.split.reduce((a, [, h]) => a + h, 0);
 for (const [k, h] of rep.split) console.log(`  ${pad(k, 34)} ${lpad(h.toFixed(1), 7)}  ${lpad((100 * h / tot).toFixed(1), 5)}%`);
@@ -48,7 +48,7 @@ const longWaits = rep.wants.filter((w) => w.waitedH >= 6).slice(0, 12);
 if (longWaits.length) { console.log('  gold: purchases waited on (≥ 6 h; the bot buys once a price is under 80% of its gold, 50% for energy):'); for (const w of longWaits) console.log(`    ${pad(w.what, 26)} ${lpad(w.cost.toLocaleString('en'), 14)} g · ${w.waitedH} h${w.bought ? '' : ' (never bought)'}`); }
 const stops = P2.offLog.filter((x) => x[2] < x[3] * 0.95);
 if (stops.length) console.log(`  offline farms that could not last the gap: ${stops.length}/${P2.offLog.length} (e.g. ${stops.slice(0, 3).map((x) => x[1] + ' ' + x[2] + 'h/' + x[3] + 'h').join(', ')})`);
-console.log(`  food: ${rep.food.foodH} h making food for ${rep.food.fightH} h of combat (ratio ${rep.food.ratio})`);
+console.log(`  food: ${rep.food.cookH} h fishing + cooking for ${rep.food.fightH} h of combat (${Math.round(100 * rep.food.cookH / Math.max(1, rep.food.fightH))}%) · ${rep.food.eatenPerFightH} eaten per hour of combat`);
 if (rep.deaths.length) console.log(`  deaths: ${rep.deaths.length} (${rep.deaths.slice(0, 6).map(([h, z]) => z + '@' + h + 'h').join(', ')})`);
 const so = Object.entries(rep.stockouts).sort((a, b) => b[1] - a[1]).slice(0, 8);
 if (so.length) console.log('  inputs that ran out most: ' + so.map(([k, n]) => `${k} ×${n}`).join(', '));

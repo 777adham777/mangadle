@@ -47,7 +47,9 @@ let zoneRatio = function (zi) {
 zoneRatio = memo(zoneRatio);   // same stage, same gear, same epoch: same answer
 const FR = new Map();
 let FRK = null;
-const powerKey = () => charLv() + '|' + S.equip.armor + S.equip.accessory + S.equipU + '|' + equipped().map((id) => id + techLv(id)).join(',') + '|' + Math.floor(totalTrain() / 10)
+const PK = { ep: -1, c: '', v: '' };
+const powerKey = () => { const c = memoCombo(); if (PK.ep === EPOCH && PK.c === c) return PK.v; PK.ep = EPOCH; PK.c = c; return (PK.v = powerKeyNow()); };
+const powerKeyNow = () => charLv() + '|' + S.equip.armor + S.equip.accessory + S.equipU + '|' + equipped().map((id) => id + techLv(id)).join(',') + '|' + Math.floor(totalTrain() / 10)
   + '|' + (S.fruit || '') + fruitRank() + '|' + Object.keys(S.gates).length + '|' + (S.combat.food && count(S.combat.food) >= 1 ? S.combat.food : '') + '|' + (S.shop.lucky_coin || 0) + (S.shop.satchel || 0) + '|' + Object.keys(P.fail).length;
 function frate(zi) {
   const k = powerKey();
@@ -55,15 +57,49 @@ function frate(zi) {
   if (!FR.has(zi)) FR.set(zi, fightRates(zi));
   return FR.get(zi);
 }
+// Food decides what you can hold (2026-11-25): no HP comes back in battle, so a stage is yours if no blow
+// can drop you from the auto-eat line and you have (or can make) food; a guardian if, on top of that, your
+// stock covers the whole fight. Time spent making the food counts against a stage's XP per hour.
+const eatLine = () => autoEatThreshold() * pMaxHp();
+const FPS = { ep: -1, m: new Map() };
+function foodProdSec(id) {
+  if (FPS.ep !== EPOCH) { FPS.ep = EPOCH; FPS.m.clear(); }
+  if (FPS.m.has(id)) return FPS.m.get(id);
+  const v = foodProdSecNow(id); FPS.m.set(id, v); return v;
+}
+function foodProdSecNow(id) {
+  const p = producerOf(id);
+  if (!p) return 60;
+  const c = chainRates(p.skill, p.act, 0, false);
+  return c && c.out[id] > 0 ? 1 / c.out[id] : 60;
+}
+function foodCost(zi) {
+  const r = frate(zi);
+  if (!(r.hpLoss > 0)) return { perS: 0, prodPerS: 0 };
+  const bf = ownedFood() || bestFood();
+  if (!bf) return null;
+  const perS = r.hpLoss / Math.max(1, foodHeal(bf));
+  return { bf, perS, prodPerS: perS * foodProdSec(bf) };
+}
+function bossOk(zi) {
+  const r = frate(zi);
+  if (r.blow >= eatLine()) return false;                     // one blow from the eat line: gear and HP first
+  const f = ownedFood(), pool = pMaxHp() * (1 - autoEatThreshold()) + (f ? foodStock() * foodHeal(f) : 0);
+  return r.worstFight < pool;
+}
 function zoneOk(zi, lim) {
   if (!ZONES[zi] || !zoneUnlocked(zi) || ZONES[zi].tear || ZONES[zi].dungeon || !ZONES[zi].enemies.length) return false;
   const f = P.fail[zi];
   if (f && power() < f * 1.12) return false;
-  if (zoneRatio(zi) >= (lim || 0.9)) return false;
+  if (ZONES[zi].boss) return bossOk(zi);
   const r = frate(zi);
-  return r.safe && (r.food || r.deathT > 2 * 3600);
+  if (r.blow >= eatLine()) return false;
+  if (zoneRatio(zi) < (lim || 0.9) && (r.hpLoss === 0 || r.deathT > 2 * 3600)) return true;
+  return zoneRatio(zi) < 4 && !!foodCost(zi);
 }
 const zoneXph = (zi) => frate(zi).xp.character * 3600;
+// XP per hour once the time to make the food it eats is counted
+const zoneEff = (zi) => { const c = foodCost(zi); return zoneXph(zi) / (1 + (c ? c.prodPerS : 0)); };
 // The best XP is in the hardest stages you can hold: from the last unlocked stage down, the best of the
 // first three that pass.
 const BXZ = { key: null, zi: 0 };
@@ -71,11 +107,11 @@ function bestXpZone() {
   const k = powerKey();
   if (BXZ.key === k) return BXZ.zi;
   let best = null, bv = 0, seen = 0;
-  for (let zi = ZONES.length - 1; zi >= 0 && seen < 3; zi--) {
+  for (let zi = ZONES.length - 1; zi >= 0 && seen < 4; zi--) {
     const z = ZONES[zi];
-    if (!zoneUnlocked(zi) || !zoneOk(zi, z.boss ? 0.5 : 0.7)) continue;
+    if (z.boss || !zoneUnlocked(zi) || !zoneOk(zi, 0.7)) continue;
     seen++;
-    const v = zoneXph(zi); if (v > bv) { bv = v; best = zi; }
+    const v = zoneEff(zi); if (v > bv) { bv = v; best = zi; }
   }
   BXZ.key = k; BXZ.zi = best == null ? 0 : best;
   return BXZ.zi;
@@ -101,7 +137,13 @@ function bestFood() {
   }
   return best;
 }
+const OF = { k: null, v: null };
 function ownedFood() {
+  const k = EPOCH + '|' + Object.keys(S.items).length;
+  if (OF.k === k) return OF.v;
+  OF.k = k; return (OF.v = ownedFoodNow());
+}
+function ownedFoodNow() {
   let best = null;
   for (const id in S.items) { const it = ITEMS[id]; if (it && it.type === 'food' && S.items[id] >= 5 && (!best || foodHeal(id) > foodHeal(best))) best = id; }
   return best;
@@ -259,10 +301,11 @@ function combatGoal(zi) {
   if (zi < 0) return null;
   if (!zoneUnlocked(zi)) { let k = zi - 1; while (k > 0 && !zoneUnlocked(k)) k--; return combatGoal(k); }
   equipBest(zi);
-  const lim = ZONES[zi].boss ? 1.0 : 0.85;
-  if (zoneOk(zi, lim)) {
-    if (frate(zi).hpLoss > 0 && foodStock() < 30) { const bf = bestFood(); if (bf) { const t = needTask(bf, 120); if (t) return t; } }
-    return fightTask(zi);
+  if (zoneOk(zi, 0.85)) return fightTask(zi);
+  // a guardian you could survive blow by blow, but not to the end: cook enough for the whole fight
+  if (ZONES[zi].boss && zoneUnlocked(zi) && frate(zi).blow < eatLine()) {
+    const bf = ownedFood() || bestFood();
+    if (bf) { const n = Math.ceil(frate(zi).worstFight / Math.max(1, foodHeal(bf)) * 1.2); if (foodStock() < n) { const t = needTask(bf, n); if (t) return Object.assign(t, { forFood: true }); } }
   }
   return powerUp(zi);
 }
@@ -276,7 +319,12 @@ function questTask() {
     const id = g.id.slice(3), d = DG_BY[id], gzi = ZONES.findIndex((z) => z.id === d.guard);
     equipBest(gzi);
     const r = dungeonRates(id);
-    if (!r.ok) { if (foodStock() < 40) { const bf = bestFood(); if (bf) { const t = needTask(bf, 150); if (t) return t; } } return powerUp(gzi); }
+    if (!r.ok) {
+      // survivable blow by blow but short of food: cook what the five rooms eat (×1.3), else get stronger
+      const bf = ownedFood() || bestFood();
+      if (bf && r.blowOk) { const n = Math.ceil(r.dmg / Math.max(1, foodHeal(bf)) * 1.3); if (foodStock() < n) { const t = needTask(bf, n); if (t) return Object.assign(t, { forFood: true }); } }
+      return powerUp(gzi);
+    }
     if (count(dgKey(id)) < 1) return needTask(dgKey(id), 1) || fightTask(gzi);
     return { kind: 'dungeon', id };
   }
@@ -417,6 +465,23 @@ function housekeeping(H) {
   equipBest(S.combat.zone != null ? S.combat.zone : P.lastZone || 0);
   const f = ownedFood() || Object.keys(S.items).find((k) => ITEMS[k] && ITEMS[k].type === 'food' && S.items[k] >= 1); if (f) S.combat.food = f;
 }
+// Food: a fight that costs HP needs a stock that lasts. The bot keeps enough of its best food for
+// FOOD_HOURS of that fight (an offline night included) and cooks before it goes back to fighting.
+const FOOD_HOURS = 12, FOOD_CAP = 1500;
+function foodNeed(zi) {
+  const r = frate(zi), bf = ownedFood() || bestFood();
+  if (!(r.hpLoss > 0) || !bf || ZONES[zi].boss) return null;     // guardians: combatGoal sizes the stock
+  return { id: bf, n: Math.min(FOOD_CAP, Math.ceil(r.hpLoss * FOOD_HOURS * 3600 * REST_PACE / Math.max(1, foodHeal(bf)))) };
+}
+function withFood(t) {
+  if (!t || t.kind !== 'fight') return t;
+  const need = foodNeed(t.zi);
+  if (!need) return t;
+  const have = foodStock(), low = have < need.n * 0.25;
+  // below a quarter of the target: cook first; otherwise top the stock up during sessions
+  if (low || (have < need.n && !MAC.night && sched().toNext < 1800)) { const f = needTask(need.id, need.n); if (f) { MAC.foodWant = true; return Object.assign(f, { forFood: true }); } }
+  return t;
+}
 function plan() {
   let t = null;
   try { t = questTask(); } catch (e) { plog('ERR ' + e.message); P.note['planner error: ' + e.message] = (P.note['planner error: ' + e.message] || 0) + 1; }
@@ -426,5 +491,5 @@ function plan() {
     if (id) P.note['no plan: ' + id] = (P.note['no plan: ' + id] || 0) + 1;
     t = featureOpen('battle') && zoneOk(bestXpZone(), 0.9) ? fightTask(bestXpZone()) : trainTask('woodcutting');
   }
-  return t;
+  return withFood(t);
 }
