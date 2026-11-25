@@ -42,8 +42,8 @@ function expCard(a) {
     <div class="ac-head">${art}<div class="ac-name"><b>${esc(a.name)}</b><small>Expedition · Lv ${a.level}</small></div><span class="ac-cta" title="${esc(why)}">${why ? `${ui('close')}${S.exped.ships.length >= shipSlots() ? 'No free ship' : why.startsWith('Needs') ? 'Need wood' : esc(why)}` : `${ui('play')}Send`}</span></div>
     <div class="ac-stats"><span title="Trip length">${ui('time')}<b>${durName(dur)}</b></span><span title="Hauls of loot it brings back">${ui('chest')}<b>~${fmt(hauls)}</b> hauls</span><span title="Voyaging XP on return"><b>${fmt(a.xp * EXP_XP * hauls * skillXpMult('voyaging'))}</b> xp</span></div>
     <div class="ac-io"><small>Hull</small>${io(c.hull, c.hullN)}<small>Food</small>${io(c.dish, c.dishN, true)}</div>
-    <div class="ac-io"><small>Per haul</small>${tile(null, `${fmt(a.loot.gold[0] * goldMult())}+`, { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}${a.loot.table.map(([k]) => tile(k, null, { cls: 'xs' })).join('')}${(a.extra || []).map(([k, ch]) => tile(k, fmtRate(ch), { cls: 'xs' })).join('')}</div>
-    <div class="ac-io"><small>Rare</small>${a.loot.rare.map(([k, ch]) => tile(k, fmtRate(ch * luckMult()), { cls: 'xs' })).join('')}</div>
+    <div class="ac-io"><small>Per haul</small>${tile(null, `${fmt(a.loot.gold[0] * goldMult())}+`, { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}${a.loot.table.map(([k]) => tile(k, null, { cls: 'xs', unknown: !isFound(k) })).join('')}${(a.extra || []).map(([k, ch]) => tile(k, fmtRate(ch), { cls: 'xs', unknown: !isFound(k), r: rarity(k) })).join('')}</div>
+    <div class="ac-io"><small>Rare</small>${a.loot.rare.map(([k, ch]) => tile(k, fmtRate(ch * luckMult()), { cls: 'xs', unknown: !isFound(k), r: rarity(k) })).join('')}</div>
     <div class="ac-foot"><span class="ac-own">${S.exped.ships.filter((s) => s.id === a.id).length ? `${ui('check')} A ship sails here` : 'Provisions are optional'}</span>
       <span class="ac-m" title="Mastery: one point per haul">${ui('mastery')}<b>${masteryLv('voyaging', a.id)}</b></span></div>
   </button>`;

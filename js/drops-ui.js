@@ -119,9 +119,9 @@ function lootTableHTML() {
     const e = typeof enemyAt === 'function' ? enemyAt(C.zone, i) : e0;
     const drops = (e.drops || []).map(([id, ch]) => {
       const schem = ITEMS[id] && ITEMS[id].type === 'schematic';
-      const got = id === 'FRUIT' ? FRUITS.some((f) => S.found[f]) : schem ? S.known[id] : S.found[id];
+      const got = isFound(id);
       const p = schem ? ch * lm : ch < 0.2 ? ch * lm : ch;
-      return tile(id, fmtRate(p), got ? { cls: 'xs' } : { cls: 'xs', unknown: true, r: rarity(id), title: '???' });
+      return tile(id, fmtRate(p), got ? { cls: 'xs' } : { cls: 'xs', unknown: true, r: rarity(id), title: 'Undiscovered' });
     }).join('');
     return `<li class="lt-foe"><span class="lt-who">${ic('enemy', e.name)}<b>${esc(e.name)}</b>${z.boss ? '<em class="dr-tag boss">Boss</em>' : ''}</span><span class="lt-drops">${drops || '<small class="muted">No items</small>'}</span></li>`;
   }).join('');

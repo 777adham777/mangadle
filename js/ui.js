@@ -102,14 +102,21 @@ const KIND_OF = { res: 'res', gem: 'res', spice: 'res', seed: 'res', equip: 'equ
 const itemKind = (id) => (ITEMS[id] ? KIND_OF[ITEMS[id].type] || 'res' : null);
 const kindCorner = (k) => (k ? `<span class="tile-kind k-${k}" aria-hidden="true">${ui('k-' + k)}</span>` : '');
 
+// Has the player met this item yet? (a Devil Fruit roll counts any fruit; schematics count once learned)
+const isFound = (id) => (id === 'FRUIT' ? FRUITS.some((f) => S.found[f]) : id === 'GEM' ? GEM_TABLE.some(([g]) => S.found[g])
+  : !!(S.found[id] || (ITEMS[id] && ITEMS[id].type === 'schematic' && S.known[id])));
+// Silhouette art: the icon stripped of every tooltip hook, drawn black under a "?".
+const silArt = (icon) => (icon || '').replace(/\sdata-t?tip="[^"]*"/g, '').replace(/\stitle="[^"]*"/g, '') + '<b class="q">?</b>';
 // An item tile: art area tinted by rarity + family corner + a light count strip.
 function tile(id, n, o) {
   o = o || {};
-  const r = o.unknown ? 0 : (o.r || rarity(id));
+  // Undiscovered: a black silhouette of the art with a "?" over it, and nothing that names it (no tooltip).
+  const r = o.unknown ? (o.r || 0) : (o.r || rarity(id));
   const tag = o.tag || 'span';
   const real = !o.unknown && !o.icon && id && ITEMS[id];
-  const art = o.unknown ? '<b class="q">?</b>' : (o.icon || itemIc(id)) + (o.mark != null ? o.mark : !o.icon && id ? itemMark(id) : '')
+  const art = o.unknown ? silArt(o.icon || (id ? itemIc(id) : '')) : (o.icon || itemIc(id)) + (o.mark != null ? o.mark : !o.icon && id ? itemMark(id) : '')
     + (real ? kindCorner(itemKind(id)) : '');
+  if (o.unknown) o = Object.assign({}, o, { cls: (o.cls || '') + ' sil unk' });
   // Real items get the rich tooltip (tooltips.js) instead of a plain title.
   const tip = real ? `data-tip="${id}"` : o.tip ? o.tip : `title="${esc(o.title || (o.unknown ? 'Undiscovered' : id ? fruitLabel(id) : ''))}"`;
   return `<${tag} class="tile r${r} ${o.cls || ''}" ${o.attrs || ''} ${tip}>`
@@ -119,7 +126,7 @@ function tile(id, n, o) {
 function petTile(pt, o) {
   o = o || {};
   const got = S.pets[pt.id];
-  return tile(null, o.n, Object.assign({ r: 5, icon: ic('pet', pt.id), unknown: !got && !o.reveal, title: got || o.reveal ? pt.name : 'Undiscovered pet' }, o));
+  return tile(null, o.n, Object.assign({ r: got || o.reveal ? 5 : 0, icon: ic('pet', pt.id), unknown: !got && !o.reveal, title: got || o.reveal ? pt.name : 'Undiscovered pet' }, o));
 }
 
 /* =============================================================== small UI kit */
@@ -590,7 +597,7 @@ function actCard(skill, a) {
   if (a.in) lines.push(`<div class="ac-io"><small>Needs</small>${Object.entries(a.in).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(stock(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (stock(k) < n ? 'short' : '') })).join('')}</div>`);
   if (a.loot) {
     lines.push(`<div class="ac-io"><small>Loot</small>${tile(null, `${fmt(a.loot.gold[0] * goldMult())}+`, { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}${a.loot.table.map(([k]) => tile(k, null, { cls: 'xs' })).join('')}</div>`);
-    lines.push(`<div class="ac-io"><small>Rare</small>${a.loot.rare.map(([k, c]) => tile(k, fmtRate(c * luckMult()), { cls: 'xs' })).join('')}</div>`);
+    lines.push(`<div class="ac-io"><small>Rare</small>${a.loot.rare.map(([k, c]) => tile(k, fmtRate(c * luckMult()), { cls: 'xs', unknown: !isFound(k) })).join('')}</div>`);
   }
   if (it && it.type === 'equip') lines.push(`<div class="ac-note">${statInline(it.stats)}</div>`);
   lines.push(uix('actLines', skill, a));
@@ -609,8 +616,8 @@ function rareTiles(skill) {
   for (const [id, c] of (RARE_FINDS[skill] || []).concat(GLOBAL_RARE)) {
     if (id === 'GEM') {
       const tot = GEM_TABLE.reduce((a, g) => a + g[1], 0);
-      GEM_TABLE.forEach(([g, w]) => out.push(tile(g, fmtRate(c * m * w / tot), { cls: S.found[g] ? '' : 'dim' })));
-    } else out.push(tile(id, fmtRate(c * m), { cls: id !== 'FRUIT' && !S.found[id] ? 'dim' : '' }));
+      GEM_TABLE.forEach(([g, w]) => out.push(tile(g, fmtRate(c * m * w / tot), { unknown: !isFound(g) })));
+    } else out.push(tile(id, fmtRate(c * m), { unknown: !isFound(id) }));
   }
   const pet = PETS.find((x) => x.skill === skill);
   if (pet) out.push(petTile(pet, { n: S.pets[pet.id] ? 'Owned' : `~${PET_HOURS}h`, reveal: false }));
@@ -819,7 +826,7 @@ VIEWS.hero = (tab) => {
 function itemHead(id, unknown) {
   const it = ITEMS[id], r = unknown ? 0 : rarity(id);
   return `<div class="dt-hero r${r}"><div class="dt-name"><small>${unknown ? 'Undiscovered' : `<span class="rar r${r}">${RARITY_NAME[r] || ''}</span> · <span class="kind-lab k-${itemKind(id)}">${ui('k-' + itemKind(id))}${KINDS[itemKind(id)].one}</span>${typeLabel(id) !== KINDS[itemKind(id)].one ? ' · ' + typeLabel(id) : ''}`}</small><h2>${unknown ? '???' : esc(it.name)}</h2>${unknown ? '' : stars(r)}${!unknown && (it.base ? ITEMS[it.base] : it).lore ? `<p class="lore dt-lore">${esc((it.base ? ITEMS[it.base] : it).lore)}</p>` : ''}</div>
-    <div class="dt-art">${unknown ? '<b class="q">?</b>' : itemIc(id)}</div></div>`;
+    <div class="dt-art ${unknown ? 'sil' : ''}">${unknown ? silArt(itemIc(id)) : itemIc(id)}</div></div>`;
 }
 // The detail panel with nothing selected: what is in the bank, at a glance (click a line to open that item).
 function bankSummaryHTML() {
@@ -846,7 +853,7 @@ function inspectorHTML() {
   else if (it.type === 'scroll' && typeof scrollInspect === 'function') { const x = scrollInspect(selItem); body.push(x.body); acts.push(...x.acts); }
   else if (it.type === 'chest') {
     const tot = it.loot.reduce((a, l) => a + l[1], 0);
-    body.push(`${hdr('Contents', `${fmt(it.gold[0])}–${fmt(it.gold[1])} gold + ${it.rolls > 1 ? it.rolls + ' of' : 'one of'}`)}<ul class="srcs">${it.loot.map(([id, w, q]) => `<li><span><i>${itemIc(id)}</i>${esc(fruitLabel(id))}${q[1] > 1 ? ` ×${q[0]}–${q[1]}` : ''}</span><b>${fmtRate(w / tot)}</b></li>`).join('')}</ul>`);
+    body.push(`${hdr('Contents', `${fmt(it.gold[0])}–${fmt(it.gold[1])} gold + ${it.rolls > 1 ? it.rolls + ' of' : 'one of'}`)}<ul class="srcs">${it.loot.map(([id, w, q]) => `<li><span>${isFound(id) ? `<i>${itemIc(id)}</i>${esc(fruitLabel(id))}` : `<i class="sil">${silArt(itemIc(id))}</i>???`}${q[1] > 1 ? ` ×${q[0]}–${q[1]}` : ''}</span><b>${fmtRate(w / tot)}</b></li>`).join('')}</ul>`);
     acts.push(gbtn('Open 1', 'open', `data-open="${selItem}:1"`));
     if (n > 1) acts.push(gbtn(`Open all ×${fmt(Math.min(n, 1000))}`, 'open', `data-open="${selItem}:all"`));
   } else {
@@ -882,7 +889,7 @@ function collectionHTML() {
   let detail = `<div class="empty-note big">${ui('collection')}<span>Select a tile to see where it drops and how rare it is.</span></div>`;
   if (selCol && selCol.startsWith('pet:')) {
     const pt = PET_BY[selCol.slice(4)], got = S.pets[pt.id];
-    detail = `<div class="dt-hero r${got ? 5 : 0}"><div class="dt-name"><small>Pet${got ? ' · in your party' : ''}</small><h2>${got ? pt.name : '???'}</h2>${got ? stars(5) : ''}</div><div class="dt-art">${got ? ic('pet', pt.id) : '<b class="q">?</b>'}</div></div>
+    detail = `<div class="dt-hero r${got ? 5 : 0}"><div class="dt-name"><small>Pet${got ? ' · in your party' : ''}</small><h2>${got ? pt.name : '???'}</h2>${got ? stars(5) : ''}</div><div class="dt-art ${got ? '' : 'sil'}">${got ? ic('pet', pt.id) : silArt(ic('pet', pt.id))}</div></div>
       <div class="dt-body">${attrList([['star', 'Bonus', petBonus(pt)]])}${hdr('Where to find')}<ul class="srcs">${petSource(pt)}</ul></div>`;
   } else if (selCol && ITEMS[selCol]) {
     const it = ITEMS[selCol], got = S.found[selCol];

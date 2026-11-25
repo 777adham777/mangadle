@@ -43,10 +43,11 @@
 .fo-cta.q { background: var(--panel3); border-top-color: var(--line2); min-width: 150px; }
 /* Craft ×1 beside Craft ∞: the one-off is the quieter button */
 .fo-cta.one { min-width: 0; padding: 0 18px; background: var(--panel3); border-top-color: var(--line2); }
-.fo-qty { display: inline-flex; align-items: stretch; }
+.fo-qty { display: inline-flex; align-items: stretch; box-shadow: 0 0 0 1px var(--line2); transition: box-shadow 0.12s; }
+.fo-qty:hover, .fo-qty:focus-within { box-shadow: 0 0 0 1px var(--rc, #e0b040); }
+.fo-qty .fo-n:focus, .fo-qty .fo-n:focus-visible { outline: none; box-shadow: none; border-radius: 0; }
 .fo-qty .fo-n { width: 64px; height: 48px; box-sizing: border-box; padding: 0 8px; text-align: center; font: inherit; font-weight: 700; font-size: 16px;
-  color: var(--text, #fff); background: var(--panel2, #1a1d26); border: 1px solid var(--line2); border-right: 0; border-radius: 0; }
-.fo-qty .fo-n:focus { outline: none; border-color: var(--rc, #e0b040); }
+  color: var(--text, #fff); background: var(--panel2, #1a1d26); border: 0; border-left: 1px solid var(--line2); border-radius: 0; outline: none; }
 .fo-ctas .fo-cta:not(.one):not(.q) { min-width: 150px; }
 @media (max-width: 860px) { .fo-ctas { width: 100%; } .fo-ctas .fo-cta { flex: 1 1 140px; } }
 

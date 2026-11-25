@@ -103,7 +103,7 @@ UIX.actLines.push((skill, a) => {
     const out = Object.keys(a.out)[0], n = S.quality.log[variantId(out, 'p')] || 0, sp = spiceFor('cooking', out);
     return `<div class="ac-note q-line"><span class="${n ? 'got' : ''}" title="Chance per dish to come out Perfect (${ITEMS[out].type === 'food' ? 'heals 50% more' : 'buff 50% stronger'}). Grows with mastery and your level.">${ui('perfect')}Perfect ${pct(perfectChance('cooking', a))}${n ? ` · ${fmt(n)} made` : ''}</span>${sp ? `<span class="q-sp" style="--sc:${SPICES[sp].col}" title="${esc(spiceText(sp))}">${gi(SPICES[sp].icon)}${esc(SPICES[sp].adj)}</span>` : ''}</div>`;
   }
-  if (a.extra && a.loot) return `<div class="ac-io"><small>Cargo</small>${a.extra.map(([k, c]) => tile(k, fmtRate(c), { cls: 'xs ' + (S.found[k] ? '' : 'dim') })).join('')}</div>`;
+  if (a.extra && a.loot) return `<div class="ac-io"><small>Cargo</small>${a.extra.map(([k, c]) => tile(k, fmtRate(c), { cls: 'xs', unknown: !isFound(k), r: rarity(k) })).join('')}</div>`;
   return '';
 });
 

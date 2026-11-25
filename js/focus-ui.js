@@ -209,7 +209,7 @@ function focusFindsHTML(skill, a, T) {
     const lore = ((it.base ? ITEMS[it.base] : it).lore || it.desc || '').split(/(?<=\.)\s/)[0];
     const tip = `Unknown ${RARITY_NAME[r] || ''} ${typeLabel(k).toLowerCase()}${every}${lore ? `\n"${lore}"` : ''}`;
     // The icon without its data-tip, so hovering never names it.
-    return tile(k, fmtRate(p), { cls: 'xs sil', r, icon: itemIc(k).replace(/\sdata-tip="[^"]*"/, ''), mark: '', title: tip });
+    return tile(k, fmtRate(p), { cls: 'xs', unknown: true, r, title: tip });
   }).join('');
   return `<div class="fo-ing fo-extra"><small>Rare finds <em>${got} / ${a.extra.length}</em></small>${tiles}</div>`;
 }
