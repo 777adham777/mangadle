@@ -208,7 +208,7 @@ function isOn(key) {
 function navRow(key, icon, label, o) {
   o = o || {};
   const on = !o.noOn && isOn(key);
-  return `<button class="nav-row ${on ? 'on' : ''} ${o.sub ? 'sub' : ''}" data-nav="${key}" style="--rc:${o.color || rc('hub')}" title="${label}">
+  return `<button class="nav-row ${on ? 'on' : ''} ${o.sub ? 'sub' : ''}" data-nav="${key}" style="--rc:${o.color || rc('hub')}" ${o.skill ? `data-rtip="skill:${o.skill}"` : `title="${label}"`}>
     <span class="nr-ic">${icon}</span><span class="nr-name">${label}</span>
     ${o.skill ? `<span class="nr-lv" data-lv="${o.skill}">${skillLv(o.skill)}</span><span class="nr-xp"><i data-xpbar="${o.skill}"></i></span>` : ''}
     ${o.busy ? '<i class="nr-busy"></i>' : ''}${S.ui.fresh && S.ui.fresh[key] ? '<em class="nr-new">New</em>' : o.skill && o.skill === guideSkill() && !o.busy ? '<i class="nr-goal" title="Current objective">!</i>' : ''}</button>`;
@@ -233,7 +233,7 @@ function renderRail() {
     groups.push(open ? `<div class="nav-group">${head}
       ${ks.map((k) => navRow(`realm:${r}:${k}`, ic('skill', k), SKILLS[k].name, { skill: k, color: rc(r), busy: S.action && S.action.skill === k })).join('')}</div>`
       // Folded: the world's full name, then one chip per skill (icon, level, XP filling along its bottom edge).
-      : `<div class="nav-group folded">${head}<div class="nav-chips">${ks.map((k) => `<button class="nchip ${S.action && S.action.skill === k ? 'busy' : ''} ${k === guideSkill() ? 'goal' : ''} ${S.ui.fresh && S.ui.fresh[`realm:${r}:${k}`] ? 'fresh' : ''}" data-nav="realm:${r}:${k}" style="--rc:${rc(r)}" title="${SKILLS[k].name} · Lv ${skillLv(k)}${k === guideSkill() ? ' · current objective' : ''}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><i class="nc-xp"><i data-xpbar="${k}"></i></i></button>`).join('')}</div></div>`);
+      : `<div class="nav-group folded">${head}<div class="nav-chips">${ks.map((k) => `<button class="nchip ${S.action && S.action.skill === k ? 'busy' : ''} ${k === guideSkill() ? 'goal' : ''} ${S.ui.fresh && S.ui.fresh[`realm:${r}:${k}`] ? 'fresh' : ''}" data-nav="realm:${r}:${k}" style="--rc:${rc(r)}" data-rtip="skill:${k}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><i class="nc-xp"><i data-xpbar="${k}"></i></i></button>`).join('')}</div></div>`);
   }
   // Combat sits under the starting world: you fish and cook before you fight.
   if (featureOpen('battle')) groups.splice(Math.min(2, groups.length), 0, `<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
@@ -363,28 +363,30 @@ let SOURCES = null;
 function sourcesOf(id) {
   if (!SOURCES) {
     SOURCES = {};
-    const add = (item, icon, text, rate) => {
-      if (item === 'FRUIT') { FRUITS.forEach((f) => add(f, icon, text, rate == null ? null : rate / FRUITS.length)); return; }
-      if (item === 'GEM') { const tot = GEM_TABLE.reduce((a, g) => a + g[1], 0); GEM_TABLE.forEach(([g, w]) => add(g, icon, text, rate * w / tot)); return; }
-      (SOURCES[item] = SOURCES[item] || []).push({ icon, text, rate });
+    // go: where a click on the source leads (tooltips.js tipGo): act:<skill>:<action>, skill:<skill>, zone:<i>, tip:<item>, view:<view>
+    const add = (item, icon, text, rate, go) => {
+      if (item === 'FRUIT') { FRUITS.forEach((f) => add(f, icon, text, rate == null ? null : rate / FRUITS.length, go)); return; }
+      if (item === 'GEM') { const tot = GEM_TABLE.reduce((a, g) => a + g[1], 0); GEM_TABLE.forEach(([g, w]) => add(g, icon, text, rate * w / tot, go)); return; }
+      (SOURCES[item] = SOURCES[item] || []).push({ icon, text, rate, go: go || null });
     };
     for (const k in SKILLS) for (const a of SKILLS[k].actions) {
-      for (const o in a.out || {}) add(o, ['skill', k], `${SKILLS[k].name} Lv ${a.level}`, null);
-      for (const [t, c] of a.extra || []) add(t, a.loot ? ['voyage', a.id] : ['skill', k], `${a.loot ? 'Voyage' : SKILLS[k].name} · ${a.name}`, c);
+      const go = `act:${k}:${a.id}`;
+      for (const o in a.out || {}) add(o, ['skill', k], `${SKILLS[k].name} Lv ${a.level} · ${a.name}`, null, go);
+      for (const [t, c] of a.extra || []) add(t, a.loot ? ['voyage', a.id] : ['skill', k], `${a.loot ? 'Voyage' : SKILLS[k].name} · ${a.name}`, c, go);
       if (a.loot) {
-        a.loot.table.forEach(([t]) => add(t, ['voyage', a.id], `Voyage · ${a.name}`, 1 / a.loot.table.length));
-        a.loot.rare.forEach(([t, c]) => add(t, ['voyage', a.id], `Voyage · ${a.name}`, c));
+        a.loot.table.forEach(([t]) => add(t, ['voyage', a.id], `Voyage · ${a.name}`, 1 / a.loot.table.length, go));
+        a.loot.rare.forEach(([t, c]) => add(t, ['voyage', a.id], `Voyage · ${a.name}`, c, go));
       }
     }
-    for (const k in RARE_FINDS) RARE_FINDS[k].forEach(([t, c]) => add(t, ['skill', k], `${SKILLS[k].name} · any action`, c));
+    for (const k in RARE_FINDS) RARE_FINDS[k].forEach(([t, c]) => add(t, ['skill', k], `${SKILLS[k].name} · any action`, c, 'skill:' + k));
     GLOBAL_RARE.forEach(([t, c]) => add(t, ['ui', 'rare'], 'Any skill action', c));
-    for (const z of ZONES) for (const e of z.enemies) e.drops.forEach(([t, c]) => add(t, ['enemy', e.name], `${e.name} · ${z.name}`, c));
+    ZONES.forEach((z, zi) => { for (const e of z.enemies) e.drops.forEach(([t, c]) => add(t, ['enemy', e.name], `${e.name} · ${z.name}`, c, z.dungeon ? 'view:battle#gs-dungeons' : 'zone:' + zi)); });
     for (const k in ITEMS) if (ITEMS[k].type === 'chest') {
       const tot = ITEMS[k].loot.reduce((a, l) => a + l[1], 0);
-      ITEMS[k].loot.forEach(([t, w]) => add(t, ['item', k], ITEMS[k].name, w / tot));
+      ITEMS[k].loot.forEach(([t, w]) => add(t, ['item', k], ITEMS[k].name, w / tot, 'tip:' + k));
     }
-    SHOP.forEach((sh) => { if (sh.give) add(sh.give[0], ['shop', sh.id], 'Market', null); });
-    if (typeof EXTRA_SOURCES !== 'undefined') EXTRA_SOURCES.forEach(([id, k, ref, text, rate]) => add(id, [k, ref], text, rate));
+    SHOP.forEach((sh) => { if (sh.give) add(sh.give[0], ['shop', sh.id], 'Market', null, 'view:market'); });
+    if (typeof EXTRA_SOURCES !== 'undefined') EXTRA_SOURCES.forEach(([id, k, ref, text, rate]) => add(id, [k, ref], text, rate, k === 'skill' && SKILLS[ref] ? 'skill:' + ref : null));
   }
   return SOURCES[id] || [];
 }
@@ -528,9 +530,9 @@ function skBannerHTML(realm, skill) {
   // Compact (2026-11-24): the level ring is the XP bar, and the buffs and Path / Rare finds / Synergies share one
   // line, so the focus panel's button stays above the fold at 860 px.
   return `<section class="sk-banner sk-slim" style="--rc:${rc(realm)}">
-    <div class="sk-ring" data-xpring="${skill}" style="--p:${b.p}" title="Progress to the next level"><span><b data-lv="${skill}">${b.L}</b><small>Level</small></span></div>
+    <div class="sk-ring" data-xpring="${skill}" style="--p:${b.p}" data-rtip="skill:${skill}"><span><b data-lv="${skill}">${b.L}</b><small>Level</small></span></div>
     <div class="sk-main"><small>${R.name}</small>
-      <div class="sk-line"><h1>${s.name}</h1><span class="sk-xpt" data-xptext="${skill}">${xpText(b)}</span></div>
+      <div class="sk-line"><h1>${s.name}</h1>${typeof skGuideBtn === 'function' ? skGuideBtn(skill) : ''}<span class="sk-xpt" data-xptext="${skill}">${xpText(b)}</span></div>
       <div class="sk-line sk-chips"><div class="pills">${mods.join('')}</div>${typeof skInfoBtns === 'function' && s.realm !== 'combat' ? skInfoBtns(skill) : ''}</div></div>
   </section>`;
 }
@@ -677,7 +679,7 @@ function gsTopHTML(z) {
     <div class="gs-where"><span class="gs-ric">${z ? ic('realm', z.realm) : ui('battle')}</span><span><small>${z ? esc(REALMS[z.realm].name) : 'Battlefield'}</small><b>${z ? esc(z.name) : 'Choose a stage'}</b></span>${z ? `<span class="danger ${dc}">${dl}</span>` : ''}</div>
     ${z ? arrow(next, '›', 'Next stage') : ''}
     ${prog}
-    <div class="gs-acts">${typeof dgOn === 'function' && dgOn() ? gbtn('Dungeons', 'chest', 'data-nav="battle#gs-dungeons"', 'dark sm') : ''}${gbtn('Stages', 'map', 'data-gostages', 'dark sm')}${z ? gbtn('Retreat', 'stop', 'data-stopcombat', 'sm hot') : ''}</div>
+    <div class="gs-acts">${typeof dgOn === 'function' && dgOn() ? gbtn('Dungeons', 'chest', 'data-nav="battle#gs-dungeons"', 'dark sm') : ''}${gbtn('Stages', 'map', 'data-gostages', 'dark sm')}${z ? gbtn('Retreat', 'stop', 'data-stopcombat', 'sm hot') : ''}${typeof skGuideBtn === 'function' ? skGuideBtn('character') : ''}</div>
   </div>`;
 }
 function gsTechHTML() {

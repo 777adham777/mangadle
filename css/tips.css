@@ -1,0 +1,104 @@
+/* Tooltips everywhere + pinned cards + skill guides (tooltips.js, skill-guide.js, 2026-11-26) */
+
+/* ---- plain hints (from title=) and live cards */
+#itip.hint { max-width: min(280px, calc(100vw - 16px)); }
+.it-card.ht { min-width: 0; padding: 7px 10px; border-top-width: 1px; --rgc: var(--line2, #3a3d48); }
+#itip.hint .it-card.ht[style] { min-width: 220px; border-top-width: 2px; }
+.ht-h { display: block; font: 700 12.5px/1.3 var(--display, inherit); color: var(--text); }
+.ht-p { margin: 2px 0 0; color: var(--dim); font-size: 12px; line-height: 1.4; }
+.it-card.ht > .ht-p:first-child { margin: 0; color: var(--text); }
+.ht-ic { display: grid; place-items: center; width: 34px; height: 34px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.03); }
+.ht-ic .gi, .ht-ic svg { width: 24px; height: 24px; }
+.ht-bar { height: 5px; margin-top: 8px; background: rgba(255, 255, 255, 0.07); overflow: hidden; }
+.ht-bar i { display: block; height: 100%; background: var(--rgc); transition: width 0.25s; }
+.ht-sub { display: block; margin-top: 3px; color: var(--mute); font-size: 11px; }
+.ht-next { margin-top: 7px; padding-top: 6px; border-top: 1px solid var(--line); font-size: 11.5px; }
+.ht-next b { color: var(--gold, #f3c255); }
+.ht-goal { color: var(--gold, #f3c255); font-size: 11.5px; }
+
+/* ---- pinned card: it takes the mouse, its lines are links */
+#itip.pinned { pointer-events: auto; max-width: min(330px, calc(100vw - 16px)); }
+#itip.pinned .it-card { box-shadow: 0 0 0 1px color-mix(in srgb, var(--rgc, #888) 60%, transparent), 0 14px 36px rgba(0, 0, 0, 0.7); }
+.it-pin { display: flex; align-items: center; gap: 8px; padding: 4px 6px 4px 10px; background: color-mix(in srgb, var(--rgc, #f3c255) 22%, #111318); border: 1px solid var(--line); border-bottom: 0; color: var(--dim); font: 600 10px var(--display, inherit); letter-spacing: 0.06em; text-transform: uppercase; }
+#itip .it-pin { --rgc: var(--gold, #f3c255); }
+.it-pin span { flex: 1; }
+.it-pin a { display: grid; place-items: center; min-width: 22px; height: 22px; padding: 0 6px; color: var(--text); cursor: pointer; border: 1px solid transparent; }
+.it-pin a:hover { border-color: var(--line2, var(--line)); background: rgba(255, 255, 255, 0.06); }
+.it-pin .gi { width: 12px; height: 12px; fill: currentColor; }
+#itip.pinned .it-hint { display: none !important; }
+#itip.full .less { display: none; }
+.it-go { display: flex; align-items: center; gap: 6px; margin: 0 -5px; padding: 1px 5px; color: inherit; text-decoration: none; }
+.it-go s { display: none; text-decoration: none; }
+#itip.pinned .it-go { cursor: pointer; }
+#itip.pinned .it-go s { display: grid; place-items: center; width: 12px; opacity: 0.45; }
+#itip.pinned .it-go s .gi { width: 9px; height: 9px; fill: var(--dim); }
+#itip.pinned .it-go:hover { background: color-mix(in srgb, var(--rgc, #f3c255) 18%, transparent); }
+#itip.pinned .it-go:hover span, #itip.pinned .it-go:hover b { color: var(--text); }
+#itip.pinned .it-go:hover s { opacity: 1; }
+#itip.pinned .it-go.shut { cursor: not-allowed; opacity: 0.55; }
+#itip.pinned .it-card [data-tip] { cursor: pointer; }
+
+/* the row a link led to */
+.tip-flash { animation: tipFlash 1.6s ease-out; }
+@keyframes tipFlash {
+  0%, 30% { box-shadow: 0 0 0 2px var(--gold, #f3c255), 0 0 18px color-mix(in srgb, var(--gold, #f3c255) 60%, transparent); }
+  100% { box-shadow: 0 0 0 2px transparent, 0 0 0 transparent; }
+}
+
+/* ---- "?" beside a skill's name */
+.sk-help { display: inline-grid; place-items: center; width: 22px; height: 22px; margin-left: 2px; padding: 0; flex-shrink: 0; border: 1px solid color-mix(in srgb, var(--rc) 55%, var(--line)); border-radius: 50%; background: color-mix(in srgb, var(--rc) 14%, transparent); color: var(--text); font: 800 13px/1 var(--display, inherit); cursor: pointer; transition: background 0.12s, transform 0.12s; }
+.sk-help:hover { background: color-mix(in srgb, var(--rc) 35%, transparent); transform: scale(1.08); }
+.gs-acts .sk-help { --rc: var(--gold, #f3c255); width: 28px; height: 28px; }
+
+/* ---- the guide window */
+.sg { display: grid; gap: 12px; max-width: 640px; padding: 16px 18px; text-align: left; background: rgba(14, 15, 19, 0.97); border: 1px solid var(--line); border-top: 2px solid var(--rc); box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6); }
+.sg-head { display: flex; gap: 12px; align-items: flex-start; }
+.sg-ic { display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; border: 1px solid color-mix(in srgb, var(--rc) 50%, var(--line)); background: color-mix(in srgb, var(--rc) 12%, transparent); }
+.sg-ic .gi, .sg-ic svg { width: 32px; height: 32px; }
+.sg-head small { color: var(--rc); font: 600 10.5px var(--display, inherit); letter-spacing: 0.08em; text-transform: uppercase; }
+.sg-head h2 { margin: 1px 0 4px; }
+.sg-head p { margin: 0; color: var(--dim); font-size: 13px; line-height: 1.45; }
+.sg-sec h4 { display: flex; align-items: baseline; gap: 8px; margin: 0 0 6px; color: var(--text); font: 700 11px var(--display, inherit); letter-spacing: 0.08em; text-transform: uppercase; }
+.sg-sec h4 small { color: var(--mute); font-weight: 600; letter-spacing: 0.04em; }
+.sg-how { display: grid; gap: 5px; margin: 0; padding: 0; list-style: none; }
+.sg-how li { display: flex; gap: 8px; align-items: flex-start; color: var(--dim); font-size: 12.5px; line-height: 1.4; }
+.sg-how li > i { display: grid; place-items: center; width: 18px; height: 18px; flex-shrink: 0; margin-top: 1px; }
+.sg-how .gi { width: 14px; height: 14px; fill: var(--rc); }
+.sg-how b { color: var(--text); }
+.sg-acts { display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 4px; }
+.sg-act { display: flex; align-items: center; gap: 8px; padding: 4px 8px 4px 4px; border: 1px solid var(--line); background: rgba(255, 255, 255, 0.02); color: inherit; text-decoration: none; cursor: pointer; }
+a.sg-act:hover { border-color: color-mix(in srgb, var(--rc) 60%, var(--line)); background: color-mix(in srgb, var(--rc) 10%, transparent); }
+.sg-act.shut { opacity: 0.5; cursor: default; }
+.sg-lv { width: 22px; color: var(--mute); font: 700 11px var(--display, inherit); text-align: center; }
+.sg-nm { flex: 1; min-width: 0; display: grid; }
+.sg-nm b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12.5px; }
+.sg-nm small { display: flex; align-items: center; gap: 2px; color: var(--mute); }
+.sg-nm small i, .sg-tiles i, .sg-chip small i { display: grid; place-items: center; width: 18px; height: 18px; }
+.sg-nm small i .gi, .sg-nm small i img, .sg-nm small i svg, .sg-tiles i > *, .sg-chip small i > * { max-width: 16px; max-height: 16px; }
+.sg-nm small em { margin: 0 3px; font-style: normal; }
+.sg-act s { opacity: 0.4; }
+.sg-act s .gi { width: 10px; height: 10px; fill: var(--dim); }
+a.sg-act:hover s { opacity: 1; }
+.sg-lock { display: flex; align-items: center; gap: 3px; color: var(--mute); font: 600 11px var(--display, inherit); font-style: normal; }
+.sg-lock .gi { width: 10px; height: 10px; fill: var(--mute); }
+.sg-more { margin: 4px 0 0; color: var(--mute); font-size: 11.5px; }
+.sg-flow { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 10px; }
+.sg-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.sg-chip { display: flex; align-items: center; gap: 6px; padding: 3px 8px 3px 4px; border: 1px solid var(--line); color: inherit; text-decoration: none; font-size: 12px; cursor: pointer; }
+a.sg-chip:hover { border-color: color-mix(in srgb, var(--rc) 60%, var(--line)); background: color-mix(in srgb, var(--rc) 10%, transparent); }
+.sg-chip > i { display: grid; place-items: center; width: 20px; height: 20px; }
+.sg-chip > i .gi, .sg-chip > i svg { width: 18px; height: 18px; }
+.sg-chip small { display: flex; }
+.sg-chip.mute { color: var(--mute); cursor: default; }
+.sg-chip.mute .gi { width: 11px; height: 11px; fill: var(--mute); }
+.sg-pills { display: flex; flex-wrap: wrap; gap: 4px; margin-bottom: 6px; }
+.sg-line { display: flex; align-items: center; gap: 8px; margin: 4px 0 0; color: var(--dim); font-size: 12.5px; line-height: 1.4; }
+.sg-line > .gi, .sg-line > svg { width: 14px; height: 14px; flex-shrink: 0; fill: var(--rc); }
+.sg-line > span:first-of-type { flex: 1; }
+.sg-line b { color: var(--text); }
+.sg-tiles { display: flex; gap: 2px; }
+.sg-tiles i { opacity: 0.4; }
+.sg-tiles i.got, .sg-line:not(:has(.got)) .sg-tiles i { opacity: 1; }
+.sg-tip { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 10px; border: 1px dashed var(--line); color: var(--mute); font-size: 12px; line-height: 1.4; }
+.sg-tip .gi { width: 14px; height: 14px; flex-shrink: 0; fill: var(--mute); }
+.sg-tip kbd { padding: 0 4px; border: 1px solid var(--line); border-bottom-width: 2px; font: 600 11px var(--display, inherit); color: var(--dim); }
