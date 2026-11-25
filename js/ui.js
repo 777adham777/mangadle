@@ -410,7 +410,7 @@ function farmRates(skill, a) {
 }
 function combatRates() {
   const z = ZONES[S.combat.zone], e = z.enemies[0];
-  const kph = 3600 / (timeToKill(e) + (z.boss ? BOSS_RESPAWN : 1.2));
+  const kph = 3600 / (timeToKill(e) + (z.boss ? BOSS_RESPAWN : FOE_RESPAWN));
   return { z, kph, xph: kph * e.xp * 1.33 * xpMult(), goldh: kph * (e.gold[0] + e.gold[1]) / 2 * goldMult() };
 }
 // The big "now farming" block (overview + the active skill page).
@@ -743,7 +743,7 @@ function zoneXph(zi) {
   const z = ZONES[zi], n = z.enemies.length;
   let t = 0, x = 0;
   for (let j = 0; j < n; j++) { const e = enemyAt(zi, j); t += timeToKill(e); x += e.xp; }
-  return (3600 / (t / n + (z.boss ? BOSS_RESPAWN : 1.2))) * (x / n);
+  return (3600 / (t / n + (z.boss ? BOSS_RESPAWN : FOE_RESPAWN))) * (x / n);
 }
 function bestZone() {
   let best = -1, bx = 0;
@@ -1470,10 +1470,10 @@ document.addEventListener('click', (ev) => {
   else if ('journal' in d) openModal(journalHTML(), 'Close');
   else if (d.nav) { const [v, anchor] = d.nav.split('#'); setView(v); navAnchor = anchor || null; }
   else if (d.act) {
-    const [s, id] = d.act.split(':');
+    const [s, id, n] = d.act.split(':');
     const st = actState(s, findAction(s, id));
     if (st === 'locked' || st === 'missing') { retrigger(t, 'shake'); if (st === 'missing') toast('Missing materials — gather them first.', 'bad'); return; }
-    startAction(s, id);
+    startAction(s, id, +n || 0);
   }
   else if ('stop' in d) stopAction();
   else if (d.zone !== undefined) startCombat(+d.zone);
@@ -1574,6 +1574,7 @@ function showOffline(secs, before) {
   const rows = [], tiles = [];
   for (const k in after.levels) if (after.levels[k] > before.levels[k]) rows.push(`<div class="ob-line"><i>${ic('skill', k)}</i><span>${SKILLS[k].name}</span><b>Lv ${before.levels[k]} → ${after.levels[k]}</b></div>`);
   if (after.kills > before.kills) rows.push(`<div class="ob-line"><i>${ui('skull')}</i><span>Foes defeated</span><b>+${fmt(after.kills - before.kills)}</b></div>`);
+  if (after.kills > before.kills) rows.push(`<div class="ob-line"><i>${ui('sleep')}</i><span class="muted">You were resting: battles while away give half the Character XP.</span></div>`);
   if (after.train > before.train) rows.push(`<div class="ob-line"><i>${ui('energy')}</i><span>Training levels</span><b>+${fmt(after.train - before.train)}</b></div>`);
   const dg = after.gold - before.gold;
   if (dg) tiles.push(tile(null, (dg > 0 ? '+' : '') + fmt(dg), { r: 3, icon: ui('gold'), title: 'Gold', cls: 'pop-in' }));
@@ -1601,7 +1602,7 @@ function boot() {
     const secs = offlineSeconds(away), before = snapshot();
     fillChamber(away - secs);   // time beyond the offline limit goes to the Time Chamber
     if (typeof awayBegin === 'function') awayBegin();
-    SIM = true; advance(secs); SIM = false;
+    SIM = true; RESTING = true; advance(secs); SIM = false; RESTING = false;
     showOffline(secs, before);
   }
   S.last = Date.now();
@@ -1656,7 +1657,7 @@ let GAME_SPEED = 1;   // dev tools (dev.js) fast-forward: the extra time runs si
 function catchUp() {
   const now = Date.now(), dt = (now - lastTick) / 1000;
   lastTick = now;
-  if (dt > 5) { fillChamber(dt - offlineSeconds(dt)); SIM = true; advance(offlineSeconds(dt)); SIM = false; dirty = true; }
+  if (dt > 5) { fillChamber(dt - offlineSeconds(dt)); SIM = true; RESTING = true; advance(offlineSeconds(dt)); SIM = false; RESTING = false; dirty = true; }
   else if (dt > 0) {
     step(dt);
     if (GAME_SPEED > 1) { SIM = true; advance(dt * (GAME_SPEED - 1)); SIM = false; }

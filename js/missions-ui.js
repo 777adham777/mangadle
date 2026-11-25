@@ -19,7 +19,7 @@ function msUnit(m) {
   if (m.k === 'zone') {
     const zi = msZoneIndex(m), z = ZONES[zi];
     if (!z) return 0;
-    return timeToKill(enemyAt(zi, 0)) + (z.boss ? BOSS_RESPAWN : 1.2);
+    return timeToKill(enemyAt(zi, 0)) + (z.boss ? BOSS_RESPAWN : FOE_RESPAWN);
   }
   const a = SKILLS[m.skill] && findAction(m.skill, m.id);
   return a ? actionTime(m.skill, a) : 0;

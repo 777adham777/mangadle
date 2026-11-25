@@ -124,8 +124,11 @@ function focusHTML(skill) {
   }
   const last = SPOT['last_' + skill];
   const go = FC.includes(skill) ? FC_TXT[skill].go : s.type === 'voyage' ? 'Set sail' : s.type === 'craft' ? 'Craft' : 'Start';
+  // Recipes that use materials: "Craft ×1" (one, then stop) beside "Craft ∞" (until stopped or out of materials).
+  const batch = st === 'ready' && !busy && a.in && s.type === 'craft';
   const cta = run ? `<button class="fo-cta stop" data-stop>${ui('stop')}<span>Stop</span></button>`
     : st === 'ready' && busy ? focusSwitchHTML(skill, a, go, busy)
+    : batch ? `<span class="fo-ctas"><button class="fo-cta one" data-act="${skill}:${a.id}:1" title="Make one, then stop">${ui('play')}<span>${go} ×1</span></button><button class="fo-cta" data-act="${skill}:${a.id}" title="Keep going until you stop it or run out of materials">${ui('play')}<span>${go} ∞</span></button></span>`
     : `<button class="fo-cta" data-act="${skill}:${a.id}" ${locked || st === 'missing' ? 'disabled' : ''}>${st === 'ready' && FC.includes(skill) ? `${ui('play')}${FC_TXT[skill].go}` : ctaLabel(skill, a, st)}</button>`;
   return `<section class="win fo-win ${run ? 'on' : ''}" data-focus="${skill}" style="--rc:${rc(s.realm)}">
     <div class="fo-bg" data-skill-bg="${skill}" aria-hidden="true"></div>
@@ -152,7 +155,8 @@ function focusSwitchHTML(skill, a, go, busy) {
   const runA = S.action && findAction(S.action.skill, S.action.id);
   const ends = M && ((M.cur && M.cur.n) || (runA && runA.in));
   const q = ends && msFree() > 0 ? `<button class="fo-cta q" data-qnext="${skill}:${a.id}" title="Task Queue: starts when ${esc(M.cur ? msName(M.cur) : runA.name)} ends">${ui('missions')}<span>Queue next<small>after ${esc(M.cur ? msName(M.cur) : runA.name)}</small></span></button>` : '';
-  return `<span class="fo-ctas"><button class="fo-cta sw" data-act="${skill}:${a.id}">${ui('play')}<span>${go} now<small>stops ${esc(busy)}</small></span></button>${q}</span>`;
+  const one = a.in && SKILLS[skill].type === 'craft' ? `<button class="fo-cta one" data-act="${skill}:${a.id}:1" title="Make one, then stop (stops ${esc(busy)})">${ui('play')}<span>×1</span></button>` : '';
+  return `<span class="fo-ctas">${one}<button class="fo-cta sw" data-act="${skill}:${a.id}">${ui('play')}<span>${go}${one ? ' ∞' : ' now'}<small>stops ${esc(busy)}</small></span></button>${q}</span>`;
 }
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-qnext]');

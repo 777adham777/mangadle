@@ -28,13 +28,14 @@ function addWorld(def) {
 // The old ATK_SCALE (hex 4.5, hunter 9, echo 30, rift 30) was set when Energy Disciplines reached level 900;
 // with levels that cost 7% more each, the late guardians were 5× to 1000× out of reach. Each world's foes now
 // get BAL[world]: their attack and HP are divided by √BAL so the guardian falls around its day of the week.
-// XP_SCALE sets how fast the Character level climbs in each world (halved in the pace pass of 2026-11-24).
+// XP_SCALE sets how fast the Character level climbs in each world (halved in the pace pass of 2026-11-24,
+// then on 2026-11-25 ×0.6 in Leaf Village and ×0.4 after it: one night of battle took the bot from level 43 to 67).
 const BAL = { shinobi: 0.67, seas: 1.6, soul: 3, ki: 13, hex: 100, hunter: 120, echo: 800, rift: 600 };
 const ZONE_BAL = { fox: 0.7, admiral: 0.8, unbound: 1.9, mist: 81, ravine: 81, shoals: 81, reef: 81, storm: 81, districts: 81, desert: 81, spire: 62.4, plains: 81, canyon: 71.7, citadel: 66.3, alleys: 58.8, shrine: 75, veil: 73.8, thicket: 15.6, cliffs: 47.7, ruins: 58.2, plaza: 31.8, museum: 64.2, pillars: 75.9 };
 const ATK_SCALE = { hex: 4.5, hunter: 9, echo: 30, rift: 30 };
 const HP_SCALE = {};
 for (const r in BAL) { ATK_SCALE[r] = (ATK_SCALE[r] || 1) / Math.sqrt(BAL[r]); HP_SCALE[r] = 1 / Math.sqrt(BAL[r]); }
-const XP_SCALE = { shinobi: 0.09, seas: 0.175, soul: 0.175, ki: 0.175, hex: 0.175, hunter: 0.175, echo: 0.175, rift: 0.175 };
+const XP_SCALE = { shinobi: 0.054, seas: 0.07, soul: 0.07, ki: 0.07, hex: 0.07, hunter: 0.07, echo: 0.07, rift: 0.07 };
 function finalizeWorlds() {
   UNLOCKS.push(...UNLOCK_TAIL);
   for (const z of ZONES) for (const e of z.enemies) {

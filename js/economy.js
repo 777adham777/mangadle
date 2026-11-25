@@ -68,6 +68,10 @@ const GEAR_TIERS = {
   // ---- Skill depth (depth.js): placed where their skill level is realistically reached
   amber_pendant: [5, 'craft', 'def'], thunder_harpoon: [9, 'craft'], sekki_bracers: [12.5, 'craft', 'def'], living_wood_mail: [13, 'craft'],
   frostvoid_scythe: [15, 'craft'], sunstar_plate: [23, 'craft'], kido_focus: [24.5, 'craft'], divine_bow: [28.5, 'craft'],
+  // ---- Resource tiers (tiers.js, 2026-11-25): where their gathering level is reached
+  ember_maple_bow: [4.5, 'craft'], moonsilver_blade: [9, 'craft'], surge_gi: [14, 'craft'], bloodstone_gauntlets: [16, 'craft'],
+  threadbound_charm: [18, 'craft', 'off'], griffon_cloak: [22, 'craft'], crystal_ward: [24, 'craft', 'def'], meteor_hammer: [25.5, 'craft'],
+  kings_ring: [29.5, 'craft', 'hyb'], soulking_blade: [30, 'craft'],
   // ---- The Rift (28+)
   rift_cleaver: [28.5, 'legend'], rift_eye: [29, 'legend', 'hyb'],
   // ---- The manga armory (armory.js), world by world
@@ -136,6 +140,17 @@ const GEAR_RECIPES = {
   wildhide_coat:    { beastlord_claw: [2], lynx_pelt: 0.4, boar_tusk: 0.3, hex_void: 0.3 },
   // Echo Quarter
   star_badge:       { chimera_heart: [1], sage_chakra: [2], wyrm_scale: 0.4, chimera_mane: 0.3, sun_ingot: 0.3 },
+  // Resource tiers (tiers.js): the new nodes, a new ingot or dish, one older material
+  ember_maple_bow:      { beast_ember: [1], ember_maple: 0.5, storm_chakra: 0.3, sea_kelp: 0.2 },
+  moonsilver_blade:     { moonsilver_ingot: 0.5, soul_fragment: 0.3, ghost_ray: 0.2 },
+  surge_gi:             { ki_surge: 0.4, moonsilver_ingot: 0.3, phantom_silk: 0.3 },
+  bloodstone_gauntlets: { bloodstone_ingot: 0.4, ki_blaze: 0.3, thunderbark: 0.3 },
+  threadbound_charm:    { hex_thread: 0.4, hex_bone: 0.3, lantern_squid: 0.2, ki_surge: 0.1 },
+  griffon_cloak:        { griffon_plume: 0.35, serpent_skin: 0.25, hex_seal: 0.2, ki_blaze: 0.1, grizzly_hide: 0.1 },
+  crystal_ward:         { crystal_fragment: 0.4, silver_fragment: 0.3, grizzly_hide: 0.15, serpent_skin: 0.15 },
+  meteor_hammer:        { meteor_fragment: 0.4, bloodstone_ingot: 0.3, ki_aura: 0.3 },
+  kings_ring:           { king_finger: [2], divine_ki: 0.4, arrow_fragment: 0.3, soulking_ingot: 0.3 },
+  soulking_blade:       { soulking_ingot: 0.5, ant_chitin: 0.3, sage_elm: 0.1, allblue_tuna: 0.1 },
   // The manga armory (armory.js): each world's own materials plus one older one
   red_vest:         { beast_ember: [1], sea_kelp: 0.4, sea_crab: 0.3, shadowroot: 0.3 },
   wado_blade:       { tide_pearl: [1], mist_steel: 0.4, ironwood: 0.3, sea_salt: 0.3 },
@@ -176,6 +191,7 @@ const ARTS_LEVELS = {
   tool_tracking_1: 80, tool_tracking_2: 83, tool_tracking_3: 86,
   tool_archaeology_1: 88, tool_archaeology_2: 91, tool_archaeology_3: 94,
   tool_woodcutting_4: 92, tool_fishing_4: 92, tool_mining_4: 93,
+  tool_gravity_4: 93, tool_exorcism_4: 93, tool_tracking_4: 94, tool_archaeology_4: 96,
   // hunting gear (Green Island)
   fish_bait: 78, scent_lure: 79, snare: 78, net_trap: 80, cage_trap: 82, spirit_trap: 84, wyrm_trap: 86, chimera_trap: 89,
   // curses and the Fox's fire
@@ -271,6 +287,19 @@ function gearRecipe(id) {
   return inp;
 }
 
+/* ======================================================== combat drop pacing (2026-11-25) */
+// Plain stage foes dropped far too much: a night of battle brought ~16,000 materials. Their common drops
+// (materials, food, spices at 5% or more) now come half as often and in half the quantity ([2, 4] → [1, 2]).
+// World relics on stage foes too (a night still brought ~1,500 Leviathan Scales; a gate asks for 5).
+// Guardians, dungeons, rare drops, gear, schematics, chests and scrolls keep their rates. Applied before the
+// recipes are priced, so gear that asks for these drops asks for fewer of them (same time per piece).
+const DROP_PACE = { chance: 0.5, qty: 0.5, types: ['res', 'food', 'spice'], from: 0.05 };
+for (const z of ZONES) if (!z.boss && !z.dungeon) for (const e of z.enemies) e.drops = e.drops.map(([id, ch, q]) => {
+  const it = ITEMS[id];
+  if (!it || ch < DROP_PACE.from || !DROP_PACE.types.includes(it.type)) return [id, ch, q];
+  return [id, ch * DROP_PACE.chance, [Math.max(1, Math.round(q[0] * DROP_PACE.qty)), Math.max(1, Math.ceil(q[1] * DROP_PACE.qty))]];
+});
+
 /* ------------------------------------------------------------ apply */
 // dungeon set pieces (dungeons.js) are priced like every other piece
 if (typeof DUNGEON_TIERS !== 'undefined') Object.assign(GEAR_TIERS, DUNGEON_TIERS);
@@ -296,3 +325,4 @@ if (typeof DUNGEON_TIERS !== 'undefined') Object.assign(GEAR_TIERS, DUNGEON_TIER
   }
   arts.sort((x, y) => x.level - y.level);
 })();
+

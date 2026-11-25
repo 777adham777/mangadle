@@ -397,10 +397,11 @@ function advance(seconds) {
 }
 
 /* ------------------------------------------------------------- skills */
-function startAction(skill, id) {
+// n > 0: stop after n actions (the "Craft ×1" button); no n = run until stopped or out of materials.
+function startAction(skill, id, n) {
   const act = findAction(skill, id);
   if (!act) return;
-  if (S.action && S.action.skill === skill && S.action.id === id) { stopAction(); return; }
+  if (S.action && S.action.skill === skill && S.action.id === id && !n) { stopAction(); return; }
   if (!skillOpen(skill)) return;
   if (act.schem && !S.known[act.schem]) return toast(`Requires the ${ITEMS[act.schem].name}`, 'bad');
   if (skillLv(skill) < act.level) return toast(`Requires ${SKILLS[skill].name} level ${act.level}`, 'bad');
@@ -409,6 +410,7 @@ function startAction(skill, id) {
   if (why) return toast(why, 'bad');
   stopCombat();
   S.action = { skill, id, prog: 0 };
+  if (n > 0) S.action.left = n;
   dirty = true;
 }
 function stopAction(msg) { S.action = null; dirty = true; if (msg) toast(msg, 'bad'); }
@@ -428,6 +430,7 @@ function tickAction(dt) {
     a.prog -= T;
     completeAction(a.skill, act);
     if (S.action !== a) return;   // a hook ended it (a queued task reached its size)
+    if (a.left != null && --a.left <= 0) { S.action = null; dirty = true; emit('batchdone', { skill: a.skill, act }); return; }
     T = actionTime(a.skill, act);
   }
 }
@@ -553,6 +556,11 @@ function stopCombat() {
 }
 // A guardian takes a while to rise again: bosses are worth refighting for their loot, not an XP farm.
 const BOSS_RESPAWN = 12;
+// Pace pass 2 (2026-11-25): a new foe steps in after 3 s (was 1.2 s), so a night of battle is not 9,000 kills.
+const FOE_RESPAWN = 3;
+// Resting: battles simulated while the game was closed (offline catch-up) give half the Character XP.
+let RESTING = false;
+const REST_XP = 0.5;
 // Elites and mini-bosses (GDD §3): in a stage without a boss, 1 foe in 20 is an Elite (stronger, triple rewards,
 // drop chances ×3), and every 50th foe is the stage's Alpha, a mini-boss (×5 rewards, drop chances ×5).
 const RANKED = {};
@@ -633,7 +641,7 @@ function killEnemy(e) {
   const C = S.combat, z = ZONES[C.zone];
   const g = Math.floor(randInt(e.gold[0], e.gold[1]) * goldMult());
   S.gold += g;
-  addXp('character', e.xp);
+  addXp('character', e.xp * (RESTING ? REST_XP : 1));
   S.bounty += e.xp * 10;
   const dropped = [], loot = {}, dry = dryMult();
   let epic = false;
@@ -661,7 +669,7 @@ function killEnemy(e) {
   S.stats.kills++;
   if (z.boss) { S.stats.bossKills++; if (C.kills[z.id] === 1) toast(`${e.name} defeated! A new path opens...`, 'rare'); }
   clog(`Defeated ${e.name}: +${fmt(g)} gold${dropped.length ? ", " + dropped.join(", ") : ""}`, 'win');
-  C.enemy = null; C.respawn = z.boss ? BOSS_RESPAWN : 1.2;
+  C.enemy = null; C.respawn = z.boss ? BOSS_RESPAWN : FOE_RESPAWN;
   emit('kill', { enemy: e, gold: g, loot, boss: !!z.boss });
 }
 // foeLanded: damage of the last enemy swing (0 = dodged). foes.js applies on-hit effects only when it connected.

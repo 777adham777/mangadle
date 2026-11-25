@@ -84,8 +84,8 @@ hook('tick', (dt) => {
 // The cards on the Voyaging page send ships; nothing there runs as your main activity any more.
 {
   const base = startAction;
-  startAction = function (skill, id) {
+  startAction = function (skill, id, n) {
     if (SKILLS[skill] && SKILLS[skill].type === 'voyage') return sendExp(id);
-    return base(skill, id);
+    return base(skill, id, n);
   };
 }

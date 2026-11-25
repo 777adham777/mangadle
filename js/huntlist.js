@@ -49,7 +49,7 @@ const shareOf = (dropId, id) => (dropId === id ? 1 : dropId === 'FRUIT' && FRUIT
 function zoneKph(zi) {
   const z = ZONES[zi], es = z.enemies.map((_, i) => enemyAt(zi, i));
   const ttk = es.reduce((a, e) => a + timeToKill(e), 0) / es.length;
-  return 3600 / (ttk + (z.boss ? BOSS_RESPAWN : 1.2));
+  return 3600 / (ttk + (z.boss ? BOSS_RESPAWN : FOE_RESPAWN));
 }
 // Every source of an item: { label, icon: [kind, ref], perHour (null = unknown rate), seen, go, danger }.
 function huntSources(id) {

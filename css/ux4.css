@@ -41,6 +41,9 @@
 .fo-cta.sw > span, .fo-cta.q > span { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.1; }
 .fo-cta.sw small, .fo-cta.q small { font: 500 11px var(--body, 'Saira', sans-serif); letter-spacing: 0; text-transform: none; opacity: 0.85; margin-top: 2px; }
 .fo-cta.q { background: var(--panel3); border-top-color: var(--line2); min-width: 150px; }
+/* Craft ×1 beside Craft ∞: the one-off is the quieter button */
+.fo-cta.one { min-width: 0; padding: 0 18px; background: var(--panel3); border-top-color: var(--line2); }
+.fo-ctas .fo-cta:not(.one):not(.q) { min-width: 150px; }
 @media (max-width: 860px) { .fo-ctas { width: 100%; } .fo-ctas .fo-cta { flex: 1 1 140px; } }
 
 /* ---------- 04 · Bank: NEW row on top, summary when nothing is selected */
