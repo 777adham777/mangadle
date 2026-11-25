@@ -124,11 +124,11 @@ function focusHTML(skill) {
   }
   const last = SPOT['last_' + skill];
   const go = FC.includes(skill) ? FC_TXT[skill].go : s.type === 'voyage' ? 'Set sail' : s.type === 'craft' ? 'Craft' : 'Start';
-  // Recipes that use materials: "Craft ×1" (one, then stop) beside "Craft ∞" (until stopped or out of materials).
+  // Recipes that use materials: a count field + "Craft" (that many, then stop) beside "Craft ∞" (until stopped or out of materials).
   const batch = st === 'ready' && !busy && a.in && s.type === 'craft';
   const cta = run ? `<button class="fo-cta stop" data-stop>${ui('stop')}<span>Stop</span></button>`
     : st === 'ready' && busy ? focusSwitchHTML(skill, a, go, busy)
-    : batch ? `<span class="fo-ctas"><button class="fo-cta one" data-act="${skill}:${a.id}:1" title="Make one, then stop">${ui('play')}<span>${go} ×1</span></button><button class="fo-cta" data-act="${skill}:${a.id}" title="Keep going until you stop it or run out of materials">${ui('play')}<span>${go} ∞</span></button></span>`
+    : batch ? `<span class="fo-ctas">${craftNHTML(skill, a, go, '')}<button class="fo-cta" data-act="${skill}:${a.id}" title="Keep going until you stop it or run out of materials">${ui('play')}<span>${go} ∞</span></button></span>`
     : `<button class="fo-cta" data-act="${skill}:${a.id}" ${locked || st === 'missing' ? 'disabled' : ''}>${st === 'ready' && FC.includes(skill) ? `${ui('play')}${FC_TXT[skill].go}` : ctaLabel(skill, a, st)}</button>`;
   return `<section class="win fo-win ${run ? 'on' : ''}" data-focus="${skill}" style="--rc:${rc(s.realm)}">
     <div class="fo-bg" data-skill-bg="${skill}" aria-hidden="true"></div>
@@ -154,9 +154,44 @@ function focusSwitchHTML(skill, a, go, busy) {
   const runA = S.action && findAction(S.action.skill, S.action.id);
   const ends = M && ((M.cur && M.cur.n) || (runA && runA.in));
   const q = ends && msFree() > 0 ? `<button class="fo-cta q" data-qnext="${skill}:${a.id}" title="Task Queue: starts when ${esc(M.cur ? msName(M.cur) : runA.name)} ends">${ui('missions')}<span>Queue next<small>after ${esc(M.cur ? msName(M.cur) : runA.name)}</small></span></button>` : '';
-  const one = a.in && SKILLS[skill].type === 'craft' ? `<button class="fo-cta one" data-act="${skill}:${a.id}:1" title="Make one, then stop (stops ${esc(busy)})">${ui('play')}<span>×1</span></button>` : '';
+  const one = a.in && SKILLS[skill].type === 'craft' ? craftNHTML(skill, a, go, busy) : '';
   return `<span class="fo-ctas">${one}<button class="fo-cta sw" data-act="${skill}:${a.id}">${ui('play')}<span>${go}${one ? ' ∞' : ' now'}<small>stops ${esc(busy)}</small></span></button>${q}</span>`;
 }
+// "Craft ×N": the player types how many to make; the run stops after that many (or when materials run out).
+// The count is remembered per recipe; the field has an id so a redraw keeps its focus and caret.
+const craftN = (skill, id) => Math.max(1, Math.min(99999, ((S.ui.craftN || {})[skill + ':' + id]) || 1));
+function craftNHTML(skill, a, go, busy) {
+  const n = craftN(skill, a.id), stops = busy ? ` (stops ${esc(busy)})` : '';
+  return `<span class="fo-qty" title="How many to make, then stop${stops}"><input id="fo-n-${skill}-${a.id}" class="fo-n" data-craftq="${skill}:${a.id}" type="text" inputmode="numeric" maxlength="5" value="${n}" aria-label="How many to make"><button class="fo-cta one" data-craftn="${skill}:${a.id}">${ui('play')}<span>${go}</span></button></span>`;
+}
+function craftNGo(skill, id, field) {
+  const raw = parseInt(field ? field.value : '', 10);
+  const n = Math.max(1, Math.min(99999, raw > 0 ? raw : craftN(skill, id)));
+  (S.ui.craftN = S.ui.craftN || {})[skill + ':' + id] = n;
+  const st = actState(skill, findAction(skill, id));
+  if (st === 'locked' || st === 'missing') { if (st === 'missing') toast('Missing materials — gather them first.', 'bad'); return; }
+  startAction(skill, id, n);
+}
+document.addEventListener('input', (ev) => {
+  const f = ev.target.closest('[data-craftq]');
+  if (!f) return;
+  const v = f.value.replace(/\D/g, '').slice(0, 5);
+  if (v !== f.value) f.value = v;
+  if (+v > 0) (S.ui.craftN = S.ui.craftN || {})[f.dataset.craftq] = +v;
+});
+document.addEventListener('keydown', (ev) => {
+  const f = ev.target.closest && ev.target.closest('[data-craftq]');
+  if (!f || ev.key !== 'Enter') return;
+  ev.preventDefault();
+  const [skill, id] = f.dataset.craftq.split(':');
+  craftNGo(skill, id, f);
+});
+document.addEventListener('click', (ev) => {
+  const b = ev.target.closest('[data-craftn]');
+  if (!b) return;
+  const [skill, id] = b.dataset.craftn.split(':');
+  craftNGo(skill, id, b.parentElement.querySelector('[data-craftq]'));
+});
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-qnext]');
   if (!t) return;

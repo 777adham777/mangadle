@@ -398,7 +398,7 @@ function advance(seconds) {
 }
 
 /* ------------------------------------------------------------- skills */
-// n > 0: stop after n actions (the "Craft ×1" button); no n = run until stopped or out of materials.
+// n > 0: stop after n actions (the "Craft ×N" field); no n = run until stopped or out of materials.
 function startAction(skill, id, n) {
   const act = findAction(skill, id);
   if (!act) return;
