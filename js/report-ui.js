@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the away recap (report.js keeps the away log and the allies)
+   ANIME IDLE RPG — the away recap (report.js keeps the away log and the allies)
    Coming back after a while:
    - the highlight: the best thing that happened while you were away (replayable);
    - the timeline: queued tasks, bosses, rare finds and levels, with their time;
@@ -112,7 +112,7 @@ function cooReady() {
     if (ripe) out.push([`${ripe} plot${ripe > 1 ? 's' : ''} ready to harvest`, gbtn('Farming', 'play', `data-nav="realm:${SKILLS.farming.realm}:farming" data-closemodal`, 'sm')]);
   }
   if (typeof expOn === 'function' && expOn() && S.exped.ships.length < shipSlots()) out.push(['A ship waits in port', gbtn('Voyaging', 'play', `data-nav="realm:${SKILLS.voyaging.realm}:voyaging" data-closemodal`, 'sm')]);
-  if (typeof hasAllStones === 'function' && wishesOn() && hasAllStones()) out.push(['All seven Dragon Balls', gbtn('Wish', 'rare', 'data-nav="home" data-closemodal', 'sm')]);
+  if (typeof hasAllStones === 'function' && wishesOn() && hasAllStones()) out.push(['All seven Wish Orbs', gbtn('Wish', 'rare', 'data-nav="home" data-closemodal', 'sm')]);
   return out;
 }
 function cooHaul(before, after) {

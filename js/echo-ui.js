@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Echo Quarter: Archaeology, Restoration and Bonding results (echo.js is the engine)
+   ANIME IDLE RPG — Echo Quarter: Archaeology, Restoration and Bonding results (echo.js is the engine)
    The dig site's excavation grid (shown in the focus panel, focus-ui.js), the last dig /
    restored piece, and the site-cleared, Flawless, Resonance and Echo-evolves notices.
    ========================================================================== */

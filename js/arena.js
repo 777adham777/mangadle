@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — battle arena ("Grand Stage", 2026-11-24)
+   ANIME IDLE RPG — battle arena ("Grand Stage", 2026-11-24)
    The fight is seen through your eyes: no hero on screen, only the foe, big,
    in the middle of its world's painted stage. Its name, HP, wind-up and tags
    float above it; its drops sit in a corner, the farm rates in the other.
@@ -104,7 +104,7 @@ function stageHTML() {
 const FX_VIEW = {
   mist: ['dodge', 'Mist Step', 'Dodge chance'], skin: ['shield', 'Iron Skin', 'Less damage taken'], fore: ['all-seeing-eye', 'Foresight', 'Dodge chance'],
   ward: ['soul', 'Soul Ward', 'Less damage taken'], cshield: ['shield', 'Chain Shield', 'Less damage taken'], regen: ['heart-plus', 'Regeneration', 'Recovering HP'],
-  scarlet: ['third-eye', 'Scarlet Eyes', 'Techniques stronger'], domain: ['magic-swirl', 'Domain', 'Domain Expansion open'],
+  scarlet: ['third-eye', 'Scarlet Eyes', 'Techniques stronger'], domain: ['magic-swirl', 'Domain', 'Domain Release open'],
 };
 const FX_ON_FOE = { mark: ['tied-scroll', 'Sealed', 'Takes more damage'], chain: ['spider-web', 'Chained', 'Deals less damage'], burn: ['fire', 'Burning', 'Burns every second'], puppet: ['puppet', 'Puppet Thread', 'Attacks slower'] };
 const secs = (t) => (t > 999 ? '' : Math.ceil(t) + 's');

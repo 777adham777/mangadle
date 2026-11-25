@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — the gear economy (DOM-free). One table sets every piece of equipment and its recipe.
+   ANIME IDLE RPG — the gear economy (DOM-free). One table sets every piece of equipment and its recipe.
    Loaded after builds.js (perks) and before the story / UI, so every file sees the final numbers.
 
    1. Every piece belongs to a STAGE: the battle stage (ZONES index, 0 = Training Grounds,

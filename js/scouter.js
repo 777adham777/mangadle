@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the Scouter (Dragon Ball), DOM-free
+   ANIME IDLE RPG — the Scouter (Dragon Ball), DOM-free
    Reads a stage's foes, then plays the fight out with the real engine on a copy of
    your save (nothing of yours changes): win chance, the move that brings you down,
    and up to two fixes taken from what you own, each one checked the same way.

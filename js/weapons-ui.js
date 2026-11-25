@@ -2,7 +2,7 @@
 // A gold price beside the material tiles (refinement, awakening).
 const goldCost = (g) => (g > 0 ? `<span class="aw-gold ${S.gold < g ? 'short' : ''}" title="Gold">${ui('gold')}<b>${fmt(S.gold)}</b>/${fmt(g)}</span>` : '');
 /* ==========================================================================
-   TRI-REALM — weapons interface: the weapon rack in the Bank and the forge panel
+   ANIME IDLE RPG — weapons interface: the weapon rack in the Bank and the forge panel
    of the selected copy (level, refinement, awakening). Engine: weapons.js.
    ========================================================================== */
 

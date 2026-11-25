@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — worlds beyond the first three
+   ANIME IDLE RPG — worlds beyond the first three
    Each world registers itself with addWorld(): realm, skills + actions, zones,
    relics, schematics, gate and unlocks. Loaded after data.js, before game.js.
    ========================================================================== */
@@ -110,22 +110,22 @@ const TECHNIQUES = {
     desc: (L) => `While equipped: +${(4 + 0.6 * (L - 1)).toFixed(1)}% speed on every skill.`,
     tiers: { 5: 'Also +5% XP on every skill.', 10: 'Also +10 Luck.' } },
   // Green Island: the six Nen categories, each a different way to fight
-  nen_enhance:   { name: 'Enhancement: Rock Fist', cat: 'attack', realm: 'hunter', cd: 14, tags: ['melee', 'nen'],
+  nen_enhance:   { name: 'Reinforcement: Rock Fist', cat: 'attack', realm: 'hunter', cd: 14, tags: ['melee', 'nen'],
     desc: (L) => `Strike for ${(5 + 0.5 * (L - 1)).toFixed(1)}× your max hit.`,
     tiers: { 5: 'Ignores 30% of the foe\'s defense.', 10: 'Recharges in 10s.' } },
-  nen_emit:      { name: 'Emission: Aura Bullets', cat: 'attack', realm: 'hunter', cd: 12, tags: ['projectile', 'multi-hit', 'nen'],
+  nen_emit:      { name: 'Projection: Aura Bullets', cat: 'attack', realm: 'hunter', cd: 12, tags: ['projectile', 'multi-hit', 'nen'],
     desc: (L) => `Fire 5 bullets for ${(0.9 + 0.09 * (L - 1)).toFixed(2)}× your max hit each.`,
     tiers: { 5: 'Fires 6 bullets.', 10: 'Fires 7 bullets.' } },
-  nen_conjure:   { name: 'Conjuration: Chain Shield', cat: 'defense', realm: 'hunter', cd: 15, tags: ['guard', 'nen'],
+  nen_conjure:   { name: 'Materialization: Chain Shield', cat: 'defense', realm: 'hunter', cd: 15, tags: ['guard', 'nen'],
     desc: (L) => `Once hurt or before a big blow: take ${40 + 3 * (L - 1)}% less damage for 5s.`,
     tiers: { 5: 'Lasts 7s.', 10: 'Also heals 5% of your max HP when it starts.' } },
-  nen_manip:     { name: 'Manipulation: Puppet Thread', cat: 'support', realm: 'hunter', cd: 18, tags: ['seal', 'nen'],
+  nen_manip:     { name: 'Control: Puppet Thread', cat: 'support', realm: 'hunter', cd: 18, tags: ['seal', 'nen'],
     desc: () => 'For 8s: the foe attacks 25% slower.',
     tiers: { 5: 'Lasts 12s.', 10: 'The foe attacks 40% slower.' } },
-  nen_trans:     { name: 'Transmutation: Elastic Aura', cat: 'passive', realm: 'hunter', cd: 0, tags: ['passive', 'nen'],
+  nen_trans:     { name: 'Shaping: Elastic Aura', cat: 'passive', realm: 'hunter', cd: 0, tags: ['passive', 'nen'],
     desc: (L) => `While equipped: auto-attacks deal ${8 + (L - 1)}% more damage.`,
     tiers: { 5: 'Also +5% attack speed.', 10: 'Auto-attacks deal another 10% more.' } },
-  nen_special:   { name: 'Specialization: Scarlet Eyes', cat: 'ultimate', realm: 'hunter', cd: 50, tags: ['nen', 'critical'],
+  nen_special:   { name: 'Singularity: Scarlet Eyes', cat: 'ultimate', realm: 'hunter', cd: 50, tags: ['nen', 'critical'],
     desc: (L) => `For 10s: every technique is ${30 + 3 * (L - 1)}% stronger and your auto-attacks are critical hits.`,
     tiers: { 5: 'Lasts 15s.', 10: 'It starts with a strike of 8× your max hit.' } },
   // Shinjuku: Domain Expansions (Ultimate). Cast: a big hit, then for 10s (15s from level 5) every technique
@@ -148,7 +148,7 @@ Object.assign(TECHNIQUES, {
   chakra_control: { name: 'Chakra Control', cat: 'passive', realm: 'shinobi', cd: 0, tags: ['passive'],
     desc: (L) => `While equipped: techniques deal ${8 + (L - 1)}% more damage.`,
     tiers: { 5: 'Also +5% max HP.', 10: 'Techniques deal another 10% more.' } },
-  observation_haki: { name: 'Observation Haki', cat: 'passive', realm: 'seas', cd: 0, tags: ['passive', 'haki'],
+  observation_haki: { name: 'Watchful Resolve', cat: 'passive', realm: 'seas', cd: 0, tags: ['passive', 'haki'],
     desc: (L) => `While equipped: ${(4 + 0.5 * (L - 1)).toFixed(1)}% chance to dodge every blow.`,
     tiers: { 5: 'Also +5% defense.', 10: 'Dodge chance +5% more.' } },
   reiatsu_pressure: { name: 'Spiritual Pressure', cat: 'passive', realm: 'soul', cd: 0, tags: ['passive'],
@@ -252,13 +252,13 @@ const EXTRA_USES = [];
   defItem('schem_battle_armor', 'Schematic: Battle Armor Mk-X', '📜', 15000, schem('battle_armor'));
   defItem('schem_gravity_bracer', 'Schematic: Gravity Bracer', '📜', 15000, schem('gravity_bracer'));
   // wish stones (one per world)
-  for (let i = 1; i <= 7; i++) { defItem('wish_stone_' + i, `${i}-Star Dragon Ball`, '🔮', 5000, { type: 'wish', star: i }); EXTRA_SOURCES.push(['wish_stone_' + i, 'ui', 'wish', `Any skill or foe of world ${i} (once Dragon Balls are unlocked)`, 1 / 1500]); }
+  for (let i = 1; i <= 7; i++) { defItem('wish_stone_' + i, `${i}-Star Wish Orb`, '🔮', 5000, { type: 'wish', star: i }); EXTRA_SOURCES.push(['wish_stone_' + i, 'ui', 'wish', `Any skill or foe of world ${i} (once Wish Orbs are unlocked)`, 1 / 1500]); }
   for (const c of CROPS) EXTRA_SOURCES.push([c.id, 'skill', 'farming', `Farming · plant ${c.name} Seed (${c.mins} min)`, null]);
 
   SKILLS.gravity = { name: 'Gravity Training', realm: 'ki', icon: '💪', type: 'gather',
     desc: 'Train under crushing gravity. Every session strains your body; at 100% you break through your limit for good (+0.3% damage and max HP each). Levels train your disciplines faster, grow your stamina, unlock transformations and enlarge the Time Chamber.' };
   SKILLS.farming = { name: 'Farming', realm: 'ki', icon: '🌱', type: 'farm',
-    desc: 'Plant seeds on plots that grow in real time, even while you do something else. Crops feed buff meals and Senzu Beans. A harvest can come up Giant (×3), and mutations leave seeds of the next crop.' };
+    desc: 'Plant seeds on plots that grow in real time, even while you do something else. Crops feed buff meals and Vital Beans. A harvest can come up Giant (×3), and mutations leave seeds of the next crop.' };
   SKILLS.gravity.actions = [
     gather('ki_dust', 1, 3), gather('ki_spark', 10, 3.5), gather('ki_orb', 22, 4), gather('ki_core', 35, 4.5),
     gather('ki_flare', 50, 5), gather('ki_nova', 65, 5.5), gather('ki_star', 80, 6.5),
@@ -291,9 +291,9 @@ const EXTRA_USES = [];
   RARE_FINDS.gravity.push(['seed_vital_bean', 1 / 60], ['seed_sun_wheat', 1 / 120], ['seed_moon_rice', 1 / 250], ['seed_fire_pepper', 1 / 500]);
   RARE_FINDS.gravity.push(['seed_frost_melon', 1 / 400], ['seed_thunder_root', 1 / 700], ['seed_star_fruit', 1 / 1200]);
   SHOP.push(
-    { id: 'buy_beans', cat: 'Supplies', realm: 'ki', name: '5× Senzu Bean Seed', icon: '🌱', desc: 'Starter seeds for your first plots.', cost: 400, give: ['seed_vital_bean', 5] },
+    { id: 'buy_beans', cat: 'Supplies', realm: 'ki', name: '5× Vital Bean Seed', icon: '🌱', desc: 'Starter seeds for your first plots.', cost: 400, give: ['seed_vital_bean', 5] },
     { id: 'buy_wheat', cat: 'Supplies', realm: 'ki', name: '5× Sun Wheat Seed', icon: '🌱', desc: 'Grows into flour for Sunbread.', cost: 1500, give: ['seed_sun_wheat', 5] },
-    { id: 'tools_ki', cat: 'Tools', realm: 'ki', name: 'Capsule Workshop', icon: '🛠️', desc: '+10% speed for Kaio Planet skills per tier.', costs: [20000, 80000, 300000, 1e6, 3e6] },
+    { id: 'tools_ki', cat: 'Tools', realm: 'ki', name: 'Capsule Workshop', icon: '🛠️', desc: '+10% speed for Titan Planet skills per tier.', costs: [20000, 80000, 300000, 1e6, 3e6] },
   );
   SYNERGIES.push(
     { from: 'gravity',   to: 'combat',  kind: 'xp',   per: 0.004, name: 'Heavy Bones',   desc: 'Training under gravity speeds up combat XP' },
@@ -303,7 +303,7 @@ const EXTRA_USES = [];
   const E = (name, hp, atk, def, spd, xp, gold, drops) => en(name, '', hp, atk, def, spd, xp, gold, drops);
   addWorld({
     id: 'ki',
-    realm: { name: 'Kaio Planet', icon: '⚡', color: '#ffb93d', ui: '#ffc65a', tagline: 'Endless plains, gravity chambers and warriors who never stop growing.' },
+    realm: { name: 'Titan Planet', icon: '⚡', color: '#ffb93d', ui: '#ffc65a', tagline: 'Endless plains, gravity chambers and warriors who never stop growing.' },
     zones: [
       { id: 'plains', name: 'Rocky Plains', realm: 'ki', rec: 92, enemies: [
         E('Wasteland Brawler', 6000, 560, 240, 2.5, 1300, [400, 800], [['ki_spark', 0.3, [2, 4]], ['gravity_plate', 0.08, [1, 1]], ['seed_moon_rice', 0.03, [1, 2]]]),
@@ -327,10 +327,10 @@ const EXTRA_USES = [];
     unlocks: [
       { id: 'skill:gravity', name: 'Gravity Training', need: () => !!S.gates.ki || usedSkill('gravity') },
       { id: 'skill:farming', name: 'Farming', need: () => skillLv('gravity') >= 5 || usedSkill('farming'),
-        hint: () => 'Reach Gravity Training level 5', why: 'An old farmer on the plains hands you Senzu Bean seeds and three plots.' },
+        hint: () => 'Reach Gravity Training level 5', why: 'An old farmer on the plains hands you Vital Bean seeds and three plots.' },
       { id: 'feature:transform', name: 'Transformations', need: () => skillLv('gravity') >= 10,
         hint: () => 'Reach Gravity Training level 10', why: 'Your body can finally hold a surge of ki. Pick a form on the Battlefield.' },
-      { id: 'feature:wishes', name: 'Dragon Balls', need: () => (S.combat.kills.plains || 0) >= 10,
+      { id: 'feature:wishes', name: 'Wish Orbs', need: () => (S.combat.kills.plains || 0) >= 10,
         hint: () => 'Defeat 10 foes on the Rocky Plains', why: 'A fallen soldier drops a radar. It picks up seven strange signals, one in every world.' },
       { id: 'feature:chamber', name: 'Time Chamber', need: () => skillLv('gravity') >= 20 || (S.chamber && S.chamber.store > 0),
         hint: () => 'Reach Gravity Training level 20', why: 'A sealed room in the gravity hall: time runs differently inside. Hours you spend away beyond the offline limit are stored there. It holds one hour already.' },
@@ -352,7 +352,7 @@ const EXTRA_USES = [];
 
   defItem('cursed_fragment', 'Cursed Fragment', '🧩', 400);
   SKILLS.exorcism = { name: 'Cursed Research', realm: 'hex', icon: '🕯️', type: 'gather',
-    desc: 'Study the curses that haunt every world. Each has a grade you see before facing it (Grade 4 to Grade 1, and the rare Special Grade): higher grades leave far more. They leave cursed essence, their world\'s materials and Cursed Fragments that level up any technique. Its level strengthens your Binding Vows.' };
+    desc: 'Study the curses that haunt every world. Each has a grade you see before facing it (Grade 4 to Grade 1, and the rare Special Grade): higher grades leave far more. They leave cursed essence, their world\'s materials and Cursed Fragments that level up any technique. Its level strengthens your Cursed Pacts.' };
   const X = (item, level, time, name, extra) => Object.assign(gather(item, level, time), { name, extra: extra.concat([['cursed_fragment', 0.04 + level / 1500, [1, 1]]]) });
   SKILLS.exorcism.actions = [
     X('hex_ash', 1, 3, 'Harbor Wraiths', [['reef_bass', 0.4, [1, 2]], ['tide_pearl', 0.02, [1, 1]]]),
@@ -415,7 +415,7 @@ const EXTRA_USES = [];
       offer: { tyrant_horn: 1, gravity_plate: 5, ki_nova: 20, fire_pepper: 10 } },
     unlocks: [
       { id: 'skill:exorcism', name: 'Cursed Research', need: () => !!S.gates.hex || usedSkill('exorcism') },
-      { id: 'feature:vows', name: 'Binding Vows', need: () => (S.combat.kills.alleys || 0) >= 10 || S.pacts.active.length > 0,
+      { id: 'feature:vows', name: 'Cursed Pacts', need: () => (S.combat.kills.alleys || 0) >= 10 || S.pacts.active.length > 0,
         hint: () => 'Defeat 10 foes in the Shadow Alleys', why: 'A dying sorcerer teaches you the oldest trick: bind yourself with a restriction and get stronger. Vows are on the Cursed Research page.' },
     ],
   });
@@ -533,8 +533,8 @@ const BEASTS = {};   // id -> { name, realm, kind, base, per, desc }
       offer: { matriarch_eye: 1, veil_shard: 4, hex_void: 20, bound_talisman: 3 } },
     unlocks: [
       { id: 'skill:tracking', name: 'Hunting', need: () => !!S.gates.hunter || usedSkill('tracking') },
-      { id: 'feature:contracts', name: 'Hunter Licence', need: () => (S.combat.kills.thicket || 0) >= 10 || (S.contracts && S.contracts.stars > 0),
-        hint: () => 'Defeat 10 foes in the Exam Thicket', why: 'You passed the Hunter Exam. Contracts now come in from every world (menu: Contracts).' },
+      { id: 'feature:contracts', name: 'Hunter Charter', need: () => (S.combat.kills.thicket || 0) >= 10 || (S.contracts && S.contracts.stars > 0),
+        hint: () => 'Defeat 10 foes in the Exam Thicket', why: 'You passed the Hunter Selection. Contracts now come in from every world (menu: Contracts).' },
     ],
   });
 })();
@@ -575,7 +575,7 @@ const ECHOES = [
   defItem('ancient_gravity_bracer', 'Ancient Gravity Bracer', '⭕', 130000, eq('accessory', { atk: 230, def: 100, hp: 1100 }));
 
   SKILLS.archaeology = { name: 'Archaeology', realm: 'echo', icon: '⛏️', type: 'gather',
-    desc: 'Dig one site in every world. Each site is an 8×8 excavation grid: every dig opens a square, and a grid hides caches, relics, a Stand Arrow Shard and one Intact find. Clear it for Echo Dust and a fresh grid.' };
+    desc: 'Dig one site in every world. Each site is an 8×8 excavation grid: every dig opens a square, and a grid hides caches, relics, an Echo Arrow Shard and one Intact find. Clear it for Echo Dust and a fresh grid.' };
   SKILLS.restoration = { name: 'Restoration', realm: 'echo', icon: '🏺', type: 'craft',
     desc: 'Restore artifacts for permanent museum bonuses (a Flawless one counts ×1.5, and you can retry until it is), and rebuild ancient versions of iconic gear.' };
   SKILLS.bonding = { name: 'Echo Bonding', realm: 'echo', icon: '👤', type: 'bond',

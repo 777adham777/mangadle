@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the rare drop reveal
+   ANIME IDLE RPG — the rare drop reveal
    An Epic (4★) or Legendary (5★) drop stops the screen for a moment, like a gacha pull:
    a beam of light in the rarity's colour falls, a shockwave, and the item's card turns over,
    its stars landing one by one. The card says what the item is for (its stats, what it makes,
@@ -22,7 +22,7 @@ function revealUse(id) {
   if (it.type === 'chest') return 'Open it from the Bank.';
   if (it.type === 'fruit') return S.fruit === id ? 'Eat it to deepen your fruit (rank up).' : 'Eat it from the Bank for a permanent power (one fruit at a time).';
   if (it.type === 'gem') return 'Socket it into gear, or use it to refine a weapon.';
-  if (it.type === 'wish') return 'One of seven Dragon Balls. Gather all seven to make a wish.';
+  if (it.type === 'wish') return 'One of seven Wish Orbs. Gather all seven to make a wish.';
   if (it.type === 'schematic') return 'Learned for good.';
   const uses = [];
   for (const k in SKILLS) for (const a of SKILLS[k].actions || []) if (a.in && a.in[id]) uses.push(`${a.name} (${SKILLS[k].name} ${a.level})`);

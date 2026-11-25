@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Shinjuku: Exorcism results (hex.js is the engine)
+   ANIME IDLE RPG — Shinjuku: Exorcism results (hex.js is the engine)
    The last curse exorcised (focus panel, whose gauge shows the next curse's grade:
    focus-ui.js) and the Special Grade notice.
    ========================================================================== */

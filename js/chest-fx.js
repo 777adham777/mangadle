@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — chest opening, gacha style
+   ANIME IDLE RPG — chest opening, gacha style
    Opening a chest from the Bank plays a short pull: the chest drops onto a dimmed screen,
    shakes harder and harder while its glow climbs through the rarity colours up to the best
    item inside (blue Rare → purple Epic → gold Legendary), then the lid bursts off in light.

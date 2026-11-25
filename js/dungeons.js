@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — dungeons (DOM-free, 2026-11-25)
+   ANIME IDLE RPG — dungeons (DOM-free, 2026-11-25)
    One dungeon per world, opened by that world's guardian. A run is five rooms fought in a
    row: four of the world's foes grown to guardian strength, then the dungeon's lord.
    - No breather: your HP does not regenerate between rooms (food and techniques do).
@@ -21,7 +21,7 @@
 // set: [weapon, armor, accessory] = [id, name, perks, extra], bonuses.
 const DUNGEONS = [
   { id: 'archive', realm: 'shinobi', name: 'The Sealed Archive', guard: 'fox',
-    blurb: 'Under the Hokage rock, the scrolls that were never meant to be read keep their own guards.',
+    blurb: 'Under the Warden Rock, the scrolls that were never meant to be read keep their own guards.',
     rooms: ['Mist Assassin', 'Puppet Drone', 'Ninken Alpha', 'Stone Golem'], lord: ['Stone Golem', 'Archive Colossus'],
     key: { storm_chakra: 12, mist_steel: 4, chakra_orb: 6 },
     set: { id: 'archive', name: 'Archive Keeper', b2: { tech: 0.12 }, b3: { cdr: 0.1, tag_wind: 0.25 },
@@ -36,14 +36,14 @@ const DUNGEONS = [
       pieces: [['wreck_harpoon', 'Wreck Harpoon', { leech: 0.03 }, { fam: 'lance', g: 'barbed-spear', c: '#4fb0c0' }],
         ['wreck_coat', 'Barnacle Coat', { regen: 0.006 }, { g: 'chain-mail', c: '#3f7a70' }],
         ['wreck_doubloon', 'Cursed Doubloon', { gold: 0.1 }, { g: 'coinflip', c: '#e8c060' }]] } },
-  { id: 'catacombs', realm: 'soul', name: 'The Hollow Catacombs', guard: 'sovereign',
-    blurb: 'Below the Seireitei, the husks that were never purified wait in the dark.',
+  { id: 'catacombs', realm: 'soul', name: 'The Husk Catacombs', guard: 'sovereign',
+    blurb: 'Below the Inner Court, the husks that were never purified wait in the dark.',
     rooms: ['Lurking Husk', 'Sand Wraith', 'Masked Lancer', 'Bone Priest'], lord: ['Towering Husk', 'Catacomb Behemoth'],
     key: { phantom_silk: 6, husk_mask: 6, void_stone: 4 },
     set: { id: 'cata', name: 'Catacomb Reaper', b2: { exec: 0.1 }, b3: { berserk: 0.25, critDmg: 0.3 },
       pieces: [['cata_scythe', 'Catacomb Scythe', { exec: 0.15 }, { fam: 'sickle', g: 'crescent-blade', c: '#a8a0c8' }],
         ['cata_shroud', 'Bone Shroud', { wind: 0.15 }, { g: 'warlock-hood', c: '#d8d0c0' }],
-        ['cata_mask', 'Hollow Fragment', { berserk: 0.2 }, { g: 'horned-skull', c: '#f0f0f0' }]] } },
+        ['cata_mask', 'Husk Fragment', { berserk: 0.2 }, { g: 'horned-skull', c: '#f0f0f0' }]] } },
   { id: 'pit', realm: 'ki', name: 'The Gravity Pit', guard: 'tyrant',
     blurb: 'A crater where gravity is a hundred times stronger. The fighters who fell in never left.',
     rooms: ['Raging Ape', 'Sprout Fiend', 'Elite Soldier', 'Armored Commander'], lord: ['Horned Mutant', 'Pit Overlord'],
@@ -69,8 +69,8 @@ const DUNGEONS = [
         ['nest_carapace', 'Nest Carapace', { thorns: 0.15 }, { g: 'spiked-shoulder-armor', c: '#608a40' }],
         ['nest_antenna', 'Hive Antenna', { dodge: 0.03 }, { g: 'wing-cloak', c: '#c0e080' }]] } },
   { id: 'tomb', realm: 'echo', name: 'The Pillar Tomb', guard: 'pillar',
-    blurb: 'Where the Pillar Men slept for ten thousand years. The sun has never reached its last room.',
-    rooms: ['Masked Vampire', 'Sunlight Monk', 'Living Statue', 'Echo Thief'], lord: ['Pillar Warrior', 'Tomb Pillar Man'],
+    blurb: 'Where the Pillar Lords slept for ten thousand years. The sun has never reached its last room.',
+    rooms: ['Masked Vampire', 'Sunlight Monk', 'Living Statue', 'Echo Thief'], lord: ['Pillar Warrior', 'Entombed Pillar Lord'],
     key: { pillar_fragment: 6, starmetal_fragment: 4, obsidian_fragment: 4 },
     set: { id: 'tomb', name: 'Ripple Monk', b2: { tag_fire: 0.25 }, b3: { burnHit: 1, tech: 0.1 },
       pieces: [['tomb_gauntlet', 'Sunlight Gauntlet', { tag_fire: 0.2 }, { fam: 'fist', g: 'gloves', c: '#ffb020' }],

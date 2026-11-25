@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Soul City: Mining and Smelting (soul.js is the engine)
+   ANIME IDLE RPG — Soul City: Mining and Smelting (soul.js is the engine)
    The last ore / ingot (shown in the focus panel, whose gauge shows the vein and the
    forge heat: focus-ui.js), the Mother Lode and White Heat notices, the intro cards.
    ========================================================================== */

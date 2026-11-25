@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — resource tiers (DOM-free). Loaded after depth.js, before loot.js.
+   ANIME IDLE RPG — resource tiers (DOM-free). Loaded after depth.js, before loot.js.
    2026-11-25: the gathering skills had 7 to 10 nodes with gaps of up to 16 levels. Each one gets
    3 or 4 new nodes in its gaps (and one near the top), and every new resource has somewhere to go:
      Woodcutting  Ember Maple 39 · Thunderbark 65 · Sage Elm 80      → carvings, the fuel of the new ingots, gear
@@ -44,7 +44,7 @@ for (const [id, name, log, g] of [['maple_fan', 'Ember Maple Fan', 'ember_maple'
 /* ================================================================ Orange Town · Fishing + Cooking */
 tItem('ghost_ray', 'Ghost Ray', '🐟', 38, { desc: 'A pale ray that glides under ghost ships. Sailors say it follows the drowned home.' }, 'tropical-fish', '#b8c8ff');
 tItem('lantern_squid', 'Lantern Squid', '🦑', 60, { desc: 'A squid that lights the deep with its own body. Its ink glows for a week.' }, 'lantern-flame', '#7ff0e0');
-tItem('allblue_tuna', 'All Blue Tuna', '🐟', 220, { desc: 'A tuna from the sea where every ocean meets. Cooks cross the world for a single one.' }, 'double-fish', '#3fb8ff');
+tItem('allblue_tuna', 'Allsea Tuna', '🐟', 220, { desc: 'A tuna from the sea where every ocean meets. Cooks cross the world for a single one.' }, 'double-fish', '#3fb8ff');
 addNodes('fishing',
   node('ghost_ray', 51, 5.2, null, [['fish_oil', 0.06, [1, 2]]]),
   node('lantern_squid', 64, 5.7, null, [['fish_oil', 0.08, [1, 2]]]),
@@ -52,7 +52,7 @@ addNodes('fishing',
 );
 tItem('ray_skewers', 'Ghost Ray Skewers', '🍢', 80, { type: 'food', heal: 290 }, 'eating', '#b8c8ff');
 tItem('squid_ink_ramen', 'Glowing Ink Ramen', '🍜', 120, { type: 'food', heal: 390 }, 'noodles', '#7ff0e0');
-tItem('allblue_feast', 'All Blue Tuna Banquet', '🍱', 420, { type: 'food', heal: 900 }, 'knife-fork', '#3fb8ff');
+tItem('allblue_feast', 'Allsea Tuna Banquet', '🍱', 420, { type: 'food', heal: 900 }, 'knife-fork', '#3fb8ff');
 addNodes('cooking',
   craft('ray_skewers', 51, 3.5, { ghost_ray: 1 }),
   craft('squid_ink_ramen', 64, 4, { lantern_squid: 1, fish_oil: 1 }),
@@ -60,9 +60,9 @@ addNodes('cooking',
 );
 
 /* ================================================================ Soul City · Mining + Smelting */
-tItem('moonsilver', 'Moonsilver Ore', '🪨', 38, { desc: 'Silver ore that only shines at night, mined from the walls of the Soul Palace road.' }, 'ore', '#cfe0ff');
+tItem('moonsilver', 'Moonsilver Ore', '🪨', 38, { desc: 'Silver ore that only shines at night, mined from the walls of the Monarch\'s Palace road.' }, 'ore', '#cfe0ff');
 tItem('bloodstone', 'Bloodstone', '🪨', 62, { desc: 'A red stone that warms in your hand, as if something under it still had a pulse.' }, 'mineral-heart', '#d8344a');
-tItem('soul_crystal', 'Soul King Crystal', '💎', 190, { desc: 'A shard of the crystal that seals the king of souls. It weighs nothing and feels like it weighs a mountain.' }, 'floating-crystal', '#fff0a8');
+tItem('soul_crystal', 'Soul Monarch Crystal', '💎', 190, { desc: 'A shard of the crystal that seals the king of souls. It weighs nothing and feels like it weighs a mountain.' }, 'floating-crystal', '#fff0a8');
 addNodes('mining',
   node('moonsilver', 51, 5.2, null, [['reishi_dust', 0.07, [1, 2]]]),
   node('bloodstone', 65, 5.8, null, [['reishi_dust', 0.07, [1, 2]]]),
@@ -70,7 +70,7 @@ addNodes('mining',
 );
 tItem('moonsilver_ingot', 'Moonsilver Ingot', '🟫', 95, { ingot: true, desc: 'Moonsilver smelted over Ember Maple. It stays cool in the hottest fight.' }, 'metal-bar', '#cfe0ff');
 tItem('bloodstone_ingot', 'Bloodstone Ingot', '🟥', 160, { ingot: true, desc: 'Bloodstone smelted over Thunderbark. It drinks a little of every wound it opens.' }, 'metal-bar', '#d8344a');
-tItem('soulking_ingot', 'Soul King Ingot', '🟨', 480, { ingot: true, desc: 'A crystal of the king of souls, forged over Sage Elm. The strongest metal any world has seen.' }, 'metal-bar', '#fff0a8');
+tItem('soulking_ingot', 'Soul Monarch Ingot', '🟨', 480, { ingot: true, desc: 'A crystal of the king of souls, forged over Sage Elm. The strongest metal any world has seen.' }, 'metal-bar', '#fff0a8');
 INGOT_OF.moonsilver = 'moonsilver_ingot';
 INGOT_OF.bloodstone = 'bloodstone_ingot';
 INGOT_OF.soul_crystal = 'soulking_ingot';
@@ -101,13 +101,13 @@ addNodes('smithing',
   h('hex_thread', 'Cursed Thread', 340, 'spider-web', '#c070ff', 'Thread spun by a curse that lived inside a puppet. It ties itself in knots.');
   h('hex_bone', 'Cursed Bone', 480, 'horned-skull', '#d8d0c0', 'A bone a grudge would not let go of, even after the grave.');
   h('hex_seal', 'Grudge Seal', 680, 'tied-scroll', '#ff5a8a', 'A paper seal that held a curse in an underground station for a hundred years. It is still warm.');
-  h('king_finger', 'Finger of the King', 1200, 'claw', '#ff3050', 'One of the twenty fingers of the King of Curses. It twitches when someone strong walks by.');
+  h('king_finger', 'Finger of the King', 1200, 'claw', '#ff3050', 'One of the twenty fingers of the Demon King. It twitches when someone strong walks by.');
   const X = (item, level, time, name, extra) => node(item, level, time, name, extra.concat([['cursed_fragment', 0.04 + level / 1500, [1, 1]]]));
   addNodes('exorcism',
     X('hex_thread', 43, 4.8, 'Puppet Curses', [['storm_chakra', 0.3, [1, 2]], ['bound_talisman', 0.015, [1, 1]]]),
     X('hex_bone', 57, 5.2, 'Graveyard Wraiths', [['bone_ivory', 0.2, [1, 2]], ['grave_dust', 0.3, [1, 2]]]),
     X('hex_seal', 71, 6, 'Station Curses', [['ki_flare', 0.3, [1, 2]], ['veil_shard', 0.04, [1, 1]]]),
-    X('king_finger', 90, 7.2, 'The King of Curses', [['echo_soul', 0.3, [1, 1]], ['veil_shard', 0.06, [1, 1]]]),
+    X('king_finger', 90, 7.2, 'The Demon King', [['echo_soul', 0.3, [1, 1]], ['veil_shard', 0.06, [1, 1]]]),
   );
 }
 
@@ -117,7 +117,7 @@ addNodes('smithing',
   t('grizzly_hide', 'Grizzly Hide', 410, 'fur-shirt', '#8a5a3a', 'The hide of a forest bear that fished with its bare claws. Arrows bounce off it.');
   t('serpent_skin', 'Serpent Skin', 570, 'sea-serpent', '#5ac88a', 'A skin shed by a swamp serpent longer than a river barge.');
   t('griffon_plume', 'Griffon Plume', 780, 'wing-cloak', '#ffd27a', 'A golden flight feather. It falls slower than it should.');
-  t('ant_chitin', 'Chimera Ant Chitin', 1250, 'spiked-armor', '#5a7a3a', 'Shell from the soldiers of a royal hive. Harder than steel and lighter than wood.');
+  t('ant_chitin', 'Chimera Drone Chitin', 1250, 'spiked-armor', '#5a7a3a', 'Shell from the soldiers of a royal hive. Harder than steel and lighter than wood.');
   const TR = (item, level, time, name, extra) => node(item, level, time, name, extra.concat([['game_meat', 0.25, [1, 2]]]));
   addNodes('tracking',
     TR('grizzly_hide', 43, 4.8, 'Bear Caves', [['seed_fire_pepper', 0.015, [1, 1]], ['trail_stone', 0.012, [1, 1]]]),
@@ -138,14 +138,14 @@ addNodes('smithing',
   const D = (item, level, time, name, extra) => node(item, level, time, name, extra);
   addNodes('archaeology',
     D('silver_fragment', 43, 5.2, 'Dig: Marine Fortress', [['tide_pearl', 0.04, [1, 1]], ['blue_marlin', 0.3, [1, 2]], ['awakening_shard', 0.02, [1, 1]]]),
-    D('crystal_fragment', 57, 5.7, 'Dig: Soul Palace', [['husk_heart', 0.04, [1, 1]], ['spirit_core', 0.3, [1, 2]], ['awakening_shard', 0.024, [1, 1]]]),
+    D('crystal_fragment', 57, 5.7, "Dig: Monarch's Palace", [['husk_heart', 0.04, [1, 1]], ['spirit_core', 0.3, [1, 2]], ['awakening_shard', 0.024, [1, 1]]]),
     D('meteor_fragment', 71, 6.5, 'Dig: Pod Crash Site', [['gravity_plate', 0.03, [1, 1]], ['ki_flare', 0.3, [1, 2]], ['awakening_shard', 0.028, [1, 1]]]),
     D('arrow_fragment', 90, 7.6, 'Dig: Desert Crypt', [['pillar_glyph', 0.025, [1, 1]], ['echo_dust', 0.1, [1, 2]], ['awakening_shard', 0.035, [1, 1]]]),
   );
   // Four museum artifacts (permanent bonuses), one per new site
   const art = (id, name, realm, kind, val, desc, g, c) => { tItem(id, name, '🏺', 20000, { type: 'artifact' }, g, c); ARTIFACTS[id] = { realm, kind, val, desc }; };
-  art('silver_den_den', 'Silver Den Den Mushi', 'seas', 'gold', 0.05, '+5% gold', 'snail', '#d8e0ea');
-  art('palace_bell', 'Soul Palace Bell', 'soul', 'xp', 0.03, '+3% XP on every skill', 'stone-throne', '#a8e8ff');
+  art('silver_den_den', 'Silver Snail Phone', 'seas', 'gold', 0.05, '+5% gold', 'snail', '#d8e0ea');
+  art('palace_bell', "Monarch's Palace Bell", 'soul', 'xp', 0.03, '+3% XP on every skill', 'stone-throne', '#a8e8ff');
   art('pod_core', 'Space Pod Core', 'ki', 'dmg', 0.04, '+4% damage', 'smoking-orb', '#ff9a5a');
   art('first_arrowhead', 'The First Arrowhead', 'echo', 'hp', 0.04, '+4% max HP', 'broad-dagger', '#ffd86a');
   addNodes('restoration',
@@ -189,8 +189,8 @@ addNodes('smithing',
   A('meteor_hammer', 'Meteor Hammer', '🔨', 'weapon', { exec: 0.15 },
     { fam: 'heavy', g: 'warhammer', c: '#ff9a5a', lore: 'A hammer head forged from a crashed pod. It lands like the meteor it came from.' });
   A('kings_ring', 'Ring of the King', '💍', 'accessory', { tech: 0.1 },
-    { g: 'diamond-ring', c: '#ff3050', lore: 'Two fingers of the King of Curses set in Soul King gold. Every technique you cast feels borrowed from him.' });
-  A('soulking_blade', 'Soul King Blade', '⚔️', 'weapon', { crit: 0.06, first: 1 },
+    { g: 'diamond-ring', c: '#ff3050', lore: 'Two fingers of the Demon King set in Soul Monarch gold. Every technique you cast feels borrowed from him.' });
+  A('soulking_blade', 'Soul Monarch Blade', '⚔️', 'weapon', { crit: 0.06, first: 1 },
     { fam: 'blade', g: 'shining-sword', c: '#fff0a8', lore: 'Forged from the crystal that seals the king of souls, its guard of ant chitin. The last sword anyone will need.' });
   // Crafted placeholders: economy.js sets level, time, XP and ingredients from the stage. The levels
   // here only match it, because loot.js reads them for the rarity before economy.js runs.

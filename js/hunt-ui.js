@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Green Island: Tracking results (hunt.js is the engine)
+   ANIME IDLE RPG — Green Island: Tracking results (hunt.js is the engine)
    The last catch (focus panel, whose gauge shows the scent: focus-ui.js), Prime Prey
    and Shiny beast notices.
    ========================================================================== */

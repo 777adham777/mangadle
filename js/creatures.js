@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — creature art for non-human foes
+   ANIME IDLE RPG — creature art for non-human foes
    Each body plan is a small SVG generator (240×200, facing left toward you):
    flat cel colours, one shade band, an ink outline, a pale sticker rim (CSS).
    Parts sit in groups the stylesheet animates: .cr-breath, .cr-head, .cr-jaw,

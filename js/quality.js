@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Shiny & Perfect (game-wide quality system, DOM-free)
+   ANIME IDLE RPG — Shiny & Perfect (game-wide quality system, DOM-free)
    - A gathering skill can bring up a SHINY version of what it gathers, a
      crafting skill can make a PERFECT version of what it crafts.
    - Every skill that opts in (QUALITY) keeps a log: the first shiny / perfect

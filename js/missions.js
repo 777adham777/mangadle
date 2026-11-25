@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the Task Queue, DOM-free
+   ANIME IDLE RPG — the Task Queue, DOM-free
    Queue tasks in order: each one is an activity (a skill action or a Battlefield
    stage) and a size. When the running task is done, or its activity stops
    (out of materials, defeat), the next one starts on its own, offline too.

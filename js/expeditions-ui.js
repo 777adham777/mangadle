@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — expeditions interface: the harbour (ships at sea, trip length,
+   ANIME IDLE RPG — expeditions interface: the harbour (ships at sea, trip length,
    provisions, repeat) and destination cards. Engine: expeditions.js.
    ========================================================================== */
 

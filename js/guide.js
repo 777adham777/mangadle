@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — new-player guide (quiet since 2026-11-25)
+   ANIME IDLE RPG — new-player guide (quiet since 2026-11-25)
    The game teaches by doing; the path (Quests) already says what to do next and why.
    - No welcome window: a new game opens on Woodcutting with one line of help in the page.
    - Hints only when you look stuck: for the first steps of the Leaf Village, a small

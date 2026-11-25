@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — skill focus panel (replaces the animated skill scenes, 2026-11-23)
+   ANIME IDLE RPG — skill focus panel (replaces the animated skill scenes, 2026-11-23)
    The one detail view of a skill page, and the one place its running action shows progress:
    the item, large, in a progress ring; what it gives (per hour, XP, next level), what it
    costs, what it can also find, its effect (gear stats, heals, Shiny / Perfect odds), the

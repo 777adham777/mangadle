@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — combat builds: what you see (builds.js is the engine)
+   ANIME IDLE RPG — combat builds: what you see (builds.js is the engine)
    - every stat line (tiles, tooltips, inspector) lists the piece's perks
    - the Equipment window shows your build: its archetype, every perk you have, your sets
    - the inspector of a set piece shows the set, which pieces you wear and its bonuses

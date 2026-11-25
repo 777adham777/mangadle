@@ -1,7 +1,7 @@
 {
-  "name": "Tri-Realm Idle",
-  "short_name": "Tri-Realm",
-  "description": "An idle RPG across three collided anime-inspired worlds: ninjas, soul reapers and pirates.",
+  "name": "Anime Idle RPG",
+  "short_name": "Anime Idle RPG",
+  "description": "An idle RPG across seven anime-inspired worlds: ninjas, pirates, soul reapers, martial artists, sorcerers and hunters.",
   "id": "./",
   "start_url": "./",
   "scope": "./",

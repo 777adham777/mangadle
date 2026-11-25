@@ -1,5 +1,5 @@
 /* ==========================================================================
-   TRI-REALM IDLE — RPG incremental interface
+   ANIME IDLE RPG — RPG incremental interface
    • permanent sidebar: every skill with its level and XP, one click away
    • top activity bar: what is farming, progress, items/h, XP/h, next level
    • skill pages: every action as a full card, click to start / stop
@@ -67,7 +67,7 @@ a { color: var(--gold); }
   background: #0d111c; border-bottom: 1px solid var(--line);
 }
 .menu-btn { display: none; width: 38px; height: 38px; border-radius: 8px; place-items: center; font-size: 20px; color: var(--cream); background: var(--panel2); border: 1px solid var(--line); }
-.brand { width: calc(var(--nav-w) - 30px); flex-shrink: 0; font: 700 18px var(--display); letter-spacing: 0.32em; color: var(--cream); text-align: left; }
+.brand { width: calc(var(--nav-w) - 30px); flex-shrink: 0; font: 700 18px var(--display); letter-spacing: 0.14em; color: var(--cream); text-align: left; }
 .brand span { color: var(--gold); margin: 0 0.08em; }
 .nowbar { flex: 1; min-width: 0; height: 48px; display: flex; align-items: center; }
 .nb { width: 100%; height: 100%; display: flex; align-items: center; gap: 12px; padding: 0 6px 0 4px; border-radius: 10px; background: var(--panel); border: 1px solid var(--line); }
@@ -633,7 +633,7 @@ button.acard:hover { border-color: color-mix(in srgb, var(--rc) 60%, var(--line)
   :root { --hud-h: 54px; }
   body { grid-template-columns: minmax(0, 1fr); grid-template-areas: "hud" "main"; }
   .menu-btn { display: grid; }
-  .brand { width: auto; flex: 1; font-size: 15px; letter-spacing: 0.24em; }
+  .brand { width: auto; flex: 1; font-size: 14px; letter-spacing: 0.1em; }
   #hud { gap: 8px; padding: env(safe-area-inset-top) 10px 0; }
   .curs { gap: 5px; }
   .cur { height: 32px; padding: 0 10px 0 4px; gap: 5px; }
@@ -1173,7 +1173,7 @@ body {
 
 /* ---------- top bar */
 #hud { background: rgba(14, 14, 17, 0.96); border-bottom: 1px solid var(--line); box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03); }
-.brand { font: 700 19px var(--display); letter-spacing: 0.2em; color: #f2f2f4; }
+.brand { font: 700 17px var(--display); letter-spacing: 0.1em; color: #f2f2f4; }
 .brand span { color: var(--sel); }
 .nb, .nowbar.active .nb { border-radius: 2px; background: var(--panel); border: 1px solid var(--line); box-shadow: none; padding: 0 6px 0 5px; }
 .nowbar.active .nb { border-color: color-mix(in srgb, var(--act) 55%, var(--line)); box-shadow: 0 0 0 1px color-mix(in srgb, var(--act) 25%, transparent), 0 0 14px color-mix(in srgb, var(--act) 14%, transparent); }

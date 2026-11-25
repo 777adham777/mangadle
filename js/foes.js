@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — foes (GDD §3), DOM-free.
+   ANIME IDLE RPG — foes (GDD §3), DOM-free.
    Every enemy has a kit: a role, an element it is weak to (and sometimes one it
    resists), a passive trait and signature moves. Moves replace a normal swing
    (the 2nd, then every 3rd); the big ones are telegraphed one swing ahead, so
@@ -100,7 +100,7 @@ kit('Ninken Alpha', 'beast', { weak: 'fire', trait: ['frenzy', 1], lore: 'Leads 
   [hit('Rending Bite', 1.2, { st: BLEED(6, 0.08) }), mv('Pack Howl', { self: ['haste', 6] })]);
 kit('Stone Golem', 'tank', { weak: 'lightning', resist: 'bleed', trait: ['armored', 0.35], lore: 'Earth-style sentinel. Lightning cracks it like a dry riverbed.' },
   [hit('Boulder Slam', 2.2, { tele: 1, stun: 1.5 }), mv('Harden', { self: ['harden', 6] })]);
-kit('Ashen Fox Beast', 'boss', { weak: 'wind', resist: 'fire', lore: 'A tailed beast sealed under the den. Each tail it frees burns hotter.' },
+kit('Ashen Fox Beast', 'boss', { weak: 'wind', resist: 'fire', lore: 'A bound beast sealed under the den. Each tail it frees burns hotter.' },
   [hit('Fox Fire', 0.9, { st: BURN(6, 0.15) }), hit('Tail Sweep', 0.6, { n: 3 })],
   [PH('The tails ignite', { add: hit('Ash Bomb', 2.6, { tele: 1, st: BURN() }) }), PH('Nine-Tail Fury', { shield: 0.15 })]);
 
@@ -136,7 +136,7 @@ kit('Bone Priest', 'caster', { weak: 'fire', resist: 'drain', lore: 'Prays to th
   [mv('Dark Prayer', { heal: 0.12 }), hit('Curse of Bone', 0.8, { st: POISON(6, 0.14) })]);
 kit('Masked Sovereign', 'boss', { weak: 'lightning', resist: 'bleed', lore: 'Wears a mask for every soul it has eaten. Breaking one only reveals the next.' },
   [hit('Mask Shatter', 0.6, { n: 3 }), hit('Black Coffin', 3, { tele: 1 })],
-  [PH('A second mask', { shield: 0.15 }), PH('Sovereign Roar', { add: hit('Hollow Roar', 1, { stun: 1.5, st: WEAKEN() }) })]);
+  [PH('A second mask', { shield: 0.15 }), PH('Sovereign Roar', { add: hit('Husk Roar', 1, { stun: 1.5, st: WEAKEN() }) })]);
 
 /* World 4 · Kaio Planet */
 kit('Wasteland Brawler', 'brute', { weak: 'bleed', lore: 'Trains by punching boulders until the boulders give up.' },

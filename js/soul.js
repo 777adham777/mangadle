@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Soul City overhaul (world 3), DOM-free
+   ANIME IDLE RPG — Soul City overhaul (world 3), DOM-free
    Reishi Mining
    - The vein: mining the same ore again and again digs deeper into its vein (+4% per
      ore, up to 100%). A deep vein gives up to +15% double ore and twice the gems.

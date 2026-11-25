@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Opportunities on screen (omens.js is the engine)
+   ANIME IDLE RPG — Opportunities on screen (omens.js is the engine)
    Spawns one now and then (8-15 min apart) while you are actually playing: the page is
    visible, you clicked or pressed a key in the last 2 minutes, something runs.
    It floats over the view for 30 s with a countdown ring. Loaded after ui.js.

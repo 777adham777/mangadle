@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — item art (generated PNG icons with SVG fallback)
+   ANIME IDLE RPG — item art (generated PNG icons with SVG fallback)
    Items listed in js/item-images.js use the generated transparent PNGs in
    assets/item-icons/. The hand-drawn SVG artwork below remains as a fallback
    for custom or synthetic items that do not have a generated image.

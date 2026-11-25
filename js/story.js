@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the path's chapters (DOM-free)
+   ANIME IDLE RPG — the path's chapters (DOM-free)
    The path (GOALS in data.js) is cut into chapters: one per world, then the Rift.
    A chapter's goal is always the same shape: get strong enough for its guardian,
    beat it, clear the dungeon it opens, make the offering at the gate.
@@ -19,7 +19,7 @@ const NPCS = {
   tetsu:  { name: 'Tetsu',            title: 'Soul smith' },
   kai:    { name: 'Master Kai',       title: 'Gravity hermit' },
   yuki:   { name: 'Yuki',             title: 'Curse sorcerer' },
-  nett:   { name: 'Examiner Nett',    title: 'Hunter Association' },
+  nett:   { name: 'Examiner Nett',    title: 'Hunter Guild' },
   selene: { name: 'Curator Selene',   title: 'Keeper of the museum' },
   carto:  { name: 'The Cartographer', title: 'Who drew your map' },
 };
@@ -29,7 +29,7 @@ const CHAPTERS = [
   { id: 'leaf', n: 1, realm: 'shinobi', title: 'Leaf Village', guard: 'fox', cast: ['ren', 'kaede'], reward: { items: { old_compass: 1, sealed_scroll: 2 } } },
   { id: 'blue', n: 2, realm: 'seas', title: 'Orange Town', guard: 'admiral', cast: ['mira', 'bart'], reward: { items: { sea_charm: 1, treasure_map: 1 } } },
   { id: 'soul', n: 3, realm: 'soul', title: 'Soul City', guard: 'sovereign', cast: ['kuro', 'tetsu'], reward: { items: { reaper_scarf: 1, ruby: 1 } } },
-  { id: 'ki', n: 4, realm: 'ki', title: 'Kaio Planet', guard: 'tyrant', cast: ['kai'], reward: { items: { weighted_gi: 1, capsule_crate: 2 } } },
+  { id: 'ki', n: 4, realm: 'ki', title: 'Titan Planet', guard: 'tyrant', cast: ['kai'], reward: { items: { weighted_gi: 1, capsule_crate: 2 } } },
   { id: 'hex', n: 5, realm: 'hex', title: 'Shinjuku', guard: 'matriarch', cast: ['yuki'], reward: { items: { paper_blade: 1, cursed_box: 2 } } },
   { id: 'hunt', n: 6, realm: 'hunter', title: 'Green Island', guard: 'chimera', cast: ['nett'], reward: { items: { chimera_fang: 1, hunters_cache: 2 } } },
   { id: 'echo', n: 7, realm: 'echo', title: 'Echo Quarter', guard: 'pillar', cast: ['selene'], reward: { items: { stone_mask: 1, echo_reliquary: 1 } } },

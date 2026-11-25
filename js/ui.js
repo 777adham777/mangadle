@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — UI layer
+   ANIME IDLE RPG — UI layer
    Layout of an RPG incremental: every skill is one click away in a permanent
    sidebar, the current farm is always visible in the top activity bar, and
    skill pages show every action as a full card (time, XP/h, materials, owned).
@@ -81,9 +81,9 @@ function rarity(id) {
 }
 const rarityVoy = (a) => (a.level < 25 ? 3 : a.level < 55 ? 4 : 5);
 const actRarity = (a) => (a.loot ? rarityVoy(a) : a.out ? rarity(Object.keys(a.out)[0]) : a.level < 30 ? 3 : a.level < 60 ? 4 : 5);
-const TYPE_LABEL = { trade: 'Trade good', res: 'Material', food: 'Food', gem: 'Gem', chest: 'Treasure', fruit: 'Devil Fruit', schematic: 'Schematic' };
+const TYPE_LABEL = { trade: 'Trade good', res: 'Material', food: 'Food', gem: 'Gem', chest: 'Treasure', fruit: 'Abyss Fruit', schematic: 'Schematic' };
 const typeLabel = (id) => { const it = ITEMS[id]; if (it.relic) return `Relic · ${REALMS[it.relic].name}`; if (it.type === 'equip' && SCHEM_OF[id]) return 'Iconic ' + it.slot; return it.type === 'equip' ? it.slot[0].toUpperCase() + it.slot.slice(1) : TYPE_LABEL[it.type] || 'Item'; };
-const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Devil Fruit' : id === 'GEM' ? 'Random gem' : ITEMS[id].name);
+const fruitLabel = (id) => (id === 'FRUIT' ? 'Random Abyss Fruit' : id === 'GEM' ? 'Random gem' : ITEMS[id].name);
 function stars(r) { return `<span class="stars">${'<i></i>'.repeat(r)}</span>`; }
 
 // Item families, readable at a glance: every item tile carries its family's coloured corner (.tile-kind),
@@ -199,7 +199,7 @@ function viewAccent() {
 function renderHud() {
   $('#hud').innerHTML = `
     <button class="menu-btn" data-menu title="Menu">${ui('menu')}</button>
-    <button class="brand" data-nav="home">TRI<span>·</span>REALM</button>
+    <button class="brand" data-nav="home">ANIME<span>·</span>IDLE<span>·</span>RPG</button>
     <div id="nowbar" class="nowbar"></div>
     <div class="curs">
       <div class="cur gold" title="Gold — buys upgrades in the Market"><i>${ui('gold')}</i><b id="r-gold">0</b></div>
@@ -476,7 +476,7 @@ VIEWS.home = () => {
   };
   // One screen: what runs now and what waits on the left, every skill and your record on the right.
   return `
-  ${ptitle('Tri-Realm Idle', 'Overview')}
+  ${ptitle('Anime Idle RPG', 'Overview')}
   ${fitCols('ov-board', `<div class="ov-top">
     <section class="win">${farm || idlePicksHTML()}</section>
     <section class="win quest-win phone-only">${goalHTML()}</section>
@@ -533,7 +533,7 @@ function skBannerHTML(realm, skill) {
   const R = REALMS[realm], s = SKILLS[skill], b = xpInfo(skill);
   const mods = [`<span class="pill" title="Action speed">${ui('spd')} Speed ×${skillSpeed(skill).toFixed(2)}</span>`, `<span class="pill" title="XP multiplier">${ui('xp')} XP ×${skillXpMult(skill).toFixed(2)}</span>`];
   if (rareMult(skill) > 1) mods.push(`<span class="pill" title="Rare find multiplier">${ui('rare')} Luck ×${rareMult(skill).toFixed(2)}</span>`);
-  if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Devil Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
+  if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Abyss Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
   // Compact (2026-11-24): the level ring is the XP bar, and the buffs and Path / Rare finds / Synergies share one
   // line, so the focus panel's button stays above the fold at 860 px.
   return `<section class="sk-banner sk-slim" style="--rc:${rc(realm)}">
@@ -875,7 +875,7 @@ function inspectorHTML() {
 
 /* ------------------------------------------------------------- collection log */
 let selCol = null;
-const COL_GROUPS = [['res', 'Materials'], ['relic', 'World relics'], ['gem', 'Gems'], ['chest', 'Treasure'], ['food', 'Food'], ['equip', 'Gear'], ['schematic', 'Schematics'], ['fruit', 'Devil Fruits']];
+const COL_GROUPS = [['res', 'Materials'], ['relic', 'World relics'], ['gem', 'Gems'], ['chest', 'Treasure'], ['food', 'Food'], ['equip', 'Gear'], ['schematic', 'Schematics'], ['fruit', 'Abyss Fruits']];
 const inColGroup = (k, g) => (g === 'relic' ? !!ITEMS[k].relic : g === 'res' ? ITEMS[k].type === 'res' && !ITEMS[k].relic : ITEMS[k].type === g);
 function collectionHTML() {
   const pctAll = collectionPct();
@@ -973,16 +973,23 @@ VIEWS.market = () => `
 VIEWS.settings = () => `
   ${ptitle('System', 'Settings')}
   ${fitCols('set-board', `${isStandalone() ? '' : `<section class="win install">${tile(null, null, { r: 4, icon: ui('play') })}
-    <span class="upg-t"><b>Play it like an app</b><small>Install Tri-Realm on your phone or computer: full screen, its own icon, works offline.${installPrompt ? '' : ' iPhone / iPad: Share → Add to Home Screen. Android / desktop: browser menu → Install app.'}</small></span>
+    <span class="upg-t"><b>Play it like an app</b><small>Install Anime Idle RPG on your phone or computer: full screen, its own icon, works offline.${installPrompt ? '' : ' iPhone / iPad: Share → Add to Home Screen. Android / desktop: browser menu → Install app.'}</small></span>
     ${installPrompt ? gbtn('Install', 'check', 'data-install') : ''}</section>`}
   <section class="win">${hdr('Help')}
     <div class="btn-row">${gbtn(S.ui.noTips ? 'Turn hints on' : 'Turn hints off', 'info', 'data-toggletips', 'dark')}${gbtn('Show the page cards again', 'hero', 'data-reintro', 'dark')}</div>
-    <p class="muted small">During your first ${GUIDE_N} steps, a small hint points at the next click if nothing moves for a while. Each new skill or menu explains itself once, at the top of its page.</p></section>
-  <section class="win">${hdr('Credits')}<p class="muted small">Icons by Lorc, Delapouite, Skoll, Caro Asercion, sbed, Cathelineau, DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue and Zeromancer from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. World scenes are generated in-game.</p></section>`,
+    <p class="muted small">During your first ${GUIDE_N} steps, a small hint points at the next click if nothing moves for a while. Each new skill or menu explains itself once, at the top of its page.</p></section>`,
   `<section class="win">${hdr('Save data', 'autosaves every 10 seconds')}
     <div class="btn-row">${gbtn('Save now', 'check', 'data-save', 'dark')}${gbtn('Export', 'log', 'data-export', 'dark')}${gbtn('Import', 'open', 'data-import', 'dark')}${gbtn('Hard reset', 'close', 'data-wipe', 'danger')}</div>
     <textarea id="savebox" rows="5" placeholder="Export puts your save here. To import, paste a save here and press Import."></textarea>
+    ${backupsHTML()}
   </section>`)}`;
+// The last hourly copies (and the copies taken before an import, a restore or a reset).
+function backupsHTML() {
+  const b = saveBackups();
+  if (!b.length) return '<p class="muted small">A backup copy is kept every hour (the last ' + BAK_KEEP + ').</p>';
+  const why = { auto: 'hourly copy', 'before import': 'before an import', 'before restore': 'before a restore', 'before reset': 'before a reset' };
+  return `<div class="bak-list"><small class="muted">Backups (one per hour, the last ${BAK_KEEP})</small>${b.map((x, i) => `<div class="bak-row"><span>${esc(new Date(x.t).toLocaleString())} <em class="muted">· ${esc(why[x.why] || x.why)}</em></span>${gbtn('Restore', 'open', `data-restore="${i}"`, 'dark sm')}</div>`).join('')}</div>`;
+}
 
 /* =============================================================== activity bar + objective */
 function nowHTML() {
@@ -1533,10 +1540,24 @@ document.addEventListener('click', (ev) => {
   else if ('save' in d) { saveGame(); toast('Game saved.', 'good'); }
   else if ('export' in d) { const b = $('#savebox'); b.value = btoa(unescape(encodeURIComponent(serialize()))); b.select(); toast('Save exported — copy the text.', 'good'); }
   else if ('import' in d) {
-    try { loadFrom(decodeURIComponent(escape(atob($('#savebox').value.trim())))); saveGame(); toast('Save imported!', 'good'); dirty = true; }
-    catch (e) { toast('That save data is not valid.', 'bad'); }
+    const txt = $('#savebox').value.trim();
+    if (!txt) toast('Paste a save in the box first.', 'bad');
+    else if (txt.length > 4e6) toast('That text is far too long to be a save.', 'bad');
+    else if (confirm('Replace your current progress with this save? Your current save is kept as a backup (Settings → Save data).')) {
+      const before = serialize();
+      try { loadFrom(decodeURIComponent(escape(atob(txt)))); pushBackup(before, 'before import'); saveGame(); toast('Save imported!', 'good'); dirty = true; }
+      catch (e) { toast('That save data is not valid' + (e && /older version/.test(e.message) ? ': it comes from an older version of the game.' : '.'), 'bad'); }
+    }
   }
-  else if ('wipe' in d) { if (confirm('Erase ALL progress? This cannot be undone.')) { S = defaultState(); checkUnlocks(); S.combat.hp = pMaxHp(); saveGame(); setView('home'); } }
+  else if ('restore' in d) {
+    const b = saveBackups()[+d.restore];
+    if (b && confirm(`Go back to the save from ${new Date(b.t).toLocaleString()}? Your current progress is kept as a backup.`)) {
+      const before = serialize();
+      try { loadFrom(b.save); pushBackup(before, 'before restore'); saveGame(); toast('Backup restored.', 'good'); setView('home'); }
+      catch (e) { toast('That backup cannot be read.', 'bad'); }
+    }
+  }
+  else if ('wipe' in d) { if (confirm('Erase ALL progress? Your current save is kept as a backup (Settings → Save data).')) { pushBackup(serialize(), 'before reset'); S = defaultState(); checkUnlocks(); S.combat.hp = pMaxHp(); saveGame(); setView('home'); } }
 });
 document.addEventListener('change', (ev) => {
   if (ev.target.matches('[data-food]')) { S.combat.food = ev.target.value || null; ev.target.blur(); dirty = true; }
@@ -1577,7 +1598,43 @@ const TOAST_IC = { good: 'check', bad: 'close', rare: 'rare' };
 notify = (msg, cls) => feedMsg(msg, cls);
 
 /* =============================================================== boot / loop */
-function saveGame() { try { localStorage.setItem(SAVE_KEY, serialize()); } catch (e) { /* storage unavailable */ } }
+/* Save safety (pre-alpha):
+   - a save that fails to load is never overwritten: it is kept aside (SAVE_KEY_BROKEN) and the player is told
+   - rolling backups: one copy per hour, the last 3 kept (SAVE_KEY_BAK), restorable from Settings
+   - one tab at a time: the tab that saves last owns the save; any other tab stops saving and says so */
+const SAVE_KEY_BAK = SAVE_KEY + '_bak', SAVE_KEY_BROKEN = SAVE_KEY + '_broken', SAVE_KEY_TAB = SAVE_KEY + '_tab';
+const BAK_EVERY = 3600 * 1000, BAK_KEEP = 3;
+const TAB_ID = Math.random().toString(36).slice(2);
+let LOAD_FAIL = null, TAB_BLOCKED = false;
+function lsGet(k) { try { return localStorage.getItem(k); } catch (e) { return null; } }
+function lsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (e) { return false; } }
+function saveBackups() { try { const b = JSON.parse(lsGet(SAVE_KEY_BAK) || '[]'); return Array.isArray(b) ? b.filter((x) => x && x.t && typeof x.save === 'string') : []; } catch (e) { return []; } }
+function pushBackup(save, why) {
+  const b = saveBackups();
+  b.unshift({ t: Date.now(), why: why || 'auto', save });
+  while (b.length > BAK_KEEP) b.pop();
+  // storage full: drop the oldest copies until it fits
+  while (b.length && !lsSet(SAVE_KEY_BAK, JSON.stringify(b))) b.pop();
+}
+// Another tab played after this one: this tab must not write its older state over it.
+function tabOwner() {
+  let o = null;
+  try { o = JSON.parse(lsGet(SAVE_KEY_TAB) || 'null'); } catch (e) { /* ignore */ }
+  return o && o.id !== TAB_ID ? o : null;
+}
+function claimTab() { lsSet(SAVE_KEY_TAB, JSON.stringify({ id: TAB_ID, t: Date.now() })); }
+function saveGame() {
+  if (TAB_BLOCKED) return;
+  const other = tabOwner();
+  if (other && other.t > tabClaimedAt) { TAB_BLOCKED = true; if (typeof betaTabBlocked === 'function') betaTabBlocked(); return; }
+  if (typeof DEV !== 'undefined' && DEV.on && !S.devUsed) S.devUsed = Date.now();   // bug reports say when cheats were used
+  const json = serialize();
+  if (!lsSet(SAVE_KEY, json)) return;
+  claimTab(); tabClaimedAt = Date.now();
+  const last = saveBackups()[0];
+  if (!last || Date.now() - last.t > BAK_EVERY) pushBackup(json, 'auto');
+}
+let tabClaimedAt = 0;
 
 function showOffline(secs, before) {
   const after = snapshot();
@@ -1602,8 +1659,17 @@ function boot() {
   installSprite();
   let raw = null;
   try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { /* ignore */ }
-  if (raw) { try { loadFrom(raw); } catch (e) { newGame(); } }
+  if (raw) {
+    try { loadFrom(raw); }
+    catch (e) {
+      // never lose it: keep the unreadable save aside, tell the player (beta.js), start fresh
+      lsSet(SAVE_KEY_BROKEN, JSON.stringify({ t: Date.now(), err: String(e && e.message || e), save: raw }));
+      LOAD_FAIL = String(e && e.message || e);
+      newGame();
+    }
+  }
   else newGame();
+  claimTab(); tabClaimedAt = Date.now();
   normalizeView();
   renderHud();
 
@@ -1678,4 +1744,4 @@ function catchUp() {
 let installPrompt = null;
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; dirty = true; });
-window.addEventListener('appinstalled', () => { installPrompt = null; toast('Installed! Launch Tri-Realm from your home screen.', 'good'); dirty = true; });
+window.addEventListener('appinstalled', () => { installPrompt = null; toast('Installed! Launch Anime Idle RPG from your home screen.', 'good'); dirty = true; });

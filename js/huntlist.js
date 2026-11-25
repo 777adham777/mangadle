@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the Hunt List (Hunter Association licence), DOM-free
+   ANIME IDLE RPG — the Hunt List (Hunter Association licence), DOM-free
    - Pin up to 3 items you want. For each one the list knows every source you have
      already seen (a stage you fought on, a task you did, a voyage you sailed),
      your chance there and how long one copy takes at your current pace.

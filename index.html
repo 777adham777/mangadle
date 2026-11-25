@@ -3,22 +3,29 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <title>Tri-Realm Idle</title>
-  <meta name="description" content="An idle RPG across six manga-inspired worlds: ninjas, pirates, soul reapers, warriors, sorcerers and hunters. Plays in your browser on desktop and mobile.">
+  <title>Anime Idle RPG</title>
+  <meta name="description" content="An idle RPG across seven anime-inspired worlds: ninjas, pirates, soul reapers, martial artists, sorcerers and hunters. Plays in your browser on desktop and mobile.">
   <meta name="theme-color" content="#05060d">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="Tri-Realm">
-  <meta property="og:title" content="Tri-Realm Idle">
+  <meta name="apple-mobile-web-app-title" content="Anime Idle RPG">
+  <meta property="og:title" content="Anime Idle RPG">
   <meta property="og:description" content="Ninjas, pirates, soul reapers, warriors, sorcerers and hunters in one idle RPG. Play free in your browser.">
-  <meta property="og:image" content="icons/icon-512.png">
+  <meta property="og:image" content="https://777adham777.github.io/mangadle/icons/icon-512.png">
+  <meta property="og:url" content="https://777adham777.github.io/mangadle/">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
   <link rel="manifest" href="manifest.webmanifest">
   <link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Exo+2:wght@500;600;700&family=Saira+Condensed:wght@500;600;700&family=Saira:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/fonts.css">
+  <script>
+    /* Pre-alpha: every JS error is kept (js/beta.js puts them in the bug report). */
+    window.BETA_ERRORS = [];
+    window.addEventListener('error', function (e) { if (e.target && e.target !== window && !/^(SCRIPT|LINK)$/.test(e.target.tagName)) return; if (BETA_ERRORS.length < 30) BETA_ERRORS.push({ t: Date.now(), m: String(e.message || (e.target && e.target.src ? 'Failed to load ' + e.target.src : 'error')), at: (e.filename || '').split('/').pop() + ':' + (e.lineno || 0), st: e.error && e.error.stack ? String(e.error.stack).slice(0, 600) : '' }); if (window.betaOnError) betaOnError(); }, true);
+    window.addEventListener('unhandledrejection', function (e) { if (BETA_ERRORS.length < 30) BETA_ERRORS.push({ t: Date.now(), m: 'Promise: ' + String(e.reason && e.reason.message || e.reason), at: '', st: e.reason && e.reason.stack ? String(e.reason.stack).slice(0, 600) : '' }); if (window.betaOnError) betaOnError(); });
+  </script>
   <link rel="stylesheet" href="css/style.css">
   <link rel="stylesheet" href="css/seas.css">
   <link rel="stylesheet" href="css/gdd.css">
@@ -44,6 +51,7 @@
   <link rel="stylesheet" href="css/review.css">
   <link rel="stylesheet" href="css/tips.css">
   <link rel="stylesheet" href="css/fit.css">
+  <link rel="stylesheet" href="css/beta.css">
 </head>
 <body>
   <div id="backdrop" aria-hidden="true"></div>
@@ -147,6 +155,7 @@
   <script src="js/poster-ui.js"></script>
   <script src="js/focus-ui.js"></script>
   <script src="js/ux3.js"></script>
+  <script src="js/beta.js"></script>
   <script>
     if ('serviceWorker' in navigator && location.protocol !== 'file:') {
       window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));

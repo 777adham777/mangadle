@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Hardcore mode on screen (hardcore.js is the engine)
+   ANIME IDLE RPG — Hardcore mode on screen (hardcore.js is the engine)
    The switch sits on top of the stage list; a red HC tag shows in the activity bar
    while you fight in Hardcore, and the arena takes a red edge. Loaded after ui.js.
    ========================================================================== */

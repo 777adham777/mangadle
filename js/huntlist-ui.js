@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the Hunt List on screen (huntlist.js is the engine)
+   ANIME IDLE RPG — the Hunt List on screen (huntlist.js is the engine)
    - "Hunt it" on an item in the Collection or the Bank pins it (licence: 3 hunts).
    - The list (Overview + Collection): each hunt with its best seen source and the
      expected time, the Epic+ bad-luck meter, every source (Go / post as a mission).

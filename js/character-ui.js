@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the Character view (#character)
+   ANIME IDLE RPG — the Character view (#character)
    - The hero (2026-11-25): your level, your name (the poster's, editable), your build and your
      Power, one number for damage and staying power together
    - Equipment: one card per slot (no figure since 2026-11-24: the avatar was removed);
@@ -199,7 +199,7 @@ function chListHTML(s, cands) {
   const empty = { weapon: 'No other weapon. Craft or find one.', armor: 'No armor in your bag yet.', accessory: 'No accessory in your bag yet.', food: 'No food. Cook or brew some.', fruit: 'No fruit in your bag.' }[s];
   const bare = !chWornTile(s) && !cands.length;
   return `<section class="win ch-list ${bare ? 'bare' : ''}">
-    ${hdr(CH_LABEL[s] === 'Food' ? 'Battle food' : CH_LABEL[s] === 'Fruit' ? 'Devil Fruit' : CH_LABEL[s], cands.length ? `${cands.length} owned` : '')}
+    ${hdr(CH_LABEL[s] === 'Food' ? 'Battle food' : CH_LABEL[s] === 'Fruit' ? 'Abyss Fruit' : CH_LABEL[s], cands.length ? `${cands.length} owned` : '')}
     ${bare ? '' : chWornHTML(s)}
     <div class="ch-cands">${rows || `<div class="empty-note">${empty}</div>`}</div>
   </section>`;

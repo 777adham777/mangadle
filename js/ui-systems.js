@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — interface for the world systems (systems.js).
+   ANIME IDLE RPG — interface for the world systems (systems.js).
    Loaded last: registers its views, then boots the game.
    ========================================================================== */
 
@@ -43,8 +43,9 @@ on('awaken', (d) => burst(RELEASE[d.rel].name, ITEMS[d.id].name, itemIc(d.id), r
 on('reforge', (d) => toast(`${ITEMS[d.id].name} reforged to tier ${d.tier}.`, 'rare'));
 
 /* ============================================================ shared: labels */
-Object.assign(TYPE_LABEL, { scroll: 'Technique scroll', seed: 'Seed', meal: 'Buff meal', tool: 'Tool', wish: 'Dragon Ball', trap: 'Trap', artifact: 'Artifact' });
-COL_GROUPS.push(['seed', 'Seeds'], ['meal', 'Buff meals'], ['tonic', 'Tonics'], ['wish', 'Dragon Balls']);
+Object.assign(TYPE_LABEL, { scroll: 'Technique scroll', seed: 'Seed', meal: 'Buff meal', tool: 'Tool', wish: 'Wish Orb', trap: 'Trap', artifact: 'Artifact', fruit: 'Abyss Fruit' });
+COL_GROUPS.push(['seed', 'Seeds'], ['meal', 'Buff meals'], ['tonic', 'Tonics'], ['wish', 'Wish Orbs']);
+for (const g of COL_GROUPS) if (g[0] === 'fruit') g[1] = 'Abyss Fruits';   // docs/RENAMES.md (ui.js still says Devil Fruit)
 const BUFF_NAME = { speed: 'skill speed', xp: 'XP', dmg: 'damage', gold: 'gold', rare: 'rare finds', all: 'everything',
   dbl: 'double output', keep: 'free crafts', extra: 'by-products' };
 SYN_KIND.buff = 'meal duration';
@@ -151,7 +152,7 @@ UIX.realmSide.push((realm, skill) => {
     ${FORMS.map((f) => `<li><span>${f.name} (Lv ${f.grav})</span><b>${formOpen(f) ? '×' + f.dmg + ' dmg' : ui('lock')}</b></li>`).join('')}</ul></section>`];
   if (wishesOn()) {
     const all = hasAllStones();
-    out.push(`<section class="win wishes">${hdr('Dragon Balls', `${[1, 2, 3, 4, 5, 6, 7].filter((i) => count('wish_stone_' + i)).length} / 7`)}
+    out.push(`<section class="win wishes">${hdr('Wish Orbs', `${[1, 2, 3, 4, 5, 6, 7].filter((i) => count('wish_stone_' + i)).length} / 7`)}
       <div class="stones">${[1, 2, 3, 4, 5, 6, 7].map((i) => { const r = WORLD_ORDER[i - 1]; return tile('wish_stone_' + i, null, { cls: 'xs ' + (count('wish_stone_' + i) ? '' : 'dim'), title: `★${i}: ${r ? REALMS[r].name : 'a world not yet reached'}` }); }).join('')}</div>
       <p class="muted small">One stone hides in each world: a very rare find from its skills and foes (bosses drop it more often).</p>
       ${all ? `<div class="wish-list">${WISHES.map((w) => `<button class="wish" data-wish="${w.id}"><b>${w.name}</b><small>${w.desc}${S.wishes[w.id] ? ` · made ×${S.wishes[w.id]}` : ''}</small></button>`).join('')}</div>`
@@ -159,7 +160,7 @@ UIX.realmSide.push((realm, skill) => {
   }
   return out.join('');
 });
-on('wish', (w) => burst('Shenron grants your wish', `${w.name} · ${w.desc}`, ui('wish'), rc('ki')));
+on('wish', (w) => burst('Ryujin grants your wish', `${w.name} · ${w.desc}`, ui('wish'), rc('ki')));
 
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('button');
@@ -168,7 +169,7 @@ document.addEventListener('click', (ev) => {
   if (d.plant) { const [i, c] = d.plant.split(':'); plant(+i, c); }
   else if (d.harvest !== undefined) harvest(+d.harvest);
   else if (d.form !== undefined) chooseForm(d.form);
-  else if (d.wish) { if (confirm('Summon Shenron with all 7 Dragon Balls for this wish?')) makeWish(d.wish); }
+  else if (d.wish) { if (confirm('Summon Ryujin with all 7 Wish Orbs for this wish?')) makeWish(d.wish); }
   else if (d.meal) { if (eatMeal(d.meal)) toast(`${ITEMS[d.meal].name}: +${pct(ITEMS[d.meal].buff.val)} ${BUFF_NAME[ITEMS[d.meal].buff.stat]}.`, 'good'); }
 });
 document.addEventListener('change', (ev) => { if ('autotend' in ev.target.dataset) { S.farm.auto = ev.target.checked; dirty = true; } });
@@ -176,9 +177,9 @@ document.addEventListener('change', (ev) => { if ('autotend' in ev.target.datase
 /* ============================================================ HEX: BINDING VOWS */
 UIX.realmTop.push((realm, skill) => {
   if (skill !== 'exorcism') return '';
-  if (!pactsOn()) return `<section class="win">${hdr('Binding Vows')}<p class="muted small">${ui('lock')} ${esc(lockedNote('feature:vows').replace('Locked. ', ''))}</p></section>`;
+  if (!pactsOn()) return `<section class="win">${hdr('Cursed Pacts')}<p class="muted small">${ui('lock')} ${esc(lockedNote('feature:vows').replace('Locked. ', ''))}</p></section>`;
   const n = pactSlots(), act = S.pacts.active.slice(0, n), m = pactMult();
-  return `<section class="win">${hdr('Binding Vows', `${act.length} / ${n} sworn · 2nd vow at Cursed Research 40, 3rd at 80 · bonuses ×${m.toFixed(2)} from your level`)}
+  return `<section class="win">${hdr('Cursed Pacts', `${act.length} / ${n} sworn · 2nd pact at Cursed Research 40, 3rd at 80 · bonuses ×${m.toFixed(2)} from your level`)}
     <p class="muted small">A restriction for a bonus. You can break a vow at any time.</p>
     <div class="pacts">${PACTS.map((p) => {
       const on = act.includes(p.id);
@@ -219,11 +220,11 @@ VIEWS.contracts = () => {
   };
   return `${ptitle("Green Island", 'Contracts')}
   ${fitCols('ct-board', `<section class="win licence"><div class="lc-badge">${ui('star2')}<b>${S.contracts.stars}</b></div>
-    <div><small>Hunter Licence</small><h2>${RANKS[L][1]}</h2><p class="muted small">${next ? `${next[0] - S.contracts.stars} more stars to ${next[1]}. ` : ''}Rewards ×${RANKS[L][2]} · ${contractSlots()} contracts · Silver: a free new contract every refresh · Gold: 5 contracts.</p></div>
+    <div><small>Hunter Charter</small><h2>${RANKS[L][1]}</h2><p class="muted small">${next ? `${next[0] - S.contracts.stars} more stars to ${next[1]}. ` : ''}Rewards ×${RANKS[L][2]} · ${contractSlots()} contracts · Silver: a free new contract every refresh · Gold: 5 contracts.</p></div>
     <div class="lc-next"><small>New contracts in</small><b data-ctnext>${fmtTime(Math.max(0, (C.next - Date.now()) / 1000))}</b></div></section>
   ${hdr('Board', 'targets in every world you have opened')}
   <div class="contracts">${C.list.map(card).join('') || '<div class="empty-note">No contracts yet.</div>'}</div>`,
-  `${hdr('Greed Island Cards', 'contracts give a card 70% of the time; foes drop them very rarely')}
+  `${hdr('Green Island Cards', 'contracts give a card 70% of the time; foes drop them very rarely')}
   <div class="cbooks">${WORLD_ORDER.filter(realmOpen).map(page).join('')}</div>`)}`;
 };
 UPD.push(() => {
@@ -299,7 +300,7 @@ function echoTaskOptions() {
 }
 UIX.realmTop.push((realm, skill) => {
   if (skill !== 'bonding') return '';
-  if (!echoOn()) return `<section class="win echo-none">${ui('echo')}<div><b>No Echo yet</b><p class="muted small">Gather 3 Stand Arrow Shards (Archaeology, Echo Quarter foes, the Rift) and use <b>Awaken an Echo</b> below. Each Echo has its own grades and ability.</p></div></section>`;
+  if (!echoOn()) return `<section class="win echo-none">${ui('echo')}<div><b>No Echo yet</b><p class="muted small">Gather 3 Echo Arrow Shards (Archaeology, Echo Quarter foes, the Rift) and use <b>Awaken an Echo</b> below. Each Echo has its own grades and ability.</p></div></section>`;
   const E = ECHO_BY[S.echo.id], bl = bondLv(), bp = Math.sqrt((S.echo.bond || 0) / 30) - bl;
   const why = S.echo.task ? echoTaskBlock() : '';
   return `<section class="win echo-card" style="--rc:${rc('echo')}">

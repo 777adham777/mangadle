@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — while you were away: the away log + allies, DOM-free
+   ANIME IDLE RPG — while you were away: the away log + allies, DOM-free
    - The away log: from the moment you leave (page hidden, or the game closed) until
      you come back, notable events are written down with their time, even during the
      offline simulation (SIM silences the event bus, so game.js taps emit() for us).

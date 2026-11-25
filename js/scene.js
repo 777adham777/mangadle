@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — procedural world backdrops
+   ANIME IDLE RPG — procedural world backdrops
    Each world gets a layered SVG landscape (sky, light source, parallax ridges,
    landmarks, particles). No image assets: everything is generated here.
    ========================================================================== */

@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Orange Town overhaul: interface
+   ANIME IDLE RPG — Orange Town overhaul: interface
    - Shiny & Perfect: tile shine, logs with their set bonuses (skill pages +
      Collection), celebrations
    - the fishing spots (their names and sea colours tint the Fishing cards, spot-ui.js)

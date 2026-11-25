@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — daily and weekly objectives (GDD §6.4), DOM-free.
+   ANIME IDLE RPG — daily and weekly objectives (GDD §6.4), DOM-free.
    3 dailies (new ones each local day) and 3 weeklies (each Monday), drawn from every world
    you have opened, old ones as likely as the newest, so returning to them pays.
    Rewards: gold that grows with your newest world, technique scrolls (spent on the Techniques page),

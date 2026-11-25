@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — weapons (GDD §2.3), DOM-free. Every weapon you craft or find is its own copy
+   ANIME IDLE RPG — weapons (GDD §2.3), DOM-free. Every weapon you craft or find is its own copy
    with its own progression; nothing replaces or destroys it when a better one drops.
    S.arms = [{ u, id, xp, ref, awk, el }], S.equipU = the copy you wield (S.equip.weapon = its item id).
    A. Level (1-50): the wielded weapon earns battle XP. +2% weapon attack per level.

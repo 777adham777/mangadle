@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Opportunities: a small bonus for the player who is watching, DOM-free
+   ANIME IDLE RPG — Opportunities: a small bonus for the player who is watching, DOM-free
    While you play (page visible, you acted in the last 2 minutes, something runs), now and
    then something from the current world shows up for 30 seconds (omens-ui.js spawns it).
    One click takes it; missed, nothing is lost. Never offline. Each world's is its own:
@@ -19,7 +19,7 @@ const omensOn = () => isUnlocked('feature:omens');
 const OMENS = {
   shinobi: { name: 'Messenger Toad', icon: 'frog' },
   seas:    { name: 'Message in a Bottle', icon: 'bottle' },
-  soul:    { name: 'Hell Butterfly', icon: 'butterfly' },
+  soul:    { name: 'Underworld Butterfly', icon: 'butterfly' },
   ki:      { name: 'Shooting Star', icon: 'falling-star' },
   hex:     { name: 'Fleeing Curse', icon: 'floating-ghost' },
   hunter:  { name: 'Drifting Card', icon: 'card' },

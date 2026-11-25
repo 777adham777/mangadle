@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — engine (logic is DOM-free; UI lives in ui.js)
+   ANIME IDLE RPG — engine (logic is DOM-free; UI lives in ui.js)
    ========================================================================== */
 
 const SAVE_KEY = 'trirealm_idle_save_v1';
@@ -888,7 +888,17 @@ function loadFrom(json) {
   // Techniques were reworked on 2026-11-25 (rarity scrolls, 3 Active / 3 Passive / 1 Ultimate): techniques.js converts the save.
   if (d.tech && (d.tech.v || 1) < 3 && typeof techMigrateSave === 'function') techMigrateSave(d);
   S = mergeDefaults(d, defaultState());
+  finiteNumbers(S);
   sanitize();
+}
+// A hand-edited or damaged save can carry 1e999 (Infinity): every number in it must stay a real number.
+function finiteNumbers(o, depth = 0) {
+  if (depth > 12 || !o || typeof o !== 'object') return;
+  for (const k in o) {
+    const v = o[k];
+    if (typeof v === 'number' && !Number.isFinite(v)) o[k] = 0;
+    else if (v && typeof v === 'object') finiteNumbers(v, depth + 1);
+  }
 }
 // A brand-new game.
 function newGame() { S = defaultState(); checkUnlocks(); S.combat.hp = pMaxHp(); }

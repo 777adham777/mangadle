@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — small drawing helpers
+   ANIME IDLE RPG — small drawing helpers
    What survived the avatar removal (2026-11-24): easing curves, 2D points,
    colour shading and the reduced-motion check, shared by the arena,
    the drawn creatures and the skill effects.

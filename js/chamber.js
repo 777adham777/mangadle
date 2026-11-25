@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — Time Chamber (GDD §5, Kaio Planet), DOM-free.
+   ANIME IDLE RPG — Time Chamber (GDD §5, Kaio Planet), DOM-free.
    Hours you are away beyond the offline limit are stored here (up to its capacity).
    Switched on, it spends that stored time to run your current activity and your ships
    twice as fast. Combat is not accelerated. Normal durations stay the reference.

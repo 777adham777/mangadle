@@ -1,15 +1,10 @@
 /* Service worker: makes the game installable and playable offline.
    Bump VERSION on every deploy so players get the new files. */
-importScripts('./js/item-images.js', './js/monster-art.js');
-
-const VERSION = 'tri-realm-v169';
-const ITEM_ICON_URLS = Object.values(ITEM_IMAGE_PATHS).map((path) => './' + path);
-const BACKGROUND_URLS = [
-  'woodcutting', 'crafting', 'voyaging', 'mining', 'smithing', 'gravity',
-  'farming', 'exorcism', 'tracking', 'archaeology', 'restoration', 'bonding',
-].map((name) => `./assets/backgrounds/skills/${name}.webp`).concat([
-  'shinobi', 'seas', 'soul', 'ki', 'hex', 'hunter', 'echo', 'rift',
-].map((name) => `./assets/backgrounds/combat/${name}.webp`));
+// Only the game itself is cached at install (~2 MB). Pictures (item icons, foes, scenes: ~33 MB) are cached
+// the first time the game shows them, so a phone does not download every world on the first visit.
+const VERSION = 'anime-idle-rpg-v171';
+// Pictures live in their own cache, kept across versions: served at once, refreshed in the background.
+const ART_CACHE = 'anime-idle-rpg-art';
 const SHELL = [
   './',
   './index.html',
@@ -38,6 +33,8 @@ const SHELL = [
   './css/review.css',
   './css/tips.css',
   './css/fit.css',
+  './css/beta.css',
+  './css/fonts.css',
   './js/data.js',
   './js/curve.js',
   './js/worlds.js',
@@ -126,6 +123,7 @@ const SHELL = [
   './js/poster-ui.js',
   './js/focus-ui.js',
   './js/ux3.js',
+  './js/beta.js',
   './manifest.webmanifest',
   './icons/icon-192.png',
   './icons/icon-512.png',
@@ -134,32 +132,36 @@ const SHELL = [
 ];
 
 self.addEventListener('install', (e) => {
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL.concat(ITEM_ICON_URLS, MONSTER_ART_URLS, BACKGROUND_URLS))).then(() => self.skipWaiting()));
+  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k !== VERSION && k !== ART_CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
 });
+
+// The page asks which version it runs (Settings, bug reports).
+self.addEventListener('message', (e) => { if (e.data === 'version' && e.ports[0]) e.ports[0].postMessage(VERSION); });
 
 self.addEventListener('fetch', (e) => {
   const req = e.request;
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // Google Fonts: serve from cache, refresh in the background.
-  if (url.hostname === 'fonts.googleapis.com' || url.hostname === 'fonts.gstatic.com') {
-    e.respondWith(caches.open(VERSION + '-fonts').then(async (c) => {
-      const hit = await c.match(req);
-      const net = fetch(req).then((res) => { if (res.ok || res.type === 'opaque') c.put(req, res.clone()); return res; }).catch(() => hit);
-      return hit || net;
+  if (url.origin !== location.origin) return;
+
+  if (url.pathname.includes('/assets/')) {
+    e.respondWith(caches.open(ART_CACHE).then(async (c) => {
+      const hit = await c.match(req, { ignoreSearch: true });
+      const net = fetch(req).then((res) => { if (res.ok) c.put(req, res.clone()); return res; });
+      if (hit) { net.catch(() => {}); return hit; }
+      return net;
     }));
     return;
   }
-  if (url.origin !== location.origin) return;
 
   // Game files: network first (always fresh when online), cache as fallback (offline play).
   e.respondWith(

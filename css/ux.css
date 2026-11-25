@@ -151,7 +151,7 @@ html.calm *, html.calm *::before, html.calm *::after { animation-duration: 0.01m
 /* ---------- mobile polish (PC first, phones must still look good) */
 @media (max-width: 860px) {
   /* Top bar: brand, gold, bounty and settings all fit a 360-390 px screen */
-  .brand { font-size: 14px; letter-spacing: 0.14em; min-width: 0; overflow: hidden; white-space: nowrap; }
+  .brand { font-size: 13px; letter-spacing: 0.06em; min-width: 0; overflow: hidden; white-space: nowrap; }
   .curs { flex: none; }
   .cur { padding: 0 8px 0 3px; gap: 4px; }
   .cur b { font-size: 13px; }
@@ -172,6 +172,6 @@ html.calm *, html.calm *::before, html.calm *::after { animation-duration: 0.01m
   .bag-sort button { flex: 1 0 auto; }
   #main { overflow-x: hidden; }
 }
-@media (max-width: 380px) { .brand { font-size: 12px; letter-spacing: 0.1em; } .cur i { display: none; } }
+@media (max-width: 380px) { .brand { font-size: 11px; letter-spacing: 0.04em; } .cur i { display: none; } }
 
 

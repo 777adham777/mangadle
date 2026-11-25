@@ -1,27 +1,27 @@
-# Tri-Realm Idle
+# Anime Idle RPG
 
-An idle RPG across six manga-inspired worlds, built from the Game Design Document in `docs/GDD.md`
+An idle RPG across seven anime-inspired worlds (plus the Rift), built from the Game Design Document in `docs/GDD.md`
 (audit of the old game in `docs/GDD-AUDIT.md`, design choices in `docs/DECISIONS.md`).
 One character and one progression cross every world; each world adds activities and deepens the shared systems.
 
 | # | World | Activities | What it adds |
 | --- | --- | --- | --- |
 | 1 | Leaf Village | Woodcutting, Crafting, Combat | Character level and five stats; technique collection (scrolls from battle, fragments, typed slots); Chakra |
-| 2 | Orange Town | Fishing, Cooking, Voyaging | Passive expeditions (10 min to 8 h, in parallel); spice rack; Haki |
-| 3 | Soul City | Reishi Mining, Smelting | Ingots; every weapon copy levels, refines (+10) and awakens (element, family passive); Reiatsu |
-| 4 | Kaio Planet | Gravity Training, Farming | Transformations, farm plots, Time Chamber, Dragon Balls, passive techniques; Ki |
-| 5 | Shinjuku | Cursed Research | Cursed Fragments, Domain Expansions (Ultimate techniques), Binding Vows; Cursed Energy |
-| 6 | Green Island | Hunting | Up to 3 companions, Hunter Licence contracts, Greed Island Cards, the six Nen categories as techniques; Nen |
+| 2 | Orange Town | Fishing, Cooking, Voyaging | Passive expeditions (10 min to 8 h, in parallel); spice rack; Resolve |
+| 3 | Soul City | Reishi Mining, Smelting | Ingots; every weapon copy levels, refines (+10) and awakens (element, family passive); Soul Force |
+| 4 | Titan Planet | Gravity Training, Farming | Transformations, farm plots, Time Chamber, Wish Orbs, passive techniques; Ki |
+| 5 | Shinjuku | Cursed Research | Cursed Fragments, Domain Releases (Ultimate techniques), Cursed Pacts; Cursed Energy |
+| 6 | Green Island | Hunting | Up to 3 companions, Hunter Charter contracts, Green Island Cards, the six aura categories as techniques; Aura |
 | 7 | Echo Quarter | Archaeology, Restoration, Echo Bonding | Post-game: an Echo that runs a second activity, museum |
 | ∞ | The Rift | — | Post-game: final bosses and an hourly Rift Tear |
 
 - **Character**: one level earned in battle raises Attack, Defense, Vitality, Speed and Luck; gear, techniques, companions, cards and food add to them
 - **Techniques**: foes drop their world's scroll (random technique, unknown ones favoured, pity counter); duplicates become fragments that level a technique to 10, with behaviour changes at 5 and 10; slots Attack I-III, Defense, Support, Passive, Ultimate open over the game; they fire on cooldown
-- **Energy disciplines** (Chakra, Haki, Reiatsu, Ki, Cursed Energy, Nen): split your energy between them, one more per world
+- **Energy disciplines** (Chakra, Resolve, Soul Force, Ki, Cursed Energy, Aura): split your energy between them, one more per world
 - **Weapons**: each copy keeps its own level (1-50), refinement (+1 to +10 with ingots and gems) and awakening
 - **Expeditions**: ships sail in parallel with anything else, need hull wood, optional dishes bring back more
 - Worlds open after their guardian falls and you make an offering at the gate; skills and menus open one at a time
-- Renown and Ascension per world, synergies between activities, schematics and relics for iconic gear, loot rarity, chests, Devil Fruits
+- Renown and Ascension per world, synergies between activities, schematics and relics for iconic gear, loot rarity, chests, Abyss Fruits
 - **Foes with kits**: every enemy has a role, an element it is weak to (some resist one), a passive trait and signature moves (stuns, poison, bleed, burns, shields, heals, life steal); big moves are telegraphed and trigger your defensive techniques; bosses change phase at 66% and 33% HP; Elites and Alphas roll random affixes. Every foe is a painted sprite (a few beasts are drawn creatures)
 - **Elites and mini-bosses** in every stage; **daily and weekly objectives** from every open world
 - **Battle seen through your eyes**: no hero on screen, the foe stands big in the middle of its world's stage; you are the command dock under it (HP, swing, techniques on cooldown, food)
@@ -44,7 +44,7 @@ Then open http://localhost:8000. Opening `index.html` directly also works, but o
 
 ## Dev tools (testing)
 
-Add `?dev` to the URL (or tap the TRI·REALM logo 7 times) to get a **Dev** entry in the menu: unlock every world, skill, menu and stage,
+Add `?dev` to the URL (or tap the ANIME·IDLE·RPG logo 7 times) to get a **Dev** entry in the menu: unlock every world, skill, menu and stage,
 max levels and systems, give items and gold, speed time up (×10 to ×1000) or skip hours, god mode and one-hit kills, skip objectives.
 The first cheat backs up the save so it can be restored from the same page. `?dev=0` (or the button on the page) turns it off.
 
@@ -94,8 +94,3 @@ Bump `VERSION` in `sw.js` so returning players get the new files, then push.
 | `js/dev.js` | Hidden dev tools for testing (`?dev`): unlock everything, levels, items, time speed, god mode, save backup |
 | `sw.js`, `manifest.webmanifest`, `icons/` | Installable app + offline support |
 
-## Credits
-
-Icons from [game-icons.net](https://game-icons.net) by Lorc, Delapouite, Skoll, Caro Asercion, sbed, Cathelineau,
-DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue, Willdabeast and Zeromancer,
-licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).

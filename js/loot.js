@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — loot pass (loaded after worlds.js, before icons.js)
+   ANIME IDLE RPG — loot pass (loaded after worlds.js, before icons.js)
    - every world has a treasure chest, drop-only gear with a utility perk, and a
      very rare Rift Shard on its guardian
    - rarity (1 Common … 5 Legendary) comes from how hard an item is to get, not its price
@@ -33,7 +33,7 @@ RARE_FINDS.smithing.push(['GEM', 1 / 250]);
 /* ------------------------------------------- drop-only gear for worlds 4-7 */
 // Each sits a little under the world's iconic gear but carries a utility perk (rare finds, skill speed,
 // combat XP, gold, dodge), so a lucky drop stays worth wearing next to raw-stat pieces.
-defItem('battle_scouter',   'Battle Scouter',        '⚙️', 15000,  eq('accessory', { atk: 70, def: 35, hp: 380, rare: 0.06 }));
+defItem('battle_scouter',   'Battle Visor',         '⚙️', 15000,  eq('accessory', { atk: 70, def: 35, hp: 380, rare: 0.06 }));
 defItem('weighted_gi',      'Weighted Gi',           '🥋', 16000,  eq('armor', { def: 150, hp: 860, cxp: 0.08 }));
 defItem('crimson_knuckles', 'Crimson Knuckles',      '🥊', 28000,  eq('weapon', { atk: 165, dodge: 0.03 }));
 defItem('paper_blade',      'Paper Talisman Blade',  '🗡️', 25000,  eq('weapon', { atk: 205, rare: 0.05 }));

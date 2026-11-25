@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — drop history on the Battlefield
+   ANIME IDLE RPG — drop history on the Battlefield
    Top half (no DOM): every kill's item drops are recorded in S.combat.drops through the
    engine's 'kill' hook, so offline progress (SIM) is logged too. Common drops (rarity 1-2)
    of the same item merge into one line until a Rare+ drop lands, so rare lines stand out.

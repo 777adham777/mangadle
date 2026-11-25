@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Leaf Village: Shiny & Perfect, and carvings as cargo (DOM-free)
+   ANIME IDLE RPG — Leaf Village: Shiny & Perfect, and carvings as cargo (DOM-free)
    - Woodcutting: Golden logs, the Shiny version of every log (Shiny Log).
    - Crafting: Perfect gear (+20% stats and perks) and Perfect pills (heal 50% more),
      for the Perfect Log. Scrolls, tools, traps and carvings stay plain.

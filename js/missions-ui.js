@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the Task Queue on screen (missions.js is the engine)
+   ANIME IDLE RPG — the Task Queue on screen (missions.js is the engine)
    A chip in the activity bar (tasks queued / slots) opens the queue: the running
    task with its progress, the tasks waiting in order, and a one-line form to add one.
    Loaded after ui.js.

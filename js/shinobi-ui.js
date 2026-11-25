@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Leaf Village: Woodcutting and Crafting results
+   ANIME IDLE RPG — Leaf Village: Woodcutting and Crafting results
    The last log / craft, shown in the focus panel (setLast, seas-ui.js / focus-ui.js).
    ========================================================================== */
 

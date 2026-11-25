@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Kaio Planet overhaul (world 4), DOM-free
+   ANIME IDLE RPG — Kaio Planet overhaul (world 4), DOM-free
    Gravity Training
    - Strain: every session strains your body, more under heavier gravity. At 100%
      you break through your limit: a burst of XP (5 sessions' worth) and, for good,

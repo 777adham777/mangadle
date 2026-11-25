@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — world trials (DOM-free, 2026-11-25)
+   ANIME IDLE RPG — world trials (DOM-free, 2026-11-25)
    The path (GOALS) says what to do next; trials are the medium-term goals beside it.
    Each world has six, open as soon as the world is: go deeper in one of its skills,
    master one of its systems, beat its guardian without eating, clear its dungeon
@@ -68,8 +68,8 @@ const TRIALS = [
   setTrial('ki', 'pit', { chest_pit: 2 }),
   // Shinjuku
   trialDef('hex_res', 'hex', 'Reach Cursed Research level 30', 30, tLv('exorcism'), { cursed_fragment: 10 }, 'Stronger curses, more fragments.', 'realm:hex:exorcism'),
-  trialDef('hex_dom', 'hex', 'Learn all four Domain Expansions', 4, tPool('hex'), { cursed_box: 2 }, 'Cursed Scrolls drop in Shinjuku, and Crafting writes them.', 'techniques'),
-  trialDef('hex_vow', 'hex', 'Hold Binding Vows for 3 hours', 10800, () => Math.floor(S.stats.pactTime || 0), { cursed_fragment: 10 }, 'Vows count while they are held, offline too.', 'realm:hex:exorcism'),
+  trialDef('hex_dom', 'hex', 'Learn all four Domain Releases', 4, tPool('hex'), { cursed_box: 2 }, 'Cursed Scrolls drop in Shinjuku, and Crafting writes them.', 'techniques'),
+  trialDef('hex_vow', 'hex', 'Hold Cursed Pacts for 3 hours', 10800, () => Math.floor(S.stats.pactTime || 0), { cursed_fragment: 10 }, 'Pacts count while they are held, offline too.', 'realm:hex:exorcism'),
   guardTrial('hex', 'matriarch', 'the Cursed Matriarch', { matriarch_eye: 1 }),
   fastTrial('hex', 'womb', 360, { key_womb: 3 }),
   setTrial('hex', 'womb', { chest_womb: 2 }),

@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — skill depth (DOM-free). Loaded after armory.js, before loot.js.
+   ANIME IDLE RPG — skill depth (DOM-free). Loaded after armory.js, before loot.js.
    Design: docs/SKILL-DEPTH.md. Every skill should keep surprising you as it levels:
    1. SKILL_PERKS: five named perks per skill (Lv 15, 35, 55, 70, 90), between the generic
       milestones (10, 25, 50, 75, 99). game.js applies them (perk()), world files read the
@@ -51,13 +51,13 @@ const SKILL_PERKS = {};
     [35, 'Spice Saver', '6% chance a dish uses no ingredients', { keep: 0.06 }],
     [55, 'Double Batch', '+8% chance to cook two', { dbl: 0.08 }],
     [70, "Chef's Instinct", '+12% Cooking XP', { xp: 0.12 }],
-    [90, 'All Blue', '+8% more chance a dish uses no ingredients', { keep: 0.08 }]);
+    [90, 'Allsea', '+8% more chance a dish uses no ingredients', { keep: 0.08 }]);
   P('voyaging',
     [15, 'Light Hull', '+8% hauls on every voyage', { speed: 0.08 }],
     [35, 'Lucky Charts', 'Voyage rare finds ×1.4', { rare: 0.4 }],
     [55, 'Trade Winds', '+12% Voyaging XP', { xp: 0.12 }],
     [70, 'Third Ship', 'One more ship at sea', { ship: 1 }],
-    [90, 'Grand Line Legend', '+15% hauls on every voyage', { speed: 0.15 }]);
+    [90, 'Grand Current Legend', '+15% hauls on every voyage', { speed: 0.15 }]);
   P('mining',
     [15, 'Steady Pick', '+6% Reishi Mining speed', { speed: 0.06 }],
     [35, 'Rock Reader', 'By-products ×1.6 (Reishi Dust)', { extra: 0.6 }],
@@ -73,8 +73,8 @@ const SKILL_PERKS = {};
   P('gravity',
     [15, 'Iron Will', '+6% Gravity Training speed', { speed: 0.06 }],
     [35, 'Heavy Breath', '+8% chance to gather two', { dbl: 0.08 }],
-    [55, "Kaio's Lesson", '+12% Gravity Training XP', { xp: 0.12 }],
-    [70, 'Zenkai', 'Every breakthrough is worth 25% more', { limit: 0.25 }],
+    [55, "Master Kai's Lesson", '+12% Gravity Training XP', { xp: 0.12 }],
+    [70, 'Rebound', 'Every breakthrough is worth 25% more', { limit: 0.25 }],
     [90, 'Limit Breaker', 'Every breakthrough is worth 25% more again', { limit: 0.25 }]);
   P('farming',
     [15, 'Green Thumb', 'Crops grow 10% faster', { grow: 0.1 }],
@@ -87,7 +87,7 @@ const SKILL_PERKS = {};
     [35, 'Grade Reader', 'Grade 2, Grade 1 and Special Grade curses ×1.4', { grade: 0.4 }],
     [55, 'Binding Study', '+8% chance to gather two', { dbl: 0.08 }],
     [70, 'Domain Scholar', '+12% Cursed Research XP', { xp: 0.12 }],
-    [90, 'Six Eyes', 'High-grade curses ×1.6 more', { grade: 0.6 }]);
+    [90, 'Clearsight', 'High-grade curses ×1.6 more', { grade: 0.6 }]);
   P('tracking',
     [15, 'Light Step', '+6% Hunting speed', { speed: 0.06 }],
     [35, 'Strong Scent', 'The scent builds 50% faster (Prime Prey sooner)', { scent: 0.5 }],
@@ -182,7 +182,7 @@ SKILLS.cooking.actions.sort((a, b) => a.level - b.level);
 
 // Voyaging: a route in the 38 → 55 gap and one after 82.
 SKILLS.voyaging.actions.push(
-  voyage('fishman', 'Fishman Island', '🧜', 46, 18, { catfish_hotpot: 2, ironwood: 2 },
+  voyage('fishman', 'Merfolk Isle', '🧜', 46, 18, { catfish_hotpot: 2, ironwood: 2 },
     { gold: [400, 900], table: [['thunder_catfish', [1, 3]], ['tidal_eel', [1, 3]]], rare: [['tide_pearl', 1 / 20], ['leviathan_scale', 1 / 60], ['FRUIT', 1 / 150]] }),
   voyage('final_island', 'The Final Island', '🏝️', 95, 30, { dragonet_sashimi: 2, heartwood: 2 },
     { gold: [4000, 9000], table: [['coral_dragonet', [1, 3]], ['sea_king', [1, 2]]], rare: [['tide_heart', 1 / 60], ['allblue_tuna', 1 / 30], ['FRUIT', 1 / 40]] }),
@@ -192,15 +192,15 @@ SKILLS.voyaging.actions.sort((a, b) => a.level - b.level);
 /* ================================================================ Soul City */
 // Reishi Mining: Reishi Dust from every ore, two new ores.
 dItem('reishi_dust', 'Reishi Dust', '✨', 5, { desc: 'Spirit particles knocked loose with every ore. Flux for alloys, a base for tonics.' }, 'sparkles', '#bfe0ff');
-dItem('sekki_stone', 'Sekki Stone', '🪨', 26, { desc: 'Grey stone that swallows spiritual pressure. The walls of the old training grounds were built from it.' }, 'stone-block', '#8a8f9a');
-dItem('kido_quartz', 'Kido Quartz', '💎', 115, { desc: 'Quartz that formed around a spell nobody finished. It glows when you say its number.' }, 'crystal-cluster', '#7fe0ff');
+dItem('sekki_stone', 'Hushstone', '🪨', 26, { desc: 'Grey stone that swallows spiritual pressure. The walls of the old training grounds were built from it.' }, 'stone-block', '#8a8f9a');
+dItem('kido_quartz', 'Spellcraft Quartz', '💎', 115, { desc: 'Quartz that formed around a spell nobody finished. It glows when you say its number.' }, 'crystal-cluster', '#7fe0ff');
 for (const a of SKILLS.mining.actions) a.extra = (a.extra || []).concat([['reishi_dust', 0.07, [1, 2]]]);
 SKILLS.mining.actions.push(gather('sekki_stone', 38, 4.7), gather('kido_quartz', 80, 6.5));
 SKILLS.mining.actions.sort((a, b) => a.level - b.level);
 
 // Smelting: two ingots and the first alloys (two ingots + dust).
-dItem('sekki_ingot', 'Sekki Ingot', '🟫', 60, { ingot: true, desc: 'Smelted Sekki Stone. Armour made of it shrugs off spiritual pressure.' }, 'metal-bar', '#8a8f9a');
-dItem('kido_ingot', 'Kido Ingot', '🟫', 280, { ingot: true, desc: 'Smelted Kido Quartz. It holds a spell the way a bell holds a note.' }, 'metal-bar', '#7fe0ff');
+dItem('sekki_ingot', 'Hushstone Ingot', '🟫', 60, { ingot: true, desc: 'Smelted Hushstone. Armour made of it shrugs off spiritual pressure.' }, 'metal-bar', '#8a8f9a');
+dItem('kido_ingot', 'Spellcraft Ingot', '🟫', 280, { ingot: true, desc: 'Smelted Spellcraft Quartz. It holds a spell the way a bell holds a note.' }, 'metal-bar', '#7fe0ff');
 dItem('frostvoid_alloy', 'Frostvoid Alloy', '🟪', 140, { desc: 'Frost and void ingots folded together with reishi dust. Cold that eats light.' }, 'metal-bar', '#9a8cff');
 dItem('sunstar_alloy', 'Sunstar Alloy', '🟨', 520, { desc: 'Starsteel and sun ingots fused in a white-hot forge. It never cools all the way.' }, 'metal-bar', '#ffcf4a');
 INGOT_OF.sekki_stone = 'sekki_ingot';
@@ -221,16 +221,16 @@ SKILLS.smithing.actions.sort((a, b) => a.level - b.level);
     { g: 'gem-pendant', c: '#ff9a2a', lore: 'A drop of fossil amber on a sap-lacquered cord. Lucky things seem to find whoever wears it.' });
   A('thunder_harpoon', 'Thunder Harpoon', '🔱', 'weapon', { tag_lightning: 0.2 },
     { fam: 'ranged', g: 'barbed-spear', c: '#ffd23f', lore: 'A whaler\'s harpoon greased with fish oil and tipped with a catfish\'s spark. It hits before it lands.' });
-  A('sekki_bracers', 'Sekki Bracers', '🛡️', 'accessory', { guard: 0.06 },
-    { g: 'mailed-fist', c: '#8a8f9a', lore: 'Bracers cast from Sekki ingots. Spiritual pressure slides off them like rain.' });
+  A('sekki_bracers', 'Hushstone Bracers', '🛡️', 'accessory', { guard: 0.06 },
+    { g: 'mailed-fist', c: '#8a8f9a', lore: 'Bracers cast from Hushstone ingots. Spiritual pressure slides off them like rain.' });
   A('living_wood_mail', 'Living Wood Mail', '🌿', 'armor', { regen: 0.006 },
     { g: 'leather-armor', c: '#7fbf5a', lore: 'Plates of living wood that keep growing. Cut them and they close by morning.' });
   A('frostvoid_scythe', 'Frostvoid Scythe', '⚔️', 'weapon', { exec: 0.15 },
     { fam: 'heavy', g: 'reaper-scythe', c: '#9a8cff', lore: 'A blade of frostvoid alloy. Its edge is so cold the wounds go dark.' });
   A('sunstar_plate', 'Sunstar Plate', '🛡️', 'armor', { thorns: 0.15, guard: 0.06 },
     { g: 'chest-armor', c: '#ffcf4a', lore: 'Armour that still glows from the forge. Whatever strikes it gets burned.' });
-  A('kido_focus', 'Kido Focus Staff', '🪄', 'weapon', { tech: 0.1, cdr: 0.08 },
-    { fam: 'blade', g: 'skull-staff', c: '#7fe0ff', lore: 'A staff with a Kido ingot at its head. Spells cast through it skip half their incantation.' });
+  A('kido_focus', 'Spellcraft Focus Staff', '🪄', 'weapon', { tech: 0.1, cdr: 0.08 },
+    { fam: 'blade', g: 'skull-staff', c: '#7fe0ff', lore: 'A staff with a Spellcraft ingot at its head. Spells cast through it skip half their incantation.' });
   A('divine_bow', 'Divine Root Longbow', '🏹', 'weapon', { first: 1, crit: 0.06 },
     { g: 'bow-arrow', c: '#c8a0ff', lore: 'A bow bent from a divine root and strung with sunstar wire. The first arrow decides the fight.' });
   // Crafted placeholders: economy.js sets level, time, XP and ingredients from the stage. The levels

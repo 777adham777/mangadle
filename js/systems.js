@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — world systems (DOM-free). Each plugs into game.js hooks.
+   ANIME IDLE RPG — world systems (DOM-free). Each plugs into game.js hooks.
    1. Renown & Ascension (every world)
    ========================================================================== */
 

@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Shinjuku overhaul (world 5), DOM-free
+   ANIME IDLE RPG — Shinjuku overhaul (world 5), DOM-free
    Cursed Research: every curse you study has a grade, known before you face it
    (the next one is rolled as soon as the last one falls):
      Grade 4 ×1 · Grade 3 ×1.5 · Grade 2 ×2 · Grade 1 ×3 (what it leaves, Cursed Fragments aside)

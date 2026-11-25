@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Hardcore mode, DOM-free
+   ANIME IDLE RPG — Hardcore mode, DOM-free
    A switch on the Battlefield. While it is on, every stage (guardians too) fights at
    Hardcore strength and pays for it:
      foes ×3 HP, ×2.5 attack, ×1.4 defense

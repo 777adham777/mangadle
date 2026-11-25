@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Echo Quarter overhaul (world 7), DOM-free
+   ANIME IDLE RPG — Echo Quarter overhaul (world 7), DOM-free
    Archaeology: the excavation grid
    - Every dig site is an 8×8 grid; each dig opens one square. A fresh grid hides
      1 Intact find (the Shiny version of the site's fragment, for the Shiny Log),

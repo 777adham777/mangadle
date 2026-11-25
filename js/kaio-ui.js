@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Kaio Planet: Gravity Training and Farming results (kaio.js is the engine)
+   ANIME IDLE RPG — Kaio Planet: Gravity Training and Farming results (kaio.js is the engine)
    The last session / harvest (focus panel, focus-ui.js), breakthroughs, Giant crops, mutations.
    ========================================================================== */
 

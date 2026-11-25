@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Orange Town overhaul (world 1), DOM-free
+   ANIME IDLE RPG — Orange Town overhaul (world 1), DOM-free
    - Seasonings for the Cooking spice rack: each dish cooked while one is
      picked uses one and comes out seasoned. Seasoned dishes give a battle
      buff when eaten (more healing, damage, attack speed, less damage taken,

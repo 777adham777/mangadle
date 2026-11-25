@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — Green Island overhaul (world 6), DOM-free
+   ANIME IDLE RPG — Green Island overhaul (world 6), DOM-free
    Hunting
    - Scent: every trail you follow strengthens the scent (+0.75%). At 100% you sight
      Prime Prey: that run gives ×3 and its material comes out Prime (the Shiny version,

@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — dungeons on screen (dungeons.js is the engine)
+   ANIME IDLE RPG — dungeons on screen (dungeons.js is the engine)
    - The Dungeons window on the Battlefield (above the stage list): one card per open dungeon
      (and the next one, locked, as a goal): its rooms, danger, key, records, set.
    - Inside a run the Grand Stage top bar becomes the dungeon's: five room pips, the clock, Leave.

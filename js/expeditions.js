@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — expeditions (GDD §4.4), DOM-free. Voyaging destinations are the
+   ANIME IDLE RPG — expeditions (GDD §4.4), DOM-free. Voyaging destinations are the
    SKILLS.voyaging.actions (data.js); a card no longer starts an action: it sends a ship.
    - A ship sails 10 min, 1 h, 4 h or 8 h in parallel with whatever you do (offline too).
    - It needs wood for the hull (the destination's log); a dish is optional: +30% loot.

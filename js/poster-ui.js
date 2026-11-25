@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — the Wanted poster on screen (poster.js holds the codes)
+   ANIME IDLE RPG — the Wanted poster on screen (poster.js holds the codes)
    "Wanted poster" (Character view, and the Replay highlight of a rare find) opens a
    window: the poster drawn on a canvas (your weapon, your Bounty, your latest feat),
    your name, Share / Save image, your friend code, and your friends' codes.
@@ -116,7 +116,7 @@ async function drawPoster(canvas, featId) {
     c.textAlign = 'center';
   }
   c.font = '600 14px "Saira", sans-serif'; c.fillStyle = 'rgba(58,36,18,0.7)';
-  c.fillText(`TRI·REALM · ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`, POSTER_W / 2, POSTER_H - 44);
+  c.fillText(`ANIME IDLE RPG · ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' })}`, POSTER_W / 2, POSTER_H - 44);
   return canvas;
 }
 
@@ -131,7 +131,7 @@ function posterHTML() {
       <label class="pst-f"><small>Name on the poster</small><input id="pst-name" type="text" maxlength="20" value="${esc(heroName())}" autocomplete="off"></label>
       <div class="pst-btns">${gbtn('Share', 'play', 'data-pstshare', 'sm')}${gbtn('Save image', 'check', 'data-pstsave', 'dark sm')}</div>
       <label class="pst-f"><small>Your friend code: give it to a friend, you'll drop by in their game</small><span class="pst-code"><input id="pst-mycode" type="text" readonly value="${esc(code)}">${gbtn('Copy', '', 'data-pstcopy', 'dark sm')}</span></label>
-      <label class="pst-f"><small>Add a friend's code (${F.length} / ${FRIEND_MAX}): they drop by once a day with gold</small><span class="pst-code"><input id="pst-add" type="text" placeholder="TR1..." autocomplete="off">${gbtn('Add', 'plus', `data-pstadd ${F.length >= FRIEND_MAX ? 'disabled' : ''}`, 'sm')}</span></label>
+      <label class="pst-f"><small>Add a friend's code (${F.length} / ${FRIEND_MAX}): they drop by once a day with gold (from tomorrow)</small><span class="pst-code"><input id="pst-add" type="text" placeholder="AIR1..." autocomplete="off">${gbtn('Add', 'plus', `data-pstadd ${F.length >= FRIEND_MAX ? 'disabled' : ''}`, 'sm')}</span></label>
       ${F.length ? `<ul class="pst-friends">${F.map((f, i) => `<li>${friendBadge(f.n)}<span><b>${esc(f.n)}</b><small>Bounty ${fmt(f.b)}</small></span><button class="mini-btn" data-pstdrop="${i}" title="Remove">${ui('close')}</button></li>`).join('')}</ul>` : ''}
     </div></div>`;
 }
@@ -158,7 +158,7 @@ async function savePoster() {
 async function sharePoster() {
   const blob = await posterBlob();
   const file = new File([blob], 'wanted.png', { type: 'image/png' });
-  const text = `Wanted: ${heroName()}, ฿${Math.floor(S.bounty || 0).toLocaleString('en-US')} on Tri-Realm. My friend code: ${myCode()}`;
+  const text = `Wanted: ${heroName()}, ฿${Math.floor(S.bounty || 0).toLocaleString('en-US')} on Anime Idle RPG. My friend code: ${myCode()}`;
   if (navigator.canShare && navigator.canShare({ files: [file] })) {
     try { await navigator.share({ files: [file], text }); return; } catch (e) { if (e && e.name === 'AbortError') return; }
   }

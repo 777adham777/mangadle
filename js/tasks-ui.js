@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — daily and weekly objectives, on the Quests page (since 2026-11-25). Engine: tasks.js.
+   ANIME IDLE RPG — daily and weekly objectives, on the Quests page (since 2026-11-25). Engine: tasks.js.
    ========================================================================== */
 
 function taskText(t) {

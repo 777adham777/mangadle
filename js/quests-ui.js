@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — quests on screen (2026-11-25; replaces the story's dialogue)
+   ANIME IDLE RPG — quests on screen (2026-11-25; replaces the story's dialogue)
    - The tracker (sidebar, and the Overview on phones): the chapter, the step, why it
      matters, its progress and rewards; on a guardian step, how ready you are for it.
    - The Quests page: the chapter (its goal, the guardian's readiness, every step:

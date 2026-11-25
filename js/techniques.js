@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — techniques (GDD §2.2), DOM-free. Data: TECHNIQUES / TECH_RAR in worlds.js.
+   ANIME IDLE RPG — techniques (GDD §2.2), DOM-free. Data: TECHNIQUES / TECH_RAR in worlds.js.
    Reworked twice on 2026-11-25; the user's final rules:
    - Every technique has a rarity (1 Common … 5 Legendary). Scrolls come in four rarities per world
      (Common, Rare, Epic, Legendary). Reading one draws a technique of its world: the rarer the scroll,
@@ -34,7 +34,7 @@ const TECH_SLOTS = [
   { kind: 'active',   open: () => charLv() >= 20, hint: 'Character level 20' },
   { kind: 'passive',  open: () => charLv() >= 12, hint: 'Character level 12' },
   { kind: 'passive',  open: () => !!S.gates.soul, hint: 'Reach Soul City' },
-  { kind: 'passive',  open: () => !!S.gates.ki,   hint: 'Reach Kaio Planet' },
+  { kind: 'passive',  open: () => !!S.gates.ki,   hint: 'Reach Titan Planet' },
   { kind: 'ultimate', open: () => !!S.gates.hex,  hint: 'Reach Shinjuku' },
 ].map((s, i, all) => Object.assign(s, { i, name: `${SLOT_KINDS[s.kind]} ${all.slice(0, i + 1).filter((x) => x.kind === s.kind).length}` }));
 const loadout = () => { const L = Array.isArray(S.tech.loadout) ? S.tech.loadout : (S.tech.loadout = []); while (L.length < TECH_SLOTS.length) L.push(null); return L; };

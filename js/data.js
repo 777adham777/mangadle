@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — static game data
+   ANIME IDLE RPG — static game data
    Worlds collided: the Leaf Village (start), Orange Town, Soul City, and more (worlds.js).
    ========================================================================== */
 
@@ -76,7 +76,7 @@ defItem('blue_marlin',     'Blue Marlin',      '🐡', 16);
 defItem('tidal_eel',       'Tidal Eel',        '🐍', 30);
 defItem('giant_octopus',   'Giant Octopus',    '🐙', 48);
 defItem('abyss_angler',    'Abyss Angler',     '🦑', 75);
-defItem('sea_king',        'Sea King',         '🐲', 160);
+defItem('sea_king',        'Sea Titan',        '🐲', 160);
 // Multiverse
 defItem('rift_shard',      'Rift Shard',       '🔱', 2500);
 
@@ -96,7 +96,7 @@ defItem('marlin_steak',    'Marlin Steak',     '🥩', 35,  food(120));
 defItem('eel_bowl',        'Grilled Eel Bowl', '🍱', 65,  food(220));
 defItem('takoyaki',        'Takoyaki',         '🍡', 100, food(320));
 defItem('angler_feast',    'Angler Feast',     '🍖', 150, food(440));
-defItem('sea_king_curry',  'Sea King Curry',   '🍛', 320, food(700));
+defItem('sea_king_curry',  'Sea Titan Curry',  '🍛', 320, food(700));
 defItem('soldier_pill',    'Soldier Pill',     '💊', 8,   food(40));
 defItem('sage_pill',       'Sage Pill',        '🟢', 80,  food(280));
 defItem('storm_pill',      'Storm Pill',       '🟣', 200, food(520));
@@ -418,7 +418,7 @@ const PETS = [
   { id: 'galley_mouse',  name: 'Galley Mouse',       icon: '🐭', skill: 'cooking' },
   { id: 'ship_parrot',   name: 'Ship Parrot',        icon: '🦜', skill: 'voyaging' },
   { id: 'ashen_kit',     name: 'Ashen Kit',          icon: '🐕', zone: 'fox',         chance: 1 / 30 },
-  { id: 'hollow_pup',    name: 'Hollow Pup',         icon: '🐺', zone: 'sovereign',   chance: 1 / 30 },
+  { id: 'hollow_pup',    name: 'Husk Pup',           icon: '🐺', zone: 'sovereign',   chance: 1 / 30 },
   { id: 'gull_officer',  name: 'Seagull Lieutenant', icon: '🕊️', zone: 'admiral',     chance: 1 / 30 },
   { id: 'rift_wisp',     name: 'Rift Wisp',          icon: '👀', zone: 'convergence', chance: 1 / 20 },
 ];
@@ -503,11 +503,11 @@ const BOUNTY_RANKS = [
 // fx: what one level gives (applied in game.js / systems.js / techniques.js). world: opens with that world.
 const TRAININGS = [
   { id: 'chakra',  name: 'Chakra',        world: 'shinobi', base: 25, desc: '+1% technique power, +0.2% skill speed',  fx: { tech: 0.01, speed: 0.002 } },
-  { id: 'haki',    name: 'Haki',          world: 'seas',    base: 30, desc: '+0.5% damage, +1% gold',                  fx: { dmg: 0.005, gold: 0.01 } },
-  { id: 'reiatsu', name: 'Reiatsu',       world: 'soul',    base: 35, desc: '+1% max HP, +1% weapon XP',               fx: { hp: 0.01, wxp: 0.01 } },
+  { id: 'haki',    name: 'Resolve',       world: 'seas',    base: 30, desc: '+0.5% damage, +1% gold',                  fx: { dmg: 0.005, gold: 0.01 } },
+  { id: 'reiatsu', name: 'Soul Force',    world: 'soul',    base: 35, desc: '+1% max HP, +1% weapon XP',               fx: { hp: 0.01, wxp: 0.01 } },
   { id: 'ki',      name: 'Ki',            world: 'ki',      base: 40, desc: '+1% defense, +0.2 Speed',                 fx: { def: 0.01, spd: 0.2 } },
   { id: 'cursed',  name: 'Cursed Energy', world: 'hex',     base: 50, desc: '+0.5% XP on every skill, +0.5% technique power', fx: { xp: 0.005, tech: 0.005 } },
-  { id: 'nen',     name: 'Nen',           world: 'hunter',  base: 60, desc: '+0.1 Luck, +1% companion bonus',          fx: { luck: 0.1, pet: 0.01 } },
+  { id: 'nen',     name: 'Aura',          world: 'hunter',  base: 60, desc: '+0.1 Luck, +1% companion bonus',          fx: { luck: 0.1, pet: 0.01 } },
 ];
 const disciplineOpen = (t) => realmOpen(t.world);
 // Total bonus of one kind across the disciplines (level × per-level value).
@@ -584,16 +584,16 @@ const GOALS = [
   gStep('ore20', 'Mine 20 Reishi Ore', 'realm:soul:mining', 20, gMade('spirit_ore'), 2000, { jade: 1 }, 'Ore becomes ingots, and ingots become better weapons.'),
   gStep('ingot10', 'Smelt 10 Reishi Ingots', 'realm:soul:smithing', 10, gMade('reishi_ingot'), 2500, { reishi_ingot: 10 }, 'Ingots forge gear and refine the weapons you own.'),
   stage10('districts10', 'districts', 'the Outer Districts', 2500, { husk_heart: 2 }, 'Opens the Desert of Endless Night.'),
-  gStep('katana', 'Craft an Asauchi Katana from ingots', 'realm:shinobi:arts', 1, gMade('spirit_katana'), 3000, { silver_ingot: 6 }, 'Soul City weapons are forged from its ingots.'),
+  gStep('katana', 'Craft a Nameless Katana from ingots', 'realm:shinobi:arts', 1, gMade('spirit_katana'), 3000, { silver_ingot: 6 }, 'Soul City weapons are forged from its ingots.'),
   stage10('desert10', 'desert', 'the Desert of Endless Night', 3200, { phantom_silk: 4 }, 'Opens the Spire.'),
   gStep('refine1', 'Refine a weapon to +1', 'hero', 1, () => [S.arms.some((a) => a.ref > 0) ? 1 : 0], 3500, { jade: 1 }, 'Refining makes the weapon you love keep up with new worlds.'),
   gStep('awaken', 'Awaken a weapon', 'hero', 1, () => [S.arms.some((a) => a.awk > 0) ? 1 : 0], 4000, { spirit_core: 10 }, 'An awakened weapon gets an element and its family power.'),
   stage10('spire10', 'spire', 'the Spire', 4500, { void_stone: 3 }, "Opens the Sovereign's throne."),
-  gStep('reiatsu10', 'Reach Reiatsu level 10', 'power', 10, () => [S.energy.lvl.reiatsu || 0], 5000, { soul_fragment: 20 }, 'Each world adds a discipline. Reiatsu hardens your body.'),
+  gStep('reiatsu10', 'Reach Soul Force level 10', 'power', 10, () => [S.energy.lvl.reiatsu || 0], 5000, { soul_fragment: 20 }, 'Each world adds a discipline. Soul Force hardens your body.'),
   gStep('renown25', 'Reach Renown 25 in any world', 'home', 25, () => [Math.max(0, ...WORLD_ORDER.map(renownLv))], 6000, { lost_lantern: 1 }, 'Renown grows with all you do in a world. It opens Ascension.'),
   gStep('sovereign', 'Defeat the Masked Sovereign', 'battle', 1, gKills('sovereign'), 10000, { ruby: 1 }, 'The guardian of the dead. Its mask is part of the toll.'),
-  gStep('dg_catacombs', 'Clear the Hollow Catacombs', 'battle#gs-dungeons', 1, dgDone('catacombs'), 11000, { spirit_core: 10 }, 'Its set rewards finishing blows.'),
-  gStep('gate_ki', 'Climb the Throne Stair', 'home', 1, gGate('ki'), 12000, {}, 'The toll opens a new world: Kaio Planet.'),
+  gStep('dg_catacombs', 'Clear the Husk Catacombs', 'battle#gs-dungeons', 1, dgDone('catacombs'), 11000, { spirit_core: 10 }, 'Its set rewards finishing blows.'),
+  gStep('gate_ki', 'Climb the Throne Stair', 'home', 1, gGate('ki'), 12000, {}, 'The toll opens a new world: Titan Planet.'),
   gChapter('ki'),
   gStep('gravity10', 'Reach Gravity Training level 10', 'realm:ki:gravity', 10, gLvl('gravity'), 8000, { ki_spark: 10 }, 'Gravity Training makes you stronger the longer you train.'),
   gStep('crop1', 'Harvest your first crop', 'realm:ki:farming', 1, () => [S.stats.harvests || 0], 8000, { seed_sun_wheat: 5 }, 'Crops grow on their own and feed new dishes.'),
@@ -609,9 +609,9 @@ const GOALS = [
   gChapter('hex'),
   gStep('hex10', 'Reach Cursed Research level 10', 'realm:hex:exorcism', 10, gLvl('exorcism'), 20000, { cursed_fragment: 3 }, 'Curses give Cursed Fragments: 5 of them raise the technique of your choice by one level.'),
   stage10('alleys10', 'alleys', 'the Neon Alleys', 21000, { hex_ember: 4 }, 'Opens the Shrine.'),
-  gStep('domain', 'Learn a Domain Expansion', 'techniques', 1, () => [TECH_POOLS.hex.filter(techLv).length ? 1 : 0], 25000, { scroll_hex: 1 }, 'A Domain is an Ultimate: a world of your own rules. It goes in your one Ultimate slot.'),
+  gStep('domain', 'Learn a Domain Release', 'techniques', 1, () => [TECH_POOLS.hex.filter(techLv).length ? 1 : 0], 25000, { scroll_hex: 1 }, 'A Domain is an Ultimate: a world of your own rules. It goes in your one Ultimate slot.'),
   stage10('shrine10', 'shrine', 'the Shrine', 25000, { hex_shade: 4 }, 'Opens the Veil.'),
-  gStep('vow30', 'Hold a Binding Vow for 30 minutes', 'realm:hex:exorcism', 1800, () => [Math.floor(S.stats.pactTime || 0)], 25000, { cursed_fragment: 5 }, 'Give something up, get something back.'),
+  gStep('vow30', 'Hold a Cursed Pact for 30 minutes', 'realm:hex:exorcism', 1800, () => [Math.floor(S.stats.pactTime || 0)], 25000, { cursed_fragment: 5 }, 'Give something up, get something back.'),
   stage10('veil10', 'veil', 'the Veil', 30000, { veil_shard: 2 }, "Opens the Matriarch's domain."),
   gStep('matriarch', 'Defeat the Cursed Matriarch', 'battle', 1, gKills('matriarch'), 50000, { cursed_box: 2 }, 'The guardian of the curses. Its eye opens the trail.'),
   gStep('dg_womb', 'Clear the Cursed Womb', 'battle#gs-dungeons', 1, dgDone('womb'), 55000, { cursed_fragment: 5 }, 'Its set makes every wound bleed more.'),
@@ -638,8 +638,8 @@ const GOALS = [
   gStep('dg_tomb', 'Clear the Pillar Tomb', 'battle#gs-dungeons', 1, dgDone('tomb'), 160000, { pillar_fragment: 6 }, 'Its set sets every blow on fire.'),
   gStep('gate_rift', 'Tear open the Convergence', 'home', 1, gGate('rift'), 200000, {}, 'Every world meets in the Rift.'),
   gChapter('rift'),
-  gStep('shenron', 'Summon Shenron with the 7 Dragon Balls', 'realm:ki:gravity', 1, () => [Object.values(S.wishes || {}).reduce((a, b) => a + b, 0)], 150000, {}, 'Seven balls hide in seven worlds. A wish is forever.'),
-  gStep('fruit', 'Eat a Devil Fruit', 'hero', 1, () => [S.fruit ? 1 : 0], 100000, {}, 'One fruit, one power, for good.'),
+  gStep('shenron', 'Summon Ryujin with the 7 Wish Orbs', 'realm:ki:gravity', 1, () => [Object.values(S.wishes || {}).reduce((a, b) => a + b, 0)], 150000, {}, 'Seven orbs hide in seven worlds. A wish is forever.'),
+  gStep('fruit', 'Eat an Abyss Fruit', 'hero', 1, () => [S.fruit ? 1 : 0], 100000, {}, 'One fruit, one power, for good.'),
   gStep('emperor', 'Defeat the Rift Emperor', 'battle', 1, gKills('convergence'), 400000, { rift_shard: 1 }, 'He wants every world to be one.'),
   gStep('cleaver', 'Forge the Rift Cleaver', 'realm:shinobi:arts', 1, gMade('rift_cleaver'), 500000, {}, 'The blade that cuts between worlds.'),
   gStep('col75', 'Fill 75% of the Collection Log', 'hero:collection', 75, () => [Math.floor(collectionPct() * 100)], 500000, {}, 'Every world still keeps secrets.'),
@@ -707,7 +707,7 @@ const UNLOCKS = [
   { id: 'feature:trials',     name: 'World Trials',    need: () => (S.combat.kills.training || 0) >= 10,
     hint: () => 'Defeat 10 foes at the Training Grounds', why: 'Six trials per world, beside the path: go deeper in its skills, beat its guardian on an empty stomach, race its dungeon. Each pays well, and all six give the world its seal: +5% speed and XP for its skills.' },
   { id: 'feature:dungeons',   name: 'Dungeons',        need: () => (S.combat.kills.fox || 0) >= 1,
-    hint: () => 'Defeat the Ashen Fox Beast', why: "Behind the Fox's den, a stair leads under the Hokage rock. Every world hides a dungeon: five rooms in a row, no rest, a chest and a set at the end. Its guardian gives you the first key." },
+    hint: () => 'Defeat the Ashen Fox Beast', why: "Behind the Fox's den, a stair leads under the Warden Rock. Every world hides a dungeon: five rooms in a row, no rest, a chest and a set at the end. Its guardian gives you the first key." },
   { id: 'feature:collection', name: 'Collection Log',  need: () => Object.keys(S.found).length >= 12,
     hint: () => 'Discover 12 different items', why: 'You start keeping a journal of everything you find.' },
   { id: 'feature:market',     name: 'Market',          need: () => S.gold >= 500 || Object.keys(S.shop).length > 0,
@@ -730,8 +730,8 @@ const UNLOCKS = [
     hint: () => 'Earn a Bounty of 5,000', why: 'Your first wanted poster is up. Open it from the Character view: share the image with a friend, and swap friend codes so your heroes visit each other.' },
   { id: 'feature:omens',      name: 'Opportunities',   need: () => (!!S.gates.seas && charLv() >= 30) || !!(S.omen && S.omen.n),
     hint: () => 'Reach Character level 30 in Orange Town', why: 'Keep an eye on the screen: now and then something from the world you are in shows up for 30 seconds (a messenger toad, a bottle in the waves...). Take it for a small bonus. Missing one costs nothing.' },
-  { id: 'feature:scouter',    name: 'Scouter',         need: () => (!!S.gates.seas && S.stats.deaths >= 1) || !!(S.scout && S.scout.n),
-    hint: () => 'Lose a fight in Orange Town or later', why: 'A strange device falls out of the cracked sky: a Scouter. It reads the power of a stage and plays the fight out for you: win chance, what brings you down, and what to change. Battlefield.' },
+  { id: 'feature:scouter',    name: 'Power Visor',     need: () => (!!S.gates.seas && S.stats.deaths >= 1) || !!(S.scout && S.scout.n),
+    hint: () => 'Lose a fight in Orange Town or later', why: 'A strange device falls out of the cracked sky: a Power Visor. It reads the power of a stage and plays the fight out for you: win chance, what brings you down, and what to change. Battlefield.' },
   { id: 'feature:missions',   name: 'Task Queue',   need: () => (!!S.gates.seas && skillLv('fishing') >= 10) || !!(S.missions && S.missions.list && S.missions.list.length),
     hint: () => 'Reach Fishing level 10 in Orange Town', why: 'You can now queue tasks: each one starts when the previous one is done, even while you are away. Open the queue from the activity bar.' },
   worldUnlock('soul', 'Soul City'),
@@ -745,7 +745,7 @@ const UNLOCKS = [
   { id: 'feature:hardcore',   name: 'Hardcore mode',   need: () => (S.combat.kills.districts || 0) >= 25 || !!(S.hard && S.hard.kills),
     hint: () => 'Defeat 25 foes in the Outer Districts of Soul City', why: 'A switch on top of the stage list: every stage, guardians too, fights at Hardcore strength (×3 HP, ×2.5 attack) and pays for it (drops ×3, gold ×3, XP ×1.5).' },
   { id: 'feature:huntlist',   name: 'Hunt List',       need: () => (!!S.gates.soul && skillLv('mining') >= 10) || !!(S.hlist && S.hlist.list && (S.hlist.list.length || S.hlist.done)),
-    hint: () => 'Reach Reishi Mining level 10 in Soul City', why: 'The Hunter Association sends you a provisional licence. Pin up to 3 items you want (Collection or Bank): the Hunt List tracks where they drop, your odds and how long they should take.' },
+    hint: () => 'Reach Reishi Mining level 10 in Soul City', why: 'The Hunter Guild sends you a provisional charter. Pin up to 3 items you want (Collection or Bank): the Hunt List tracks where they drop, your odds and how long they should take.' },
 ];
 const UNLOCK_TAIL = [{ id: 'realm:rift', name: 'The Rift', need: () => !!S.gates.rift, hint: gateHint('rift') }];
 // worlds.js pushes each new world's unlocks, then the Rift closes the list.

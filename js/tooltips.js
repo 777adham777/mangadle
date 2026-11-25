@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — item tooltips
+   ANIME IDLE RPG — item tooltips
    Every item tile and item icon carries data-tip="<item id>" (ui.js tile / itemIc), every
    technique icon data-ttip="<technique id>" (ui.js ic). Hovering one shows a card; on touch,
    a tap on a plain icon or a long press on a button does. Items: name, rarity, family, what it
@@ -14,7 +14,9 @@
    asks RTIP[kind] for a live card (skill level and XP...), refreshed while it is open.
    ========================================================================== */
 
-const TIP_HINT = '<div class="it-hint"><kbd>Shift</kbd> details &amp; pin</div>';
+// technique tags are internal keys; a few read better (and more original) with a display name
+const TAG_LABEL = { haki: 'resolve', nen: 'aura' };
+const TIP_HINT ='<div class="it-hint"><kbd>Shift</kbd> details &amp; pin</div>';
 // A clickable line inside a pinned card (tipGo below). Locked places stay readable but say so.
 function tipGoOpen(go) {
   if (!go) return false;
@@ -164,7 +166,7 @@ function techTipHTML(id) {
     ${L ? `<p class="it-text">${T.desc(L)}</p>
       <ul class="it-tiers more">${TECH_TIERS.map((t) => `<li class="${L >= t ? 'got' : ''}"><em>Lv ${t}</em>${esc(T.tiers[t])}</li>`).join('')}</ul>
       <div class="it-rows more">${rows.map(([icn, l, v]) => `<div><i>${ui(icn)}</i><span>${l}</span><b>${esc(v)}</b></div>`).join('')}</div>
-      ${T.tags && T.tags.length ? `<div class="it-tags more">${T.tags.map((t) => `<i>${esc(t)}</i>`).join('')}</div>` : ''}`
+      ${T.tags && T.tags.length ? `<div class="it-tags more">${T.tags.map((t) => `<i>${esc(TAG_LABEL[t] || t)}</i>`).join('')}</div>` : ''}`
     : `<p class="it-text">${T.desc(1)}<span class="more"> Not learned yet: read ${esc(world ? world.name : '')} scrolls (rarer ones draw rarer techniques).</span></p>`}
     <div class="it-src more"><small>Where to get it</small>${src.map(([i, t, v]) => tipLink('view:techniques', `<i>${i}</i><span>${esc(t)}</span>${v ? `<b>${v}</b>` : ''}`)).join('')}</div>
     ${TIP_HINT}</div>`;

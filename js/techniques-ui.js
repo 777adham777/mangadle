@@ -1,6 +1,6 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — techniques interface (2026-11-25). Engine: techniques.js.
+   ANIME IDLE RPG — techniques interface (2026-11-25). Engine: techniques.js.
    - left: the Loadout in three groups (3 Active in firing order, 3 Passive, 1 Ultimate; click a slot
      to choose where Equip puts a technique), then your scrolls by world and rarity, with Read.
    - right: the technique book, one tab per world: each technique with its rarity, level, what it does,

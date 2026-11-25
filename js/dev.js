@@ -1,8 +1,8 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM IDLE — developer tools (for testing)
+   ANIME IDLE RPG — developer tools (for testing)
    Hidden from players. Turn on with ?dev in the URL (?dev=0 turns it off),
-   or tap the TRI·REALM logo 7 times. A "Dev" entry then appears in the menu:
+   or tap the ANIME·IDLE·RPG logo 7 times. A "Dev" entry then appears in the menu:
    unlock everything, set levels, give items, fast-forward time, god mode,
    and a backup of the save taken before the first cheat.
    Loaded after ui.js, before ui-systems.js boots the game.
@@ -190,7 +190,7 @@ UPD.push(() => { const el = $('[data-devprog]'); if (el && SKIP.left > 0) setTex
 UIX.quick.push(() => (devOn() ? [['dev', 'dev', GAME_SPEED > 1 ? `Dev ×${GAME_SPEED}` : 'Dev']] : []));
 const DEV_SPEEDS = [1, 10, 100, 1000];
 const DEV_LVLS = [10, 30, 60, 99];
-const DEV_TYPE_NAMES = { res: 'Materials', food: 'Food', equip: 'Gear', gem: 'Gems', chest: 'Treasure', fruit: 'Devil Fruits', scroll: 'Technique scrolls', tool: 'Tools', seed: 'Seeds', meal: 'Meals', bait: 'Bait', wish: 'Dragon Balls' };
+const DEV_TYPE_NAMES = { res: 'Materials', food: 'Food', equip: 'Gear', gem: 'Gems', chest: 'Treasure', fruit: 'Abyss Fruits', scroll: 'Technique scrolls', tool: 'Tools', seed: 'Seeds', meal: 'Meals', bait: 'Bait', wish: 'Wish Orbs' };
 let devType = 'all', devQty = '100';
 
 VIEWS.dev = () => {
@@ -223,7 +223,7 @@ VIEWS.dev = () => {
     </section>
     <section class="win">${hdr('Systems')}
       <div class="btn-row">${btn('systems', 'Max every system', 'crown')}${btn('pets', 'All pets', 'pet')}${btn('renown', 'Renown 100', 'trophy')}</div>
-      <p class="muted small">Max every system: pets, Renown 100, techniques at level 10, every tool, full Greed Island Cards and museum, every beast at level 20, an Echo graded A, Gold Hunter licence, a set of Dragon Balls.</p>
+      <p class="muted small">Max every system: pets, Renown 100, techniques at level 10, every tool, full Green Island Cards and museum, every beast at level 20, an Echo graded A, Gold Hunter Charter, a set of Wish Orbs.</p>
     </section>
   </div>`, `<section class="win">${hdr('Items', `${Object.keys(S.items).length} kinds in the bank`)}
     <div class="dev-give">
