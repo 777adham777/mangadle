@@ -149,3 +149,12 @@
 /* a list whose header sits outside a panel (the recipe gallery): the tab already names it */
 .sk-more:has(> .sk-tabs) .sk-pane > .hdr:first-child > span { display: none; }
 .sk-more:has(> .sk-tabs) .sk-pane > .hdr:first-child { justify-content: flex-end; }
+/* a narrow stage column: the kills/XP/gold rates sit at the bottom right, clear of the foe's name plate */
+@container (max-width: 1000px) {
+  .gs-rates { top: auto; bottom: 10px; }
+}
+/* a scroll with nothing left to teach says so in a line (it was a disabled button too long for the panel) */
+.scr-block { flex: 1 1 100%; margin: 0; display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ok); }
+.scr-block .gi { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
+/* your name line in the dock: the stats wrap under the name instead of running under the techniques */
+.gs-mename { flex-wrap: wrap; row-gap: 0; min-width: 0; }

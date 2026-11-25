@@ -112,7 +112,7 @@ function scrollInspect(id) {
   const body = it.tech
     ? `${hdr('Teaches')}<p class="scr-one">${ic('technique', it.tech)}<span><b>${esc(TECHNIQUES[it.tech].name)}</b> · ${TECHNIQUES[it.tech].desc(Math.max(1, techLv(it.tech)))}</span></p><p class="muted small">${techLv(it.tech) ? `Known: reading it gives ${FRAG_PER_DUP} fragments.` : 'Read it to learn it.'}</p>`
     : `${hdr('Can teach', `${pool.filter(techLv).length} / ${pool.length} learned`)}<ul class="srcs">${pool.map(row).join('')}</ul><p class="muted small">A random one; techniques you don't know come up 3× as often. A known one gives ${FRAG_PER_DUP} fragments.</p>`;
-  const acts = block ? [gbtn(block, 'lock', 'disabled')] : [gbtn('Read 1', 'play', `data-readscroll="${id}:1"`)].concat(n > 1 ? [gbtn(`Read all ×${fmt(n)}`, 'play', `data-readscroll="${id}:all"`, 'dark')] : []);
+  const acts = block ? [`<p class="scr-block">${ui('check')}<span>${esc(block)}</span></p>`] : [gbtn('Read 1', 'play', `data-readscroll="${id}:1"`)].concat(n > 1 ? [gbtn(`Read all ×${fmt(n)}`, 'play', `data-readscroll="${id}:all"`, 'dark')] : []);
   return { body, acts };
 }
 
