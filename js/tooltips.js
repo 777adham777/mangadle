@@ -47,7 +47,7 @@ function tipEffect(id) {
       if (typeof ARTIFACTS !== 'undefined' && ARTIFACTS[id]) text = `Restore it for the museum: ${ARTIFACTS[id].desc}.`;
       break;
     case 'scroll':
-      if (it.pool) text = `Read it to learn a random ${REALMS[it.pool] ? REALMS[it.pool].name : ''} technique.`;
+      if (it.pool) text = `Technique currency: 1 learns a ${REALMS[it.pool] ? REALMS[it.pool].name : ''} technique of your choice, more level it up.`;
       else if (TECHNIQUES[it.tech]) {
         const T = TECHNIQUES[it.tech], L = Math.max(1, (typeof techLv === 'function' && techLv(it.tech)) || 1);
         rows.push(['technique', TECH_CATS[T.cat] ? TECH_CATS[T.cat].name : 'Technique', T.name]);
@@ -123,29 +123,28 @@ function tipHTML(id, arm, stackN) {
 }
 
 // Techniques: what they do at your level, their Lv 5 / Lv 10 tiers, progress and where to get them.
-// Unknown techniques keep their secret: only their type, world and source show.
+// Techniques you have not learned show what level 1 does and what learning it costs (you choose what to buy).
 function techTipHTML(id) {
   const T = TECHNIQUES[id];
   if (!T) return '';
   const L = techLv(id), cat = TECH_CATS[T.cat], world = REALMS[T.realm];
   const cd = T.cd ? `${typeof techCd === 'function' ? techCd(id) : T.cd}s cooldown` : 'no cooldown';
-  const slot = TECH_SLOTS.find((s) => S.tech.slots[s.id] === id);
+  const j = slotOf(id), p = techPrice(id);
   const src = [[ic('realm', T.realm), `${scrollName(T.realm)} · dropped by ${world ? world.name : ''} foes`, '']];
-  for (const k in SKILLS) for (const a of SKILLS[k].actions || []) if (a.out && a.out['scroll_' + id]) src.push([ic('skill', k), `${SKILLS[k].name} · writes this scroll`, `Lv ${a.level}`]);
   const rows = L ? [
     ['star', 'Level', `${L} / ${TECH_MAX}`],
-    L < TECH_MAX ? ['frag', 'Fragments', `${techFrag(id)} / ${fragCost(id)}`] : ['star', 'Fragments', 'Mastered'],
-    ['check', 'Slot', slot ? slot.name : slotFor(id) ? 'Not equipped · a slot is free' : 'Not equipped'],
+    p ? ['technique', 'Next level', `${p.n} ${scrollName(T.realm)}${p.n > 1 ? 's' : ''}`] : ['star', 'Next level', 'Mastered'],
+    ['check', 'Slot', j >= 0 && slotOpen(j) ? `Slot ${j + 1}` : 'Not equipped'],
   ] : [];
   return `<div class="it-card tt" style="--rgc:${rc(T.realm)}"><div class="it-head">${tile(null, null, { r: L ? Math.min(5, 1 + Math.floor(L / 3)) : 0, icon: ic('technique', id), unknown: !L, cls: 's' })}
-      <div><b class="it-name">${L ? esc(T.name) : 'Unknown technique'}</b><small>${esc(cat.name)} · ${esc(world ? world.name : '')}${L ? ' · ' + cd : ''}</small></div></div>
+      <div><b class="it-name">${esc(T.name)}</b><small>${esc(cat.name)} · ${esc(world ? world.name : '')}${L ? ' · ' + cd : ''}</small></div></div>
     ${L ? `<p class="it-text">${T.desc(L)}</p>
       <ul class="it-tiers more">${TECH_TIERS.map((t) => `<li class="${L >= t ? 'got' : ''}"><em>Lv ${t}</em>${esc(T.tiers[t])}</li>`).join('')}</ul>
       <div class="it-rows more">${rows.map(([icn, l, v]) => `<div><i>${ui(icn)}</i><span>${l}</span><b>${esc(v)}</b></div>`).join('')}</div>
       ${T.tags && T.tags.length ? `<div class="it-tags more">${T.tags.map((t) => `<i>${esc(t)}</i>`).join('')}</div>` : ''}`
-    : `<p class="it-text">Not learned yet.<span class="more"> A scroll of ${esc(world ? world.name : 'its world')} teaches a random technique; unknown ones come up 3× as often.</span></p>`}
+    : `<p class="it-text">${T.desc(1)}<span class="more"> Not learned yet: 1 ${esc(scrollName(T.realm))} learns it (Techniques page).</span></p>`}
     <div class="it-src more"><small>Where to get it</small>${src.map(([i, t, v]) => `<div><i>${i}</i><span>${esc(t)}</span>${v ? `<b>${v}</b>` : ''}</div>`).join('')}</div>
-    ${L && L < TECH_MAX ? `<div class="it-foot more"><span>Each copy found gives <b>${FRAG_PER_DUP}</b> fragments</span></div>` : ''}${TIP_HINT}</div>`;
+    <div class="it-foot more"><span>You hold <b>${fmt(count(scrollOf(id)))}</b> ${esc(scrollName(T.realm))}${count(scrollOf(id)) === 1 ? '' : 's'}</span></div>${TIP_HINT}</div>`;
 }
 
 (() => {

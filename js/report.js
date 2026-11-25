@@ -50,7 +50,7 @@ EMIT_TAP = (ev, d) => {
 // skill: the trade their gift comes from (its best task you can do) · perk: what their bond raises.
 const ALLIES = {
   ren:    { skill: 'woodcutting', perk: 'speed', gift: 'logs from his own axe' },
-  kaede:  { skill: null, perk: 'dmg', gift: 'technique fragments', tech: true },
+  kaede:  { skill: null, perk: 'dmg', gift: 'Leaf Scrolls', tech: true },
   mira:   { skill: 'voyaging', perk: 'speed', gift: 'a ship\'s haul', voyage: true },
   bart:   { skill: 'cooking', perk: 'speed', gift: 'dishes from the galley' },
   kuro:   { skill: 'mining', perk: 'speed', gift: 'ore from the drowned seams' },
@@ -100,7 +100,7 @@ function allyVisit(id) {
   const res = { id, gains: {}, gold: 0, xp: 0, skill: A.skill, frag: null };
   if (A.tech) {
     const known = typeof TECHNIQUES !== 'undefined' ? Object.keys(S.tech.lv).filter((t) => TECHNIQUES[t]) : [];
-    if (known.length) { const t = pick(known); const n = 4 * mult; S.tech.frag[t] = (S.tech.frag[t] || 0) + n; res.frag = { id: t, n }; }
+    if (known.length) { const t = pick(known), k = 'scroll_shinobi', n = mult; addItem(k, n); res.frag = { id: t, n, item: k }; }
     else { res.gold = Math.round(250 * (1 + charLv() / 5)) * mult; S.gold += res.gold; }
   } else if (A.voyage) {
     const a = allyTask('voyaging');

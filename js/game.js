@@ -58,7 +58,7 @@ function defaultState() {
     asc: {},                            // world id -> chosen Ascension tier for its zones
     gear: {},
     arms: [], armSeq: 0, equipU: null,   // weapon copies and the one you wield (weapons.js)                           // equipment id -> { xp, rel, gems: [], tier } (awakening, sockets, reforge)
-    tech: { slots: {}, lv: {}, frag: {}, pity: 0 },   // techniques.js
+    tech: { loadout: [null, null, null, null, null, null], lv: {}, pity: 0, v: 2 },   // techniques.js
     ki: { form: null, stamina: 100 },
     farm: { plots: [], auto: false },
     buffs: {},                          // meal buffs: stat -> { v, t (seconds left) }
@@ -391,8 +391,9 @@ function step(dt) {
     S.stats.playtime += dt;
   } finally { IN_STEP = false; }
 }
+// Resting (offline catch-up, a hidden tab): the world runs at half pace while you are away (pace pass 3).
 function advance(seconds) {
-  let t = seconds;
+  let t = seconds * (RESTING ? REST_PACE : 1);
   while (t > 0) { const s = Math.min(1, t); step(s); t -= s; }
 }
 
@@ -558,9 +559,10 @@ function stopCombat() {
 const BOSS_RESPAWN = 12;
 // Pace pass 2 (2026-11-25): a new foe steps in after 3 s (was 1.2 s), so a night of battle is not 9,000 kills.
 const FOE_RESPAWN = 3;
-// Resting: battles simulated while the game was closed (offline catch-up) give half the Character XP.
+// Resting: while the game is closed (offline catch-up) everything runs at REST_PACE (skills, battles, ships,
+// crops): a night away is a rest, not a second day. REST_XP stays as a separate knob (1 = no extra cut).
 let RESTING = false;
-const REST_XP = 0.5;
+const REST_PACE = 0.5, REST_XP = 1;
 // Elites and mini-bosses (GDD §3): in a stage without a boss, 1 foe in 20 is an Elite (stronger, triple rewards,
 // drop chances ×3), and every 50th foe is the stage's Alpha, a mini-boss (×5 rewards, drop chances ×5).
 const RANKED = {};
@@ -876,6 +878,8 @@ function loadFrom(json) {
   if ((d.goalV || 1) < 2) { const id = OLD_GOAL_IDS[d.goal]; d.goal = id != null && GOAL_BY[id] != null ? GOAL_BY[id] : d.goal >= OLD_GOAL_IDS.length ? GOALS.length : 0; d.goalV = 2; }
   // The avatar was removed (2026-11-24): only its name (the poster's) is kept.
   if (d.avatar) { if (!d.hero && d.avatar.name) d.hero = { name: String(d.avatar.name) }; delete d.avatar; }
+  // Techniques were reworked on 2026-11-25 (scrolls buy levels, six open slots): techniques.js converts the save.
+  if (d.tech && (d.tech.v || 1) < 2 && typeof techMigrateSave === 'function') techMigrateSave(d);
   S = mergeDefaults(d, defaultState());
   sanitize();
 }

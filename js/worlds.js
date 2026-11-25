@@ -29,13 +29,14 @@ function addWorld(def) {
 // with levels that cost 7% more each, the late guardians were 5× to 1000× out of reach. Each world's foes now
 // get BAL[world]: their attack and HP are divided by √BAL so the guardian falls around its day of the week.
 // XP_SCALE sets how fast the Character level climbs in each world (halved in the pace pass of 2026-11-24,
-// then on 2026-11-25 ×0.6 in Leaf Village and ×0.4 after it: one night of battle took the bot from level 43 to 67).
+// then on 2026-11-25 ×0.6 in Leaf Village and ×0.4 after it: one night of battle took the bot from level 43 to 67;
+// pace pass 3, same day: 0.05 after the Leaf Village, the mid game was still too generous).
 const BAL = { shinobi: 0.67, seas: 1.6, soul: 3, ki: 13, hex: 100, hunter: 120, echo: 800, rift: 600 };
 const ZONE_BAL = { fox: 0.7, admiral: 0.8, unbound: 1.9, mist: 81, ravine: 81, shoals: 81, reef: 81, storm: 81, districts: 81, desert: 81, spire: 62.4, plains: 81, canyon: 71.7, citadel: 66.3, alleys: 58.8, shrine: 75, veil: 73.8, thicket: 15.6, cliffs: 47.7, ruins: 58.2, plaza: 31.8, museum: 64.2, pillars: 75.9 };
 const ATK_SCALE = { hex: 4.5, hunter: 9, echo: 30, rift: 30 };
 const HP_SCALE = {};
 for (const r in BAL) { ATK_SCALE[r] = (ATK_SCALE[r] || 1) / Math.sqrt(BAL[r]); HP_SCALE[r] = 1 / Math.sqrt(BAL[r]); }
-const XP_SCALE = { shinobi: 0.054, seas: 0.07, soul: 0.07, ki: 0.07, hex: 0.07, hunter: 0.07, echo: 0.07, rift: 0.07 };
+const XP_SCALE = { shinobi: 0.054, seas: 0.05, soul: 0.05, ki: 0.05, hex: 0.05, hunter: 0.05, echo: 0.05, rift: 0.05 };
 function finalizeWorlds() {
   UNLOCKS.push(...UNLOCK_TAIL);
   for (const z of ZONES) for (const e of z.enemies) {
@@ -148,21 +149,12 @@ const TECHNIQUES = {
 // Technique pools: which world's scroll teaches what. Each world adds its own as it is reworked.
 const TECH_POOLS = {};
 for (const id in TECHNIQUES) (TECH_POOLS[TECHNIQUES[id].realm] = TECH_POOLS[TECHNIQUES[id].realm] || []).push(id);
-// A world's scroll drops from its foes and is read at once: a random technique of that world
-// (unknown ones 3× as likely). A duplicate becomes fragments of that technique.
+// A world's scroll drops from its foes and waits in the Bank: it is that world's technique currency
+// (learn a technique, then level it up). techniques.js.
 const SCROLL_NAME = { shinobi: 'Leaf Scroll', seas: 'Sea Scroll', soul: 'Soul Scroll', ki: 'Ki Scroll', hex: 'Cursed Scroll', hunter: 'Hunter Scroll' };
-for (const r in TECH_POOLS) defItem('scroll_' + r, SCROLL_NAME[r] || `${REALMS[r].name} Scroll`, '📜', 40, { type: 'scroll', pool: r });
-// Crafted scrolls teach one chosen technique (the deterministic way to target it).
-for (const id in TECHNIQUES) defItem('scroll_' + id, 'Scroll: ' + TECHNIQUES[id].name, '📜', 50, { type: 'scroll', tech: id });
-SKILLS.arts.actions.push(
-  craft('scroll_shadow_strike', 8, 5, { chakra_shard: 8, healing_leaf: 6 }),
-  craft('scroll_healing_palm', 14, 5, { healing_leaf: 12, chakra_orb: 3 }),
-  craft('scroll_kunai_volley', 18, 5, { cedar_log: 10, chakra_orb: 4 }),
-  craft('scroll_mist_step', 20, 6, { mist_steel: 3, chakra_orb: 5 }),
-  craft('scroll_iron_skin', 28, 6, { beast_fang: 2, storm_chakra: 4, cloud_fern: 6 }),
-  craft('scroll_sealing_mark', 36, 7, { storm_chakra: 6, shadowroot: 6, jade: 1 }),
-  craft('scroll_fire_lotus', 50, 8, { beast_ember: 4, nature_essence: 4, ashen_tail: 1 }),
-);
+for (const r in TECH_POOLS) defItem('scroll_' + r, SCROLL_NAME[r] || `${REALMS[r].name} Scroll`, '📜', 40, { type: 'scroll', pool: r, desc: 'Technique currency: spend it on the Techniques page to learn or level up a technique of its world.' });
+// Crafting copies a Leaf Scroll from forest materials: a steady way to the next Leaf technique level.
+SKILLS.arts.actions.push(craft('scroll_shinobi', 10, 6, { chakra_shard: 8, healing_leaf: 6, chakra_orb: 2 }));
 SKILLS.arts.actions.sort((a, b) => a.level - b.level);
 
 /* ========================================== SOUL: awakening, gems, reforge */
@@ -280,7 +272,8 @@ const EXTRA_USES = [];
   SKILLS.arts.actions.push(...tinker);
   SKILLS.arts.actions.sort((a, b) => a.level - b.level);
   for (const s of ['gravity', 'farming']) { RARE_FINDS[s] = []; }
-  RARE_FINDS.woodcutting.push(['seed_vital_bean', 1 / 60], ['seed_sun_wheat', 1 / 120], ['seed_moon_rice', 1 / 250], ['seed_fire_pepper', 1 / 500]);
+  // Seeds are Kaio Planet's (Farming): Gravity Training turns them up, never the Leaf Village forest (world lock, loot.js).
+  RARE_FINDS.gravity.push(['seed_vital_bean', 1 / 60], ['seed_sun_wheat', 1 / 120], ['seed_moon_rice', 1 / 250], ['seed_fire_pepper', 1 / 500]);
   RARE_FINDS.gravity.push(['seed_frost_melon', 1 / 400], ['seed_thunder_root', 1 / 700], ['seed_star_fruit', 1 / 1200]);
   SHOP.push(
     { id: 'buy_beans', cat: 'Supplies', realm: 'ki', name: '5× Senzu Bean Seed', icon: '🌱', desc: 'Starter seeds for your first plots.', cost: 400, give: ['seed_vital_bean', 5] },
@@ -332,7 +325,7 @@ const EXTRA_USES = [];
 
 /* ====================================================== WORLD 5: HEXBOUND CITY */
 // Cursed Research studies curses from every world: cursed essence, that world's materials and Cursed
-// Fragments that level any technique. Shinjuku's scrolls teach Domain Expansions (Ultimate techniques).
+// Cursed Fragments stand in for a missing technique scroll of any world. Shinjuku's scrolls buy Domain Expansions (Ultimate techniques).
 // Binding Vows (systems.js): self-imposed restrictions for big bonuses.
 (() => {
   const h = (id, name, v) => defItem(id, name, '🕯️', v);

@@ -4,7 +4,7 @@
    While you play (page visible, you acted in the last 2 minutes, something runs), now and
    then something from the current world shows up for 30 seconds (omens-ui.js spawns it).
    One click takes it; missed, nothing is lost. Never offline. Each world's is its own:
-     Leaf Village · a messenger toad: 3 fragments for a technique you know
+     Leaf Village · a messenger toad: a Leaf Scroll (once techniques are open)
      Orange Town  · a message in a bottle: your ships at sea sail 10 minutes ahead
      Soul City    · a hell butterfly: 60 s of double yield (skills) and double gold (battle)
      Kaio Planet  · a shooting star: 60 s of double skill speed and +50% attack speed
@@ -49,8 +49,7 @@ function omenGrant(r) {
   const res = { items: {}, gold: 0, text: '' };
   const gold = () => { res.gold = omenGold(); S.gold += res.gold; };
   if (r === 'shinobi') {
-    const known = Object.keys(S.tech.lv).filter((t) => TECHNIQUES[t]);
-    if (known.length) { const t = pick(known); S.tech.frag[t] = (S.tech.frag[t] || 0) + 3; res.text = `+3 ${TECHNIQUES[t].name} fragments`; }
+    if (techOn()) { addItem('scroll_shinobi', 1); res.items.scroll_shinobi = 1; res.text = `+1 ${ITEMS.scroll_shinobi.name}`; }
     else { gold(); res.text = `The toad leaves you ${fmt(res.gold)} gold`; }
   } else if (r === 'seas') {
     const sea = S.exped.ships.filter((sh) => sh.left > 0);

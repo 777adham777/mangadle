@@ -1,157 +1,166 @@
 'use strict';
 /* ==========================================================================
-   TRI-REALM — techniques interface: typed slots on the Battlefield, and the
-   Techniques page (collection, fragments, level-ups, tiers). Engine: techniques.js.
-   Scrolls wait in the Bank until you read them (2026-11-25): the Techniques page has a
-   shelf of unread scrolls, the Bank inspector and the battle dock have a Read button,
-   and reading opens a window with what you learned.
+   TRI-REALM — techniques interface (reworked 2026-11-25). Engine: techniques.js.
+   The page reads left to right:
+   - left: your Loadout (six numbered slots, the firing order; pick a slot, move, remove),
+     then your scrolls per world (the currency) and how it works in three lines;
+   - right: the technique book, one tab per world: each technique with its level, what it does,
+     its next tier, one "Learn / Level up" button priced in scrolls and one "Equip in slot N".
+   The Battlefield's Techniques tab shows the loadout with cooldowns; the Bank inspector explains a scroll.
    ========================================================================== */
 
 VIEW_FEATURE.techniques = 'techniques';
 UIX.quick.push(() => (techOn() ? [['techniques', 'technique', 'Techniques']] : []));
 const catIc = (cat) => ui(TECH_CATS[cat].icon);
-const tagList = (id) => TECHNIQUES[id].tags.map((t) => `<i class="ttag">${t}</i>`).join('');
 const scrollName = (r) => SCROLL_NAME[r] || `${REALMS[r].name} Scroll`;
+const techWorlds = () => WORLD_ORDER.filter((r) => TECH_POOLS[r] && realmOpen(r));
 
-// One slot: what sits there, its cooldown, and a picker limited to its category.
-function techSlotHTML(sl) {
-  if (!sl.open()) return `<div class="tslot locked">${catIc(sl.cat)}<span><b>${sl.name}</b> · ${sl.hint}</span></div>`;
-  const cur = S.tech.slots[sl.id], pool = Object.keys(TECHNIQUES).filter((id) => techLv(id) && TECHNIQUES[id].cat === sl.cat);
-  return `<div class="tslot ${cur ? 'on' : ''}" data-cat="${sl.cat}"><span class="ts-ic"${cur ? ` data-ttip="${cur}"` : ''}>${cur ? ic('technique', cur) : catIc(sl.cat)}</span>
-    <select data-techslot="${sl.id}"><option value="">${sl.name} · ${pool.length ? 'empty' : 'no technique yet'}</option>${pool.map((id) => `<option value="${id}" ${cur === id ? 'selected' : ''}>${TECHNIQUES[id].name} · Lv ${techLv(id)}</option>`).join('')}</select>
-    ${cur ? `<small>${TECHNIQUES[cur].desc(techLv(cur))}${TECHNIQUES[cur].cd ? ` · ${techCd(cur)}s` : ''}</small>${TECHNIQUES[cur].cd ? `<span class="tcd"><i data-techcd="${cur}"></i></span>` : ''}` : ''}</div>`;
+// The slot an Equip button fills: the one you picked, else the first free one, else the last open one.
+function tkTarget() {
+  const sel = S.ui.tkSlot;
+  if (sel != null && slotOpen(sel)) return sel;
+  const f = freeSlot();
+  if (f) return f.i;
+  const open = openSlots();
+  return open.length ? open[open.length - 1].i : 0;
 }
-// On the Battlefield: the open slots, plus the next one to open.
-UIX.battleSide.push(() => {
-  if (!techOn()) return '';
-  const nextLocked = TECH_SLOTS.find((x) => !x.open());
-  return `<section class="win techs">${hdr('Techniques', 'fire on their own when ready')}
-    <div class="tslots">${TECH_SLOTS.filter((s) => s.open() || s === nextLocked).map(techSlotHTML).join('')}</div>
-    ${gbtn('All techniques', 'technique', 'data-nav="techniques"', 'dark sm')}</section>`;
-});
+// The book's tab: the one you picked, else the newest world that has something to buy, else the first.
+function tkWorld() {
+  const ws = techWorlds();
+  if (S.ui.tkWorld && ws.includes(S.ui.tkWorld)) return S.ui.tkWorld;
+  return ws.slice().reverse().find((r) => TECH_POOLS[r].some((id) => count(scrollOf(id)) && techCanUp(id))) || ws[0];
+}
+const worldReady = (r) => TECH_POOLS[r].filter((id) => count('scroll_' + r) > 0 && techCanUp(id)).length;
+// Cost as icons: 2 × Leaf Scroll (+ 3 × Cursed Fragment).
+function tkPriceHTML(id) {
+  const p = techPrice(id);
+  if (!p) return '';
+  const sc = `<span class="tk-cost">${itemIc(scrollOf(id))}<b>${p.n}</b></span>`;
+  if (!p.cursed) return sc;
+  return `<span class="tk-cost">${itemIc(scrollOf(id))}<b>${p.scrolls}</b></span><span class="tk-cost">${itemIc('cursed_fragment')}<b>${p.cursed}</b></span>`;
+}
 
-function techCardHTML(id) {
-  const T = TECHNIQUES[id], L = techLv(id);
-  if (!L) return `<div class="tcard unknown"><span class="tc-ic" data-ttip="${id}">${ui('lock')}</span><div class="tc-main"><b>???</b><small>${TECH_CATS[T.cat].name} · ${esc(scrollName(T.realm))}</small></div></div>`;
-  const c = fragCost(id), f = techFrag(id), eqd = isEquipped(id);
-  const tiers = TECH_TIERS.map((t) => `<li class="${L >= t ? 'got' : ''}"><em>Lv ${t}</em>${T.tiers[t]}</li>`).join('');
-  return `<div class="tcard ${eqd ? 'eq' : ''}" style="--rc:${rc(T.realm)}">
-    <span class="tc-ic">${ic('technique', id)}</span>
-    <div class="tc-main"><b>${T.name}</b><small>${catIc(T.cat)}${TECH_CATS[T.cat].name}${T.cd ? ` · ${T.cd}s` : ''} ${tagList(id)}</small></div>
-    <span class="tc-lv"><small>Lv</small>${L}<small>/${TECH_MAX}</small></span>
-    <p class="tc-desc">${T.desc(L)}</p>
-    <ul class="tc-tiers">${tiers}</ul>
-    <div class="tc-foot">${L < TECH_MAX
-      ? `<span class="tc-frag">${ui('frag')}<b>${f}</b>/${c} fragments</span>${f < c && count('cursed_fragment') ? gbtn(`Cursed ×${Math.min(c - f, count('cursed_fragment'))}`, 'frag', `data-infuse="${id}"`, 'dark sm') : ''}${gbtn(`Level ${L + 1}`, 'plus', `data-techup="${id}" ${f < c ? 'disabled' : ''}`, 'sm')}`
-      : `<span class="tc-frag">${ui('star')}Mastered</span>`}
-      ${eqd ? `<span class="pill">${ui('check')}Equipped</span>` : slotFor(id) ? gbtn('Equip', 'play', `data-techeq="${id}"`, 'dark sm') : ''}</div>
-  </div>`;
+/* ------------------------------------------------------------ the loadout */
+function tkSlotHTML(sl, opts) {
+  const o = opts || {}, n = `<span class="tk-n">${sl.i + 1}</span>`;
+  if (!sl.open()) return `<li class="tk-slot locked">${n}<span class="tk-lock">${ui('lock')}<span>Opens at <b>${esc(sl.hint)}</b></span></span></li>`;
+  const id = loadout()[sl.i], sel = !o.compact && tkTarget() === sl.i;
+  if (!id || !techLv(id)) {
+    return `<li class="tk-slot empty ${sel ? 'sel' : ''}" ${o.compact ? '' : `data-tkslot="${sl.i}"`}>${n}<span class="tk-empty">${o.compact ? 'Empty slot' : sel ? 'Empty · the next technique you equip goes here' : 'Empty'}</span></li>`;
+  }
+  const T = TECHNIQUES[id], L = techLv(id), last = sl.i === Math.max(...openSlots().map((s) => s.i));
+  const ctl = o.compact ? '' : `<span class="tk-ctl">
+      <button class="tk-mini" data-tkmove="${sl.i}:-1" title="Fire earlier" ${sl.i === 0 ? 'disabled' : ''}>▲</button>
+      <button class="tk-mini dn" data-tkmove="${sl.i}:1" title="Fire later" ${last ? 'disabled' : ''}>▼</button>
+      <button class="tk-mini x" data-tkoff="${id}" title="Remove from the slot">✕</button></span>`;
+  return `<li class="tk-slot on ${sel ? 'sel' : ''}" ${o.compact ? '' : `data-tkslot="${sl.i}"`} style="--rc:${rc(T.realm)}">${n}
+    <span class="tk-ic">${ic('technique', id)}</span>
+    <span class="tk-t"><b>${esc(T.name)}</b><small>Lv ${L} · ${TECH_CATS[T.cat].name}${T.cd ? ` · every ${techCd(id)}s` : ' · always on'}</small></span>${ctl}
+    ${T.cd && o.compact ? `<span class="tk-cdbar"><i data-techcd="${id}"></i></span>` : ''}</li>`;
 }
-/* ------------------------------------------------------------ reading scrolls */
-// What a stack can teach: its world's pool, or its one technique.
-const scrollPool = (id) => (ITEMS[id].tech ? [ITEMS[id].tech] : TECH_POOLS[ITEMS[id].pool] || []);
-// The window after reading: new techniques as big cards first, then fragments per technique.
-function scrollResultHTML(list) {
-  const all = list.flatMap((r) => r.res), n = all.length;
-  if (!n) return '';
-  const fresh = all.filter((r) => r.fresh), frag = {};
-  for (const r of all) if (!r.fresh) frag[r.id] = (frag[r.id] || 0) + r.frag;
-  const slotOf = (id) => TECH_SLOTS.find((s) => S.tech.slots[s.id] === id);
-  const newCard = (r, i) => {
-    const T = TECHNIQUES[r.id], sl = slotOf(r.id), open = TECH_SLOTS.find((s) => s.cat === T.cat && s.open());
-    const where = sl ? `<span class="scr-eq on">${ui('check')}Equipped · ${esc(sl.name)}</span>`
-      : open ? `<span class="scr-eq">${ui('info')}${esc(open.name)} is taken: swap it on the Techniques page</span>`
-      : `<span class="scr-eq">${ui('lock')}No ${esc(TECH_CATS[T.cat].name)} slot open yet</span>`;
-    return `<div class="scr-new pop-in" style="--rc:${rc(T.realm)}">
-      <span class="scr-ic">${ic('technique', r.id)}</span>
-      <div class="scr-t"><small>${catIc(T.cat)}${TECH_CATS[T.cat].name} · ${esc(REALMS[T.realm].name)}${T.cd ? ` · every ${T.cd}s` : ''}</small><b>${esc(T.name)}</b>
-        <p>${T.desc(1)}</p>${where}</div></div>`;
-  };
-  const dupRow = (id) => {
-    const T = TECHNIQUES[id], L = techLv(id), c = fragCost(id), f = techFrag(id), ready = L < TECH_MAX && f >= c;
-    return `<li class="pop-in">${ic('technique', id)}<span><b>${esc(T.name)}</b><small>Lv ${L}${L < TECH_MAX ? ` · ${f} / ${c} fragments` : ' · mastered'}</small></span>
-      <em>+${frag[id]}</em>${ready ? `<i class="scr-ready">${ui('plus')}Level ${L + 1} ready</i>` : ''}</li>`;
-  };
-  const src = list.length === 1 ? ITEMS[list[0].id] : null;
-  const title = fresh.length ? (fresh.length > 1 ? `${fresh.length} new techniques` : 'New technique') : 'Fragments';
-  return `<div class="scr-res ${fresh.length > 2 ? 'many' : ''}">
-    <div class="scr-head"><span class="scr-seal">${src ? itemIc(list[0].id) : ui('technique')}</span>
-      <div><small>${n > 1 ? `${n} scrolls unsealed` : `${esc(src ? src.name : 'Scroll')} unsealed`}</small><h2>${title}</h2></div></div>
-    ${fresh.map(newCard).join('')}
-    ${Object.keys(frag).length ? `<ul class="scr-dups">${Object.keys(frag).map(dupRow).join('')}</ul>` : ''}
-    <div class="scr-cta">${gbtn('Techniques', 'technique', 'data-realmgo="techniques"', 'dark sm')}</div></div>`;
+function tkLoadoutHTML() {
+  const open = openSlots().length;
+  return `<section class="win tk-load">${hdr('Loadout', `${open} / ${TECH_SLOTS.length} slots open · they fire in this order`)}
+    <ol class="tk-slots">${TECH_SLOTS.map((s) => tkSlotHTML(s)).join('')}</ol>
+    <p class="tk-hint">${ui('info')}<span>Click a slot to choose where <b>Equip</b> puts a technique. Defensive ones wait until you are hurt; passives are always on.</span></p></section>`;
 }
-function readFlow(id, n) {
-  const list = id === '*' ? readAllScrolls() : [readScrolls(id, n)].filter(Boolean);
-  if (!list.length) { toast((id !== '*' && scrollBlock(id)) || 'No scroll to read.', 'bad'); return; }
-  openModal(scrollResultHTML(list), 'Continue');
-  if (typeof selItem !== 'undefined' && id !== '*' && !count(id)) selItem = null;
-  sideDirty = true;
-  dirty = true;
+function tkWalletHTML() {
+  const rows = techWorlds().map((r) => {
+    const k = 'scroll_' + r, n = count(k), ready = worldReady(r);
+    return `<button class="tk-coin ${n ? '' : 'none'}" data-tkworld="${r}" style="--rc:${rc(r)}">${tile(k, fmt(n), { cls: 'xs' })}<span><b>${esc(scrollName(r))}</b><small>${ready ? `${ready} technique${ready > 1 ? 's' : ''} ready to buy` : `${esc(REALMS[r].name)} foes drop it`}</small></span></button>`;
+  });
+  if (count('cursed_fragment')) rows.push(`<div class="tk-coin">${tile('cursed_fragment', fmt(count('cursed_fragment')), { cls: 'xs' })}<span><b>Cursed Fragments</b><small>${CURSED_PER_SCROLL} replace a missing scroll of any world</small></span></div>`);
+  return `<section class="win tk-wallet">${hdr('Your scrolls', 'the technique currency')}
+    <div class="tk-coins">${rows.join('')}</div>
+    <ul class="tk-how">
+      <li>${ui('battle')}<span>Every foe can drop its world's scroll; guardians often do.</span></li>
+      <li>${ui('technique')}<span><b>1 scroll</b> learns a technique of that world. Each level costs more (up to ${TECH_COST[TECH_MAX - 1]}).</span></li>
+      <li>${ui('star')}<span>Levels <b>5</b> and <b>10</b> change how a technique works.</span></li>
+    </ul></section>`;
 }
-// A shelf card: one stack, what it can teach, Read / Read all.
-function scrollShelfCard(id) {
-  const it = ITEMS[id], n = count(id), pool = scrollPool(id), known = pool.filter(techLv).length, block = scrollBlock(id);
-  const what = it.tech ? (techLv(it.tech) ? `${TECHNIQUES[it.tech].name} · Lv ${techLv(it.tech)}: +${FRAG_PER_DUP} fragments` : `Teaches ${TECHNIQUES[it.tech].name}`)
-    : `${known} / ${pool.length} learned · ${known < pool.length ? 'new ones 3× as likely' : 'duplicates give fragments'}`;
-  return `<div class="scr-card ${block ? 'off' : ''}">${tile(id, '×' + fmt(n))}<span class="scr-ct"><b>${esc(it.name)}</b><small>${esc(block || what)}</small></span>
-    <span class="scr-cb">${gbtn('Read', 'play', `data-readscroll="${id}:1" ${block ? 'disabled' : ''}`, 'sm')}${n > 1 ? gbtn(`All ×${fmt(n)}`, '', `data-readscroll="${id}:all" ${block ? 'disabled' : ''}`, 'dark sm') : ''}</span></div>`;
+
+/* ------------------------------------------------------------ the book */
+function tkPips(L) {
+  let s = '';
+  for (let i = 1; i <= TECH_MAX; i++) s += `<i class="${i <= L ? 'on' : ''} ${TECH_TIERS.includes(i) ? 'tier' : ''}"></i>`;
+  return `<span class="tk-pips" title="Level ${L} / ${TECH_MAX}">${s}</span>`;
 }
-function scrollShelfHTML() {
-  const ids = scrollIds().sort((a, b) => (ITEMS[a].tech ? 1 : 0) - (ITEMS[b].tech ? 1 : 0) || count(b) - count(a));
-  if (!ids.length) return '';
-  const n = scrollsOwned();
-  return `<section class="win scr-shelf">${hdr('Scrolls to read', `${fmt(n)} in your Bank`)}
-    <div class="scr-cards">${ids.map(scrollShelfCard).join('')}</div>
-    ${ids.length > 1 ? `<div class="scr-all">${gbtn(`Read every scroll ×${fmt(n)}`, 'play', 'data-readscroll="*"', 'sm')}</div>` : ''}</section>`;
+function tkRowHTML(id) {
+  const T = TECHNIQUES[id], L = techLv(id), eq = isEquipped(id), p = techPrice(id), tgt = tkTarget();
+  const nextTier = TECH_TIERS.find((t) => t > L);
+  const buy = !p ? `<span class="tk-max">${ui('star')}Mastered</span>`
+    : `<button class="tk-buy ${p.ok ? '' : 'short'}" data-tkup="${id}" ${p.ok ? '' : 'disabled'} title="${p.ok ? '' : `You need ${p.n} ${esc(scrollName(T.realm))}${p.n > 1 ? 's' : ''}`}">
+        <span>${L ? `Level ${L + 1}` : 'Learn'}</span>${tkPriceHTML(id)}</button>`;
+  const slotBtn = !L ? '' : eq
+    ? `<button class="tk-eq on" data-tkoff="${id}" title="Remove it from slot ${slotOf(id) + 1}">${ui('check')}<span>Slot ${slotOf(id) + 1}</span></button>`
+    : `<button class="tk-eq" data-tkeq="${id}" title="Put it in slot ${tgt + 1}${loadout()[tgt] && techLv(loadout()[tgt]) ? ` (replaces ${esc(TECHNIQUES[loadout()[tgt]].name)})` : ''}">${ui('play')}<span>Equip · slot ${tgt + 1}</span></button>`;
+  return `<div class="tk-row ${L ? '' : 'unk'} ${eq ? 'eq' : ''}" style="--rc:${rc(T.realm)}">
+    <span class="tk-big">${ic('technique', id)}</span>
+    <div class="tk-main">
+      <div class="tk-top"><b>${esc(T.name)}</b><span class="tk-cat c-${T.cat}">${catIc(T.cat)}${TECH_CATS[T.cat].name}</span>${T.cd ? `<span class="tk-cd">${ui('spd')}${techCd(id)}s</span>` : ''}</div>
+      <p class="tk-desc">${T.desc(Math.max(1, L))}</p>
+      <div class="tk-meta">${tkPips(L)}<span class="tk-lv">${L ? `Lv <b>${L}</b>/${TECH_MAX}` : 'Not learned'}</span>
+        ${nextTier ? `<span class="tk-next"><em>Lv ${nextTier}</em>${esc(T.tiers[nextTier])}</span>` : `<span class="tk-next done"><em>Lv 10</em>${esc(T.tiers[10])}</span>`}</div>
+      <small class="tk-when">${esc(TECH_CATS[T.cat].how)}</small>
+    </div>
+    <div class="tk-act">${buy}${slotBtn}</div></div>`;
 }
-// The Bank inspector for a scroll: what it can teach, then Read.
-function scrollInspect(id) {
-  const it = ITEMS[id], n = count(id), pool = scrollPool(id), block = scrollBlock(id);
-  const row = (t) => `<li><span><i>${techLv(t) ? ic('technique', t) : ui('lock')}</i>${techLv(t) ? esc(TECHNIQUES[t].name) : '???'}</span><b>${techLv(t) ? `Lv ${techLv(t)}` : TECH_CATS[TECHNIQUES[t].cat].name}</b></li>`;
-  const body = it.tech
-    ? `${hdr('Teaches')}<p class="scr-one">${ic('technique', it.tech)}<span><b>${esc(TECHNIQUES[it.tech].name)}</b> · ${TECHNIQUES[it.tech].desc(Math.max(1, techLv(it.tech)))}</span></p><p class="muted small">${techLv(it.tech) ? `Known: reading it gives ${FRAG_PER_DUP} fragments.` : 'Read it to learn it.'}</p>`
-    : `${hdr('Can teach', `${pool.filter(techLv).length} / ${pool.length} learned`)}<ul class="srcs">${pool.map(row).join('')}</ul><p class="muted small">A random one; techniques you don't know come up 3× as often. A known one gives ${FRAG_PER_DUP} fragments.</p>`;
-  const acts = block ? [`<p class="scr-block">${ui('check')}<span>${esc(block)}</span></p>`] : [gbtn('Read 1', 'play', `data-readscroll="${id}:1"`)].concat(n > 1 ? [gbtn(`Read all ×${fmt(n)}`, 'play', `data-readscroll="${id}:all"`, 'dark')] : []);
-  return { body, acts };
+function tkBookHTML() {
+  const ws = techWorlds(), w = tkWorld();
+  if (!w) return '';
+  const tabs = ws.map((r) => { const n = worldReady(r); return `<button class="tk-tab ${r === w ? 'on' : ''}" data-tkworld="${r}" style="--rc:${rc(r)}">${ic('realm', r)}<span>${esc(REALMS[r].name)}</span>${n ? `<em>${n}</em>` : ''}</button>`; }).join('');
+  const pool = TECH_POOLS[w], known = pool.filter(techLv).length;
+  return `<section class="win tk-book" style="--rc:${rc(w)}">
+    <div class="tk-tabs">${tabs}</div>
+    <div class="tk-bookhead"><span>${tile('scroll_' + w, fmt(count('scroll_' + w)), { cls: 'xs' })}<b>${esc(REALMS[w].name)}</b> techniques</span><small>${known} / ${pool.length} learned</small></div>
+    <div class="tk-list">${pool.map(tkRowHTML).join('')}</div></section>`;
 }
 
 VIEWS.techniques = () => {
   const ids = Object.keys(TECHNIQUES), known = ids.filter(techLv).length;
-  const byWorld = WORLD_ORDER.filter((r) => TECH_POOLS[r] && realmOpen(r)).map((r) => `
-    <section class="win" style="--rc:${rc(r)}">${hdr(`${REALMS[r].name} · ${esc(scrollName(r))}`, `${TECH_POOLS[r].filter(techLv).length} / ${TECH_POOLS[r].length} learned`)}
-      <div class="tcards">${TECH_POOLS[r].map(techCardHTML).join('')}</div></section>`).join('');
   return `${ptitle('Your build', 'Techniques', `<span class="pill">${known} / ${ids.length} learned</span>`)}
-  ${fitCols('tq-board', `${introCardHTML('feature:techniques')}${scrollShelfHTML()}
-  <section class="win">${hdr('Slots', 'one technique per slot, matched by type · they fire in this order')}
-    <div class="tslots wide">${TECH_SLOTS.map(techSlotHTML).join('')}</div></section>
-  <p class="muted small tc-help">Every foe drops its world's scroll now and then (bosses often); it waits in your Bank until you read it. A scroll teaches a random technique of that world; unknown ones come up 3× as often.
-  A technique you already know gives <b>${FRAG_PER_DUP} fragments</b> instead, and fragments level it up. Levels 5 and 10 change how it works.
-  Crafting can also write the scroll of one chosen technique, and Cursed Fragments from Cursed Research count for any technique.</p>`, byWorld)}`;
+  ${fitCols('tq-board tk-page', `${introCardHTML('feature:techniques')}${tkLoadoutHTML()}${tkWalletHTML()}`, tkBookHTML())}`;
 };
+
+/* ------------------------------------------------------------ the Battlefield tab */
+UIX.battleSide.push(() => {
+  if (!techOn()) return '';
+  const nextLocked = TECH_SLOTS.find((x) => !x.open());
+  const n = techReady();
+  return `<section class="win techs">${hdr('Techniques', 'fire on their own, in this order')}
+    <ol class="tk-slots compact">${TECH_SLOTS.filter((s) => s.open() || s === nextLocked).map((s) => tkSlotHTML(s, { compact: true })).join('')}</ol>
+    ${gbtn(n ? `Techniques · ${n} ready to buy` : 'Manage techniques', 'technique', 'data-nav="techniques"', (n ? '' : 'dark ') + 'sm')}</section>`;
+});
+
+/* ------------------------------------------------------------ the Bank inspector */
+const scrollPool = (id) => TECH_POOLS[ITEMS[id].pool] || [];
+function scrollInspect(id) {
+  const it = ITEMS[id], r = it.pool, pool = scrollPool(id);
+  const row = (t) => { const L = techLv(t), p = techPrice(t);
+    return `<li><span><i>${ic('technique', t)}</i>${esc(TECHNIQUES[t].name)}</span><b>${L ? `Lv ${L}` : 'Not learned'}${p ? ` · next ${p.n}` : ' · max'}</b></li>`; };
+  const body = `${hdr('Technique currency', REALMS[r] ? REALMS[r].name : '')}<p class="muted small">Spend it on the Techniques page: 1 scroll learns a ${esc(REALMS[r] ? REALMS[r].name : '')} technique, more scrolls level it up.</p>
+    <ul class="srcs">${pool.map(row).join('')}</ul>`;
+  return { body, acts: [gbtn('Spend on Techniques', 'technique', 'data-nav="techniques"')] };
+}
 
 UIX.actLines.push((skill, a) => {
   const it = a.out && ITEMS[Object.keys(a.out)[0]];
-  if (!it || it.type !== 'scroll' || !it.tech) return '';
-  const L = techLv(it.tech), T = TECHNIQUES[it.tech];
-  return `<div class="ac-note tech-note"><span>${ic('technique', it.tech)}${L ? `Lv ${L}/${TECH_MAX} · gives ${FRAG_PER_DUP} fragments` : 'Not learned yet'}</span><span class="muted">${T.desc(Math.max(1, L))}</span></div>`;
+  if (!it || it.type !== 'scroll' || !it.pool) return '';
+  return `<div class="ac-note tech-note"><span>${ui('technique')}Technique currency: ${fmt(count('scroll_' + it.pool))} owned</span><span class="muted">Spend it on the Techniques page.</span></div>`;
 });
 
+/* ------------------------------------------------------------ live */
 UPD.push(() => {
   for (const el of $$('[data-techcd]')) {
     const id = el.dataset.techcd, left = Math.max(0, RT.cd[id] || 0);
     el.style.width = (100 * (1 - left / techCd(id))) + '%';
   }
 });
-// Reading opens its own window (readFlow); anything learned another way still says so.
 on('technique', (d) => {
-  if (d.source === 'read') return;
-  const T = TECHNIQUES[d.id];
-  if (d.fresh) burst('New technique', `${T.name} · ${TECH_CATS[T.cat].name}`, ic('technique', d.id), rc(T.realm));
-  else toast(`${T.name}: +${d.frag} fragments`, 'good');
+  const T = TECHNIQUES[d.id], j = slotOf(d.id);
+  if (d.fresh) burst('New technique', `${T.name} · ${j >= 0 ? `in slot ${j + 1}` : 'equip it in a slot'}`, ic('technique', d.id), rc(T.realm));
 });
-// Your first scroll: one line in the feed, pointing at where to read it.
-on('firstscroll', (sid) => { toast(`${ITEMS[sid].name} found: read it on the Techniques page`, 'rare'); sideDirty = true; });
+on('firstscroll', (sid) => { toast(`${ITEMS[sid].name} found: spend it on the Techniques page`, 'rare'); sideDirty = true; });
 on('techup', (d) => {
   const T = TECHNIQUES[d.id];
   if (TECH_TIERS.includes(d.lv)) burst(`${T.name} · Lv ${d.lv}`, T.tiers[d.lv], ic('technique', d.id), rc(T.realm));
@@ -164,22 +173,21 @@ on('tech', (d) => {
 });
 
 document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('button');
+  const t = ev.target.closest('button, [data-tkslot]');
   if (!t || t.disabled) return;
-  if (t.dataset.readscroll) { const [id, n] = t.dataset.readscroll.split(':'); readFlow(id, n === 'all' ? 'all' : +n || 1); }
-  else if (t.dataset.techup) upgradeTech(t.dataset.techup);
-  else if (t.dataset.infuse) infuseTech(t.dataset.infuse);
-  else if (t.dataset.techeq) { const sl = slotFor(t.dataset.techeq); if (sl) equipTech(sl.id, t.dataset.techeq); }
+  const D = t.dataset;
+  if (D.tkup) { techUp(D.tkup); dirty = true; sideDirty = true; }
+  else if (D.tkeq) { const i = tkTarget(); if (equipTech(i, D.tkeq)) S.ui.tkSlot = null; dirty = true; }
+  else if (D.tkoff) { unequipTech(D.tkoff); dirty = true; }
+  else if (D.tkmove) { ev.stopPropagation(); const [i, d] = D.tkmove.split(':').map(Number); if (moveTech(i, d)) S.ui.tkSlot = i + d; dirty = true; }
+  else if (D.tkworld) { S.ui.tkWorld = D.tkworld; if (S.ui.view !== 'techniques') setView('techniques'); dirty = true; }
+  else if (D.tkslot != null && !ev.target.closest('button')) { const i = +D.tkslot; S.ui.tkSlot = S.ui.tkSlot === i ? null : i; dirty = true; }
 });
-document.addEventListener('change', (ev) => {
-  const d = ev.target.dataset;
-  if (d.techslot !== undefined) { equipTech(d.techslot, ev.target.value); ev.target.blur(); }
-});
-// A scroll that drops mid-fight (or gets read): the battle dock and the menu badge follow.
-let scrollSeen = -1;
+// The menu badge follows what you can buy.
+let tkSeen = -1;
 UPD.push(() => {
-  const n = scrollsOwned();
-  if (n === scrollSeen) return;
-  if (scrollSeen >= 0) { sideDirty = true; if (inBattleView() || S.ui.view === 'techniques') dirty = true; }
-  scrollSeen = n;
+  const n = techReady();
+  if (n === tkSeen) return;
+  if (tkSeen >= 0) { sideDirty = true; if (inBattleView() || S.ui.view === 'techniques') dirty = true; }
+  tkSeen = n;
 });

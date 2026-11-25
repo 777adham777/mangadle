@@ -153,6 +153,54 @@ function computeSalvage() {
     it.salvage = give;
   }
 }
+/* ---------------------------------------------------------------- world lock */
+// Every item belongs to one universe, and only drops there (user rule, 2026-11-25): no Log Pose in the Leaf
+// Village, no Devil Fruit off a Shinjuku curse, no Soul City ore in a voyage haul, no fish dug up in the Echo
+// Quarter. A foe drops, a skill finds (rare finds, by-products), a ship hauls and a chest holds only items of
+// its own world. Exceptions: gems (plain minerals every world refines with), the Rift Shard (the tear runs
+// through every world) and the Rift itself (the crossover, where every world bleeds in).
+// An item's world: HOME_OVERRIDE, else its world relic, else the world whose skill gathers it, else the world
+// of most foes that drop it, else of its first source.
+const WORLD_NEUTRAL = new Set(['GEM', 'jade', 'sapphire', 'ruby', 'void_diamond', 'rift_shard']);
+const HOME_OVERRIDE = {
+  nature_essence: 'shinobi',   // Senjutsu: the Leaf Village's sage chakra
+  fossil_amber: 'shinobi',     // tree resin from the Leaf Village woods
+  old_compass: 'seas',         // the Log Pose: the Grand Line's compass
+  FRUIT: 'seas',               // Devil Fruits are One Piece's
+};
+for (const id in ITEMS) if (/^seed_/.test(id)) HOME_OVERRIDE[id] = 'ki';   // Farming lives on Kaio Planet
+const ITEM_HOME = {};
+function computeHomes() {
+  const votes = {}, first = {}, vote = (id, r, w) => { if (!r || r === 'rift') return; (votes[id] = votes[id] || {})[r] = (votes[id][r] || 0) + w; if (!first[id]) first[id] = r; };
+  const gathered = {};
+  for (const k in SKILLS) if (SKILLS[k].type !== 'craft') for (const a of SKILLS[k].actions || []) for (const o in a.out || {}) gathered[o] = gathered[o] || SKILLS[k].realm;
+  for (const z of ZONES) for (const e of z.enemies) for (const [d] of e.drops) vote(d, z.realm, 1);
+  for (const k in RARE_FINDS) if (SKILLS[k]) for (const [d] of RARE_FINDS[k]) vote(d, SKILLS[k].realm, 0.5);
+  for (const k in SKILLS) for (const a of SKILLS[k].actions || []) for (const [d] of a.extra || []) vote(d, SKILLS[k].realm, 0.5);
+  for (const id in ITEMS) {
+    const v = votes[id];
+    ITEM_HOME[id] = HOME_OVERRIDE[id] || ITEMS[id].relic || gathered[id] || (v ? Object.keys(v).sort((a, b) => v[b] - v[a])[0] : null);
+  }
+  ITEM_HOME.FRUIT = 'seas';
+}
+const homeOf = (id) => (id === 'FRUIT' ? 'seas' : ITEM_HOME[id]);
+const inWorld = (id, realm) => !realm || realm === 'rift' || WORLD_NEUTRAL.has(id) || !homeOf(id) || homeOf(id) === realm;
+const WORLD_LOCK_CUT = [];   // what the lock removed (dev checks read it)
+function worldLock() {
+  computeHomes();
+  const keep = (list, realm, where) => {
+    for (let i = list.length - 1; i >= 0; i--) if (!inWorld(list[i][0], realm)) { WORLD_LOCK_CUT.push([list[i][0], where]); list.splice(i, 1); }
+  };
+  for (const z of ZONES) for (const e of z.enemies) keep(e.drops, z.realm, e.name);
+  for (const k in RARE_FINDS) if (SKILLS[k]) keep(RARE_FINDS[k], SKILLS[k].realm, 'find:' + k);
+  for (const k in SKILLS) for (const a of SKILLS[k].actions || []) {
+    if (a.extra) keep(a.extra, SKILLS[k].realm, k + ':' + a.id);
+    if (a.loot) for (const t in a.loot) if (Array.isArray(a.loot[t])) keep(a.loot[t], SKILLS[k].realm, 'haul:' + a.id);
+  }
+  // A chest holds its own world's things (a chest's world is where it is found).
+  for (const id in ITEMS) if (ITEMS[id].type === 'chest' && ITEMS[id].loot) keep(ITEMS[id].loot, homeOf(id), id);
+}
+worldLock();
 computeRarity();
 computeSalvage();
 

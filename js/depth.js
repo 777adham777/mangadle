@@ -183,9 +183,9 @@ SKILLS.cooking.actions.sort((a, b) => a.level - b.level);
 // Voyaging: a route in the 38 → 55 gap and one after 82.
 SKILLS.voyaging.actions.push(
   voyage('fishman', 'Fishman Island', '🧜', 46, 18, { catfish_hotpot: 2, ironwood: 2 },
-    { gold: [400, 900], table: [['thunder_catfish', [1, 3]], ['sekki_stone', [2, 4]], ['chakra_sap', [2, 5]]], rare: [['tide_pearl', 1 / 20], ['fossil_amber', 1 / 60], ['FRUIT', 1 / 150]] }),
+    { gold: [400, 900], table: [['thunder_catfish', [1, 3]], ['tidal_eel', [1, 3]]], rare: [['tide_pearl', 1 / 20], ['leviathan_scale', 1 / 60], ['FRUIT', 1 / 150]] }),
   voyage('final_island', 'The Final Island', '🏝️', 95, 30, { dragonet_sashimi: 2, heartwood: 2 },
-    { gold: [4000, 9000], table: [['coral_dragonet', [1, 3]], ['kido_quartz', [1, 3]], ['divine_root', [1, 2]]], rare: [['tide_heart', 1 / 60], ['fossil_amber', 1 / 30], ['FRUIT', 1 / 40]] }),
+    { gold: [4000, 9000], table: [['coral_dragonet', [1, 3]], ['sea_king', [1, 2]]], rare: [['tide_heart', 1 / 60], ['allblue_tuna', 1 / 30], ['FRUIT', 1 / 40]] }),
 );
 SKILLS.voyaging.actions.sort((a, b) => a.level - b.level);
 

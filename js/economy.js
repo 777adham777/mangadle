@@ -195,7 +195,7 @@ const ARTS_LEVELS = {
   // hunting gear (Green Island)
   fish_bait: 78, scent_lure: 79, snare: 78, net_trap: 80, cage_trap: 82, spirit_trap: 84, wyrm_trap: 86, chimera_trap: 89,
   // curses and the Fox's fire
-  scroll_hex: 74, scroll_fire_lotus: 40,
+  scroll_hex: 74,
   rift_cleaver: 95,
 };
 
@@ -326,3 +326,29 @@ if (typeof DUNGEON_TIERS !== 'undefined') Object.assign(GEAR_TIERS, DUNGEON_TIER
   arts.sort((x, y) => x.level - y.level);
 })();
 
+
+/* ======================================================== pace pass 3 (2026-11-25) */
+// The user: the early game is fine, but from Orange Town on, materials and gold piled up so fast that
+// nothing was a choice (the bot ended a week with 258 M gold, all the Market costs ~140 M, and 200,000
+// materials in the Bank). Three cuts, all past the first world:
+// - SKILL_PACE: an action takes longer the higher its level (×1 up to level 10, ×1.6 from level 40 on),
+//   for the same XP and the same output: fewer materials and less XP per hour in the mid game.
+// - GOLD_PACE: foes, voyages and chests of later worlds pay less gold (Leaf Village ×1, Orange Town ×0.5,
+//   then ×0.3). The Market's later tiers become a choice, not a formality.
+// - DROP_PACE above now keeps 35% of the plain foes' common drops (was 50%).
+DROP_PACE.chance = 0.35;   // applied above at 0.5: the extra cut is made here (×0.7)
+for (const z of ZONES) if (!z.boss && !z.dungeon) for (const e of z.enemies) for (const d of e.drops) {
+  const it = ITEMS[d[0]];
+  if (it && d[1] >= 0.05 * 0.5 && DROP_PACE.types.includes(it.type) && !it.relic) d[1] *= 0.7;
+}
+const SKILL_PACE = (lv) => 1 + 0.6 * Math.max(0, Math.min(1, (lv - 10) / 30));
+for (const k in SKILLS) {
+  const sk = SKILLS[k];
+  if (sk.type === 'voyage' || sk.type === 'combat') continue;
+  for (const a of sk.actions || []) if (a.time && a.level > 10) a.time = Math.round(a.time * SKILL_PACE(a.level) * 10) / 10;
+}
+const GOLD_PACE = (realm) => { const i = WORLD_ORDER.indexOf(realm); return i <= 0 ? 1 : i === 1 ? 0.5 : 0.3; };
+const paceGold = (g, m) => [Math.max(1, Math.round(g[0] * m)), Math.max(1, Math.round(g[1] * m))];
+for (const z of ZONES) { const m = GOLD_PACE(z.realm); if (m < 1) for (const e of z.enemies) if (e.gold) e.gold = paceGold(e.gold, m); }
+for (const a of SKILLS.voyaging.actions) if (a.loot && a.loot.gold) a.loot.gold = paceGold(a.loot.gold, GOLD_PACE('seas'));
+for (const id in ITEMS) { const it = ITEMS[id]; if (it.type === 'chest' && it.gold && typeof homeOf === 'function') { const m = GOLD_PACE(homeOf(id)); if (m < 1) it.gold = paceGold(it.gold, m); } }

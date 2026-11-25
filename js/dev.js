@@ -88,7 +88,7 @@ function maxSystems() {
   for (const p of PETS) S.pets[p.id] = 1;
   for (const r of WORLD_ORDER) S.renown[r] = Math.max(renownPts(r), RENOWN_K * 100 * 100);
   for (const id in TECHNIQUES) S.tech.lv[id] = TECH_MAX;
-  for (const id in TECHNIQUES) if (!isEquipped(id)) { const sl = slotFor(id); if (sl) S.tech.slots[sl.id] = id; }
+  for (const id in TECHNIQUES) autoEquip(id);
   for (const id in ITEMS) { const it = ITEMS[id]; if (it.type === 'tool') S.tools[it.toolFor] = Math.max(toolTier(it.toolFor), it.tier); }
   for (const k in CARDS) S.cards[k] = 1;
   for (const id in ARTIFACTS) S.museum[id] = 1;

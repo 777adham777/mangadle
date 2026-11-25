@@ -13,7 +13,6 @@
 .gs-tech:not(.gs-scrolls) em { display: none; }
 
 /* Techniques page: an even slot grid, selects at the same height */
-.tslots.wide { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); align-items: start; }
 
 /* Quests: the trial tabs line up in an even grid; daily/weekly rows align with their header */
 .tr-tabs { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
@@ -44,6 +43,5 @@
   /* skill pages: the header chips wrap instead of being cut */
   .sk-slim .sk-chips, .sk-banner .pills, .sk-banner .sk-info-btns { flex-wrap: wrap; overflow: visible; }
   /* Techniques: slots use the panel's own padding once */
-  .tslots.wide { padding-inline: 0; grid-template-columns: minmax(0, 1fr); }
   .tr-tabs { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }

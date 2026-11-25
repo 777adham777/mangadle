@@ -219,7 +219,7 @@ function renderRail() {
   groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => {
     const f = featureOfView(k);
     if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
-    return `<button class="nq ${isOn(k) ? 'on' : ''} ${S.ui.fresh && S.ui.fresh[k] ? 'fresh' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}${k === 'techniques' && typeof scrollsOwned === 'function' && scrollsOwned() ? `<em class="nq-badge" title="Scrolls to read">${fmt(scrollsOwned())}</em>` : ''}</button>`;
+    return `<button class="nq ${isOn(k) ? 'on' : ''} ${S.ui.fresh && S.ui.fresh[k] ? 'fresh' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}${k === 'techniques' && typeof techReady === 'function' && techReady() ? `<em class="nq-badge" title="Techniques you can learn or level up">${fmt(techReady())}</em>` : ''}</button>`;
   }).join('')}</div>`);
   // Le menu qui tient: from 3 worlds on, the worlds you are not in fold to one line of skill chips (icon + level,
   // one click each). Open: the world on screen, the one working, the newest, and any you unfolded yourself.
@@ -682,11 +682,11 @@ function gsTopHTML(z) {
 }
 function gsTechHTML() {
   if (typeof techOn !== 'function' || !techOn()) return '';
-  const slots = openSlots(), sc = scrollsOwned();
-  const read = sc ? `<button class="gs-tech gs-scrolls" data-readscroll="*" title="Read your ${sc} scroll${sc > 1 ? 's' : ''}">${gi('tied-scroll')}<em>Read ×${fmt(sc)}</em></button>` : '';
-  return `<div class="gs-techs">${read}${slots.map((sl) => {
-    const id = S.tech.slots[sl.id];
-    if (!id || !techLv(id)) return `<button class="gs-tech empty" data-nav="techniques" title="${esc(sl.name)}: empty. Equip a technique">${ui(TECH_CATS[sl.cat].icon)}</button>`;
+  const slots = openSlots(), n = techReady();
+  const buy = n ? `<button class="gs-tech gs-scrolls" data-nav="techniques" title="${n} technique${n > 1 ? 's' : ''} you can learn or level up with your scrolls">${gi('tied-scroll')}<em>${n} ready</em></button>` : '';
+  return `<div class="gs-techs">${buy}${slots.map((sl) => {
+    const id = loadout()[sl.i];
+    if (!id || !techLv(id)) return `<button class="gs-tech empty" data-nav="techniques" title="${esc(sl.name)}: empty. Equip a technique">${ui('plus')}</button>`;
     const pas = TECHNIQUES[id].cat === 'passive';
     return `<button class="gs-tech ${pas ? 'pas' : ''}" ${pas ? '' : `data-gstech="${id}"`} data-nav="techniques" title="${esc(TECHNIQUES[id].name)} · Lv ${techLv(id)}${pas ? ' · passive' : ''}">${ic('technique', id)}<em>${esc(TECHNIQUES[id].name)}</em><s></s></button>`;
   }).join('')}</div>`;
@@ -1575,7 +1575,7 @@ function showOffline(secs, before) {
   const rows = [], tiles = [];
   for (const k in after.levels) if (after.levels[k] > before.levels[k]) rows.push(`<div class="ob-line"><i>${ic('skill', k)}</i><span>${SKILLS[k].name}</span><b>Lv ${before.levels[k]} → ${after.levels[k]}</b></div>`);
   if (after.kills > before.kills) rows.push(`<div class="ob-line"><i>${ui('skull')}</i><span>Foes defeated</span><b>+${fmt(after.kills - before.kills)}</b></div>`);
-  if (after.kills > before.kills) rows.push(`<div class="ob-line"><i>${ui('sleep')}</i><span class="muted">You were resting: battles while away give half the Character XP.</span></div>`);
+  rows.push(`<div class="ob-line"><i>${ui('sleep')}</i><span class="muted">You were resting: while the game is closed, everything runs at half speed.</span></div>`);
   if (after.train > before.train) rows.push(`<div class="ob-line"><i>${ui('energy')}</i><span>Training levels</span><b>+${fmt(after.train - before.train)}</b></div>`);
   const dg = after.gold - before.gold;
   if (dg) tiles.push(tile(null, (dg > 0 ? '+' : '') + fmt(dg), { r: 3, icon: ui('gold'), title: 'Gold', cls: 'pop-in' }));

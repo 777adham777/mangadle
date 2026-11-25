@@ -58,18 +58,19 @@ function scoutFixes(zi) {
     const w = S.arms.filter((a) => a.u !== S.equipU && armEl(a) === weak).sort((a, b) => armAtk(b) - armAtk(a))[0];
     if (w) out.push({ key: 'arm:' + w.u, kind: 'item', id: w.id, label: `Wield your ${ITEMS[w.id].name}`, sub: `awakened to ${weak}: its weakness`, apply: () => { equipArm(w.u); } });
   }
-  if (typeof TECH_SLOTS !== 'undefined' && SLOT_BY.def.open()) {
-    const curDef = S.tech.slots.def;
-    const defs = Object.keys(S.tech.lv).filter((t) => TECHNIQUES[t] && TECHNIQUES[t].cat === 'defense' && t !== curDef).sort((a, b) => techLv(b) - techLv(a));
-    if (defs.length) { const t = defs[0]; out.push({ key: 'tech:def:' + t, kind: 'tech', id: t, label: `${TECHNIQUES[t].name} in the Defense slot`, sub: 'fires before a big blow', apply: () => { equipTech('def', t); } }); }
-  }
-  if (weak && typeof TECH_SLOTS !== 'undefined') {
-    const atkSlots = TECH_SLOTS.filter((s) => s.cat === 'attack' && s.open());
-    const has = atkSlots.some((s) => S.tech.slots[s.id] && TECHNIQUES[S.tech.slots[s.id]].tags.includes(weak));
-    const t = Object.keys(S.tech.lv).filter((x) => TECHNIQUES[x] && TECHNIQUES[x].cat === 'attack' && TECHNIQUES[x].tags.includes(weak) && !isEquipped(x)).sort((a, b) => techLv(b) - techLv(a))[0];
-    if (t && !has && atkSlots.length) {
-      const slot = atkSlots.slice().sort((a, b) => techLv(S.tech.slots[a.id]) - techLv(S.tech.slots[b.id]))[0];
-      out.push({ key: `tech:${slot.id}:${t}`, kind: 'tech', id: t, label: `${TECHNIQUES[t].name} in ${slot.name}`, sub: `${weak}: its weakness`, apply: () => { equipTech(slot.id, t); } });
+  if (typeof TECH_SLOTS !== 'undefined' && techOn()) {
+    // Where a suggested technique goes: a free slot, else the slot of your weakest technique of another kind.
+    const slotFor = (keep) => { const f = freeSlot(); if (f) return f.i;
+      const c = equipped().filter((x) => TECHNIQUES[x].cat !== keep).sort((x, y) => techLv(x) - techLv(y))[0]; return c ? slotOf(c) : -1; };
+    const eq = equipped();
+    if (!eq.some((x) => TECHNIQUES[x].cat === 'defense')) {
+      const t = Object.keys(S.tech.lv).filter((x) => TECHNIQUES[x] && TECHNIQUES[x].cat === 'defense').sort((x, y) => techLv(y) - techLv(x))[0], i = t ? slotFor('defense') : -1;
+      if (i >= 0) out.push({ key: `tech:${i}:${t}`, kind: 'tech', id: t, label: `${TECHNIQUES[t].name} in slot ${i + 1}`, sub: 'a defense: fires before a big blow', apply: () => { equipTech(i, t); } });
+    }
+    if (weak && !eq.some((x) => TECHNIQUES[x].tags.includes(weak))) {
+      const t = Object.keys(S.tech.lv).filter((x) => TECHNIQUES[x] && TECHNIQUES[x].cat === 'attack' && TECHNIQUES[x].tags.includes(weak) && !isEquipped(x)).sort((x, y) => techLv(y) - techLv(x))[0];
+      const i = t ? slotFor('defense') : -1;
+      if (i >= 0) out.push({ key: `tech:${i}:${t}`, kind: 'tech', id: t, label: `${TECHNIQUES[t].name} in slot ${i + 1}`, sub: `${weak}: its weakness`, apply: () => { equipTech(i, t); } });
     }
   }
   return out;

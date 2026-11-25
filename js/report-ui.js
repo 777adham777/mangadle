@@ -33,7 +33,7 @@ function cooHeadline(e) {
   if (e.k === 'hunt') return { title: `Hunt complete: ${ITEMS[e.id].name}`, sub: `On your Hunt List for ${fmtTime(e.real || 0)}`, art: tile(e.id, null, {}), replay: rarity(e.id) >= 4 ? e.id : null, r: Math.max(4, rarity(e.id)) };
   if (e.k === 'pet') return { title: `${e.name} joins you`, sub: 'A new companion', art: tile(null, null, { r: 5, icon: ic('pet', e.id) }), r: 5 };
   if (e.k === 'dg') return { title: `${DG_BY[e.id].name} cleared${e.n > 1 ? ` ×${e.n}` : ''}`, sub: e.piece ? `Set piece: ${ITEMS[e.piece].name}` : 'A chest each run', art: tile(e.piece || dgChest(e.id), null, {}), r: e.piece ? 5 : 4 };
-  if (e.k === 'scroll') return { title: `${fmt(e.n)} technique scroll${e.n > 1 ? 's' : ''}`, sub: 'Waiting in your Bank: read them on the Techniques page', art: tile(null, null, { r: 4, icon: gi('tied-scroll') }), r: 4 };
+  if (e.k === 'scroll') return { title: `${fmt(e.n)} technique scroll${e.n > 1 ? 's' : ''}`, sub: 'Waiting in your Bank: spend them on the Techniques page', art: tile(null, null, { r: 4, icon: gi('tied-scroll') }), r: 4 };
   if (e.k === 'schem') return { title: `${ITEMS[ITEMS[e.id].teaches].name} schematic learned`, sub: 'A new recipe', art: tile(e.id, null, {}), r: 4 };
   if (e.k === 'boss') return { title: `${e.name} falls`, sub: 'A guardian defeated', art: tile(null, null, { r: 5, icon: ic('enemy', e.name) }), r: 4 };
   if (e.k === 'card') return { title: `Card: ${CARDS[e.id] ? CARDS[e.id].name : 'new card'}`, sub: 'Added to the Card Book', art: tile(null, null, { r: 4, icon: ui('rare') }), r: 4 };
@@ -85,7 +85,7 @@ function allyCard(v) {
   const N = NPCS[v.id], A = ALLIES[v.id];
   const gifts = Object.entries(v.gains).sort((a, b) => rarity(b[0]) - rarity(a[0])).slice(0, 4).map(([k, n]) => tile(k, fmt(n), { cls: 'xs' })).join('')
     + (v.gold ? tile(null, fmt(v.gold), { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' }) : '')
-    + (v.frag ? tile(null, '+' + v.frag.n, { r: 4, icon: ic('technique', v.frag.id), cls: 'xs', title: `${TECHNIQUES[v.frag.id].name} fragments` }) : '')
+    + (v.frag ? (v.frag.item ? tile(v.frag.item, '+' + v.frag.n, { cls: 'xs' }) : tile(null, '+' + v.frag.n, { r: 4, icon: ic('technique', v.frag.id), cls: 'xs', title: TECHNIQUES[v.frag.id].name })) : '')
     + (v.xp ? `<span class="coo-xp">+${fmt(v.xp)} XP</span>` : '');
   const pips = Array.from({ length: ALLY_MAX }, (_, i) => `<i class="${i < v.bond ? 'on' : ''}"></i>`).join('');
   return `<div class="coo-ally">${npcArt(v.id)}<div class="ca-main">
@@ -106,7 +106,7 @@ function cooReady() {
   if (typeof msOn === 'function' && msOn() && !msUsed()) out.push(['The Task Queue is empty', gbtn('Queue', 'missions', 'data-msboard', 'sm')]);
   const chests = Object.keys(S.items).filter((k) => ITEMS[k] && ITEMS[k].type === 'chest').reduce((a, k) => a + count(k), 0);
   if (chests) out.push([`${fmt(chests)} chest${chests > 1 ? 's' : ''} to open`, gbtn('Bank', 'open', 'data-nav="hero" data-closemodal', 'sm')]);
-  if (typeof techOn === 'function' && techOn() && Object.keys(S.tech.lv).some((t) => TECHNIQUES[t] && fragCost(t) > 0 && techFrag(t) >= fragCost(t))) out.push(['A technique can level up', gbtn('Techniques', 'technique', 'data-nav="techniques" data-closemodal', 'sm')]);
+  if (typeof techReady === 'function' && techReady()) out.push(['Scrolls to spend on techniques', gbtn('Techniques', 'technique', 'data-nav="techniques" data-closemodal', 'sm')]);
   if (typeof plots === 'function' && skillOpen('farming')) {
     const ripe = plots().filter((p) => p && CROP_BY[p.crop] && p.t >= CROP_BY[p.crop].mins * 60).length;
     if (ripe) out.push([`${ripe} plot${ripe > 1 ? 's' : ''} ready to harvest`, gbtn('Farming', 'play', `data-nav="realm:${SKILLS.farming.realm}:farming" data-closemodal`, 'sm')]);

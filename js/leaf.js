@@ -66,4 +66,4 @@ for (const id of CARVING_IDS) {
 // Curse residue, grudge embers and shade essence had no use: Crafting turns them into Cursed Scrolls.
 SKILLS.arts.actions.push(craft('scroll_hex', 60, 6, { hex_residue: 12, hex_ember: 8, hex_shade: 5 }));
 SKILLS.arts.actions.sort((a, b) => a.level - b.level);
-EXTRA_USES.push(['cursed_fragment', 'Counts as fragments of any technique you know (Techniques page)']);
+EXTRA_USES.push(['cursed_fragment', `Pays for a missing technique scroll of any world, ${CURSED_PER_SCROLL} for one (Techniques page)`]);

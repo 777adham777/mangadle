@@ -53,7 +53,7 @@ const chapterSteps = (c) => GOALS.slice(c.from, chapterEnd(c) + 1);
 function storyState() { if (!S.story) S.story = { seen: {}, done: {} }; return S.story; }
 
 // Claiming a step also gives its items; the last step of a chapter gives the chapter's reward.
-// Everything goes to the bank (scrolls too: you read them when you choose).
+// Everything goes to the bank (scrolls too: you spend them on techniques when you choose).
 function storyGive(k, n) { addItem(k, n); }
 {
   const base = claimGoal;
