@@ -1,0 +1,151 @@
+/* ==========================================================================
+   One screen per page (2026-11-25). A page never scrolls on a desktop screen: it fills the main
+   area, and each long list scrolls inside its own panel (like Melvor's combat page).
+   A page opts in with the class .fit on its root. The Bank / collection lists are the one
+   logical exception: they scroll inside their panel too, never the page.
+   Phones (and very short windows) keep the stacked, scrolling page: one column cannot hold it all.
+   Loaded last.
+   ========================================================================== */
+
+@media (min-width: 861px) and (min-height: 620px) {
+  #main:has(> .fit) { overflow: hidden; padding-bottom: 14px; }
+  #main > .fit { flex: 1 1 0; min-height: 0; }
+  /* a page title above a fit page keeps its own height */
+  #main:has(> .fit) > .ptitle { flex-shrink: 0; }
+
+  /* the shared scroll look for a panel that scrolls inside the page */
+  .fit-scroll, .sk-a, .sk-panes { overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line2) transparent; }
+
+  /* ---- Skill pages (skBoardHTML): banner, then the focus column and the tabbed list column ---- */
+  .sk-board { display: grid; grid-template-rows: auto minmax(0, 1fr); gap: 10px; }
+  .sk-board > .sk-banner { min-height: 0; }
+  .sk-body { display: grid; grid-template-columns: minmax(0, 1fr) clamp(360px, 34%, 520px); gap: 14px; min-height: 0; }
+  .sk-body.solo { grid-template-columns: minmax(0, 1fr); }
+  .sk-a { min-height: 0; min-width: 0; display: flex; flex-direction: column; gap: 12px; padding-right: 2px; }
+  .sk-a > * { flex-shrink: 0; }
+  .sk-b { min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+  .sk-board .sk-more { margin-top: 0; }
+  .sk-b > .sk-tabs { flex-shrink: 0; }
+  .sk-panes { flex: 1 1 0; min-height: 0; padding-right: 2px; }
+  /* without tabs, the list's own header reads as the column title */
+  .sk-b:not(:has(> .sk-tabs)) .sk-pane > .win { border-top: 1px solid var(--line); border-radius: 2px; }
+  .sk-b:not(:has(> .sk-tabs)) .sk-pane > .win > .hdr:first-child > span { display: revert; }
+  /* the picker list already scrolls with its column */
+  .sk-panes .pk-list { max-height: none; overflow: visible; }
+  /* the recipe gallery: its cards in the column width */
+  .sk-panes .ws-bar .ws-q, .sk-panes .ws-bar label { flex: 1 1 100%; }
+  .sk-panes .ws-body > .ws-list { grid-template-columns: repeat(auto-fill, minmax(104px, 1fr)); }
+  .sk-panes .ws-cats { flex-wrap: wrap; overflow: visible; }
+  .sk-panes .ws-cats > * { flex: 0 0 auto; }
+  .sk-panes .act-grid { grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); }
+}
+
+/* ---- Battlefield (VIEWS.battle): the stage column and, beside it, one tabbed panel ---- */
+.gs-board { display: flex; flex-direction: column; gap: 12px; }
+.gs-panel { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.gs-panel > .intro-card { margin: 0; }
+.gs-tabs .sk-tabs { flex-wrap: wrap; overflow: visible; }
+.gs-tabs .sk-tabs button { flex: 1 0 auto; padding: 0 12px; }
+.gs-tabs .sk-pane > .win > .hdr:first-child > span { display: none; }
+.gs-tabs .sk-pane > .win > .hdr:first-child:not(:has(small)) { display: none; }
+.gs-tabs .stage-list { max-height: none; }
+.gs-tabs .dw-grid { grid-template-columns: minmax(0, 1fr); }
+
+@media (min-width: 861px) and (min-height: 620px) {
+  .gs-board { display: grid; grid-template-columns: minmax(0, 1fr) clamp(380px, 31%, 480px); gap: 14px; }
+  .gs-board > .gs { height: auto; min-height: 0; container-type: inline-size; }
+  .gs-panel { min-height: 0; }
+  .gs-panel > .sk-more { flex: 1 1 0; min-height: 0; display: flex; flex-direction: column; }
+  .gs-panel .sk-panes { flex: 1 1 0; min-height: 0; }
+  .gs-panel .log { max-height: none; }
+}
+/* a narrow stage column: the food picker goes under your bar and techniques; the next-stage gauge stays */
+@container (max-width: 900px) {
+  .gs-dock { grid-template-columns: minmax(0, 1fr) auto; gap: 10px 14px; }
+  .gs-food { grid-column: 1 / -1; justify-self: stretch; }
+  .gs-food .gs-fsel { flex: 1; }
+  .gs-food .gs-fsel select { max-width: none; width: 100%; }
+  .gs-prog { display: grid; margin-left: 6px; }
+  .gs-acts .gbtn span { display: none; }
+}
+/* eight tabs fit on two short rows */
+.gs-tabs .sk-tabs button { height: 30px; padding: 0 10px; font-size: 11.5px; letter-spacing: 0.06em; }
+/* a very narrow stage column: your bar, then the techniques row, then food */
+@container (max-width: 700px) {
+  .gs-dock { grid-template-columns: minmax(0, 1fr); gap: 8px; }
+  .gs-techs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 58px); gap: 6px; }
+  .gs-tech { width: auto; height: auto; aspect-ratio: 1; }
+}
+
+/* ---- Pages in columns (fitCols in ui.js): each column scrolls on its own ---- */
+.fcols { display: flex; flex-direction: column; gap: 12px; }
+.fcol { display: contents; }
+@media (min-width: 861px) and (min-height: 620px) {
+  .fcols { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); grid-template-columns: var(--fc, none); gap: 14px; align-items: stretch; }
+  .fcol { display: flex; flex-direction: column; gap: 12px; min-height: 0; min-width: 0;
+    overflow-y: auto; overscroll-behavior: contain; scrollbar-width: thin; scrollbar-color: var(--line2) transparent; padding-right: 2px; }
+  .fcol > * { flex-shrink: 0; }
+  .fcol > .hdr { margin: 2px 0 -4px; }
+
+  /* column widths, page by page */
+  .ov-board { --fc: minmax(0, 1fr) minmax(0, 1.35fr); }
+  .tq-board { --fc: minmax(0, 1fr) minmax(0, 1.2fr); }
+  .ct-board { --fc: minmax(0, 1fr) minmax(0, 1fr); }
+  .col-board { --fc: minmax(0, 1fr) 380px; }
+  .pw-board { --fc: minmax(340px, 0.8fr) minmax(0, 1.2fr); }
+  .set-board { --fc: minmax(0, 1fr) minmax(0, 1fr); }
+  .dev-board { --fc: minmax(0, 1fr) minmax(0, 1fr); }
+
+  /* Overview: the skill cards in two to three columns of their own column */
+  .ov-board .ov-grid { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+  .ov-board .ov-top { grid-template-columns: minmax(0, 1fr); }
+  /* Collection: the grid panel fills its column and scrolls */
+  .col-board .col-win { flex: 1 0 auto; }
+  .col-board .col-detail { position: static; max-height: none; }
+  /* Energy: the discipline cards in two columns */
+  .pw-board .train-grid { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); }
+  /* Market: the wares scroll inside the page */
+  .shop.fit { align-content: start; padding-right: 2px; }
+  /* Quests: both columns scroll */
+  .qs-layout.fit { align-items: stretch; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); }
+  /* Character: hero and equipment stay, the slot list and the stats scroll */
+  .ch-layout.fit { align-items: stretch; grid-template-rows: auto auto minmax(0, 1fr); }
+  .ch-layout.fit > .ch-list, .ch-layout.fit > .ch-stats { min-height: 0; overflow-y: auto; scrollbar-width: thin; scrollbar-color: var(--line2) transparent; }
+}
+@media (min-width: 861px) and (min-height: 620px) {
+  /* Bank: the tabs, search and footer stay, the item grid scrolls (the logical exception, inside its panel) */
+  .bank-layout.fit { align-items: stretch; }
+  .bank-layout.fit > .bag-win { display: flex; flex-direction: column; min-height: 0; }
+  .bank-layout.fit > .bag-win > * { flex-shrink: 0; }
+  .bank-layout.fit > .bag-win > .bag-grid { grid-auto-rows: max-content; flex: 0 1 auto; min-height: 0; overflow-y: auto; align-content: start; scrollbar-width: thin; scrollbar-color: var(--line2) transparent; padding-bottom: 2px; }
+  .bank-layout.fit > .bag-win > .bag-foot { margin-top: auto; }
+  .bank-layout.fit > .detail { position: static; max-height: none; min-height: 0; overflow-y: auto; scrollbar-width: thin; }
+}
+@media (min-width: 861px) and (max-width: 1380px) and (min-height: 620px) {
+  /* Character on a smaller screen: hero and equipment across, then the slot list beside the stats */
+  .ch-layout.fit { grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); grid-template-areas: "hero hero" "doll doll" "list stats"; grid-template-rows: auto auto minmax(0, 1fr); }
+  .ch-layout.fit > .ch-stats { display: block; }
+  .gs-board { grid-template-columns: minmax(0, 1fr) clamp(320px, 34%, 480px); }
+}
+@media (min-width: 861px) and (max-width: 980px) and (min-height: 620px) {
+  .hero-layout.bank-layout.fit { grid-template-columns: minmax(0, 1fr) 280px; }
+}
+/* a narrow stage column: the next-stage gauge drops under the stage name */
+@container (max-width: 620px) {
+  .gs-top { flex-wrap: wrap; row-gap: 6px; }
+  .gs-where { flex: 1 1 auto; }
+  .gs-prog { order: 5; flex: 1 1 60%; max-width: none; margin: 0; }
+  .gs-acts { order: 6; }
+}
+/* the stage name gives way before the danger tag and the arrows */
+.gs-where > span:nth-child(2) { min-width: 0; }
+
+@media (max-width: 700px) {
+  /* phone dock: every technique on one even row */
+  .gs-techs { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 6px; }
+  .gs-tech { width: auto; height: auto; aspect-ratio: 1; }
+  .gs-tech > .gi { width: 26px; height: 26px; }
+}
+/* a list whose header sits outside a panel (the recipe gallery): the tab already names it */
+.sk-more:has(> .sk-tabs) .sk-pane > .hdr:first-child > span { display: none; }
+.sk-more:has(> .sk-tabs) .sk-pane > .hdr:first-child { justify-content: flex-end; }

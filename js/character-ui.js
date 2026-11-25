@@ -248,7 +248,7 @@ VIEWS.character = (tab) => {
   for (const s of chSlotIds()) { lists[s] = chCands(s); ups[s] = s !== 'fruit' && lists[s].some((c) => c.score > 0.0001); }
   return `
   ${ptitle('Hero', 'Character')}
-  <div class="ch-layout">
+  <div class="ch-layout fit">
     ${chHeroHTML()}
     ${chDollHTML(ups)}
     ${chStatsHTML()}

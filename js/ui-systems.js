@@ -218,13 +218,13 @@ VIEWS.contracts = () => {
       <div class="cards">${ids.map((k) => { const c = CARDS[k], own = S.cards[k]; return `<div class="hcard ${own ? 'own' : ''}" title="${own ? esc(c.name) : 'Unknown card'}">${own ? (c.kind === 'foe' ? ic('enemy', c.ref) : itemIc(c.ref)) : '<b class="q">?</b>'}<small>${own ? esc(c.name) : '???'}</small></div>`; }).join('')}</div></section>`;
   };
   return `${ptitle("Green Island", 'Contracts')}
-  <section class="win licence"><div class="lc-badge">${ui('star2')}<b>${S.contracts.stars}</b></div>
+  ${fitCols('ct-board', `<section class="win licence"><div class="lc-badge">${ui('star2')}<b>${S.contracts.stars}</b></div>
     <div><small>Hunter Licence</small><h2>${RANKS[L][1]}</h2><p class="muted small">${next ? `${next[0] - S.contracts.stars} more stars to ${next[1]}. ` : ''}Rewards ×${RANKS[L][2]} · ${contractSlots()} contracts · Silver: a free new contract every refresh · Gold: 5 contracts.</p></div>
     <div class="lc-next"><small>New contracts in</small><b data-ctnext>${fmtTime(Math.max(0, (C.next - Date.now()) / 1000))}</b></div></section>
   ${hdr('Board', 'targets in every world you have opened')}
-  <div class="contracts">${C.list.map(card).join('') || '<div class="empty-note">No contracts yet.</div>'}</div>
-  ${hdr('Greed Island Cards', 'contracts give a card 70% of the time; foes drop them very rarely')}
-  <div class="cbooks">${WORLD_ORDER.filter(realmOpen).map(page).join('')}</div>`;
+  <div class="contracts">${C.list.map(card).join('') || '<div class="empty-note">No contracts yet.</div>'}</div>`,
+  `${hdr('Greed Island Cards', 'contracts give a card 70% of the time; foes drop them very rarely')}
+  <div class="cbooks">${WORLD_ORDER.filter(realmOpen).map(page).join('')}</div>`)}`;
 };
 UPD.push(() => {
   const el = $('[data-ctnext]');

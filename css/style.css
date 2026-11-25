@@ -785,15 +785,12 @@ button.acard:hover { border-color: color-mix(in srgb, var(--rc) 60%, var(--line)
    and skill pages put reference info (milestones, rare finds, synergies) in a side column. */
 #main > * { width: 100%; max-width: 2400px; margin-right: auto; }
 .nowbar { max-width: 760px; margin-right: auto; }
-.sk-col { display: flex; flex-direction: column; gap: 14px; min-width: 0; }
-.sk-col > .hdr { margin: 4px 0 -4px; }
 .act-grid { grid-template-columns: repeat(auto-fill, minmax(min(250px, 100%), 1fr)); }
 
 /* ---------------------------------------------------------------- dense skill page
    Fill the width, keep the header and the current farm short so the action cards
    start high on the screen; locked actions collapse into small chips. */
 #main { padding: 14px 18px 40px; gap: 12px; }
-.sk-col { gap: 12px; }
 .sk-banner { padding: 12px 18px; gap: 14px; }
 .sk-main { gap: 5px; }
 .sk-main h1 { font-size: 26px; }

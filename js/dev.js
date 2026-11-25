@@ -201,7 +201,7 @@ VIEWS.dev = () => {
   const skills = [...WORLD_ORDER.filter((r) => r !== 'rift'), 'combat'].flatMap((r) => skillsOf(r));
   return `
   ${ptitle('Testing', 'Dev tools', `<span class="pill">${ui('dev')} Dev mode</span>`)}
-  <section class="win dev-top">${hdr('Unlock', `${UNLOCKS.filter((u) => S.unlocked[u.id]).length} / ${UNLOCKS.length} unlocked`)}
+  ${fitCols('dev-board', `<section class="win dev-top">${hdr('Unlock', `${UNLOCKS.filter((u) => S.unlocked[u.id]).length} / ${UNLOCKS.length} unlocked`)}
     <div class="btn-row">${gbtn('Unlock everything', 'lock', 'data-dev="unlock"')}${gbtn('Unlock and max everything', 'crown', 'data-dev="everything"', 'dark')}</div>
     <p class="muted small"><b>Unlock everything</b> opens every world, skill, menu, stage and schematic, and keeps your levels. <b>Max</b> also puts every skill at its max level, maxes every system below and adds 1B gold.</p>
   </section>
@@ -225,8 +225,7 @@ VIEWS.dev = () => {
       <div class="btn-row">${btn('systems', 'Max every system', 'crown')}${btn('pets', 'All pets', 'pet')}${btn('renown', 'Renown 100', 'trophy')}</div>
       <p class="muted small">Max every system: pets, Renown 100, techniques at level 10, every tool, full Greed Island Cards and museum, every beast at level 20, an Echo graded A, Gold Hunter licence, a set of Dragon Balls.</p>
     </section>
-  </div>
-  <section class="win">${hdr('Items', `${Object.keys(S.items).length} kinds in the bank`)}
+  </div>`, `<section class="win">${hdr('Items', `${Object.keys(S.items).length} kinds in the bank`)}
     <div class="dev-give">
       <input class="dev-in grow" id="dev-item" list="dev-items" placeholder="Item name" autocomplete="off">
       <input class="dev-in num" id="dev-n" type="number" min="1" value="1" aria-label="Quantity">
@@ -253,7 +252,7 @@ VIEWS.dev = () => {
       <p class="muted small">The first cheat backs up your save automatically, so you can always go back to your real game.</p>
       <div class="btn-row">${btn('off', 'Turn dev mode off', 'close')}</div>
     </section>
-  </div>`;
+  </div>`)}`;
 };
 
 /* ------------------------------------------------------------ input */

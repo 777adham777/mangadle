@@ -12,22 +12,6 @@
    the full name is in the tooltip */
 .gs-tech:not(.gs-scrolls) em { display: none; }
 
-/* Battlefield below the stage: dungeons beside techniques/stats/log, then every stage across the
-   full width (in two columns when there is room), so neither side runs on alone */
-.gs-below { grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); grid-template-areas: "st side"; }
-.gs-below.has-dg { grid-template-areas: "dg side" "st st"; }
-.gs-below > .dgs { grid-area: dg; min-width: 0; scroll-margin-top: calc(var(--hud-h) + 12px); }
-.gs-below > .stages { grid-area: st; min-width: 0; }
-.gs-below > .gs-side { grid-area: side; }
-@media (min-width: 1200px) {
-  .gs-below.has-dg > .stages .stage-list { display: block; column-count: 2; column-gap: 16px; }
-  .gs-below.has-dg > .stages .stage-list > * { break-inside: avoid; margin-bottom: 5px; }
-}
-@media (max-width: 980px) {
-  .gs-below, .gs-below.has-dg { grid-template-columns: minmax(0, 1fr); grid-template-areas: "st" "side"; }
-  .gs-below.has-dg { grid-template-areas: "dg" "st" "side"; }
-}
-
 /* Techniques page: an even slot grid, selects at the same height */
 .tslots.wide { grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); align-items: start; }
 

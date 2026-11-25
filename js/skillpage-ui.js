@@ -1,9 +1,8 @@
-/* Skill page layout (VIEWS.realm in ui.js). No right column any more: the page uses the full width.
-   - Skills with a focus panel (focus-ui.js) get a "stage": the panel beside a one-click picker of every
-     unlocked action (trees, ore veins, rituals). Crafting skills have no picker: their recipe gallery,
-     under the stage, is their one list.
-   - Milestones, rare finds and synergies open in a window from buttons in the skill banner at the top.
-   - Each skill's extra panels live in a tabbed sub-menu at the bottom of the page. */
+/* Skill page layout (VIEWS.realm in ui.js): one screen, no page scroll (skBoardHTML).
+   - Left: the focus panel (focus-ui.js) and the skill's own panels.
+   - Right: the action list (a one-click picker of trees, ore veins, rituals; the recipe gallery for crafting)
+     and, as more tabs, each extra panel.
+   - Milestones, rare finds and synergies open in a window from buttons in the skill banner at the top. */
 
 const PICK_TITLE = { woodcutting: 'Trees', mining: 'Ore veins', archaeology: 'Dig sites', bonding: 'Rituals', tracking: 'Hunts' };
 
@@ -26,14 +25,6 @@ function pickerHTML(skill) {
     ${next ? `<div class="ws-next pk-next">${tile(null, null, { r: actRarity(next), icon: actIc(skill, next), cls: 'xs', title: next.name })}
       <span><small>Next unlock</small><b>${esc(next.name)}</b></span><em>${next.schem && !S.known[next.schem] ? ui('schematic') : ui('lock')}Lv ${next.level}</em></div>` : ''}</div></section>`;
 }
-// The focus panel and, beside it, what the player acts on (plus the skill's own top panels).
-function skStageHTML(skill, scene, top) {
-  const s = SKILLS[skill];
-  let side = s.type === 'gather' || s.type === 'bond' ? pickerHTML(skill) : '';
-  side += top;
-  return `<div class="sk-stage ${side.trim() ? '' : 'solo'}"><div class="stg-scene">${scene}</div>${side.trim() ? `<div class="stg-side">${side}</div>` : ''}</div>`;
-}
-
 // Banner buttons (top of the page): each opens its panel in a window.
 const SK_INFO = {
   // The skill's path: the generic milestones and its own perks (depth.js), in level order.
@@ -63,28 +54,51 @@ document.addEventListener('click', (ev) => {
   openSkInfo(skill, key);
 });
 
-// Bottom sub-menu: one tab per extra panel, labelled by the panel's own header.
-function skMoreHTML(realm, skill) {
-  const parts = [];
-  for (const f of UIX.realmSide) { const h = f(realm, skill); if (h) parts.push(h); }
-  if (renownOn()) parts.push(renownHTML(realm));
-  if (!parts.length) return '';
-  const tabs = parts.map((h) => {
+// The skill page as one screen (2026-11-25, nothing to scroll): the banner on top, then two columns.
+// Left: the focus panel and the skill's own panels (plots, harbour, vows, companions...).
+// Right: one panel with tabs, the action list first, then each extra panel (logs, Renown, Time Chamber...).
+// Long content scrolls inside its own column, never the page.
+// Panels as tabs: each panel's own header names its tab.
+function hdrTabs(parts) {
+  return parts.filter(Boolean).map((h) => {
     const m = h.match(/<h3 class="hdr"><span>(.*?)<\/span>/), label = m ? m[1].replace(/<[^>]+>/g, '').trim() : 'Info';
     return { key: label.toLowerCase().replace(/[^a-z0-9]+/g, '-'), label, h };
   });
+}
+// One tabbed panel (skill pages, Battlefield). group keys the remembered tab in S.ui.skTab.
+function tabPanelHTML(group, tabs, cls) {
+  if (!tabs.length) return '';
   S.ui.skTab = S.ui.skTab || {};
-  const cur = tabs.some((t) => t.key === S.ui.skTab[skill]) ? S.ui.skTab[skill] : tabs[0].key;
-  return `<section class="sk-more" data-skmore="${skill}">
-    <nav class="sk-tabs">${tabs.map((t) => `<button class="${t.key === cur ? 'on' : ''}" data-sktab="${skill}:${t.key}">${esc(t.label)}</button>`).join('')}</nav>
-    ${tabs.map((t) => `<div class="sk-pane" data-pane="${t.key}" ${t.key === cur ? '' : 'hidden'}>${t.h}</div>`).join('')}</section>`;
+  const cur = tabs.some((t) => t.key === S.ui.skTab[group]) ? S.ui.skTab[group] : tabs[0].key;
+  return `<section class="sk-more ${cls || ''}" data-skmore="${group}">
+    ${tabs.length > 1 ? `<nav class="sk-tabs">${tabs.map((t) => `<button class="${t.key === cur ? 'on' : ''}" data-sktab="${group}:${t.key}">${esc(t.label)}${t.badge ? `<em>${t.badge}</em>` : ''}</button>`).join('')}</nav>` : ''}
+    <div class="sk-panes">${tabs.map((t) => `<div class="sk-pane" data-pane="${t.key}" ${t.key === cur ? '' : 'hidden'}>${t.h}</div>`).join('')}</div></section>`;
+}
+// Shows the tab that holds this element (a link to 'battle#gs-dungeons', the Stages button...).
+function showPaneOf(el) {
+  const pane = el && el.closest('.sk-pane'), box = pane && pane.closest('.sk-more');
+  if (!pane || !box) return;
+  const key = pane.dataset.pane, group = box.dataset.skmore;
+  S.ui.skTab = S.ui.skTab || {};
+  S.ui.skTab[group] = key;
+  for (const b of $$('[data-sktab]', box)) b.classList.toggle('on', b.dataset.sktab === group + ':' + key);
+  for (const q of $$('.sk-pane', box)) q.hidden = q.dataset.pane !== key;
+}
+// o: { main, list: [label, html] | null, cls, attrs }
+function skBoardHTML(realm, skill, o) {
+  const extra = [];
+  for (const f of UIX.realmSide) extra.push(f(realm, skill));
+  if (renownOn()) extra.push(renownHTML(realm));
+  const tabs = (o.list ? [{ key: 'list', label: o.list[0], h: o.list[1] }] : []).concat(hdrTabs(extra));
+  const side = tabPanelHTML(skill, tabs, 'sk-b');
+  return `<div class="sk-page sk-board fit ${o.cls || ''}" ${o.attrs || ''} style="--rc:${rc(realm)}">
+  ${skBannerHTML(realm, skill)}
+  <div class="sk-body ${side ? '' : 'solo'}"><div class="sk-a">${o.main}</div>${side}</div>
+  </div>`;
 }
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-sktab]');
   if (!t) return;
-  const [skill, key] = t.dataset.sktab.split(':'), box = t.closest('.sk-more');
-  S.ui.skTab = S.ui.skTab || {};
-  S.ui.skTab[skill] = key;
-  for (const b of $$('[data-sktab]', box)) b.classList.toggle('on', b === t);
-  for (const p of $$('.sk-pane', box)) p.hidden = p.dataset.pane !== key;
+  const box = t.closest('.sk-more'), key = t.dataset.sktab.split(':')[1];
+  showPaneOf($(`.sk-pane[data-pane="${key}"]`, box));
 });

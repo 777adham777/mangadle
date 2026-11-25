@@ -48,7 +48,7 @@ function huntListHTML(where) {
   const H = hlState();
   if (!H.list.length && where === 'home') return '';
   return `<section class="win hl-win">${hdr('Hunt List', `Licence · ${H.list.length} / ${HUNT_MAX}${H.done ? ` · ${H.done} hunted` : ''}`)}
-    ${H.list.length ? `<div class="hl-grid">${H.list.map(huntCard).join('')}</div>` : `<p class="muted small hl-empty">${ui('hunt')}Pick an item in the Collection or the Bank and press <b>Hunt it</b>: the list shows where it drops, your odds and how long it should take.</p>`}</section>`;
+    ${H.list.length ? `<div class="hl-grid">${H.list.map(huntCard).join('')}</div>` : `<p class="muted small hl-empty">${ui('hunt')}<span>Pick an item in the Collection or the Bank and press <b>Hunt it</b>: the list shows where it drops, your odds and how long it should take.</span></p>`}</section>`;
 }
 UIX.homeTop.push(() => huntListHTML('home'));
 

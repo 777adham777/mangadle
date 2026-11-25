@@ -97,7 +97,8 @@ document.addEventListener('click', (ev) => {
     if (confirm('Leave the dungeon? The run ends and its key is spent.')) { stopCombat(); dgEnd('left'); }
   } else if ('godungeons' in t.dataset) {
     const el = $('#gs-dungeons');
-    if (el) el.scrollIntoView({ behavior: calmMotion() ? 'auto' : 'smooth', block: 'start' });
+    showPaneOf(el);
+    if (el) el.scrollIntoView({ behavior: calmMotion() ? 'auto' : 'smooth', block: 'nearest' });
   }
 });
 document.addEventListener('change', (ev) => {

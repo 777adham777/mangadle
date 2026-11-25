@@ -122,13 +122,12 @@ VIEWS.techniques = () => {
     <section class="win" style="--rc:${rc(r)}">${hdr(`${REALMS[r].name} · ${esc(scrollName(r))}`, `${TECH_POOLS[r].filter(techLv).length} / ${TECH_POOLS[r].length} learned`)}
       <div class="tcards">${TECH_POOLS[r].map(techCardHTML).join('')}</div></section>`).join('');
   return `${ptitle('Your build', 'Techniques', `<span class="pill">${known} / ${ids.length} learned</span>`)}
-  ${introCardHTML('feature:techniques')}${scrollShelfHTML()}
+  ${fitCols('tq-board', `${introCardHTML('feature:techniques')}${scrollShelfHTML()}
   <section class="win">${hdr('Slots', 'one technique per slot, matched by type · they fire in this order')}
     <div class="tslots wide">${TECH_SLOTS.map(techSlotHTML).join('')}</div></section>
   <p class="muted small tc-help">Every foe drops its world's scroll now and then (bosses often); it waits in your Bank until you read it. A scroll teaches a random technique of that world; unknown ones come up 3× as often.
   A technique you already know gives <b>${FRAG_PER_DUP} fragments</b> instead, and fragments level it up. Levels 5 and 10 change how it works.
-  Crafting can also write the scroll of one chosen technique, and Cursed Fragments from Cursed Research count for any technique.</p>
-  ${byWorld}`;
+  Crafting can also write the scroll of one chosen technique, and Cursed Fragments from Cursed Research count for any technique.</p>`, byWorld)}`;
 };
 
 UIX.actLines.push((skill, a) => {

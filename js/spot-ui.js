@@ -133,13 +133,7 @@ function fcQHTML(skill, a) {
 /* ---------------------------------------------------------------- the page */
 function fcPage(realm, skill) {
   const sel = fcSel(skill);
-  return `<div class="sk-page sk-col fc-page" data-fc="${skill}" style="--rc:${rc(realm)}">
-  ${skBannerHTML(realm, skill)}
-  ${uix('realmTop', realm, skill)}
-  ${focusHTML(skill)}
-  ${fcPickHTML(skill, sel)}
-  ${skMoreHTML(realm, skill)}
-  </div>`;
+  return skBoardHTML(realm, skill, { cls: 'fc-page', attrs: `data-fc="${skill}"`, main: `${uix('realmIntro', realm, skill)}${focusHTML(skill)}${uix('realmTop', realm, skill)}`, list: [FC_TXT[skill].pick, fcPickHTML(skill, sel)] });
 }
 {
   const base = VIEWS.realm;

@@ -127,6 +127,9 @@ function gbtn(label, icon, attrs, cls) {
   return `<button class="gbtn ${cls || ''}" ${attrs || ''}>${icon ? `<i class="gbtn-ic">${ui(icon)}</i>` : ''}<span>${label}</span></button>`;
 }
 const hdr = (t, extra) => `<h3 class="hdr"><span>${t}</span>${extra ? `<small>${extra}</small>` : ''}</h3>`;
+// One screen (css/fit.css): a page in columns, each scrolling on its own; phones stack them.
+// fitCols('cls', colA, colB...) ; widths through the cls (or --fc).
+const fitCols = (cls, ...cols) => `<div class="fit fcols ${cls}">${cols.map((c) => `<div class="fcol">${c}</div>`).join('')}</div>`;
 const ptitle = (small, big, right) => `<div class="ptitle"><div class="pt-txt"><small>${small}</small><h1>${big}</h1></div>${right || ''}</div>`;
 const stat = (label, val, attrs) => `<div class="stat"><small>${label}</small><b ${attrs || ''}>${val}</b></div>`;
 
@@ -173,6 +176,8 @@ function setView(v) {
   if (name === 'realm') S.ui.tab[realm] = skill;
   $('#main').scrollTop = 0;
   document.body.classList.remove('menu-open');
+  // damage numbers of the page you leave do not float over the next one
+  for (const f of $$('#fx > .float')) f.remove();
   viewChanged = true;
   dirty = true;
 }
@@ -443,11 +448,12 @@ function farmPanel() {
 const VIEWS = {};
 // Extension points filled by ui-systems.js: each entry returns HTML (or '').
 // realmScene: an animated scene under a skill's banner (seas-ui.js); when one is shown it carries the farm numbers.
-const UIX = { bagTop: [], quick: [], homeTop: [], questsBottom: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [], nowbar: [], colDetail: [], stagesTop: [] };
+const UIX = { realmIntro: [], bagTop: [], quick: [], homeTop: [], questsBottom: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [], nowbar: [], colDetail: [], stagesTop: [] };
 const uix = (k, ...a) => UIX[k].map((f) => f(...a) || '').join('');
 // The quiet guide (guide.js): the first line of help on Woodcutting, and each skill's card on its first visit.
-UIX.realmTop.push((realm, skill) => firstHintHTML(realm, skill) + introCardHTML('skill:' + skill) + (skill === 'cooking' ? introCardHTML('feature:spices') : ''));
-UIX.battleTop.push(() => introCardHTML('feature:battle') + introCardHTML('feature:dungeons'));
+// One intro card at a time: the next one shows once this one is read.
+UIX.realmIntro.push((realm, skill) => firstHintHTML(realm, skill) + (introCardHTML('skill:' + skill) || (skill === 'cooking' ? introCardHTML('feature:spices') : '')));
+UIX.battleTop.push(() => introCardHTML('feature:battle') || introCardHTML('feature:dungeons'));
 
 /* ------------------------------------------------------------- overview */
 VIEWS.home = () => {
@@ -459,22 +465,22 @@ VIEWS.home = () => {
       <span class="ovs-ring" data-xpring="${k}" style="--p:${b.p}">${ic('skill', k)}</span><span class="ovs-main"><span class="ovs-top"><b>${SKILLS[k].name}</b><em><small>Lv</small> <span data-lv="${k}">${b.L}</span></em></span>
       <span class="xpbar thin"><i data-xpbar="${k}"></i></span></span></button>`;
   };
+  // One screen: what runs now and what waits on the left, every skill and your record on the right.
   return `
   ${ptitle('Tri-Realm Idle', 'Overview')}
-  <div class="ov-top">
+  ${fitCols('ov-board', `<div class="ov-top">
     <section class="win">${farm || idlePicksHTML()}</section>
     <section class="win quest-win phone-only">${goalHTML()}</section>
   </div>
   ${gateHTML()}
-  ${uix('homeTop')}
-  ${hdr('Skills', `Total level ${totalLevel()} · ${UNLOCKS.filter((u) => S.unlocked[u.id]).length} / ${UNLOCKS.length} discovered`)}
+  ${uix('homeTop')}`, `${hdr('Skills', `Total level ${totalLevel()} · ${UNLOCKS.filter((u) => S.unlocked[u.id]).length} / ${UNLOCKS.length} discovered`)}
   <div class="ov-grid">${[...openRealms().slice(0, 1), ...(featureOpen('battle') ? ['combat'] : []), ...openRealms().slice(1)].map((r) => `
     <section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${r === 'combat' ? ui('battle') : ic('realm', r)}${r === 'combat' ? 'Combat' : REALMS[r].name}</h3>
       ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
     ${gateHTML() ? '' : nextUnlockHTML('win ov-next')}</div>
   <section class="win adv-win">${hdr('Adventurer')}
     <div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Character', 'Lv ' + charLv())}${stat('Techniques', `${Object.keys(S.tech.lv).length} / ${Object.keys(TECHNIQUES).length}`)}</div>
-  </section>`;
+  </section>`)}`;
 };
 
 // Idle Overview: up to three one-click picks (resume, the objective, the closest level-up) instead of an explanation.
@@ -534,21 +540,18 @@ VIEWS.realm = (realm, skill) => {
   const active = S.action && S.action.skill === skill;
   const scene = uix('realmScene', realm, skill);
   const top = uix('realmTop', realm, skill);
-  // Full-width page: the focus panel (focus-ui.js) and ONE list of actions, then the tabbed sub-menu
-  // (skillpage-ui.js). Gathering skills list their actions beside the focus panel, crafting skills in the
-  // recipe gallery under it (the focus panel is its detail view); only skills without a focus panel keep the card grid.
   const grid = !scene || s.type === 'voyage';
-  return `<div class="sk-page sk-col" style="--rc:${rc(realm)}">
-  ${skBannerHTML(realm, skill)}
-  ${scene && s.type === 'craft'
-    // Crafting: the recipe gallery sits beside the focus panel on wide screens (stacks under it otherwise)
-    ? `<div class="sk-stage craft-stage"><div class="stg-scene">${scene}${top}</div><div class="stg-side ws-side">${workshopHTML(skill, { detail: false })}</div></div>`
-    : scene ? skStageHTML(skill, scene, top) : `${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}${top}`}
-  ${s.type === 'craft' ? (scene ? '' : workshopHTML(skill, {})) : !grid ? '' : `${s.actions.length ? hdr({ voyage: 'Destinations', craft: 'Recipes', tame: 'Hunts', bond: 'Rituals' }[s.type] || 'Gathering', `${open} / ${s.actions.length} unlocked · click a card to start`) : ''}
-  <div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
-  ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}`}
-  ${skMoreHTML(realm, skill)}
-  </div>`;
+  // One screen (skBoardHTML): the focus panel and the skill's own panels on the left, the action list on the right.
+  const LIST = { craft: 'Recipes', voyage: 'Destinations', tame: 'Hunts', bond: 'Rituals' };
+  let list = null;
+  if (s.type === 'craft') list = [LIST.craft, workshopHTML(skill, scene ? { detail: false } : {})];
+  else if (scene && (s.type === 'gather' || s.type === 'bond')) list = [PICK_TITLE[skill] || 'Actions', pickerHTML(skill)];
+  else if (grid && s.actions.length) list = [LIST[s.type] || 'Gathering', `<div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
+    ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}`];
+  // the first-visit card, then the focus panel, then the skill's own panels (heat, plots, companions...)
+  const intro = uix('realmIntro', realm, skill);
+  const main = scene ? `${intro}${scene}${top}` : `${intro}${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}${top}`;
+  return skBoardHTML(realm, skill, { main, list });
 };
 function actState(skill, a) {
   if (a.schem && !S.known[a.schem]) return 'schem';
@@ -630,24 +633,26 @@ VIEWS.battle = () => {
     if (!sealed) groups += zoneRow(z, i);
   });
   const z = C.zone != null ? ZONES[C.zone] : null;
-  return `
+  // One screen (2026-11-25, like Melvor's combat page): the stage column (where, the foe, your dock) and
+  // beside it one tabbed panel holding everything else: stages, dungeons, techniques, stats, log, drops...
+  const part = (f) => f();
+  const tabs = hdrTabs([
+    `<section class="win stages" id="gs-stages">${hdr('Stages', `${ZONES.filter((x, i) => !x.dungeon && zoneUnlocked(i)).length} open`)}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section>`,
+    typeof dungeonsWinHTML === 'function' ? dungeonsWinHTML() : '',
+    ...UIX.battleSide.map(part),
+    `<section class="win char-stats">${hdr('Stats', `Lv ${charLv()}`)}${charStatsHTML()}</section>`,
+    `<section class="win log-win">${hdr('Log')}<div class="log" id="clog">${logHTML()}</div></section>`,
+    ...(UIX.battleBottom || []).map(part),
+    `<section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), synergiesFrom('character'))}</section>`,
+  ]);
+  return `<div class="gs-board fit">
   <div class="gs" style="--rc:${rc(z ? z.realm : 'combat')}">
     ${gsTopHTML(z)}
     <section id="stage" class="arena gs-stage ${C.zone != null ? 'fighting' : ''}">${stageHTML()}</section>
     ${gsDockHTML(foods)}
   </div>
-  ${uix('battleTop')}
-  ${(() => { const dg = typeof dungeonsWinHTML === 'function' ? dungeonsWinHTML() : ''; return `<div class="gs-below ${dg ? 'has-dg' : ''}">
-    ${dg}
-    <section class="win stages" id="gs-stages">${hdr('Stages')}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section>`; })()}
-    <div class="gs-side">
-      ${uix('battleSide')}
-      <section class="win char-stats">${hdr('Character', `Lv ${charLv()}`)}${charStatsHTML()}</section>
-      <section class="win log-win">${hdr('Battle log')}<div class="log" id="clog">${logHTML()}</div></section>
-    </div>
-  </div>
-  ${UIX.battleBottom ? uix('battleBottom') : ''}
-  <section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), synergiesFrom('character'))}</section>`;
+  <div class="gs-panel">${uix('battleTop')}${tabPanelHTML('battle', tabs, 'gs-tabs')}</div>
+  </div>`;
 };
 // "Grand Stage" (2026-11-24): no hero on screen. The top bar says where you fight and what it opens,
 // the stage shows the foe (arena.js stageHTML), the command dock under it is you.
@@ -709,7 +714,8 @@ function gsDockHTML(foods) {
 document.addEventListener('click', (ev) => {
   if (!ev.target.closest('[data-gostages]')) return;
   const el = $('#gs-stages');
-  if (el) el.scrollIntoView({ behavior: calmMotion() ? 'auto' : 'smooth', block: 'start' });
+  showPaneOf(el);
+  if (el) el.scrollIntoView({ behavior: calmMotion() ? 'auto' : 'smooth', block: 'nearest' });
 });
 // One tier switch for every world (2026-11-24): each world takes the chosen tier, or its highest unlocked one
 // below it (its header then names the tier it really plays). uix('stagesTop') (the Hardcore switch) now sits
@@ -797,13 +803,13 @@ VIEWS.hero = (tab) => {
   const newRow = fresh.length && !q && fresh.length < 0.6 * order.filter((k) => count(k) > 0).length ? `<div class="bag-new"><div class="bn-head"><small>New since your last visit · ${fresh.length}</small><button class="mini-btn bn-seen" data-bankseen>Mark seen</button></div><div class="bag-grid">${fresh.map(bt).join('')}</div></div>` : '';
   return `
   ${ptitle('Hero', 'Bank', heroTabs(tab))}
-  <div class="hero-layout bank-layout">
+  <div class="hero-layout bank-layout fit">
     <section class="win bag-win">
       <nav class="bag-tabs">${BAG_TABS.map(([k, icn, l]) => `<button class="${S.ui.bank === k ? 'on' : ''}${KINDS[k] ? ' k-' + k : ''}" data-bankf="${k}" title="${l}">${ui(icn)}<span>${l}</span></button>`).join('')}</nav>
       <div class="bag-tools"><label class="bag-q">${ui('search')}<input id="bank-q" type="search" data-bankq placeholder="Search the bank" value="${esc(S.ui.bankq || '')}" autocomplete="off"></label>
         <nav class="bag-sort">${[['rarity', 'Rarity'], ['qty', 'Qty'], ['new', 'Newest'], ['value', 'Value']].map(([k, l]) => `<button class="${sort === k ? 'on' : ''}" data-banksort="${k}">${l}</button>`).join('')}</nav></div>
       ${uix('bagTop')}${newRow}<div class="bag-grid">${ids.length ? ids.map(bt).join('') : '<div class="empty-note">' + (q ? 'No item matches.' : 'Nothing here yet.') + '</div>'}</div>
-      <div class="bag-foot"><span>${Object.keys(S.items).length} item types</span><span>Bank value ${ui('gold')} ${fmt(worth)}</span></div>
+      <div class="bag-foot"><span>${Object.keys(S.items).filter((k) => count(k) > 0).length} item types</span><span>Bank value ${ui('gold')} ${fmt(worth)}</span></div>
     </section>
     <section class="win detail">${armDetailHTML() || inspectorHTML() || bankSummaryHTML()}</section>
   </div>`;
@@ -886,12 +892,10 @@ function collectionHTML() {
   const found = Object.keys(S.found).filter(real).length + Object.keys(S.pets).length, all = Object.keys(ITEMS).filter(real).length + PETS.length;
   return `
   ${ptitle('Hero', 'Collection', heroTabs('collection'))}
-  <section class="win col-sum"><div class="cs-top"><b>${Math.floor(pctAll * 100)}%</b><span class="muted">${found} / ${all} discovered</span></div><span class="pbar gold"><i style="width:${pctAll * 100}%"></i></span></section>
-  ${uix('collectionTop')}
-  <div class="hero-layout col-layout">
-    <section class="win col-win">${groups}${pets}</section>
+  ${fitCols('col-board', `<section class="win col-win">${groups}${pets}</section>`,
+    `<section class="win col-sum"><div class="cs-top"><b>${Math.floor(pctAll * 100)}%</b><span class="muted">${found} / ${all} discovered</span></div><span class="pbar gold"><i style="width:${pctAll * 100}%"></i></span></section>
     <section class="win detail col-detail">${detail}</section>
-  </div>`;
+    ${uix('collectionTop')}`)}`;
 }
 function obtainedHTML(title, sub, tiles, rows) {
   return `<div class="ob-head"><small>${sub || ''}</small><h2>${esc(title)}</h2></div>
@@ -919,7 +923,7 @@ VIEWS.power = () => {
   const steps = ['1', '10', '100', '10%', '25%', 'max'];
   return `
   ${ptitle('Energy mastery', 'Disciplines')}
-  <section class="win energy-win">
+  ${fitCols('pw-board', `<section class="win energy-win">
     <div class="en-top">
       <div class="en-num"><small>Free energy</small><b><span data-eidle>${fmt(energyIdle())}</span><em> / ${fmt(cap)}</em></b></div>
       <div class="en-ctl"><label>Per click</label><div class="seg">${steps.map((s) => `<button class="${E.step === s ? 'on' : ''}" data-step="${s}"><span>${s}</span></button>`).join('')}</div>
@@ -928,7 +932,10 @@ VIEWS.power = () => {
     <div class="pool-bar">${TRAININGS.map((t) => `<i style="width:${((E.alloc[t.id] || 0) / cap) * 100}%;background:${TRAIN_COLORS[t.id]}" title="${t.name}"></i>`).join('')}</div>
     <p class="muted small en-help">Split your energy between your disciplines: each one levels up forever, even offline. Every world you reach teaches a new one.</p>
   </section>
-  <div class="train-grid">${TRAININGS.map((t) => {
+  <section class="win">${hdr('Gold upgrades')}
+    <div class="upg">${tile(null, null, { r: 4, icon: ui('energy') })}<span class="upg-t"><b>Bigger Vessel</b><small>+25 energy capacity · now ${fmt(cap)}</small></span>${gbtn(fmt(capCost()), 'gold', `data-buycap data-cost="${capCost()}"`, 'sm')}</div>
+    <div class="upg">${tile(null, null, { r: 4, icon: ui('power') })}<span class="upg-t"><b>Purer Energy</b><small>+10% training speed · now ×${energyPower().toFixed(2)}</small></span>${gbtn(fmt(powCost()), 'gold', `data-buypow data-cost="${powCost()}"`, 'sm')}</div>
+  </section>`, `<div class="train-grid">${TRAININGS.map((t) => {
     if (!disciplineOpen(t)) return `<section class="win train locked"><div class="tr-top"><span class="tr-ic">${ui('lock')}</span><span class="tr-main"><b>${t.name}</b><small>Learned in ${REALMS[t.world].name}</small></span></div></section>`;
     const a = E.alloc[t.id] || 0, L = tl(t.id), rate = (a * energyPower()) / trainCost(t.id, L);
     return `<section class="win train ${a ? 'active' : ''}" style="--tc:${TRAIN_COLORS[t.id]}">
@@ -939,17 +946,13 @@ VIEWS.power = () => {
         <span class="tr-alloc"><b>${fmt(a)}</b> energy · <em>${a ? (rate >= 1 ? fmt(rate) + ' lv/s' : fmtTime(1 / rate) + ' / lv') : 'idle'}</em></span>
         <button class="mini-btn hot" data-alloc="${t.id}:1" title="Add energy">${ui('plus')}</button></div>
     </section>`;
-  }).join('')}</div>
-  <section class="win">${hdr('Gold upgrades')}
-    <div class="upg">${tile(null, null, { r: 4, icon: ui('energy') })}<span class="upg-t"><b>Bigger Vessel</b><small>+25 energy capacity · now ${fmt(cap)}</small></span>${gbtn(fmt(capCost()), 'gold', `data-buycap data-cost="${capCost()}"`, 'sm')}</div>
-    <div class="upg">${tile(null, null, { r: 4, icon: ui('power') })}<span class="upg-t"><b>Purer Energy</b><small>+10% training speed · now ×${energyPower().toFixed(2)}</small></span>${gbtn(fmt(powCost()), 'gold', `data-buypow data-cost="${powCost()}"`, 'sm')}</div>
-  </section>`;
+  }).join('')}</div>`)}`;
 };
 
 /* ------------------------------------------------------------- market */
 VIEWS.market = () => `
   ${ptitle('Merchant', 'Market')}
-  <div class="shop">${SHOP.filter((it) => !it.realm || realmOpen(it.realm)).map((it) => {
+  <div class="shop fit fit-scroll">${SHOP.filter((it) => !it.realm || realmOpen(it.realm)).map((it) => {
     const tier = S.shop[it.id] || 0, cost = shopCost(it), maxed = cost === undefined;
     const r = it.give ? 2 : it.cat === 'Charms' ? 5 : 4;
     return `<section class="win ware">${tile(it.give ? it.give[0] : null, it.give ? '×' + it.give[1] : (it.costs ? `${tier}/${it.costs.length}` : ''), { r, icon: ic('shop', it.id), title: it.name })}
@@ -960,17 +963,17 @@ VIEWS.market = () => `
 /* ------------------------------------------------------------- settings */
 VIEWS.settings = () => `
   ${ptitle('System', 'Settings')}
-  ${isStandalone() ? '' : `<section class="win install">${tile(null, null, { r: 4, icon: ui('play') })}
+  ${fitCols('set-board', `${isStandalone() ? '' : `<section class="win install">${tile(null, null, { r: 4, icon: ui('play') })}
     <span class="upg-t"><b>Play it like an app</b><small>Install Tri-Realm on your phone or computer: full screen, its own icon, works offline.${installPrompt ? '' : ' iPhone / iPad: Share → Add to Home Screen. Android / desktop: browser menu → Install app.'}</small></span>
     ${installPrompt ? gbtn('Install', 'check', 'data-install') : ''}</section>`}
   <section class="win">${hdr('Help')}
     <div class="btn-row">${gbtn(S.ui.noTips ? 'Turn hints on' : 'Turn hints off', 'info', 'data-toggletips', 'dark')}${gbtn('Show the page cards again', 'hero', 'data-reintro', 'dark')}</div>
     <p class="muted small">During your first ${GUIDE_N} steps, a small hint points at the next click if nothing moves for a while. Each new skill or menu explains itself once, at the top of its page.</p></section>
-  <section class="win">${hdr('Save data', 'autosaves every 10 seconds')}
+  <section class="win">${hdr('Credits')}<p class="muted small">Icons by Lorc, Delapouite, Skoll, Caro Asercion, sbed, Cathelineau, DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue and Zeromancer from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. World scenes are generated in-game.</p></section>`,
+  `<section class="win">${hdr('Save data', 'autosaves every 10 seconds')}
     <div class="btn-row">${gbtn('Save now', 'check', 'data-save', 'dark')}${gbtn('Export', 'log', 'data-export', 'dark')}${gbtn('Import', 'open', 'data-import', 'dark')}${gbtn('Hard reset', 'close', 'data-wipe', 'danger')}</div>
     <textarea id="savebox" rows="5" placeholder="Export puts your save here. To import, paste a save here and press Import."></textarea>
-  </section>
-  <section class="win">${hdr('Credits')}<p class="muted small">Icons by Lorc, Delapouite, Skoll, Caro Asercion, sbed, Cathelineau, DarkZaitzev, Faithtoken, Felbrigg, Guard13007, John Colburn, Lucas, PriorBlue and Zeromancer from <a href="https://game-icons.net" target="_blank" rel="noopener">game-icons.net</a>, licensed under <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC BY 3.0</a>. World scenes are generated in-game.</p></section>`;
+  </section>`)}`;
 
 /* =============================================================== activity bar + objective */
 function nowHTML() {
@@ -1330,7 +1333,7 @@ function render() {
   main.innerHTML = VIEWS[name](a1, a2);
   main.scrollTop = scroll;
   // a link that names a section ('battle#gs-dungeons'): bring it into view once
-  if (navAnchor) { const el = document.getElementById(navAnchor); navAnchor = null; if (el) el.scrollIntoView({ block: 'start' }); }
+  if (navAnchor) { const el = document.getElementById(navAnchor); navAnchor = null; if (el) { showPaneOf(el); el.scrollIntoView({ block: 'nearest' }); } }
   if (foc && $('#' + foc[0])) { const el = $('#' + foc[0]); el.focus({ preventScroll: true }); try { el.setSelectionRange(foc[1], foc[2]); } catch (e) { /* not a text field */ } }
   if (boxVal !== null && $('#savebox')) $('#savebox').value = boxVal;
   if (name === 'hero') { bankSig = Object.keys(S.items).join(','); setTimeout(() => { Object.keys(S.items).forEach((k) => seenItems.add(k)); bankSeenSave(); }, 0); }
