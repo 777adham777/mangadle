@@ -181,7 +181,7 @@ function sgBoost(skill) {
 
 function skillGuideHTML(skill) {
   const s = SKILLS[skill], G = GUIDE_SK[skill] || { tag: s.desc || '', steps: [], tip: null }, b = xpInfo(skill);
-  const realmName = REALMS[s.realm] ? REALMS[s.realm].name : 'Battlefield';
+  const realmName = REALMS[s.realm] ? REALMS[s.realm].name : 'Combat';
   return `<div class="sg" style="--rc:${rc(s.realm === 'combat' ? 'combat' : s.realm)}">
     <header class="sg-hero" style="background-image:url('${sgBg(skill)}')">
       <span class="sg-ic">${ic('skill', skill)}</span>

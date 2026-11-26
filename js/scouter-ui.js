@@ -79,7 +79,7 @@ UIX.battleBottom.unshift(scoutWinHTML);
 on('death', (e) => {
   if (!scoutOn() || e.rank) return;
   const z = S.scout && S.scout.last && ZONES.find((x) => x.id === S.scout.last);
-  if (z) { SC.zi = ZONES.indexOf(z); SC.base = null; toast(`Power Visor: scan ${z.name} on the Battlefield to see why you lost.`, 'rare'); dirty = true; }
+  if (z) { SC.zi = ZONES.indexOf(z); SC.base = null; toast(`Power Visor: scan ${z.name} in Combat to see why you lost.`, 'rare'); dirty = true; }
 });
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-scscan],[data-scapply]');

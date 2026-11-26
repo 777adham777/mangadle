@@ -62,7 +62,7 @@ const TRIALS = [
   // Kaio Planet
   trialDef('ki_grav', 'ki', 'Reach Gravity Training level 30', 30, tLv('gravity'), { ki_core: 4 }, '', 'realm:ki:gravity'),
   trialDef('ki_crops', 'ki', 'Harvest 50 crops', 50, tStat('harvests'), { seed_star_fruit: 3 }, '', 'realm:ki:farming'),
-  trialDef('ki_trans', 'ki', 'Transform 25 times in battle', 25, tStat('transforms'), { vital_bean: 10 }, 'Pick a form on the Battlefield.'),
+  trialDef('ki_trans', 'ki', 'Transform 25 times in battle', 25, tStat('transforms'), { vital_bean: 10 }, 'Pick a form in Combat.'),
   guardTrial('ki', 'tyrant', 'the Crimson Tyrant', { tyrant_horn: 1 }),
   fastTrial('ki', 'pit', 360, { key_pit: 3 }),
   setTrial('ki', 'pit', { chest_pit: 2 }),

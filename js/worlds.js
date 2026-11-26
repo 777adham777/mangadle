@@ -312,7 +312,7 @@ const EXTRA_USES = [];
       { id: 'skill:farming', name: 'Farming', need: () => skillLv('gravity') >= 5 || usedSkill('farming'),
         hint: () => 'Reach Gravity Training level 5', why: 'An old farmer on the plains hands you Vital Bean seeds and three plots.' },
       { id: 'feature:transform', name: 'Transformations', need: () => skillLv('gravity') >= 10,
-        hint: () => 'Reach Gravity Training level 10', why: 'Your body can finally hold a surge of ki. Pick a form on the Battlefield.' },
+        hint: () => 'Reach Gravity Training level 10', why: 'Your body can finally hold a surge of ki. Pick a form in Combat.' },
       { id: 'feature:wishes', name: 'Wish Orbs', need: () => (S.combat.kills.plains || 0) >= 10,
         hint: () => 'Defeat 10 foes on the Rocky Plains', why: 'A fallen soldier drops a radar. It picks up seven strange signals, one in every world.' },
       { id: 'feature:chamber', name: 'Time Chamber', need: () => skillLv('gravity') >= 20 || (S.chamber && S.chamber.store > 0),

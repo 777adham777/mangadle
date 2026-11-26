@@ -744,7 +744,7 @@ function gsTopHTML(z) {
     <div class="gs-where"><span class="gs-ric">${z ? ic('realm', z.realm) : ui('battle')}</span><span>${z ? `<small>${esc(REALMS[z.realm].name)}</small>` : ''}<b>${z ? esc(z.name) : 'Combat'}</b></span>${z ? `<span class="danger ${dc}">${dl}</span>` : ''}</div>
     ${z ? arrow(next, '›', 'Next stage') : ''}
     ${prog}
-    <div class="gs-acts">${typeof dgOn === 'function' && dgOn() ? gbtn('Dungeons', 'chest', 'data-nav="battle#gs-dungeons"', 'dark sm gs-dgbtn') : ''}${z ? `<button class="gbtn sm hot" data-stopcombat title="Retreat"><i class="gbtn-ic">${gi('run')}</i><span>Retreat</span></button>` : ''}${typeof skGuideBtn === 'function' ? skGuideBtn('character').replace(/title="[^"]*"/, 'title="Guide: Battlefield"') : ''}</div>
+    <div class="gs-acts">${typeof dgOn === 'function' && dgOn() ? gbtn('Dungeons', 'chest', 'data-nav="battle#gs-dungeons"', 'dark sm gs-dgbtn') : ''}${z ? `<button class="gbtn sm hot" data-stopcombat title="Retreat"><i class="gbtn-ic">${gi('run')}</i><span>Retreat</span></button>` : ''}${typeof skGuideBtn === 'function' ? skGuideBtn('character').replace(/title="[^"]*"/, 'title="Guide: Combat"') : ''}</div>
   </div>`;
 }
 function gsTechHTML() {

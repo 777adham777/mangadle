@@ -750,7 +750,7 @@ const UNLOCKS = [
     hint: () => 'Reach Character level 30 in Orange Town', why: 'Keep an eye on the screen: now and then something from the world you are in shows up for 30 seconds (a messenger toad, a bottle in the waves...). Take it for a small bonus. Missing one costs nothing.',
     req: 'at Character Lv 30 in Orange Town', prog: () => [charLv(), 30, 1] },
   { id: 'feature:scouter',    name: 'Power Visor',     need: () => (!!S.gates.seas && S.stats.deaths >= 1) || !!(S.scout && S.scout.n),
-    hint: () => 'Lose a fight in Orange Town or later', why: 'A strange device falls out of the cracked sky: a Power Visor. It reads the power of a stage and plays the fight out for you: win chance, what brings you down, and what to change. Battlefield.',
+    hint: () => 'Lose a fight in Orange Town or later', why: 'A strange device falls out of the cracked sky: a Power Visor. It reads the power of a stage and plays the fight out for you: win chance, what brings you down, and what to change.',
     req: 'after a lost fight in Orange Town', at: ['Combat', 'battle'] },
   { id: 'feature:missions',   name: 'Task Queue',   need: () => (!!S.gates.seas && skillLv('fishing') >= 10) || !!(S.missions && S.missions.list && S.missions.list.length),
     hint: () => 'Reach Fishing level 10 in Orange Town', why: 'You can now queue tasks: each one starts when the previous one is done, even while you are away. Open the queue from the activity bar.',
