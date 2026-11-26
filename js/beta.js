@@ -13,16 +13,19 @@ const BETA = {
   notice: 1,                 // bump to show the pre-alpha notice again to everyone
   worlds: 3,                 // worlds open in this build (Infinity = all)
   feedback: '',              // Discord invite or form URL: shown in Settings and in the bug report
-  version: location.protocol === 'file:' ? 'local' : 'unknown',
+  build: 183,                // keep equal to the number in sw.js VERSION (bump both on deploy)
+  date: '26 Nov',            // day of that build
+  version: location.protocol === 'file:' ? 'local' : 'unknown',   // cache name the service worker reports (play data, bug report)
 };
+const betaVersion = () => `build ${BETA.build} · ${BETA.date}`;
 
 /* ---------------------------------------------------------------- version + update bar */
-(function betaVersion() {
+(function betaVersionAsk() {
   if (!('serviceWorker' in navigator) || location.protocol === 'file:') return;
   const ask = (sw) => {
     if (!sw) return;
     const ch = new MessageChannel();
-    ch.port1.onmessage = (e) => { BETA.version = String(e.data || BETA.version); dirty = true; };
+    ch.port1.onmessage = (e) => { BETA.version = String(e.data || BETA.version); };
     sw.postMessage('version', [ch.port2]);
   };
   navigator.serviceWorker.ready.then((r) => ask(r.active)).catch(() => {});
@@ -53,13 +56,14 @@ function betaCover(html) {
 }
 const betaUncover = () => { const el = document.getElementById('beta-cover'); if (el) el.classList.remove('show'); };
 
-function betaNotice() {
-  betaCover(`<small class="beta-tag">Pre-alpha</small><h2>Welcome, tester!</h2>
-    <ul><li>Things will break and numbers will change.</li>
+// about = reopened from Settings (not the first-time welcome)
+function betaNotice(about) {
+  betaCover(`<small class="beta-tag">Pre-alpha${about ? ' · ' + betaVersion() : ''}</small><h2>${about ? 'This build' : 'Welcome, tester!'}</h2>
+    <ul><li>${about ? 'Pre-alpha: things break, numbers change.' : 'Things will break and numbers will change.'}</li>
       <li><b>${BETA.worlds} worlds</b> are open in this build.</li>
       <li>Bugs and ideas: <b>Settings → Report a bug</b>.</li>
-      <li>The game notes how you play, nothing personal, and it stays here: <b>Settings → Play data</b>.</li></ul>
-    <div class="btn-row">${gbtn('Let\'s go', 'check', 'data-betaok')}</div>`);
+      ${about ? '' : '<li>The game notes how you play, nothing personal, and it stays here: <b>Settings → Play data</b>.</li>'}</ul>
+    <div class="btn-row">${about ? gbtn('Close', 'close', 'data-betaclose', 'dark') : gbtn('Let\'s go', 'check', 'data-betaok')}</div>`);
 }
 // Worlds past the build's last one stay out of the menus, lists and counts (dev mode shows everything).
 // The Rift sits after every world.
@@ -88,7 +92,7 @@ function betaInfo() {
   const sc = `${screen.width}×${screen.height} @${devicePixelRatio}, window ${innerWidth}×${innerHeight}`;
   const errs = (window.BETA_ERRORS || []).slice(-8).map((e) => `- ${new Date(e.t).toISOString().slice(11, 19)} ${e.m} (${e.at})${e.st ? '\n    ' + e.st.split('\n').slice(1, 4).join('\n    ').trim() : ''}`);
   return [
-    `Version: ${BETA.version}`,
+    `Version: ${betaVersion()} (${BETA.version})`,
     `Date: ${new Date().toISOString()}`,
     `Browser: ${navigator.userAgent}`,
     `Screen: ${sc}${typeof isStandalone === 'function' && isStandalone() ? ' (installed app)' : ''}`,
@@ -130,7 +134,7 @@ function betaOnError() {
   VIEWS.settings = (...a) => {
     // in the Save data column: the first column is already full (one screen per page)
     const h = base(...a), sd = h.indexOf('<span>Save data</span>'), i = sd < 0 ? h.indexOf('<section') : h.lastIndexOf('<section', sd);
-    const sec = `<section class="win beta-set">${hdr('Pre-alpha', 'version ' + esc(BETA.version))}
+    const sec = `<section class="win beta-set">${hdr('Pre-alpha', betaVersion())}
       <div class="btn-row">${gbtn('Report a bug', 'info', 'data-betareport')}${BETA.feedback ? `<a class="gbtn dark" href="${esc(BETA.feedback)}" target="_blank" rel="noopener"><span>Feedback</span></a>` : ''}${gbtn('About this build', 'hero', 'data-betanote', 'dark')}</div></section>`;
     return i < 0 ? h + sec : h.slice(0, i) + sec + h.slice(i);
   };
@@ -156,7 +160,7 @@ document.addEventListener('click', async (ev) => {
   const d = t.dataset;
   if ('betaok' in d) { S.ui.betaSeen = BETA.notice; betaUncover(); dirty = true; saveGame(); if (LOAD_FAIL) { LOAD_FAIL = null; } }
   else if ('betareport' in d) { const b = document.getElementById('beta-bar'); if (b && b.className === 'err') b.remove(); betaReport(); }
-  else if ('betanote' in d) betaNotice();
+  else if ('betanote' in d) betaNotice(true);
   else if ('betaclose' in d) betaUncover();
   else if ('betacopy' in d) {
     const what = (document.getElementById('beta-what') || {}).value || '';

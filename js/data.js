@@ -515,9 +515,9 @@ const discFx = (k) => TRAININGS.reduce((a, t) => a + (t.fx[k] || 0) * (S.energy.
 
 /* ------------------------------------------------------------------- shop */
 const SHOP = [
-  { id: 'tools_shinobi', cat: 'Tools', name: 'Shinobi Tool Pouch', icon: '🎒', desc: '+10% speed for Leaf Village skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
-  { id: 'tools_soul',    cat: 'Tools', name: 'Soul Lantern',       icon: '🏮', desc: '+10% speed for Soul City skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
-  { id: 'tools_seas',    cat: 'Tools', name: 'Ship Upgrades',      icon: '🛠️', desc: '+10% speed for Orange Town skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
+  { id: 'tools_shinobi', cat: 'Tools', realm: 'shinobi', name: 'Shinobi Tool Pouch', icon: '🎒', desc: '+10% speed for Leaf Village skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
+  { id: 'tools_soul',    cat: 'Tools', realm: 'soul', name: 'Soul Lantern',       icon: '🏮', desc: '+10% speed for Soul City skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
+  { id: 'tools_seas',    cat: 'Tools', realm: 'seas', name: 'Ship Upgrades',      icon: '🛠️', desc: '+10% speed for Orange Town skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
   { id: 'abundance',     cat: 'Charms', name: 'Abundance Charm',   icon: '🍀', desc: '+5% chance per tier to double gathering output.', costs: [500, 5000, 50000, 500000] },
   { id: 'lucky_coin',    cat: 'Charms', name: 'Lucky Coin',        icon: '🎲', desc: '+8 Luck per tier.', costs: [2000, 20000, 200000] },
   { id: 'satchel',       cat: 'Charms', name: 'Auto-Eat Satchel',  icon: '👝', desc: 'Eat earlier: 40% → 55% → 70% HP.', costs: [1000, 20000] },

@@ -235,3 +235,118 @@
 .coo-ally.friend small { color: var(--gold); }
 .ch-poster .gi { color: #e8c98a; }
 @media (max-width: 640px) { .pst { grid-template-columns: 1fr; } .pst-art { max-width: 260px; justify-self: center; } }
+
+/* ==========================================================================
+   Deep UI audit, meta pages (Bank, Collection, Market, Energy, Quests, Settings, modals)
+   ========================================================================== */
+/* M14 · the destructive action is the quietest button */
+.gbtn.danger { background: transparent; color: #ff8a8a; box-shadow: inset 0 0 0 1px rgba(224, 71, 90, 0.75); margin-left: auto; }
+.gbtn.danger .gbtn-ic { background: transparent; color: #ff8a8a; }
+.gbtn.danger:hover:not(:disabled) { background: rgba(224, 71, 90, 0.12); box-shadow: inset 0 0 0 1px #e0475a; }
+/* P22 · no keyboard on a touch screen */
+@media (hover: none) and (pointer: coarse) { .uxs-row.uxs-keys { display: none; } }
+/* M05 · Quests: a trial or an objective is one clickable row (one real GO: the chapter step) */
+.qs-trials .tr-card { grid-template-columns: minmax(0, 1fr) minmax(80px, 130px) auto 16px; align-items: center; gap: 10px; padding: 7px 10px; }
+.qs-trials .tr-card .tr-t b { font-size: 13.5px; line-height: 1.25; }
+.qs-trials .tr-card .q-prog { margin: 0; }
+.qs-trials .tr-card > .q-rew { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; }
+.qs-trials .tr-card .q-reward { font-size: 13px; }
+.qs-trials .tr-card > .q-rew .tile { --ts: 36px; }
+.qs-trials .tr-card.ready { grid-template-columns: minmax(0, 1fr) minmax(80px, 130px) auto auto; }
+.qs-trials .tr-card.got { grid-template-columns: minmax(0, 1fr) auto auto; }
+.tr-card.go, .task.go { cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.tr-card.go:hover, .task.go:hover { border-color: var(--line2); background: color-mix(in srgb, #fff 4%, var(--panel2)); }
+.row-go { font: 400 22px/1 var(--display); font-style: normal; color: var(--dim); opacity: 0.6; }
+.tr-card.go:hover .row-go, .task.go:hover .row-go { color: #fff; opacity: 1; }
+/* P21 · the count sits at the end of its bar; one short sub-line */
+.task .tk-prog { display: flex; align-items: center; gap: 8px; }
+.task .tk-prog .pbar { flex: 1; }
+.task .tk-prog small { flex-shrink: 0; font: 600 12px var(--display); color: var(--dim); }
+.task .tk-main > small { flex-wrap: nowrap; white-space: nowrap; overflow: hidden; }
+.task .tk-main > small .gi { flex-shrink: 0; width: 13px; height: 13px; }
+@media (max-width: 700px) {
+  .qs-trials .tr-card, .qs-trials .tr-card.ready { grid-template-columns: minmax(0, 1fr) auto 16px; }
+  .qs-trials .tr-card.ready { grid-template-columns: minmax(0, 1fr) auto auto; }
+  .qs-trials .tr-card .tr-t { grid-column: 1 / -1; }
+}
+/* M17 · gold amounts stand out in gold */
+.gold-n { font-style: normal; font-weight: 700; color: var(--gold); }
+/* M18 · Bank: a small red dot marks what is new; a "New" filter lists only that */
+.tile .new-dot { position: absolute; top: 4px; right: 4px; z-index: 2; width: 9px; height: 9px; border-radius: 50%; background: #e5484d; box-shadow: 0 0 0 2px #0d0e11; pointer-events: none; }
+.bag-newf { flex-shrink: 0; display: inline-flex; align-items: center; gap: 6px; height: 34px; padding: 0 10px; font: 600 11.5px var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--dim); background: #1c1d22; border: 1px solid var(--line2); }
+.bag-newf:hover { color: #fff; }
+.bag-newf.on { color: #fff; border-color: #e5484d; background: color-mix(in srgb, #e5484d 18%, #1c1d22); }
+.bag-newf em { min-width: 18px; height: 16px; padding: 0 4px; display: grid; place-items: center; border-radius: 8px; font: 700 10px/1 var(--display); font-style: normal; color: #fff; background: #e5484d; }
+.bag-win > .bn-head { margin: 0 0 10px; }
+.bank-sum .hdr small { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; }
+.bank-sum .hdr small .gi { width: 13px; height: 13px; }
+/* P17 · phones: one row of icon filters, a reminder of the view, search + one sort button */
+.bag-now, .bag-sortc { display: none; }
+@media (max-width: 700px) {
+  .bag-win .bag-tabs { display: flex; flex-wrap: nowrap; overflow: visible; width: 100%; margin-bottom: 6px; }
+  .bag-win .bag-tabs > button { flex: 1 1 0; min-width: 0; justify-content: center; padding: 0 4px; gap: 3px; height: 38px; }
+  .bag-win .bag-tabs > button > span { display: none; }
+  .bag-win .bag-tabs > button .gi { width: 18px; height: 18px; font-size: 18px; }
+  .bag-now { display: block; margin: 0 0 8px; font: 700 11px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
+  .bag-win .bag-tools { display: flex; flex-wrap: nowrap; gap: 8px; align-items: center; }
+  .bag-win .bag-tools .bag-q { flex: 1 1 auto; min-width: 0; }
+  .bag-win .bag-tools .bag-sort { display: none; }
+  .bag-win .bag-tools .bag-sortc { display: grid; width: 40px; height: 40px; border-radius: 2px; }
+  .bag-sortc .gi { width: 18px; height: 18px; }
+}
+/* P29 + P08 · phones: the selected item opens in a bottom sheet over the page */
+.sheet-scrim, .sheet-grip { display: none; }
+@media (max-width: 860px) {
+  .hero-layout > .detail.sheet, .col-board .col-detail.sheet {
+    position: fixed; top: auto; left: 0; right: 0; bottom: 0; z-index: 71; order: 0; margin: 0; max-height: 70dvh; overflow-y: auto; overscroll-behavior: contain;
+    padding-top: 0; background: var(--panel); border-top: 1px solid var(--line2); box-shadow: 0 -14px 40px rgba(0, 0, 0, 0.6); animation: sheetUp 0.2s ease-out;
+  }
+  #main:has(> * > .detail.sheet, .col-detail.sheet) { z-index: 72; }
+  .sheet-scrim { display: block; position: fixed; inset: 0; z-index: 70; background: rgba(0, 0, 0, 0.55); }
+  .sheet-grip { display: grid; place-items: center; position: sticky; top: 0; z-index: 3; width: 100%; height: 26px; margin-bottom: 4px; background: var(--panel); cursor: pointer; }
+  .sheet-grip i { width: 44px; height: 5px; border-radius: 3px; background: var(--line2); }
+  .col-board .col-detail:not(.sheet) { display: none; }
+}
+@keyframes sheetUp { from { transform: translateY(40%); opacity: 0.4; } to { transform: none; opacity: 1; } }
+html.calm .detail.sheet { animation: none; }
+/* M08 · Collection: one world at a time */
+.col-tabs { display: flex; flex-wrap: wrap; margin-bottom: 4px; }
+.col-tabs button { display: inline-flex; align-items: center; gap: 6px; }
+.col-tabs button .gi { width: 14px; height: 14px; fill: var(--rc); }
+.col-tabs button em { font-style: normal; font-weight: 500; letter-spacing: 0.02em; opacity: 0.8; }
+.col-tabs button.off { opacity: 0.45; cursor: default; }
+.col-more { display: none; }
+/* M07 + P09 · phones: the progress line, then the grid (found items and one "? N to find" tile per group), then the rest */
+@media (max-width: 860px) {
+  .col-board > .fcol > .col-sum { order: 0; }
+  .col-board > .fcol > .col-win { order: 1; }
+  .col-board > .fcol > *:not(.col-sum):not(.col-win) { order: 2; }
+  .col-board .col-grid .tile.unk, .col-board .ql-grid .ql-miss { display: none; }
+  .col-board .col-more { display: flex; align-items: center; justify-content: center; gap: 6px; grid-column: span 2; min-height: 52px; padding: 0 10px; font: 600 12px var(--display); color: var(--dim); border: 1px dashed var(--line2); white-space: nowrap; }
+  .col-board .ql-grid .col-more { min-height: 40px; }
+  .col-board .col-more b { font-size: 15px; color: var(--mute); }
+  .col-board .qlog .ql-tiers { display: none; }
+  .col-board .col-tabs { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .col-tabs button { min-width: 0; justify-content: flex-start; padding: 0 8px; }
+  .col-tabs button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .col-tabs button em { margin-left: auto; white-space: nowrap; }
+}
+/* M24 · Market: finished upgrades in one compact row at the bottom */
+.shop .shop-maxed { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 14px; }
+.shop-maxed > small { display: inline-flex; align-items: center; gap: 5px; font: 700 11px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ok); }
+.shop-maxed > small .gi { width: 13px; height: 13px; fill: var(--ok); }
+.shop-maxed .sm-it { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dim); }
+.shop-maxed .sm-it .tile { --ts: 32px; }
+.shop-maxed .sm-it b { font-weight: 600; }
+/* M23 · Energy: what is placed, as a chip beside the title */
+.en-chip { align-self: center; padding: 6px 12px; font: 600 13px var(--display); letter-spacing: 0.04em; color: var(--dim); background: var(--panel2); border: 1px solid var(--line2); }
+.en-chip b { color: #c5b2ff; font-size: 15px; }
+/* M11 · Welcome back: what was used sits apart, smaller, under the gains */
+.ob-used { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 6px; }
+.ob-used > small { font: 700 11px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+.ob-used .ob-grid { max-height: none; padding: 4px; justify-content: flex-start; }
+.ob-used .ob-grid .tile { --ts: 50px; }
+.coo-haul .ob-used { justify-content: flex-start; }
+/* M15 · Wanted poster: short labels, the rule behind a ?, Close inside the card */
+.pst-q { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-left: 4px; border-radius: 50%; font: 700 10px/1 var(--display); font-style: normal; color: var(--dim); border: 1px solid var(--line2); cursor: help; vertical-align: 1px; }
+.pst-close { display: flex; justify-content: flex-end; margin-top: 4px; }

@@ -2,8 +2,8 @@
 /* ==========================================================================
    ANIME IDLE RPG — quests on screen (2026-11-25; replaces the story's dialogue)
    - The tracker (sidebar, and the Overview on phones): the chapter, the step, why it
-     matters, its progress and rewards; on a guardian step, how ready you are for it.
-   - The Quests page: the chapter (its goal, the guardian's readiness, every step:
+     matters, its progress and rewards.
+   - The Quests page: the chapter (its goal, every step:
      done, now, ahead), the world trials (six per world, claim, the world seal),
      then the daily and weekly objectives (tasks-ui.js).
    - Portraits of the guides (allies, report-ui.js): an initial on their world's colour.
@@ -22,20 +22,6 @@ function npcArt(id, big) {
   return `<span class="npc-face mono${big ? ' big' : ''}" style="--rc:${rc(r)}"><b>${esc(letter)}</b>${big ? `<i>${ic('realm', r)}</i>` : ''}</span>`;
 }
 
-/* ---------------------------------------------------------------- guardian readiness */
-// From the same sums as the stage danger: how long you take to kill it vs how long it takes to kill you.
-function readiness(ch) {
-  const zi = ZONES.findIndex((z) => z.id === ch.guard);
-  if (zi < 0 || !ZONES[zi].enemies.length) return null;
-  let worst = 0;
-  ZONES[zi].enemies.forEach((_, i) => { const e = enemyAt(zi, i); worst = Math.max(worst, timeToKill(e) / timeToDie(e)); });
-  const [label, cls] = zoneDanger(zi);
-  const fill = Math.max(0.04, Math.min(1, (Math.log(3) - Math.log(Math.max(worst, 0.01))) / (Math.log(3) - Math.log(0.35))));
-  const tip = { deadly: 'Not yet. Levels, better gear and technique levels all close the gap.', risky: 'Possible with plenty of food. A few more levels make it safe.',
-    fair: 'Ready. Bring food and it falls.', easy: 'It stands no chance.' }[cls];
-  return { zi, name: ZONES[zi].enemies[0].name, label, cls, fill, tip, beaten: (S.combat.kills[ch.guard] || 0) > 0 };
-}
-const readyBar = (R, big) => `<div class="rd ${big ? 'big' : ''} ${R.cls}" title="${esc(R.tip)}"><span class="rd-top"><small>${big ? 'Your readiness for' : 'Readiness'} ${big ? `<b>${esc(R.name)}</b>` : ''}</small><em class="danger ${R.cls}">${R.label}</em></span><span class="rd-bar"><i style="width:${Math.round(R.fill * 100)}%"></i></span>${big ? `<small class="rd-tip">${esc(R.tip)}</small>` : ''}</div>`;
 const isGuardStep = (g, ch) => g && ch && g.id === (ch.step || ch.guard);
 
 /* ---------------------------------------------------------------- the tracker */
@@ -58,11 +44,10 @@ goalHTML = function () {
   if (!st) return buildEnd() ? buildEndHTML() : `<div class="quest path"><div class="q-title"><i class="q-dia"></i><b>Every step done</b></div>
     <div class="q-foot">${gbtn('Quests', 'quest', 'data-nav="quests"', 'dark sm')}</div></div>`;
   const { g, cur, done } = st, i = S.goal, ch = chapterAt(i), steps = chapterEnd(ch) - ch.from + 1, k = i - ch.from + 1;
-  const last = i === chapterEnd(ch), R = isGuardStep(g, ch) && !done ? readiness(ch) : null, opens = goalOpens();
+  const last = i === chapterEnd(ch), opens = goalOpens();
   return `<div class="quest path ${done ? 'done' : ''}" style="--rc:${rc(ch.realm)}">
     <div class="q-title"><i class="q-dia"></i><b>${esc(ch.title)}</b><small>${k} / ${steps}</small></div>
     <button class="q-main" data-nav="${g.go}" title="Go"><span class="q-ic">${ic('goal', i)}</span><span class="q-text">${g.text}${opens ? `<small class="q-opens">Opens ${esc(opens.name)}</small>` : ''}</span></button>
-    ${R ? readyBar(R) : ''}
     ${done ? `<div class="q-prog q-donerow"><span class="q-minis">${rewardMini(g.reward, g.items)}${last ? `<span class="q-mini" title="Chapter reward">${ui('crown')}</span>${rewardMini(0, ch.reward.items)}` : ''}</span>${gbtn('Claim', 'check', 'data-claim', 'sm glow')}</div>`
     : `<div class="q-prog"><span class="xpbar thin gold"><i data-goalbar style="width:${(cur / g.n) * 100}%"></i></span><span data-goaltxt>${fmt(cur)} / ${fmt(g.n)}</span></div>
     <div class="q-rew">${rewardTiles(g.reward, g.items)}${last ? `<span class="q-chap" title="Chapter reward">${ui('crown')}</span>${rewardTiles(0, ch.reward.items)}` : ''}</div>
@@ -72,9 +57,7 @@ goalHTML = function () {
 /* ---------------------------------------------------------------- the Quests page */
 function pathHTML() {
   const i = Math.min(S.goal, GOALS.length - 1), ch = chapterAt(i), st = goalState();
-  const steps = chapterSteps(ch), R = readiness(ch);
-
-
+  const steps = chapterSteps(ch);
   const row = (g, k) => {
     const n = ch.from + k, now = n === S.goal && st, done = n < S.goal;
     if (n === S.goal && buildEnd()) return `<li class="qs-step qs-end"><span class="qs-ic">${ic('realm', buildEnd())}</span><div class="qs-t"><b>End of this build</b><small>${esc(REALMS[buildEnd()].name)} comes in a later build.</small></div></li>`;
@@ -92,7 +75,6 @@ function pathHTML() {
   return `<section class="win qs-path" style="--rc:${rc(ch.realm)}">
     <div class="qs-head"><span class="qs-wic">${ic('realm', ch.realm === 'rift' ? 'rift' : ch.realm)}</span><div><small>Chapter ${ch.n} · ${S.goal - ch.from} / ${steps.length}</small><h2>${esc(ch.title)}</h2></div>
       <div class="qs-rew"><small>Chapter reward</small><div>${rewardTiles(0, ch.reward.items)}</div></div></div>
-    ${R && !R.beaten ? readyBar(R, true) : ''}
     ${(() => {
       const done = steps.map((g, k) => [g, k]).filter(([, k]) => ch.from + k < S.goal), rest = steps.map((g, k) => [g, k]).filter(([, k]) => ch.from + k >= S.goal);
       return `${done.length ? `<details class="qs-done"><summary>${ui('check')}${done.length} step${done.length > 1 ? 's' : ''} done</summary><ol class="qs-steps">${done.map(([g, k]) => row(g, k)).join('')}</ol></details>` : ''}
@@ -102,12 +84,12 @@ function pathHTML() {
   </section>`;
 }
 function trialCardHTML(t) {
-  const got = trialGot(t), p = trialProg(t), done = !got && p >= t.n;
-  return `<div class="tr-card ${got ? 'got' : done ? 'ready' : ''}">
-    <div class="tr-t"><b>${esc(t.text)}</b>${t.how ? `<small>${esc(t.how)}</small>` : ''}</div>
+  const got = trialGot(t), p = trialProg(t), done = !got && p >= t.n, go = !got && !done;
+  return `<div class="tr-card ${got ? 'got' : done ? 'ready' : 'go'}"${go ? ` data-nav="${t.go}"` : ''}${t.how ? ` title="${esc(t.how)}"` : ''}>
+    <div class="tr-t"><b>${esc(t.text)}</b></div>
     ${got ? `<span class="tr-got">${ui('check')}Claimed</span>` : `<span class="q-prog"><span class="xpbar thin gold"><i style="width:${(p / t.n) * 100}%"></i></span><span>${fmt(p)} / ${fmt(t.n)}</span></span>`}
-    <div class="tr-foot"><span class="q-rew">${rewardTiles(Math.round(trialGold(t) * goldMult()), t.items)}</span>
-      ${got ? '' : done ? gbtn('Claim', 'check', `data-trclaim="${t.id}"`, 'sm glow') : gbtn('Go', 'play', `data-nav="${t.go}"`, 'dark sm')}</div></div>`;
+    <span class="q-rew">${rewardTiles(Math.round(trialGold(t) * goldMult()), t.items)}</span>
+    ${done ? gbtn('Claim', 'check', `data-trclaim="${t.id}"`, 'sm glow') : go ? '<i class="row-go" aria-hidden="true">›</i>' : ''}</div>`;
 }
 function trialsHTML() {
   if (!trialsOn()) return '';

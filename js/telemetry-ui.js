@@ -14,14 +14,12 @@ function telCover() {
   const kb = Math.round(telFile().length / 1024);
   const send = TEL_ENDPOINT ? `<label class="tog"><input type="checkbox" data-telsend ${S.ui.telOff ? '' : 'checked'}><span>Send it to us automatically (every few hours)</span></label>` : '';
   betaCover(`<small class="beta-tag">Pre-alpha</small><h2>Your play data</h2>
-    <p>The game notes <b>how</b> it's played: time on each skill and stage, pages opened, when you reached each level, deaths, food, sessions. It shows us where the pace drags or rushes.</p>
-    <p class="muted small">No name, nothing you type. It stays in your save on this device until you send it.</p>
+    <p class="small"><b>Time per skill and stage, pages, levels, deaths, food. No name, nothing you type. Stays on this device until you send it.</b></p>
     <ul class="small"><li>${h(t.live)} played with the game open, ${h(t.off)} simulated while away</li>
-      <li>${L.ses.length + (L.cur ? 1 : 0)} session${L.ses.length + (L.cur ? 1 : 0) === 1 ? "" : "s"} · ${L.tl.length} timeline entries · ${L.snap.length} snapshots</li>
+      <li>${L.ses.length + (L.cur ? 1 : 0)} session${L.ses.length + (L.cur ? 1 : 0) === 1 ? "" : "s"} · ${L.tl.length} timeline entries · ${L.snap.length} snapshot${L.snap.length === 1 ? '' : 's'}</li>
       <li>File size: ${kb} KB</li></ul>
     ${send}
-    <div class="btn-row">${gbtn('Download the file', 'open', 'data-teldl')}${gbtn('Copy it', 'log', 'data-telcopy', 'dark')}${gbtn('Close', 'close', 'data-betaclose', 'dark')}</div>
-    <p class="muted small">Send the file with your feedback. Thanks, it really helps!</p>`);
+    <div class="btn-row">${gbtn('Download the file', 'open', 'data-teldl')}${gbtn('Copy it', 'log', 'data-telcopy', 'dark')}${gbtn('Close', 'close', 'data-betaclose', 'dark')}</div>`);
 }
 
 // Settings → Pre-alpha: one more button.

@@ -570,6 +570,9 @@ GI['plain-plus'] = 'M216 96h80v120h120v80H296v120h-80V296H96v-80h120z';
 GI['plain-minus'] = 'M96 216h320v80H96z';
 ICONS.ui.plus = 'plain-plus';
 ICONS.ui.minus = 'plain-minus';
+// Sort (the Bank's sort button on phones): an arrow up, an arrow down.
+GI['sort-arrows'] = 'M160 40l112 136h-76v296h-72V176H48zM352 472L240 336h76V40h72v296h76z';
+ICONS.ui.sort = 'sort-arrows';
 GI['plain-menu'] = 'M64 104h384v64H64zM64 224h384v64H64zM64 344h384v64H64z';
 ICONS.ui.menu = 'plain-menu';
 // Dev tools entry (dev mode only): a plain </> glyph.

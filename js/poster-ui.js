@@ -130,14 +130,15 @@ function posterHTML() {
       <div class="ms-head"><span class="ms-crest">${ui('poster')}</span><div><small>Bounty ${fmt(S.bounty || 0)} · ${esc(BOUNTY_RANKS[bountyRank()][1])}</small><h2>Wanted poster</h2></div></div>
       <label class="pst-f"><small>Name on the poster</small><input id="pst-name" type="text" maxlength="20" value="${esc(heroName())}" autocomplete="off"></label>
       <div class="pst-btns">${gbtn('Share', 'play', 'data-pstshare', 'sm')}${gbtn('Save image', 'check', 'data-pstsave', 'dark sm')}</div>
-      <label class="pst-f"><small>Your friend code: give it to a friend, you'll drop by in their game</small><span class="pst-code"><input id="pst-mycode" type="text" readonly value="${esc(code)}">${gbtn('Copy', '', 'data-pstcopy', 'dark sm')}</span></label>
-      <label class="pst-f"><small>Add a friend's code (${F.length} / ${FRIEND_MAX}): they drop by once a day with gold (from tomorrow)</small><span class="pst-code"><input id="pst-add" type="text" placeholder="AIR1..." autocomplete="off">${gbtn('Add', 'plus', `data-pstadd ${F.length >= FRIEND_MAX ? 'disabled' : ''}`, 'sm')}</span></label>
+      <label class="pst-f"><small>Your friend code <i class="pst-q" title="Give it to a friend: you'll drop by in their game.">?</i></small><span class="pst-code"><input id="pst-mycode" type="text" readonly value="${esc(code)}">${gbtn('Copy', '', 'data-pstcopy', 'dark sm')}</span></label>
+      <label class="pst-f"><small>Friend codes · ${F.length} / ${FRIEND_MAX} <i class="pst-q" title="A friend drops by once a day with gold (from tomorrow).">?</i></small><span class="pst-code"><input id="pst-add" type="text" placeholder="AIR1..." autocomplete="off">${gbtn('Add', 'plus', `data-pstadd ${F.length >= FRIEND_MAX ? 'disabled' : ''}`, 'sm')}</span></label>
       ${F.length ? `<ul class="pst-friends">${F.map((f, i) => `<li>${friendBadge(f.n)}<span><b>${esc(f.n)}</b><small>Bounty ${fmt(f.b)}</small></span><button class="mini-btn" data-pstdrop="${i}" title="Remove">${ui('close')}</button></li>`).join('')}</ul>` : ''}
+      <div class="pst-close">${gbtn('Close', 'close', 'data-pstclose', 'dark sm')}</div>
     </div></div>`;
 }
 async function showPoster(featId) {
   posterFeatId = featId || null;
-  openModal(posterHTML(), 'Close');
+  openModal(posterHTML(), 'Close', true);
   try { if (document.fonts && document.fonts.ready) await document.fonts.ready; } catch (e) { /* fonts optional */ }
   const cv = $('#pst-canvas');
   if (cv) await drawPoster(cv, posterFeatId);
@@ -172,6 +173,7 @@ async function sharePoster() {
   chDollBtns = function () { return base() + (posterOn() ? `<button class="ch-custom ch-poster" data-poster title="Your wanted poster">${ui('poster')}<span>Poster</span></button>` : ''); };
 }
 
+document.addEventListener('click', (ev) => { if (ev.target.closest('[data-pstclose]')) $('#modal-close').click(); });
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-poster],[data-pstshare],[data-pstsave],[data-pstcopy],[data-pstadd],[data-pstdrop]');
   if (!t || t.disabled) return;
