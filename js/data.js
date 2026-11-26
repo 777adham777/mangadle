@@ -713,7 +713,7 @@ const UNLOCKS = [
     hint: () => 'Discover 12 different items', why: 'You start keeping a journal of everything you find.' },
   { id: 'feature:market',     name: 'Market',          need: () => S.gold >= 500 || Object.keys(S.shop).length > 0,
     hint: () => 'Carry 500 gold', why: 'A travelling merchant noticed your heavy purse.' },
-  { id: 'feature:power',      name: 'Energy Disciplines',     need: () => charLv() >= 20 || energyUsed() > 0,
+  { id: 'feature:power',      name: 'Energy',                 need: () => charLv() >= 20 || energyUsed() > 0,
     hint: () => 'Reach Character level 20', why: 'Your chakra runs deep enough to train it. Every world you reach adds a new discipline.' },
   worldUnlock('seas', 'Orange Town'),
   { id: 'skill:fishing',      name: 'Fishing',         need: () => !!S.gates.seas || usedSkill('fishing') },

@@ -246,12 +246,13 @@
 /* P22 · no keyboard on a touch screen */
 @media (hover: none) and (pointer: coarse) { .uxs-row.uxs-keys { display: none; } }
 /* M05 · Quests: a trial or an objective is one clickable row (one real GO: the chapter step) */
-.qs-trials .tr-card { grid-template-columns: minmax(0, 1fr) minmax(90px, 130px) auto 16px; align-items: center; gap: 10px; padding: 7px 10px; }
+.qs-trials .tr-card { grid-template-columns: minmax(0, 1fr) minmax(80px, 130px) auto 16px; align-items: center; gap: 10px; padding: 7px 10px; }
 .qs-trials .tr-card .tr-t b { font-size: 13.5px; line-height: 1.25; }
 .qs-trials .tr-card .q-prog { margin: 0; }
 .qs-trials .tr-card > .q-rew { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; justify-content: flex-end; }
 .qs-trials .tr-card .q-reward { font-size: 13px; }
-.qs-trials .tr-card.ready { grid-template-columns: minmax(0, 1fr) minmax(90px, 130px) auto auto; }
+.qs-trials .tr-card > .q-rew .tile { --ts: 36px; }
+.qs-trials .tr-card.ready { grid-template-columns: minmax(0, 1fr) minmax(80px, 130px) auto auto; }
 .qs-trials .tr-card.got { grid-template-columns: minmax(0, 1fr) auto auto; }
 .tr-card.go, .task.go { cursor: pointer; transition: border-color 0.15s, background 0.15s; }
 .tr-card.go:hover, .task.go:hover { border-color: var(--line2); background: color-mix(in srgb, #fff 4%, var(--panel2)); }
@@ -330,3 +331,22 @@ html.calm .detail.sheet { animation: none; }
   .col-tabs button span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .col-tabs button em { margin-left: auto; white-space: nowrap; }
 }
+/* M24 · Market: finished upgrades in one compact row at the bottom */
+.shop .shop-maxed { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 10px 14px; }
+.shop-maxed > small { display: inline-flex; align-items: center; gap: 5px; font: 700 11px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--ok); }
+.shop-maxed > small .gi { width: 13px; height: 13px; fill: var(--ok); }
+.shop-maxed .sm-it { display: inline-flex; align-items: center; gap: 8px; font-size: 13px; color: var(--dim); }
+.shop-maxed .sm-it .tile { --ts: 32px; }
+.shop-maxed .sm-it b { font-weight: 600; }
+/* M23 · Energy: what is placed, as a chip beside the title */
+.en-chip { align-self: center; padding: 6px 12px; font: 600 13px var(--display); letter-spacing: 0.04em; color: var(--dim); background: var(--panel2); border: 1px solid var(--line2); }
+.en-chip b { color: #c5b2ff; font-size: 15px; }
+/* M11 · Welcome back: what was used sits apart, smaller, under the gains */
+.ob-used { display: flex; align-items: center; justify-content: center; gap: 12px; margin-top: 6px; }
+.ob-used > small { font: 700 11px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: var(--dim); }
+.ob-used .ob-grid { max-height: none; padding: 4px; justify-content: flex-start; }
+.ob-used .ob-grid .tile { --ts: 50px; }
+.coo-haul .ob-used { justify-content: flex-start; }
+/* M15 · Wanted poster: short labels, the rule behind a ?, Close inside the card */
+.pst-q { display: inline-grid; place-items: center; width: 15px; height: 15px; margin-left: 4px; border-radius: 50%; font: 700 10px/1 var(--display); font-style: normal; color: var(--dim); border: 1px solid var(--line2); cursor: help; vertical-align: 1px; }
+.pst-close { display: flex; justify-content: flex-end; margin-top: 4px; }

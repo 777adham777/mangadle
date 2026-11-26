@@ -979,10 +979,9 @@ VIEWS.power = () => {
   const E = S.energy, cap = energyCap();
   const steps = ['1', '10', '100', '10%', '25%', 'max'];
   return `
-  ${ptitle('Energy mastery', 'Disciplines')}
+  ${ptitle('Disciplines', 'Energy', `<span class="en-chip" title="Energy placed in disciplines"><b data-euse>${fmt(cap - energyIdle())}</b> / ${fmt(cap)} in use</span>`)}
   ${fitCols('pw-board', `<section class="win energy-win">
     <div class="en-top">
-      <div class="en-num"><small>Free energy</small><b><span data-eidle>${fmt(energyIdle())}</span><em> / ${fmt(cap)}</em></b></div>
       <div class="en-ctl"><label>Per click</label><div class="seg">${steps.map((s) => `<button class="${E.step === s ? 'on' : ''}" data-step="${s}"><span>${s}</span></button>`).join('')}</div>
         ${gbtn('Release all', 'close', 'data-releaseall', 'dark sm')}</div>
     </div>
@@ -1007,15 +1006,20 @@ VIEWS.power = () => {
 };
 
 /* ------------------------------------------------------------- market */
+// What can still be bought comes first; finished upgrades sit in one compact row at the bottom.
+const shopMaxed = (it) => shopCost(it) === undefined;
 VIEWS.market = () => `
   ${ptitle('Merchant', 'Market')}
-  <div class="shop fit fit-scroll">${SHOP.filter((it) => !it.realm || realmOpen(it.realm)).map((it) => {
+  <div class="shop fit fit-scroll">${SHOP.filter((it) => (!it.realm || realmOpen(it.realm)) && !shopMaxed(it)).map((it) => {
     const tier = S.shop[it.id] || 0, cost = shopCost(it), maxed = cost === undefined;
     const r = it.give ? 2 : it.cat === 'Charms' ? 5 : 4;
     return `<section class="win ware">${tile(it.give ? it.give[0] : null, it.give ? '×' + it.give[1] : (it.costs ? `${tier}/${it.costs.length}` : ''), { r, icon: ic('shop', it.id), title: it.name })}
       <span class="ware-t"><small>${it.cat}</small><b>${it.name}</b><small>${it.desc}</small>${it.costs ? `<span class="pips">${it.costs.map((_, i) => `<i class="${i < tier ? 'on' : ''}"></i>`).join('')}</span>` : ''}</span>
       ${gbtn(maxed ? 'Maxed' : fmt(cost), maxed ? 'check' : 'gold', `${maxed ? 'disabled' : `data-cost="${cost}"`} data-buy="${it.id}"`, 'sm')}</section>`;
-  }).join('')}</div>`;
+  }).join('')}${(() => {
+    const done = SHOP.filter((it) => (!it.realm || realmOpen(it.realm)) && shopMaxed(it));
+    return done.length ? `<section class="win shop-maxed"><small>${ui('check')}Maxed</small>${done.map((it) => `<span class="sm-it" title="${esc(it.name)} · ${esc(it.desc)}">${tile(null, null, { r: it.cat === 'Charms' ? 5 : 4, icon: ic('shop', it.id), cls: 'xs' })}<b>${esc(it.name)}</b></span>`).join('')}</section>` : '';
+  })()}</div>`;
 
 /* ------------------------------------------------------------- settings */
 VIEWS.settings = () => `
@@ -1506,7 +1510,7 @@ function update() {
     setText($(`[data-tl="${id}"]`), fmt(tl(id)));
     setText($(`[data-tbonus="${id}"]`), '+' + fmt(tl(id) * TRAIN_BY[id].per) + TRAIN_BY[id].unit);
   }
-  setText($('[data-eidle]'), fmt(energyIdle()));
+  setText($('[data-euse]'), fmt(energyCap() - energyIdle()));
 
   // bank: new item types appeared
   if (S.ui.view === 'hero' && Object.keys(S.items).join(',') !== bankSig) dirty = true;
@@ -1685,22 +1689,24 @@ function saveGame() {
 }
 let tabClaimedAt = 0;
 
-function showOffline(secs, before) {
+// What the time away burned (food, pills...) gets its own smaller row under the gains.
+const usedRowHTML = (tiles) => (tiles.length ? `<div class="ob-used"><small>Used</small><div class="ob-grid">${tiles.join('')}</div></div>` : '');
+const awaySub = (secs, rested) => `While you were away · ${fmtTime(secs)}${rested ? ' · resting (half speed)' : ''}`;
+function showOffline(secs, before, rested) {
   const after = snapshot();
-  const rows = [], tiles = [];
+  const rows = [], tiles = [], used = [];
   for (const k in after.levels) if (after.levels[k] > before.levels[k]) rows.push(`<div class="ob-line"><i>${ic('skill', k)}</i><span>${SKILLS[k].name}</span><b>Lv ${before.levels[k]} → ${after.levels[k]}</b></div>`);
   if (after.kills > before.kills) rows.push(`<div class="ob-line"><i>${ui('skull')}</i><span>Foes defeated</span><b>+${fmt(after.kills - before.kills)}</b></div>`);
-  rows.push(`<div class="ob-line"><i>${ui('sleep')}</i><span class="muted">You were resting: while the game is closed, everything runs at half speed.</span></div>`);
   if (after.train > before.train) rows.push(`<div class="ob-line"><i>${ui('energy')}</i><span>Training levels</span><b>+${fmt(after.train - before.train)}</b></div>`);
   const dg = after.gold - before.gold;
   if (dg) tiles.push(tile(null, (dg > 0 ? '+' : '') + fmt(dg), { r: 3, icon: ui('gold'), title: 'Gold', cls: 'pop-in' }));
   const ids = [...new Set([...Object.keys(before.items), ...Object.keys(after.items)])].sort((a, b) => rarity(b) - rarity(a));
   for (const id of ids) {
     const d = (after.items[id] || 0) - (before.items[id] || 0);
-    if (d) tiles.push(tile(id, (d > 0 ? '+' : '') + fmt(d), { cls: 'pop-in ' + (d < 0 ? 'neg' : '') }));
+    if (d) (d < 0 ? used : tiles).push(tile(id, (d > 0 ? '+' : '') + fmt(d), { cls: 'pop-in ' + (d < 0 ? 'neg' : '') }));
   }
-  if (!rows.length && !tiles.length) rows.push('<div class="ob-line"><span>Nothing happened — you were idle. Start an activity before leaving!</span></div>');
-  openModal(obtainedHTML('Welcome back', `While you were away · ${fmtTime(secs)}`, tiles, rows));
+  if (!rows.length && !tiles.length && !used.length) rows.push('<div class="ob-line"><span>Nothing happened — you were idle. Start an activity before leaving!</span></div>');
+  openModal(obtainedHTML('Welcome back', awaySub(secs, rested), tiles, rows) + usedRowHTML(used));
 }
 
 let lastTopKey = '';
@@ -1728,7 +1734,7 @@ function boot() {
     fillChamber(away - secs);   // time beyond the offline limit goes to the Time Chamber
     if (typeof awayBegin === 'function') awayBegin();
     SIM = true; RESTING = true; advance(secs); SIM = false; RESTING = false;
-    showOffline(secs, before);
+    showOffline(secs, before, true);
   }
   S.last = Date.now();
   lastTick = Date.now();

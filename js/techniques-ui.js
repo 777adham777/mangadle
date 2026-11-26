@@ -98,11 +98,10 @@ function tkRowHTML(id) {
   return `<div class="tk-row r${r} ${L ? '' : 'unk'} ${eq ? 'eq' : ''}" style="--rc:${rc(T.realm)}">
     <span class="tk-big">${ic('technique', id)}</span>
     <div class="tk-main">
-      <div class="tk-top"><b>${esc(T.name)}</b><span class="tk-rar r${r}" ${L < TECH_MAX && odds ? `title="Per scroll: ${odds}"` : ''}>${rarName(r)}</span><span class="tk-cat c-${T.cat}">${catIc(T.cat)}${TECH_CATS[T.cat].name}</span>${T.cd ? `<span class="tk-cd">${ui('spd')}${techCd(id)}s</span>` : ''}</div>
+      <div class="tk-top"><b>${esc(T.name)}</b><span class="tk-rar r${r}" ${L < TECH_MAX && odds ? `title="Per scroll: ${odds}"` : ''}>${rarName(r)}</span><span class="tk-cat c-${T.cat}" title="${esc(TECH_CATS[T.cat].how)}">${catIc(T.cat)}${TECH_CATS[T.cat].name}</span>${T.cd ? `<span class="tk-cd">${ui('spd')}${techCd(id)}s</span>` : ''}</div>
       <p class="tk-desc">${T.desc(Math.max(1, L))}</p>
       <div class="tk-meta">${tkPips(L)}<span class="tk-lv">${L ? `Lv <b>${L}</b>/${TECH_MAX}` : 'Not learned'}</span>
         ${nextTier ? `<span class="tk-next"><em>Lv ${nextTier}</em>${esc(T.tiers[nextTier])}</span>` : `<span class="tk-next done"><em>Mastered</em>${esc(T.tiers[10])}</span>`}</div>
-      ${T.cat === 'defense' ? `<small class="tk-when">${esc(TECH_CATS[T.cat].how)}</small>` : ''}
     </div>
     <div class="tk-act">${slotBtn}${inf}</div></div>`;
 }
