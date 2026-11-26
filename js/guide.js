@@ -13,8 +13,8 @@
 
 // The first steps only, by goal id. act/zone: what the step wants running. nav: how to get there. start: what to click.
 const GUIDE = {
-  chop10: { skill: 'woodcutting', nav: 'Open <b>Woodcutting</b> in the menu.', start: 'Start chopping a <b>Pine Log</b>.' },
-  wc5: { skill: 'woodcutting', nav: 'Back to <b>Woodcutting</b>.', start: 'Click <b>Pine Log</b>: it keeps chopping on its own.' },
+  chop10: { skill: 'woodcutting', nav: 'Open <b>Woodcutting</b> in the menu.', start: 'Press <b>Start</b> to chop Pine Logs.' },
+  wc5: { skill: 'woodcutting', nav: 'Back to <b>Woodcutting</b>.', start: 'Press <b>Start</b>: it keeps chopping on its own.' },
   sword: { act: 'arts:training_kunai', nav: 'Open <b>Crafting</b> in the menu.', start: `Click <b>${ITEMS.training_kunai.name}</b>.` },
   equip_sword: { equip: true, nav: 'Open your <b>Character</b>.' },
   pills5: { act: 'arts:soldier_pill', nav: 'Open <b>Crafting</b>.', start: 'Click <b>Soldier Pill</b>.' },
@@ -81,7 +81,7 @@ function guideStep() {
   if (G.skill) {
     if (!onGoalView(go)) return nav;
     const best = SKILLS[G.skill].actions.filter((a) => actState(G.skill, a) === 'ready').pop();
-    return best ? { sels: [`[data-card="${G.skill}:${best.id}"]`, `.fo-cta[data-act="${G.skill}:${best.id}"]`], text: G.start } : null;
+    return best ? { sels: [`.fo-cta[data-act="${G.skill}:${best.id}"]`, `[data-card="${G.skill}:${best.id}"]`], text: G.start } : null;
   }
   if (G.zone != null) {
     if (S.ui.view !== 'battle') return nav;
@@ -177,7 +177,7 @@ function showWelcome() {
 }
 function firstHintHTML(realm, skill) {
   if (skill !== 'woodcutting' || (S.stats.actions || 0) > 0 || S.action) return '';
-  return `<div class="first-hint"><span class="fh-ic">${ic('skill', 'woodcutting')}</span><p>Click <b>Pine Log</b> to start chopping.</p></div>`;
+  return `<div class="first-hint"><span class="fh-ic">${ic('skill', 'woodcutting')}</span><p>Press <b>Start</b> to chop your first Pine Logs.</p></div>`;
 }
 
 /* ------------------------------------------------------------ first visits */

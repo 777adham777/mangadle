@@ -96,7 +96,13 @@ function focusHTML(skill) {
   // Zéro mémoire: a missing material says who makes it, and one click goes there (or queues it first).
   const gets = a.in && !locked ? Object.entries(a.in).filter(([k, n]) => stock(k) < n).map(([k, n]) => {
     const p = typeof msProducer === 'function' ? msProducer(k) : null;
-    if (!p) return `<div class="fo-get none">${tile(k, null, { cls: 'xs', unknown: !isFound(k), r: rarity(k) })}<span><b>${esc(matNm(k))}</b><small>No skill of yours makes it yet: the Bank says where it drops.</small></span></div>`;
+    // No skill makes it: name where it drops (the best source you can reach) and go there in one click.
+    if (!p) {
+      const pref = (x) => (tipGoOpen(x.go) ? 10 : 0) + ({ zone: 4, act: 3, skill: 3, view: 2 }[x.go.split(':')[0]] || 1);
+      const src = sourcesOf(k).filter((x) => x.go).sort((x, y) => pref(y) - pref(x) || (y.rate || 1) - (x.rate || 1))[0];
+      const go = src && tipGoOpen(src.go) && !src.go.startsWith('tip:') ? `<span class="fo-get-b"><button class="gbtn sm" data-srcgo="${src.go}">${ui('play')}<span>Go</span></button></span>` : '';
+      return `<div class="fo-get none">${tile(k, null, { cls: 'xs', unknown: !isFound(k), r: rarity(k) })}<span><b>${esc(matNm(k))}</b><small>${!src ? 'Not found yet' : src.go === 'view:market' ? 'Sold in the Market' : `Drops from ${esc(src.text)}${src.rate != null ? ` · ${fmtRate(src.rate)}` : ''}`}</small></span>${go}</div>`;
+    }
     const runs = Math.max(1, Math.ceil((n * 10 - stock(k)) / (p.a.out[k] || 1)));
     const q = typeof msOn === 'function' && msOn() ? `<button class="gbtn sm sel" data-getq="${p.skill}:${p.a.id}:${runs}:${skill}:${a.id}" title="Task Queue: ${esc(p.a.name)} ×${runs} (enough for 10), then this recipe">Queue first</button>` : '';
     return `<div class="fo-get">${tile(k, null, { cls: 'xs', unknown: !isFound(k), r: rarity(k) })}<span><b>${esc(matNm(k))}</b><small>${esc(SKILLS[p.skill].name)} · ${esc(p.a.name)}</small></span><span class="fo-get-b"><button class="gbtn sm" data-act="${p.skill}:${p.a.id}" title="Start ${esc(p.a.name)}">${ui('play')}<span>Get it</span></button>${q}</span></div>`;
@@ -191,6 +197,10 @@ document.addEventListener('click', (ev) => {
   if (!b) return;
   const [skill, id] = b.dataset.craftn.split(':');
   craftNGo(skill, id, b.parentElement.querySelector('[data-craftq]'));
+});
+document.addEventListener('click', (ev) => {
+  const t = ev.target.closest('[data-srcgo]');
+  if (t) tipGo(t.dataset.srcgo);
 });
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-qnext]');
