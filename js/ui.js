@@ -1705,10 +1705,22 @@ function boot() {
   // Older saves never stored what the Bank showed: everything counts as seen once.
   (Array.isArray(S.ui.bankSeen) ? S.ui.bankSeen : Object.keys(S.items)).forEach((k) => seenItems.add(k));
   bankSeenSave();
-  render();
+  // boot() runs from ui-systems.js, before the later scripts (focus-ui, beta...) exist, and the
+  // first frames can fire while they are still downloading: a view that needs them waits for them.
+  const ready = () => typeof worldInBuild === 'function' && typeof focusHTML === 'function';
+  try { render(); } catch (e) { dirty = true; }
   if (isFreshSave()) showWelcome();
 
+  let lastErr = '';
   function frame() {
+    try { tickFrame(); } catch (e) {
+      // one broken render must never stop the game: report it once, keep running
+      dirty = true;
+      if (ready() && String(e) !== lastErr) { lastErr = String(e); setTimeout(() => { throw e; }); }
+    }
+    requestAnimationFrame(frame);
+  }
+  function tickFrame() {
     catchUp();
     pollUnlocks();
     const ae = document.activeElement;
@@ -1719,7 +1731,6 @@ function boot() {
       if (key !== lastTopKey || sideDirty) { lastTopKey = key; sideDirty = false; renderSide(); renderRail(); }
       update();
     }
-    requestAnimationFrame(frame);
   }
   requestAnimationFrame(frame);
   // Background tabs: desktop browsers still run timers (throttled), so keep simulating.
