@@ -128,7 +128,7 @@ function qLogHTML(skill, compact) {
   const E = qEntries(skill), kind = qKind(skill), have = E.filter((e) => e.got).length, T = qTiers(skill), ready = E.filter((e) => e.ready).length;
   const odds = kind === 'shiny' ? 'Each catch can be shiny. Mastery of a fish raises its odds. Hand one of each in to the log; sell the rest.' : 'Any dish can come out perfect. Mastery and your level raise the odds. Hand one of each in to the log (seasoned ones count); eat or sell the rest.';
   return `<section class="win qlog ${kind}" style="--rc:${rc(SKILLS[skill].realm)}">${hdr(compact ? `${Q_TITLE[kind]} · ${SKILLS[skill].name}` : Q_TITLE[kind], `${have} / ${E.length}`)}
-    <div class="ql-grid">${E.map((e) => qTile(e, skill)).join('')}</div>
+    <div class="ql-grid">${E.map((e) => qTile(e, skill)).join('')}${compact && typeof colMore === 'function' ? colMore(E.filter((e) => !e.got && !e.ready).length) : ''}</div>
     ${ready ? `<div class="ql-claim">${gbtn(`Hand in ${qNoun(kind, ready)}`, kind, `data-qclaim="${skill}:*"`, 'glow sm')}<small>1 of each goes into the log</small></div>` : ''}
     <span class="pbar gold"><i style="width:${(have / E.length) * 100}%"></i></span>
     <ul class="ql-tiers">${T.map((t) => `<li class="${t.on ? 'on' : ''}"><b>${t.need}</b><span>${esc(t.text)}</span>${t.on ? ui('check') : ''}</li>`).join('')}</ul>
@@ -138,7 +138,7 @@ UIX.realmSide.unshift((realm, skill) => (QUALITY[skill] && skillOpen(skill) ? qL
 UIX.collectionTop.push(() => {
   const ks = Object.keys(QUALITY).filter(skillOpen);
   if (!ks.length) return '';
-  return `${hdr('Shiny & Perfect')}<div class="qlog-row">${ks.map((k) => qLogHTML(k, true)).join('')}</div>`;
+  return `<div class="qlog-row">${ks.map((k) => qLogHTML(k, true)).join('')}</div>`;
 });
 
 /* ================================================================ inspector */

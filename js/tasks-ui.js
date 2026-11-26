@@ -65,8 +65,8 @@ UIX.collectionTop.push(() => {
   const foeTile = (n) => tile(null, seen[n] ? fmt(seen[n]) : null, { r: seen[n] ? 2 : 0, icon: ic('enemy', n), unknown: !seen[n], cls: 'xs' + (selCol === 'foe:' + n ? ' on' : ''), tag: 'button', attrs: `data-col="foe:${esc(n)}"`, title: seen[n] ? `${n} · defeated ${fmt(seen[n])}` : 'Unknown foe' });
   const beastTile = (b) => tile(null, S.beasts[b] ? `Lv ${beastLv(b)}` : null, { r: S.beasts[b] ? 4 : 0, icon: ic('beast', b), unknown: !S.beasts[b], cls: 'xs', title: S.beasts[b] ? BEASTS[b].name : 'Unknown beast' });
   return `<section class="win col-extra">
-    ${hdr('Techniques', `${known.length} / ${techs.length}`)}<div class="col-grid">${techs.map(techTile).join('')}</div>
-    ${hdr('Bestiary', `${met.length} / ${foes.length} foes defeated`)}<div class="col-grid">${foes.map(foeTile).join('')}</div>${selCol && selCol.startsWith('foe:') && typeof foeDetailHTML === 'function' ? `<div class="bst-detail">${foeDetailHTML(selCol.slice(4))}</div>` : ''}
-    ${hdr('Companions', `${caught.length} / ${beasts.length}`)}<div class="col-grid">${beasts.map(beastTile).join('')}</div>
+    ${hdr('Techniques', `${known.length} / ${techs.length}`)}<div class="col-grid">${techs.map(techTile).join('')}${colMore(techs.length - known.length)}</div>
+    ${hdr('Bestiary', `${met.length} / ${foes.length} foes defeated`)}<div class="col-grid">${foes.map(foeTile).join('')}${colMore(foes.length - met.length)}</div>${selCol && selCol.startsWith('foe:') && typeof foeDetailHTML === 'function' ? `<div class="bst-detail">${foeDetailHTML(selCol.slice(4))}</div>` : ''}
+    ${hdr('Companions', `${caught.length} / ${beasts.length}`)}<div class="col-grid">${beasts.map(beastTile).join('')}${colMore(beasts.length - caught.length)}</div>
   </section>`;
 });

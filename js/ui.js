@@ -815,30 +815,35 @@ const heroTabs = (tab) => `<nav class="seg big-seg">
 const BAG_TABS = [['all', 'equip', 'All'], ...Object.keys(KINDS).map((k) => [k, 'k-' + k, KINDS[k].name])];
 VIEWS.hero = (tab) => {
   if (tab === 'collection') return collectionHTML();
-  if (S.ui.bank !== 'all') S.ui.bank = KIND_OF[S.ui.bank] || 'all';   // older saves filtered by type
+  if (S.ui.bank !== 'all' && S.ui.bank !== 'new') S.ui.bank = KIND_OF[S.ui.bank] || 'all';   // older saves filtered by type
   // Zéro mémoire: search by name, sort by rarity / quantity / newest / stack value. Locked items carry a padlock.
   const q = (S.ui.bankq || '').trim().toLowerCase(), order = Object.keys(S.items), sort = S.ui.bankSort || 'rarity';
-  const SORTS = { rarity: (a, b) => rarity(b) - rarity(a) || ITEMS[b].value - ITEMS[a].value, qty: (a, b) => S.items[b] - S.items[a],
-    new: (a, b) => order.indexOf(b) - order.indexOf(a), value: (a, b) => ITEMS[b].value * S.items[b] - ITEMS[a].value * S.items[a] };
-  const ids = order.filter((k) => count(k) > 0 && (S.ui.bank === 'all' || itemKind(k) === S.ui.bank) && (!q || ITEMS[k].name.toLowerCase().includes(q)))
-    .sort(SORTS[sort] || SORTS.rarity);
-  const worth = Object.keys(S.items).reduce((a, k) => a + ITEMS[k].value * S.items[k], 0);
-  // NEW means new: what arrived since your last visit gets its own row on top (kept for this visit, saved across reloads).
+  // NEW means new: what arrived since your last visit (kept for this visit, saved across reloads): a red dot, and a filter.
   if (!bankNew) bankNew = order.filter((k) => count(k) > 0 && !seenItems.has(k)).reverse();
   const fresh = bankNew.filter((k) => count(k) > 0), fset = new Set(fresh);
-  const bt = (k) => tile(k, `<span data-count="${k}">${fmt(count(k))}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: (S.locked && S.locked[k] ? `<span class="lockb" title="Locked">${ui('lock')}</span>` : '') + (fset.has(k) ? '<span class="new">New</span>' : '') });
-  const newRow = fresh.length && !q && fresh.length < 0.6 * order.filter((k) => count(k) > 0).length ? `<div class="bag-new"><div class="bn-head"><small>New since your last visit · ${fresh.length}</small><button class="mini-btn bn-seen" data-bankseen>Mark seen</button></div><div class="bag-grid">${fresh.map(bt).join('')}</div></div>` : '';
+  if (S.ui.bank === 'new' && !fresh.length) S.ui.bank = 'all';
+  const SORTS = { rarity: (a, b) => rarity(b) - rarity(a) || ITEMS[b].value - ITEMS[a].value, qty: (a, b) => S.items[b] - S.items[a],
+    new: (a, b) => order.indexOf(b) - order.indexOf(a), value: (a, b) => ITEMS[b].value * S.items[b] - ITEMS[a].value * S.items[a] };
+  const ids = order.filter((k) => count(k) > 0 && (S.ui.bank === 'all' || (S.ui.bank === 'new' ? fset.has(k) : itemKind(k) === S.ui.bank)) && (!q || ITEMS[k].name.toLowerCase().includes(q)))
+    .sort(SORTS[sort] || SORTS.rarity);
+  const bt = (k) => tile(k, `<span data-count="${k}">${fmt(count(k))}</span>`, { tag: 'button', cls: selItem === k ? 'on' : '', attrs: `data-sel="${k}"`, corner: (S.locked && S.locked[k] ? `<span class="lockb" title="Locked">${ui('lock')}</span>` : '') + (fset.has(k) ? '<span class="new-dot" title="New"></span>' : '') });
+  const newRow = S.ui.bank === 'new' ? `<div class="bn-head"><small>New since your last visit · ${fresh.length}</small><button class="mini-btn bn-seen" data-bankseen>Mark seen</button></div>` : '';
+  const tabs = [...BAG_TABS, ['new', 'star', 'New']];
+  const SORTN = [['rarity', 'Rarity'], ['qty', 'Qty'], ['new', 'Newest'], ['value', 'Value']], sortI = Math.max(0, SORTN.findIndex(([k]) => k === sort));
+  const det = armDetailHTML() || inspectorHTML();
   return `
   ${ptitle('Hero', 'Bank', heroTabs(tab))}
   <div class="hero-layout bank-layout fit">
     <section class="win bag-win">
       <nav class="bag-tabs">${BAG_TABS.map(([k, icn, l]) => `<button class="${S.ui.bank === k ? 'on' : ''}${KINDS[k] ? ' k-' + k : ''}" data-bankf="${k}" title="${l}">${ui(icn)}<span>${l}</span></button>`).join('')}</nav>
+      <small class="bag-now">${esc((tabs.find(([k]) => k === S.ui.bank) || tabs[0])[2])} · sorted by ${SORTN[sortI][1].toLowerCase()}</small>
       <div class="bag-tools"><label class="bag-q">${ui('search')}<input id="bank-q" type="search" data-bankq placeholder="Search the bank" value="${esc(S.ui.bankq || '')}" autocomplete="off"></label>
-        <nav class="bag-sort">${[['rarity', 'Rarity'], ['qty', 'Qty'], ['new', 'Newest'], ['value', 'Value']].map(([k, l]) => `<button class="${sort === k ? 'on' : ''}" data-banksort="${k}">${l}</button>`).join('')}</nav></div>
+        ${fresh.length ? `<button class="bag-newf ${S.ui.bank === 'new' ? 'on' : ''}" data-bankf="${S.ui.bank === 'new' ? 'all' : 'new'}" title="Only what is new since your last visit">New<em>${fresh.length}</em></button>` : ''}
+        <nav class="bag-sort">${SORTN.map(([k, l]) => `<button class="${sort === k ? 'on' : ''}" data-banksort="${k}">${l}</button>`).join('')}</nav>
+        <button class="mini-btn bag-sortc" data-banksort="${SORTN[(sortI + 1) % SORTN.length][0]}" title="Sort by ${SORTN[(sortI + 1) % SORTN.length][1].toLowerCase()}" aria-label="Change the sort">${ui('sort')}</button></div>
       ${uix('bagTop')}${newRow}<div class="bag-grid">${ids.length ? ids.map(bt).join('') : '<div class="empty-note">' + (q ? 'No item matches.' : 'Nothing here yet.') + '</div>'}</div>
-      <div class="bag-foot"><span>${Object.keys(S.items).filter((k) => count(k) > 0).length} item types</span><span>Bank value ${ui('gold')} ${fmt(worth)}</span></div>
     </section>
-    <section class="win detail">${armDetailHTML() || inspectorHTML() || bankSummaryHTML()}</section>
+    <section class="win detail${det ? ' sheet' : ''}">${det ? sheetHandle() : ''}${det || bankSummaryHTML()}</section>${det ? '<div class="sheet-scrim" data-sheetx></div>' : ''}
   </div>`;
 };
 function itemHead(id, unknown) {
@@ -851,10 +856,20 @@ function bankSummaryHTML() {
   const ids = Object.keys(S.items).filter((k) => count(k) > 0);
   const total = ids.reduce((a, k) => a + count(k), 0), locked = ids.filter((k) => S.locked && S.locked[k]).length;
   const top = ids.slice().sort((a, b) => ITEMS[b].value * count(b) - ITEMS[a].value * count(a)).slice(0, 5);
-  return `<div class="bank-sum">${hdr('Bank', `${fmt(ids.length)} item types`)}
+  const worth = ids.reduce((a, k) => a + ITEMS[k].value * S.items[k], 0);
+  return `<div class="bank-sum">${hdr('Bank', `${fmt(ids.length)} types · ${ui('gold')}<em class="gold-n">${fmt(worth)}</em>`)}
     <div class="bs-nums">${stat('Items', fmt(total))}${stat('Locked', fmt(locked))}</div>
     ${top.length ? `<small class="bs-lab">Most valuable stacks</small><div class="bs-top">${top.map((k) => `<button class="bs-row" data-sel="${k}">${tile(k, null, { cls: 'xs' })}<span>${esc(ITEMS[k].name)}</span><b>${ui('gold')}${fmt(ITEMS[k].value * count(k))}</b></button>`).join('')}</div>` : ''}
     <p class="muted small bs-hint">${ui('info')}Select an item for its details.</p></div>`;
+}
+// Phones (css/meta.css): a selected item's panel is a bottom sheet; tap outside or drag the handle down to close it.
+const sheetHandle = () => '<button class="sheet-grip" data-sheetx aria-label="Close"><i></i></button>';
+function sheetClose() { selItem = null; selCol = null; if (typeof selArm !== 'undefined') selArm = null; dirty = true; }
+document.addEventListener('click', (ev) => { if (ev.target.closest('[data-sheetx]')) sheetClose(); });
+{
+  let y0 = null;
+  document.addEventListener('touchstart', (ev) => { y0 = ev.target.closest('.sheet-grip') ? ev.touches[0].clientY : null; }, { passive: true });
+  document.addEventListener('touchend', (ev) => { if (y0 !== null && ev.changedTouches[0].clientY - y0 > 50) sheetClose(); y0 = null; }, { passive: true });
 }
 function inspectorHTML() {
   if (!selItem || (!count(selItem) && !Object.values(S.equip).includes(selItem))) return '';
@@ -894,33 +909,49 @@ function inspectorHTML() {
 let selCol = null;
 const COL_GROUPS = [['res', 'Materials'], ['relic', 'World relics'], ['gem', 'Gems'], ['chest', 'Treasure'], ['food', 'Food'], ['equip', 'Gear'], ['schematic', 'Schematics'], ['fruit', 'Abyss Fruits']];
 const inColGroup = (k, g) => (g === 'relic' ? !!ITEMS[k].relic : g === 'res' ? ITEMS[k].type === 'res' && !ITEMS[k].relic : ITEMS[k].type === g);
+// Phones (css/meta.css) show only what you found, then one "? N to find" tile per group.
+const colMore = (n) => (n > 0 ? `<span class="col-more"><b>?</b> ${fmt(n)} to find</span>` : '');
+// The grid is split by world (tabs): what the world gives, '' = items with no single world.
+const petWorld = (pt) => (SKILLS[pt.skill] ? SKILLS[pt.skill].realm : pt.zone ? (ZONES.find((z) => z.id === pt.zone) || {}).realm : '') || '';
 function collectionHTML() {
   const pctAll = collectionPct();
+  const allIds = Object.keys(ITEMS).filter(colItem), wOf = (k) => itemWorld(k) || '';
+  const petAll = PETS.filter(inBuildPet);
+  const worlds = [...WORLD_ORDER.filter((r) => worldInBuild(r) && allIds.some((k) => wOf(k) === r)), ...(allIds.some((k) => !wOf(k)) ? [''] : [])];
+  let w = S.ui.colW;
+  if (!worlds.includes(w) || (w && !realmOpen(w))) w = [...worlds].reverse().find((r) => r && realmOpen(r)) || worlds[0];
+  const wIds = allIds.filter((k) => wOf(k) === w), petList = petAll.filter((pt) => petWorld(pt) === (w || '') || (!w && !WORLD_ORDER.includes(petWorld(pt))));
+  const tabs = worlds.map((r) => {
+    const ids = allIds.filter((k) => wOf(k) === r), got = ids.filter((k) => S.found[k]).length, open = !r || realmOpen(r);
+    return `<button class="${r === w ? 'on' : ''}${open ? '' : ' off'}" ${open ? `data-colw="${r || '-'}"` : 'disabled'} style="--rc:${r ? rc(r) : 'var(--dim)'}">${r ? ic('realm', r) : ui('collection')}<span>${r ? esc(REALMS[r].name) : 'Other'}</span>${open ? `<em>${got} / ${ids.length}</em>` : ''}</button>`;
+  }).join('');
   const groups = COL_GROUPS.map(([type, label]) => {
-    const ids = Object.keys(ITEMS).filter((k) => colItem(k) && inColGroup(k, type));
+    const ids = wIds.filter((k) => inColGroup(k, type));
     if (!ids.length) return '';
     const n = ids.filter((k) => S.found[k]).length;
-    return `${hdr(label, `${n} / ${ids.length}`)}<div class="col-grid">${ids.map((id) => tile(id, null, { tag: 'button', unknown: !S.found[id], cls: selCol === id ? 'on' : '', attrs: `data-col="${id}"` })).join('')}</div>`;
+    return `${hdr(label, `${n} / ${ids.length}`)}<div class="col-grid">${ids.map((id) => tile(id, null, { tag: 'button', unknown: !S.found[id], cls: selCol === id ? 'on' : '', attrs: `data-col="${id}"` })).join('')}${colMore(ids.length - n)}</div>`;
   }).join('');
-  const petList = PETS.filter(inBuildPet), petsN = petList.filter((pt) => S.pets[pt.id]).length;
-  const pets = `${hdr('Pets', `${petsN} / ${petList.length}`)}<div class="col-grid">${petList.map((pt) => petTile(pt, { tag: 'button', cls: selCol === 'pet:' + pt.id ? 'on' : '', attrs: `data-col="pet:${pt.id}"` })).join('')}</div>`;
-  let detail = `<div class="empty-note big">${ui('collection')}<span>Select an item.</span></div>`;
+  const petsN = petList.filter((pt) => S.pets[pt.id]).length;
+  const pets = petList.length ? `${hdr('Pets', `${petsN} / ${petList.length}`)}<div class="col-grid">${petList.map((pt) => petTile(pt, { tag: 'button', cls: selCol === 'pet:' + pt.id ? 'on' : '', attrs: `data-col="pet:${pt.id}"` })).join('')}${colMore(petList.length - petsN)}</div>` : '';
+  let detail = `<div class="empty-note big">${ui('collection')}<span>Select an item.</span></div>`, sheet = false;
   if (selCol && selCol.startsWith('pet:')) {
     const pt = PET_BY[selCol.slice(4)], got = S.pets[pt.id];
+    sheet = true;
     detail = `<div class="dt-hero r${got ? 5 : 0}"><div class="dt-name"><small>Pet${got ? ' · in your party' : ''}</small><h2>${got ? pt.name : '???'}</h2>${got ? stars(5) : ''}</div><div class="dt-art ${got ? '' : 'sil'}">${got ? ic('pet', pt.id) : silArt(ic('pet', pt.id))}</div></div>
       <div class="dt-body">${attrList([['star', 'Bonus', petBonus(pt)]])}${hdr('Where to find')}<ul class="srcs">${petSource(pt)}</ul></div>`;
   } else if (selCol && ITEMS[selCol]) {
     const it = ITEMS[selCol], got = S.found[selCol];
+    sheet = true;
     const rec = it.type === 'schematic' ? schemRecipe(selCol) : null;
     const teach = rec ? attrList([['star', 'Teaches', `${ITEMS[it.teaches].name} · ${SKILLS[rec.skill].name} Lv ${rec.act.level}`]]) : '';
     detail = `${itemHead(selCol, !got)}<div class="dt-body">${got && it.type === 'equip' ? attrList(statRows(it.stats)) : ''}${teach}${uix('colDetail', selCol)}${hdr('Where to find')}${sourcesHTML(selCol)}</div>`;
   }
-  const found = Object.keys(S.found).filter(colItem).length + petsN, all = Object.keys(ITEMS).filter(colItem).length + petList.length;
+  const found = Object.keys(S.found).filter(colItem).length + petAll.filter((pt) => S.pets[pt.id]).length, all = allIds.length + petAll.length;
   return `
   ${ptitle('Hero', 'Collection', heroTabs('collection'))}
-  ${fitCols('col-board', `<section class="win col-win">${groups}${pets}</section>`,
+  ${fitCols('col-board', `<section class="win col-win"><nav class="seg col-tabs">${tabs}</nav>${groups}${pets}</section>`,
     `<section class="win col-sum"><div class="cs-top"><b>${Math.floor(pctAll * 100)}%</b><span class="muted">${found} / ${all} discovered</span></div><span class="pbar gold"><i style="width:${pctAll * 100}%"></i></span></section>
-    <section class="win detail col-detail">${detail}</section>
+    <section class="win detail col-detail${sheet ? ' sheet' : ''}">${sheet ? sheetHandle() : ''}${detail}</section>${sheet ? '<div class="sheet-scrim" data-sheetx></div>' : ''}
     ${uix('collectionTop')}`)}`;
 }
 function obtainedHTML(title, sub, tiles, rows) {
@@ -1553,6 +1584,7 @@ document.addEventListener('click', (ev) => {
     }
   }
   else if (d.col) { selCol = d.col; dirty = true; }
+  else if (d.colw) { S.ui.colW = d.colw === '-' ? '' : d.colw; dirty = true; }
   else if ('install' in d && installPrompt) { installPrompt.prompt(); installPrompt.userChoice.finally(() => { installPrompt = null; dirty = true; }); }
   else if ('save' in d) { saveGame(); toast('Game saved.', 'good'); }
   else if ('export' in d) { const b = $('#savebox'); b.value = btoa(unescape(encodeURIComponent(serialize()))); b.select(); toast('Save exported — copy the text.', 'good'); }
