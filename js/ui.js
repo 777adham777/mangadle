@@ -570,7 +570,8 @@ VIEWS.realm = (realm, skill) => {
   // the first-visit card, then the focus panel, then the skill's own panels (heat, plots, companions...)
   const intro = uix('realmIntro', realm, skill);
   const main = scene ? `${intro}${scene}${top}` : `${intro}${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}${top}`;
-  return skBoardHTML(realm, skill, { main, list });
+  // Workshops: the recipe gallery leads (left, 60%), the recipe in progress sits beside it (40%).
+  return skBoardHTML(realm, skill, { main, list, cls: s.type === 'craft' && scene ? 'sk-craft' : '' });
 };
 function actState(skill, a) {
   if (a.schem && !S.known[a.schem]) return 'schem';

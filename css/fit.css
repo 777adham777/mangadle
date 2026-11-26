@@ -158,3 +158,14 @@
 .scr-block .gi { width: 16px; height: 16px; fill: currentColor; flex-shrink: 0; }
 /* your name line in the dock: the stats wrap under the name instead of running under the techniques */
 .gs-mename { flex-wrap: wrap; row-gap: 0; min-width: 0; }
+
+/* Workshops (Crafting, Smelting, Restoration...): recipes first, 60 / 40 */
+@media (min-width: 861px) and (min-height: 620px) {
+  .sk-craft .sk-body { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+  .sk-craft .sk-body > .sk-more { grid-column: 1; grid-row: 1; }
+  .sk-craft .sk-body > .sk-a { grid-column: 2; grid-row: 1; }
+  .sk-craft .fo-body { grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 16px 18px 14px 14px; min-height: 0; align-items: start; }
+  .sk-craft .fo-art { --box: 140px; margin: 6px 0 10px; }
+  .sk-craft .fo-head h2 { font-size: clamp(20px, 1.6vw, 28px); }
+  .sk-craft .fo-stats { grid-template-columns: repeat(auto-fit, minmax(84px, 1fr)); }
+}
