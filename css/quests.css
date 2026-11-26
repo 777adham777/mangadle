@@ -129,19 +129,6 @@
 .first-hint .fh-ic .gi { width: 28px; height: 28px; fill: var(--gold); }
 .first-hint p { margin: 0; font: 600 15px var(--display); color: var(--text); }
 .first-hint p b { color: #fff; }
-.intro-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--gold); }
-.ic-ic { width: 40px; height: 40px; display: grid; place-items: center; background: rgba(244, 198, 106, 0.1); border: 1px solid rgba(244, 198, 106, 0.4); }
-.ic-ic .gi { width: 24px; height: 24px; fill: var(--gold); }
-.ic-body small { font: 600 10.5px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: var(--gold); }
-.ic-body > b { display: block; font: 700 18px/1.1 var(--display); color: #fff; }
-.ic-body p { margin: 4px 0 6px; font-size: 13px; color: var(--text); }
-.ic-body ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
-.ic-body li { display: flex; gap: 8px; align-items: flex-start; font-size: 12.5px; color: var(--dim); }
-.ic-body li i { flex-shrink: 0; width: 16px; height: 16px; display: grid; place-items: center; }
-.ic-body li i .gi, .ic-body li i svg { width: 16px; height: 16px; }
-.ic-body li b { color: var(--text); }
-.ic-ok { padding: 6px 12px; font: 700 12px var(--display); letter-spacing: 0.08em; text-transform: uppercase; color: var(--text); background: var(--panel3); border: 1px solid var(--line2); cursor: pointer; }
-.ic-ok:hover { border-color: var(--gold); color: #fff; }
 /* the hint bubble: small, no pulse */
 .coach.quiet { width: min(250px, calc(100vw - 16px)); padding: 9px 30px 9px 11px; font-size: 13px; }
 .coach.quiet .cm-text small { display: block; margin-bottom: 2px; font: 700 10px var(--display); letter-spacing: 0.14em; text-transform: uppercase; color: #8a6420; }
@@ -154,4 +141,3 @@
 .nq.fresh { box-shadow: inset 0 0 0 1px var(--gold); }
 .nq.fresh span { color: var(--gold); }
 .nchip.fresh { box-shadow: inset 0 0 0 1px var(--gold); }
-@media (max-width: 700px) { .intro-card { grid-template-columns: auto minmax(0, 1fr); } .ic-ok { grid-column: 1 / -1; justify-self: end; } }

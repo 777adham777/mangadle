@@ -19,11 +19,12 @@ function pickerHTML(skill) {
   const acts = wsActs(skill), open = acts.filter((a) => !wsLocked(actState(skill, a)));
   // Recipes: what you can make right now first, best first.
   if (SKILLS[skill].type === 'craft') open.sort((a, b) => WS_SORTS.best[1](skill, a, b));
-  const next = acts.filter((a) => wsLocked(actState(skill, a))).sort((a, b) => a.level - b.level)[0];
-  return `<section class="win pick-win">${hdr(PICK_TITLE[skill] || 'Actions', `${open.length} / ${acts.length}`)}
+  // The tab already names the list: no header, no count. The next three unlocks, fading.
+  const next = acts.filter((a) => wsLocked(actState(skill, a))).sort((a, b) => a.level - b.level).slice(0, 3);
+  return `<section class="win pick-win">
     <div class="pk-list">${open.map((a) => pickRow(skill, a)).join('')}
-    ${next ? `<div class="ws-next pk-next">${actTile(skill, next, { cls: 'xs' })}
-      <span><small>Next unlock</small><b>${esc(actNm(skill, next))}</b></span><em>${next.schem && !S.known[next.schem] ? ui('schematic') : ui('lock')}Lv ${next.level}</em></div>` : ''}</div></section>`;
+    ${next.map((n, i) => `<div class="ws-next pk-next" style="--fade:${1 - i * 0.25}">${actTile(skill, n, { cls: 'xs' })}
+      <span><small>Next unlock</small><b>${esc(actNm(skill, n))}</b></span><em>${n.schem && !S.known[n.schem] ? ui('schematic') : ui('lock')}Lv ${n.level}</em></div>`).join('')}</div></section>`;
 }
 // Banner buttons (top of the page): each opens its panel in a window.
 const SK_INFO = {
@@ -71,7 +72,7 @@ function tabPanelHTML(group, tabs, cls) {
   S.ui.skTab = S.ui.skTab || {};
   const cur = tabs.some((t) => t.key === S.ui.skTab[group]) ? S.ui.skTab[group] : tabs[0].key;
   return `<section class="sk-more ${cls || ''}" data-skmore="${group}">
-    ${tabs.length > 1 ? `<nav class="sk-tabs">${tabs.map((t) => `<button class="${t.key === cur ? 'on' : ''}" data-sktab="${group}:${t.key}">${esc(t.label)}${t.badge ? `<em>${t.badge}</em>` : ''}</button>`).join('')}</nav>` : ''}
+    ${tabs.length > 1 || tabs[0].badge ? `<nav class="sk-tabs">${tabs.map((t) => `<button class="${t.key === cur ? 'on' : ''}" data-sktab="${group}:${t.key}">${esc(t.label)}${t.badge ? `<em>${t.badge}</em>` : ''}</button>`).join('')}</nav>` : ''}
     <div class="sk-panes">${tabs.map((t) => `<div class="sk-pane" data-pane="${t.key}" ${t.key === cur ? '' : 'hidden'}>${t.h}</div>`).join('')}</div></section>`;
 }
 // Shows the tab that holds this element (a link to 'battle#gs-dungeons', the Stages button...).
@@ -84,12 +85,12 @@ function showPaneOf(el) {
   for (const b of $$('[data-sktab]', box)) b.classList.toggle('on', b.dataset.sktab === group + ':' + key);
   for (const q of $$('.sk-pane', box)) q.hidden = q.dataset.pane !== key;
 }
-// o: { main, list: [label, html] | null, cls, attrs }
+// o: { main, list: [label, html, count?] | null, cls, attrs }
 function skBoardHTML(realm, skill, o) {
   const extra = [];
   for (const f of UIX.realmSide) extra.push(f(realm, skill));
   if (renownOn()) extra.push(renownHTML(realm));
-  const tabs = (o.list ? [{ key: 'list', label: o.list[0], h: o.list[1] }] : []).concat(hdrTabs(extra));
+  const tabs = (o.list ? [{ key: 'list', label: o.list[0], h: o.list[1], badge: o.list[2] }] : []).concat(hdrTabs(extra));
   const side = tabPanelHTML(skill, tabs, 'sk-b');
   return `<div class="sk-page sk-board fit ${o.cls || ''}" ${o.attrs || ''} style="--rc:${rc(realm)}">
   ${skBannerHTML(realm, skill)}

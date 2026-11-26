@@ -96,7 +96,8 @@ function fcPickHTML(skill, sel) {
     const n = acts.filter((a) => ['ready', 'active'].includes(actState('cooking', a))).length, f = S.ui.fcF || 'all';
     tools = `<nav class="seg fc-seg">${[['all', 'All', open], ['ready', 'Can cook', n]].map(([k, l, c]) => `<button class="${f === k ? 'on' : ''}" data-fcf="${k}"><span>${l}</span><em>${c}</em></button>`).join('')}</nav>`;
   }
-  return `<section class="fc-pick"><div class="fcp-h"><h3>${FC_TXT[skill].pick}</h3><small>${open} / ${acts.length}</small>${tools}</div>
+  // The tab carries the title and the count (fcPage): only the filters stay here.
+  return `<section class="fc-pick">${tools ? `<div class="fcp-h">${tools}</div>` : ''}
     ${skill === 'fishing' ? `<div class="fc-zones">${fcFishGrid(sel)}</div>` : fcCookGrid(sel)}</section>`;
 }
 
@@ -133,7 +134,7 @@ function fcQHTML(skill, a) {
 /* ---------------------------------------------------------------- the page */
 function fcPage(realm, skill) {
   const sel = fcSel(skill);
-  return skBoardHTML(realm, skill, { cls: 'fc-page', attrs: `data-fc="${skill}"`, main: `${uix('realmIntro', realm, skill)}${focusHTML(skill)}${uix('realmTop', realm, skill)}`, list: [FC_TXT[skill].pick, fcPickHTML(skill, sel)] });
+  return skBoardHTML(realm, skill, { cls: 'fc-page', attrs: `data-fc="${skill}"`, main: `${uix('realmIntro', realm, skill)}${focusHTML(skill)}${uix('realmTop', realm, skill)}`, list: [FC_TXT[skill].pick, fcPickHTML(skill, sel), `${SKILLS[skill].actions.filter((a) => !wsLocked(actState(skill, a))).length}/${SKILLS[skill].actions.length}`] });
 }
 {
   const base = VIEWS.realm;

@@ -39,7 +39,11 @@ function focusAct(skill) {
 }
 
 /* ---------------------------------------------------------------- the skill's gauge */
-// Each returns { name, f (0-1), txt, hot, col }. The tooltip is the skill intro's line of the same name.
+// Each returns { name, f (0-1), txt, hot, col }. GAUGE_TIP: the tooltip of the gauge.
+const GAUGE_TIP = {
+  mining: 'Same ore in a row digs deeper: more double ores and twice the gems at 100%. Switching ore starts a new vein.',
+  smithing: 'Every ingot stokes the forge: faster smelts and more Pure ingots. At 100% it turns White Heat. It cools while you do something else.',
+};
 const FOCUS_GAUGE = {
   mining: () => { const O = SOUL(), v = curVein(); return { name: 'The vein', f: v / 100, txt: O.lode > 0 ? `Mother Lode ×3 · ${O.lode} left` : `${Math.round(v)}%`, hot: O.lode > 0 }; },
   smithing: () => { const O = SOUL(); return { name: 'Forge heat', f: O.white > 0 ? 1 : O.heat / 100, txt: O.white > 0 ? `White Heat · ${O.white}` : `${Math.round(O.heat)}%`, hot: O.white > 0 }; },
@@ -51,16 +55,11 @@ const FOCUS_GAUGE = {
     return { name: 'Next curse', f: (i + 1) / GRADES_HEX.length, txt: `${G.name}${G.m > 1 ? ` · ×${G.m} spoils` : ''}`, hot: G.id === 'sp', col: G.col };
   },
 };
-function focusTip(skill, name) {
-  const I = typeof INTRO !== 'undefined' && INTRO['skill:' + skill], P = (I && I.points) || [];
-  const p = P.find((x) => x[1] === name);
-  return p ? p[2] : '';
-}
 function focusGaugeHTML(skill, a) {
   if (skill === 'archaeology' && typeof gridHTML === 'function') return `<div class="fo-grid">${gridHTML(a.id)}</div>`;
   const g = FOCUS_GAUGE[skill] && FOCUS_GAUGE[skill]();
   if (!g) return '';
-  return `<div class="fo-gauge ${g.hot ? 'hot' : ''}" data-fogauge="${skill}" title="${esc(focusTip(skill, g.name))}"${g.col ? ` style="--gc:${g.col}"` : ''}>
+  return `<div class="fo-gauge ${g.hot ? 'hot' : ''}" data-fogauge="${skill}" title="${esc(GAUGE_TIP[skill] || '')}"${g.col ? ` style="--gc:${g.col}"` : ''}>
     <small>${esc(g.name)}</small><span class="fo-gbar"><i style="width:${(Math.max(0, Math.min(1, g.f)) * 100).toFixed(1)}%"></i></span><b>${esc(g.txt)}</b></div>`;
 }
 
@@ -124,8 +123,6 @@ function focusHTML(skill) {
     body += focusNotes(skill, a);
     if (skill === 'cooking' && typeof fcSpiceHTML === 'function') body += fcSpiceHTML();
     body += focusGaugeHTML(skill, a);
-    const np = (SKILL_PERKS[skill] || []).find((p) => xpInfo(skill).L < p.lv);
-    if (np) body += `<button class="fo-perk" data-skinfo="${skill}:milestones" title="Open this skill's path">${ui('star')}<span><small>Next perk · Lv ${np.lv}</small><b>${esc(np.name)}</b><em>${esc(np.desc)}</em></span></button>`;
     body += `<div class="fo-mast" title="Mastery: each level makes this action 0.3% faster and adds 0.1% chance to double">${ui('mastery')}<span>Mastery <b data-mlv="${skill}:${a.id}">${masteryLv(skill, a.id)}</b></span><span class="bar"><i data-mfill="${skill}:${a.id}"></i></span></div>`;
     // La Forge P10: gear's Perfect chance, and the Care switch (+50% materials, Perfect ×3)
     if (skill === 'arts' && typeof isGearAct === 'function' && isGearAct(a)) body += `<button class="fo-care ${S.care && S.care.arts ? 'on' : ''}" data-care title="Care: +50% materials, Perfect chance ×3. Forging a recipe often raises its Perfect chance.">${ui('star')}<span>Care</span><b>Perfect ${pct(perfectChance('arts', a))}</b></button>`;
@@ -138,7 +135,8 @@ function focusHTML(skill) {
     : st === 'ready' && busy ? focusSwitchHTML(skill, a, go, busy)
     : batch ? `<span class="fo-ctas">${craftNHTML(skill, a, go, '')}<button class="fo-cta" data-act="${skill}:${a.id}" title="Keep going until you stop it or run out of materials">${ui('play')}<span>${go} ∞</span></button></span>`
     : `<button class="fo-cta" data-act="${skill}:${a.id}" ${locked || st === 'missing' ? 'disabled' : ''}>${st === 'ready' && FC.includes(skill) ? `${ui('play')}${FC_TXT[skill].go}` : ctaLabel(skill, a, st)}</button>`;
-  return `<section class="win fo-win ${run ? 'on' : ''}" data-focus="${skill}" style="--rc:${rc(s.realm)}">
+  // roomy: a gathering action has little to list, so a tall screen shows its item bigger (css/skills-ux.css)
+  return `<section class="win fo-win ${run ? 'on' : ''} ${!a.in && s.type === 'gather' && !FC.includes(skill) ? 'roomy' : ''}" data-focus="${skill}" style="--rc:${rc(s.realm)}">
     <div class="fo-bg" data-skill-bg="${skill}" aria-hidden="true"></div>
     <div class="fo-body">
       <div class="fo-art r${r}">
@@ -163,7 +161,7 @@ function focusSwitchHTML(skill, a, go, busy) {
   const ends = M && ((M.cur && M.cur.n) || (runA && runA.in));
   const q = ends && msFree() > 0 ? `<button class="fo-cta q" data-qnext="${skill}:${a.id}" title="Task Queue: starts when ${esc(M.cur ? msName(M.cur) : runA.name)} ends">${ui('missions')}<span>Queue next<small>after ${esc(M.cur ? msName(M.cur) : runA.name)}</small></span></button>` : '';
   const one = a.in && SKILLS[skill].type === 'craft' ? craftNHTML(skill, a, go, busy) : '';
-  return `<span class="fo-ctas">${one}<button class="fo-cta sw" data-act="${skill}:${a.id}">${ui('play')}<span>${go}${one ? ' ∞' : ' now'}<small>stops ${esc(busy)}</small></span></button>${q}</span>`;
+  return `<span class="fo-ctas">${one}<button class="fo-cta sw" data-act="${skill}:${a.id}" title="Stops ${esc(busy)}">${ui('play')}<span>${go}${one ? ' ∞' : ' now'}<small>stops ${esc(busy)}</small></span></button>${q}</span>`;
 }
 // "Craft ×N": the player types how many to make; the run stops after that many (or when materials run out).
 // The count is remembered per recipe; the field has an id so a redraw keeps its focus and caret.
@@ -211,7 +209,7 @@ document.addEventListener('click', (ev) => {
   const [skill, id] = t.dataset.qnext.split(':');
   if (postMission({ k: 'act', skill, id, n: 0 }, 0)) toast(`Queued next: ${findAction(skill, id).name}.`, 'good');
 });
-// "Can find": the by-products you have not found yet show as a dark silhouette in their rarity frame, with a
+// "Also drops": the by-products you have not found yet show as a dark silhouette in their rarity frame, with a
 // hint (rarity, kind, one line of lore) and about how long one takes at this speed.
 function focusFindsHTML(skill, a, T) {
   const got = a.extra.filter(([k]) => S.found[k]).length;
@@ -224,7 +222,7 @@ function focusFindsHTML(skill, a, T) {
     // The icon without its data-tip, so hovering never names it.
     return tile(k, fmtRate(p), { cls: 'xs', unknown: true, r, title: tip });
   }).join('');
-  return `<div class="fo-ing fo-extra"><small>Rare finds <em>${got} / ${a.extra.length}</em></small>${tiles}</div>`;
+  return `<div class="fo-ing fo-extra"><small>Also drops <em>${got} / ${a.extra.length}</em></small>${tiles}</div>`;
 }
 
 /* ---------------------------------------------------------------- wiring */
@@ -254,6 +252,9 @@ UPD.push(() => {
   const el = $('[data-focus]');
   if (!el) return;
   const skill = el.dataset.focus;
+  // The Start / Craft row sticks to the bottom of its column; it gets its own backdrop only when the column scrolls.
+  const col = el.parentElement;
+  if (col && col.classList.contains('sk-a')) col.classList.toggle('ovf', col.scrollHeight > col.clientHeight + 1);
   const ring = $('[data-foring]', el);
   if (ring) {
     // Only the shown action's own progress: a recipe you are browsing keeps an empty ring.

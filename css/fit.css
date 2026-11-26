@@ -43,7 +43,6 @@
 /* ---- Battlefield (VIEWS.battle): the stage column and, beside it, one tabbed panel ---- */
 .gs-board { display: flex; flex-direction: column; gap: 12px; }
 .gs-panel { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
-.gs-panel > .intro-card { margin: 0; }
 .gs-tabs .sk-tabs { flex-wrap: wrap; overflow: visible; }
 .gs-tabs .sk-tabs button { flex: 1 0 auto; padding: 0 12px; }
 .gs-tabs .sk-pane > .win > .hdr:first-child > span { display: none; }

@@ -439,6 +439,8 @@ const ICONS = {
     stormbelt: 'big-wave',
     ghostfleet: 'floating-ghost',
     worldsedge: 'galaxy',
+    fishman: 'mermaid',
+    final_island: 'island',
   },
   training: {
     chakra: 'magic-swirl',
