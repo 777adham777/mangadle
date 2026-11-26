@@ -549,7 +549,7 @@ const GOALS = [
   gStep('sword', 'Carve a Wooden Sword', 'realm:shinobi:arts', 1, gMade('training_kunai'), 30, { soldier_pill: 3 }, 'Crafting turns wood into gear. This is your first weapon.'),
   gStep('equip_sword', 'Equip your Wooden Sword', 'character', 1, () => [S.equip.weapon ? 1 : 0], 30, { chakra_shard: 10 }, 'Gear does nothing in the Bank: wear it.'),
   gStep('pills5', 'Brew 5 Soldier Pills', 'realm:shinobi:arts', 5, gMade('soldier_pill'), 40, { soldier_pill: 5 }, 'Pills heal you in battle. Five of them open the Battlefield.'),
-  gStep('food', 'Equip food for battle', 'character', 1, () => [S.combat.food ? 1 : 0], 60, { soldier_pill: 10 }, 'You eat on your own when your HP drops low.'),
+  gStep('food', 'Equip food for battle', 'character', 1, () => [S.combat.food ? 1 : 0], 60, { soldier_pill: 5 }, 'You eat on your own when your HP drops low.'),
   gStep('training10', 'Defeat 10 foes at the Training Grounds', 'battle', 10, gKills('training'), 60, { scroll_shinobi: 1 }, 'Ten wins open the next stage, the Misty Forest.'),
   gStep('tech1', 'Learn a technique', 'techniques', 1, () => [Object.keys(S.tech.lv).length], 150, { herb_pouch: 1 }, 'Foes drop scrolls. Read one on the Techniques page: it teaches a technique that fires on its own in battle.'),
   gStep('char10', 'Reach Character level 10', 'battle', 10, () => [charLv()], 200, { crystal_kunai: 1 }, 'Every level raises your five stats. Fights give the XP.'),
