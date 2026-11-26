@@ -228,8 +228,10 @@ hook('combat', (dt, e) => {
 hook('kill', () => { const k = perk('killHeal'); if (k > 0) S.combat.hp = Math.min(pMaxHp(), S.combat.hp + pMaxHp() * k); });
 // Transformations drain less stamina (the drain itself is in systems.js).
 hook('tick', (dt) => {
-  const f = typeof activeForm === 'function' && activeForm(), k = Math.min(0.8, perk('formDrain'));
-  if (f && k > 0) S.ki.stamina = Math.min(staminaMax(), S.ki.stamina + f.drain * dt * k);
+  const f = typeof activeForm === 'function' && activeForm();
+  if (!f) return;   // no transformation: skip the gear scan (it ran every tick)
+  const k = Math.min(0.8, perk('formDrain'));
+  if (k > 0) S.ki.stamina = Math.min(staminaMax(), S.ki.stamina + f.drain * dt * k);
 });
 hook('dodge', () => setFx('dodge'));
 hook('gold', () => 1 + setFx('gold'));

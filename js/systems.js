@@ -349,7 +349,16 @@ hook('xp', (skill) => (pactOn('focus') && SKILLS[skill].type === 'combat' ? 0.5 
 
 /* ================================================================ HUNTER: BAIT */
 // While you carry bait for a skill (and bait is on), each action uses one: +50% rare finds, +10% double.
-const baitFor = (skill) => Object.keys(ITEMS).find((k) => ITEMS[k].type === 'bait' && ITEMS[k].baitFor === skill && count(k) > 0);
+// Baits by skill, listed once (scanning every item on each action made a night's catch-up take seconds).
+let BAITS = null;
+function baitFor(skill) {
+  if (!BAITS) { BAITS = {}; for (const k in ITEMS) { const it = ITEMS[k]; if (it.type === 'bait' && !it.variant) (BAITS[it.baitFor] = BAITS[it.baitFor] || []).push(k); } }
+  for (const k of BAITS[skill] || []) {
+    if (count(k) > 0) return k;
+    for (const v of VARIANTS[k] || []) if (count(v) > 0) return v;
+  }
+  return undefined;
+}
 const baitOn = (skill) => S.useBait !== false && !!baitFor(skill);
 hook('rare', (skill) => (skill && baitOn(skill) ? 1.5 : 1));
 hook('double', (skill) => (baitOn(skill) ? 0.1 : 0));
@@ -491,7 +500,9 @@ function buildCards() {
   }
 }
 buildCards();
-const cardsOf = (r) => Object.keys(CARDS).filter((k) => CARDS[k].realm === r);
+// Listed once per world: pageDone runs in the speed hook, on every action.
+const CARDS_OF = {};
+const cardsOf = (r) => CARDS_OF[r] || (CARDS_OF[r] = Object.keys(CARDS).filter((k) => CARDS[k].realm === r));
 const pageDone = (r) => { const c = cardsOf(r); return c.length > 0 && c.every((k) => S.cards[k]); };
 function giveCard(realm, source) {
   const pool = cardsOf(realm).filter((k) => !S.cards[k]);
