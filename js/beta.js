@@ -57,7 +57,8 @@ function betaNotice() {
   betaCover(`<small class="beta-tag">Pre-alpha</small><h2>Welcome, tester!</h2>
     <ul><li>Things will break and numbers will change.</li>
       <li><b>${BETA.worlds} worlds</b> are open in this build.</li>
-      <li>Bugs and ideas: <b>Settings → Report a bug</b>.</li></ul>
+      <li>Bugs and ideas: <b>Settings → Report a bug</b>.</li>
+      <li>The game notes how you play, nothing personal, and it stays here: <b>Settings → Play data</b>.</li></ul>
     <div class="btn-row">${gbtn('Let\'s go', 'check', 'data-betaok')}</div>`);
 }
 // Worlds past the build's last one stay out of the menus, lists and counts (dev mode shows everything).
