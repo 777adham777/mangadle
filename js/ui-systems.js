@@ -353,10 +353,6 @@ document.addEventListener('click', (ev) => {
   if (d.awaken) awaken(d.awaken);
   else if (d.socket) { const [id, i, gm] = d.socket.split(':'); socketGem(id, +i, gm); }
   else if (d.reforge) reforge(d.reforge);
-  else if (d.salvage) {
-    const [id, q] = d.salvage.split(':'), got = salvage(id, q === 'all' ? count(id) : 1);
-    if (got) toast(`Salvaged: ${Object.entries(got).map(([k, n]) => `${ITEMS[k].name} ×${n}`).join(', ')}`, 'good');
-  }
 });
 
 /* ====================================================================== boot */

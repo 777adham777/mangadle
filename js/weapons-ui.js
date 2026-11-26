@@ -43,7 +43,7 @@ function inheritHTML(b) {
     ${gbtn(why || 'Inherit', 'upgrade', `data-inherit="${b.u}:${a.u}" ${why ? 'disabled' : ''}`, 'sm')}`;
 }
 
-// A stack of new copies: equip one, sell or salvage them.
+// A stack of new copies: equip one or sell them.
 function armStackHTML(id) {
   const fresh = freshArms(id), n = fresh.length, it = ITEMS[id];
   if (!n) return '';
@@ -53,10 +53,6 @@ function armStackHTML(id) {
   const acts = [gbtn('Equip', 'check', `data-armeq="${fresh[0].u}"`)];
   acts.push(gbtn(`Sell 1 · ${fmt(it.value)}`, 'gold', `data-armsell="${fresh[0].u}"`, 'dark sm'));
   if (n > 1) acts.push(gbtn(`Sell all ×${fmt(n)}`, 'gold', `data-armsellall="${id}"`, 'dark sm'));
-  if (it.salvage) {
-    acts.push(gbtn('Salvage 1', 'salvage', `data-armsalv="${fresh[0].u}"`, 'dark sm'));
-    if (n > 1) acts.push(gbtn(`Salvage all ×${fmt(n)}`, 'salvage', `data-armsalvall="${id}"`, 'dark sm'));
-  }
   out.push(`<div class="dt-cta">${acts.join('')}</div>`);
   out.push(inheritHTML(fresh[0]));
   out.push(`<p class="muted small">New copies of the same weapon stack. The one you wield earns battle XP: as soon as it gains a level, a refinement or an awakening, it leaves the stack and becomes a unique weapon.</p>`);
@@ -80,8 +76,7 @@ function armDetailHTML() {
   out.push(`<div class="aw-row"><span class="pbar"><i style="width:${p * 100}%"></i></span><small>${L >= ARM_MAX ? 'Max level' : `${fmt(a.xp - lo)} / ${fmt(hi - lo)} battle XP · gains XP while you wield it`}</small></div>`);
   const acts = [];
   if (!eqd) acts.push(gbtn('Equip', 'check', `data-armeq="${a.u}"`));
-  if (!eqd) acts.push(gbtn(`Sell · ${fmt(it.value * (1 + a.ref))}`, 'gold', `data-armsell="${a.u}"`, 'dark sm'));
-  if (!eqd && it.salvage) acts.push(gbtn('Salvage', 'salvage', `data-armsalv="${a.u}"`, 'dark sm'));
+  if (!eqd) acts.push(gbtn(`Sell · ${fmt(it.value)}`, 'gold', `data-armsell="${a.u}"`, 'dark sm'));
   if (acts.length) out.push(`<div class="dt-cta">${acts.join('')}</div>`);
   if (eqd) out.push(`<p class="muted small">${ui('check')} You fight with this weapon.</p>`);
 
@@ -138,13 +133,6 @@ document.addEventListener('click', (ev) => {
     const all = freshArms(d.armsellall), it = ITEMS[d.armsellall];
     for (const a of all) sellArm(a.u);
     toast(`Sold ${it.name} ×${fmt(all.length)} for ${fmt(it.value * all.length)} gold.`, 'good');
-    keepStackSel();
-  }
-  else if (d.armsalv) { const got = salvageArm(d.armsalv); if (got) { toast(`Salvaged: ${Object.entries(got).map(([k, n]) => `${ITEMS[k].name} ×${n}`).join(', ')}`, 'good'); keepStackSel(); } }
-  else if (d.armsalvall) {
-    const tot = {};
-    for (const a of freshArms(d.armsalvall)) { const got = salvageArm(a.u); if (got) for (const k in got) tot[k] = (tot[k] || 0) + got[k]; }
-    if (Object.keys(tot).length) toast(`Salvaged: ${Object.entries(tot).map(([k, n]) => `${ITEMS[k].name} ×${fmt(n)}`).join(', ')}`, 'good');
     keepStackSel();
   }
   else if (d.refine) refine(d.refine);

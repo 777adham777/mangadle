@@ -93,7 +93,7 @@ const relCost = (id, rel) => RELEASE_COST.find((c) => ITEMS[id].value < c[0])[re
 const socketCount = (id) => (!gearOn() ? 0 : ITEMS[id].slot === 'weapon' ? gearOf(id).rel : skillLv('smithing') >= 25 ? 1 : 0);
 const reforgeRelic = () => relicsOf(frontier()).sort((a, b) => ITEMS[a].value - ITEMS[b].value)[0];
 const reforgeCost = (id) => {
-  const t = gearOf(id).tier, gold = Math.round(ITEMS[id].value * 2 * (t + 1) + 200 * (t + 1));
+  const t = gearOf(id).tier, gold = Math.round(forgeVal(id) * 2 * (t + 1) + 200 * (t + 1));
   if (t >= REFORGE_MAX - 1) return { gold, relic: 'rift_shard', n: 1, smith: 90 };   // Rift-forging
   return { gold, relic: reforgeRelic(), n: t + 1, smith: 15 * (t + 1) };
 };

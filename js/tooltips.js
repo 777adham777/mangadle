@@ -42,7 +42,6 @@ function tipEffect(id) {
   switch (it.type) {
     case 'equip':
       rows.push(...statRows(Object.fromEntries(Object.keys(it.stats || {}).map((k) => [k, itemStat(id, k)]))));
-      if (it.salvage) text = 'Drop-only gear: salvages into relics.';
       break;
     case 'food':
       if (it.heal) rows.push(['hp', 'Heals in battle', fmt(foodHeal(id)) + ' HP']);

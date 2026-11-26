@@ -860,8 +860,7 @@ function inspectorHTML() {
   if (!selItem || (!count(selItem) && !Object.values(S.equip).includes(selItem))) return '';
   const it = ITEMS[selItem], n = count(selItem), equipped = !n;
   const body = [], acts = [];
-  if (it.type === 'equip') { body.push(attrList(statRows(Object.fromEntries(Object.keys(it.stats).map((k) => [k, itemStat(selItem, k)]))))); body.push(uix('inspector', selItem)); if (!equipped) acts.push(gbtn('Equip', 'check', `data-equip="${selItem}"`));
-    if (it.salvage && !equipped) body.push(`${hdr('Salvage', 'drop-only gear breaks down into relics')}<div class="aw-cost">${costTiles(it.salvage)}</div><div class="dt-cta">${gbtn('Salvage 1', 'salvage', `data-salvage="${selItem}:1"`, 'sm')}${n > 1 ? gbtn(`Salvage all ×${fmt(n)}`, 'salvage', `data-salvage="${selItem}:all"`, 'sm dark') : ''}</div>`); }
+  if (it.type === 'equip') { body.push(attrList(statRows(Object.fromEntries(Object.keys(it.stats).map((k) => [k, itemStat(selItem, k)]))))); body.push(uix('inspector', selItem)); if (!equipped) acts.push(gbtn('Equip', 'check', `data-equip="${selItem}"`));}
   else if (it.type === 'food') { body.push(attrList([['hp', 'Heals in battle', foodHeal(selItem) + ' HP']])); body.push('<p class="muted">Also packs as expedition provisions.</p>'); acts.push(S.combat.food === selItem ? gbtn('Equipped as battle food', 'check', 'disabled') : gbtn('Equip as battle food', 'eat', `data-setfood="${selItem}"`)); }
   else if (it.type === 'fruit') {
     const mine = S.fruit === selItem, rk = mine ? fruitRank() : 0;

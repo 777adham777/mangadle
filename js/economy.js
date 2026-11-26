@@ -362,3 +362,52 @@ for (const id in ITEMS) {
   const it = ITEMS[id];
   if (it.type === 'food' && it.heal) it.heal = Math.max(1, Math.round(it.heal * FOOD_HEAL_PACE));
 }
+
+/* ======================================================== La Forge, lot 1 (2026-11-26, docs/FORGE.md) */
+// P1 · Crafting levels from gear. The first craft of every piece pays a lump of XP: together, the first
+// crafts of a world's pieces pay FIRST_FORGE_SHARE of the Crafting XP between its first recipe and the next
+// world's (it was 1-2%: the levels came from carvings). Carvings go back to being expedition cargo (less XP).
+const FIRST_FORGE_SHARE = 0.4, CARVING_XP = 0.6;
+const FIRST_XP = {};   // gear id -> bonus XP of its first craft (game.js completeAction, the simulator)
+const gearWorld = (s) => Math.min(7, Math.floor(s / 4));
+function applyFirstForge() {
+  const arts = SKILLS.arts.actions, byW = {};
+  for (const a of arts) {
+    const id = Object.keys(a.out || {})[0], it = ITEMS[id];
+    if (!it || it.type !== 'equip' || it.stage == null) continue;
+    (byW[gearWorld(it.stage)] = byW[gearWorld(it.stage)] || []).push(a);
+  }
+  const ws = Object.keys(byW).map(Number).sort((x, y) => x - y);
+  ws.forEach((w, i) => {
+    const acts = byW[w], lo = Math.min(...acts.map((a) => a.level));
+    const nx = byW[ws[i + 1]], hi = nx ? Math.min(...nx.map((a) => a.level)) : Math.min(99, Math.max(...acts.map((a) => a.level)) + 4);
+    const per = FIRST_FORGE_SHARE * (XP_TABLE[hi] - XP_TABLE[lo]) / acts.length;
+    for (const a of acts) { a.first = Math.max(0, Math.round(per - a.xp)); FIRST_XP[Object.keys(a.out)[0]] = a.first; }
+  });
+  for (const [id] of CARVINGS) { const a = arts.find((x) => x.out && x.out[id]); if (a) a.xp = Math.max(1, Math.round(a.xp * CARVING_XP)); }
+}
+
+// P2 + P4 · Prices. Transforming always pays a little: an ingot is worth its inputs + 5% (level 1) to 10%
+// (level 99); a crafted piece sells for its materials + a margin that depends on the piece. Nothing is
+// salvaged any more (no recycling: user rule). Forge costs keep the stage bands (it.tv, weapons.js forgeVal).
+const SELL_MARGIN = { craft: 0.05, util: 0.05, schem: 0.07, set: 0.08, frag: 0.1 };
+const inValue = (inp) => Object.keys(inp || {}).reduce((t, k) => t + (ITEMS[k] ? ITEMS[k].value * inp[k] : 0), 0);
+function applyPrices() {
+  for (const a of SKILLS.smithing.actions.slice().sort((x, y) => x.level - y.level)) {
+    const o = Object.keys(a.out || {})[0];
+    if (!o || !a.in || !ITEMS[o]) continue;
+    const m = 1.05 + 0.05 * Math.min(1, (a.level - 1) / 98);
+    ITEMS[o].value = Math.max(1, Math.ceil(inValue(a.in) * m / a.out[o]));
+  }
+  for (const a of SKILLS.arts.actions) {
+    const o = Object.keys(a.out || {})[0], it = ITEMS[o];
+    if (!it || it.type !== 'equip' || !GEAR_TIERS[o] || !a.in) continue;
+    it.tv = it.tv || it.value;
+    const role = it.frag ? 'frag' : GEAR_TIERS[o][1];
+    it.value = Math.max(1, Math.ceil(inValue(a.in) * (1 + (SELL_MARGIN[role] || 0.05)) / a.out[o]));
+  }
+  // The Market never sells a material below 1.25 × its sale value (or buy, craft, sell would mint gold).
+  for (const s of SHOP) if (s.give && ITEMS[s.give[0]]) s.cost = Math.max(s.cost, Math.ceil(ITEMS[s.give[0]].value * s.give[1] * 1.25));
+}
+applyPrices();
+applyFirstForge();

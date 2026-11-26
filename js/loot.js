@@ -4,7 +4,7 @@
    - every world has a treasure chest, drop-only gear with a utility perk, and a
      very rare Rift Shard on its guardian
    - rarity (1 Common … 5 Legendary) comes from how hard an item is to get, not its price
-   - drop-only gear can be salvaged into its world's relics, so old loot keeps a use
+   - nothing is salvaged (La Forge, 2026-11-26): crafted gear sells for its materials + a margin
    ========================================================================== */
 
 /* ------------------------------------------------- treasure for worlds 4-7 */
@@ -132,27 +132,6 @@ function computeRarity() {
 }
 const SCHEM_FOR = (id) => Object.keys(ITEMS).find((k) => ITEMS[k].type === 'schematic' && ITEMS[k].teaches === id);
 
-/* ---------------------------------------------------------------- salvage */
-// Drop-only gear (never crafted) can be broken down into the relics of the world it comes from.
-// Higher rarity gives more. Crafted gear is not salvageable: it would turn cheap materials into relics.
-const SALVAGE_N = [0, 1, 1, 1, 2, 4];
-function computeSalvage() {
-  const realmOf = {};
-  for (const z of ZONES) for (const e of z.enemies) for (const [t] of e.drops) if (!realmOf[t]) realmOf[t] = z.realm;
-  for (const a of SKILLS.voyaging.actions) for (const [t] of a.loot.rare) if (!realmOf[t]) realmOf[t] = 'seas';
-  for (const k in RARE_FINDS) for (const [t] of RARE_FINDS[k]) if (!realmOf[t] && SKILLS[k]) realmOf[t] = SKILLS[k].realm;   // gear a skill finds
-  for (const id in ITEMS) {
-    const it = ITEMS[id];
-    if (it.type !== 'equip' || CRAFTED[id]) continue;
-    const realm = realmOf[id];
-    if (!realm) continue;   // no world: nothing to break it into
-    const relics = Object.keys(ITEMS).filter((k) => ITEMS[k].relic === realm).sort((a, b) => ITEMS[a].value - ITEMS[b].value);
-    if (!relics.length) continue;   // Rift gear: nothing to break it into
-    const give = { [relics[0]]: SALVAGE_N[it.rarity] };
-    if (it.rarity >= 5 && relics[1]) give[relics[1]] = 1;
-    it.salvage = give;
-  }
-}
 /* ---------------------------------------------------------------- world lock */
 // Every item belongs to one universe, and only drops there (user rule, 2026-11-25): no Log Pose in the Leaf
 // Village, no Devil Fruit off a Shinjuku curse, no Soul City ore in a voyage haul, no fish dug up in the Echo
@@ -202,7 +181,6 @@ function worldLock() {
 }
 worldLock();
 computeRarity();
-computeSalvage();
 
 /* ------------------------------------------------------------ drop rate pass */
 // Balance pass (2026-11-23): an Epic or Legendary drop must be an event. The rates above were set one by one

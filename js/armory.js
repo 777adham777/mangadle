@@ -9,7 +9,7 @@
      the recipes start in Orange Town, and the workshop hides a world's gear recipes until that world
      is open (workshop-ui.js).
    - Sources: rare drops (Epic once loot.js caps them), skill finds, voyage hauls, guardian drops,
-     crafted pieces and three schematics. Drop-only pieces can be salvaged like the others (loot.js).
+     crafted pieces and three schematics.
    - Each item carries its fallback glyph and colour (icons.js) until its painted icon exists.
    ========================================================================== */
 

@@ -453,6 +453,8 @@ function completeAction(skill, act) {
   if (act.in && !kept) for (const k in act.in) takeStock(k, act.in[k]);
   const mult = Math.random() < doubleChance(skill, act.id) ? 2 : 1;
   const gains = {};
+  // La Forge (economy.js FIRST_XP): the first craft of a piece of gear pays a lump of XP.
+  const out0 = act.out && Object.keys(act.out)[0], firstXp = act.first && out0 && !S.stats.made[out0] ? act.first : 0;
   if (act.out) for (const k in act.out) {
     const n = act.out[k] * mult;
     addItem(k, n); gains[k] = n;
@@ -466,12 +468,13 @@ function completeAction(skill, act) {
   let gold = 0;
   if (act.loot) { gold = rollLoot(act.loot, mult, gains); S.stats.voyages++; }
   rollRareFinds(skill, act, gains);
-  addXp(skill, act.xp);
+  addXp(skill, act.xp + firstXp);
+  if (firstXp) emit('firstforge', { skill, id: out0, xp: firstXp * skillXpMult(skill) });
   const key = skill + ':' + act.id;
   S.mastery[key] = (S.mastery[key] || 0) + 1;
   S.stats.actions++;
   hrun('action', skill, act, mult, gains);
-  emit('action', { skill, act, gains, gold, xp: act.xp * skillXpMult(skill), double: mult > 1, kept });
+  emit('action', { skill, act, gains, gold, xp: (act.xp + firstXp) * skillXpMult(skill), double: mult > 1, kept });
 }
 
 function rollRareFinds(skill, act, gains) {
@@ -776,17 +779,6 @@ function eatFruit(id) {
   if (S.fruit === id) { S.fruitRank = fruitRank() + 1; toast(`${ITEMS[id].name} deepens to rank ${S.fruitRank}.`, 'rare'); }
   else { S.fruit = id; S.fruitRank = 1; toast(`You ate the ${ITEMS[id].name}. ${ITEMS[id].desc}`, 'rare'); }
   dirty = true;
-}
-// Drop-only gear breaks down into its world's relics (ITEMS[id].salvage, set in loot.js).
-function salvage(id, n) {
-  const it = ITEMS[id];
-  n = Math.min(n, count(id));
-  if (!it || !it.salvage || n <= 0) return null;
-  removeItem(id, n);
-  const got = {};
-  for (const k in it.salvage) { got[k] = it.salvage[k] * n; addItem(k, got[k]); }
-  dirty = true;
-  return got;
 }
 function sell(id, n) {
   if (S.locked && S.locked[id]) return;   // locked in the Bank: protected from selling

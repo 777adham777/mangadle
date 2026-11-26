@@ -182,7 +182,11 @@ function applyJump(R, dtSim) {
   for (const s in R.xp) gainXp(s, R.xp[s] * dtSim);
   for (const k in R.inp) { const n = Math.min(count(k), R.inp[k] * dtSim); if (n > 0) removeItem(k, n); }
   for (const k in R.out) giveItem(k, R.out[k] * dtSim);
-  for (const k in R.made) S.stats.made[k] = (S.stats.made[k] || 0) + R.made[k] * dtSim;
+  for (const k in R.made) {
+    const b = S.stats.made[k] || 0;
+    S.stats.made[k] = b + R.made[k] * dtSim;
+    if (FIRST_XP[k] && b < 1 - 1e-6 && S.stats.made[k] >= 1 - 1e-6) gainXp('arts', FIRST_XP[k] * skillXpMult('arts'), 'first');   // La Forge: first craft
+  }
   for (const z in R.kills) S.combat.kills[z] = (S.combat.kills[z] || 0) + R.kills[z] * dtSim;
   if (R.fight) S.stats.kills += R.fight.kps * dtSim;
   S.gold += R.gold * dtSim;

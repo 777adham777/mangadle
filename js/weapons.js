@@ -6,8 +6,9 @@
    A. Level (1-50): the wielded weapon earns battle XP. +2% weapon attack per level.
    B. Refinement (+1 to +10, Soul City): ingots of the weapon's tier, plus a gem at +4, +7 and +10.
       +10% weapon attack per step. Step +n needs weapon level 5n.
-   C. Awakening (Soul City): I at level 25 and +5 (choose an element), II at level 50 and +10
-      (the passive of its family). Costs the souls of Soul City; II also a Soul City relic.
+   C. Awakening: I at level 15 and +3 (choose an element), II at level 35 and +7 (the passive of its
+      family). Costs the souls of Soul City; II also the guardian material of the weapon's world
+      (La Forge, 2026-11-26: the first awakening now happens before the end of the beta).
    Armor and accessories keep the simpler shared progression (sockets, reforge) in systems.js.
    ========================================================================== */
 
@@ -18,6 +19,9 @@ const armLv = (a) => { let L = 1; while (L < ARM_MAX && a.xp >= armXpAt(L + 1)) 
 const armOf = (u) => S.arms.find((a) => a.u === u) || null;
 const curArm = () => (S.equipU ? armOf(S.equipU) : null);
 const forgeOn = () => isUnlocked('feature:awakening');
+// Forge costs (refinement, awakening, reforge) follow the stage band of a piece (economy.js sets it.tv);
+// its value is its sale price (materials + a margin), which would make them explode.
+const forgeVal = (id) => { const it = ITEMS[baseOf(id)] || ITEMS[id]; return it.tv || it.value; };
 
 /* ------------------------------------------------------------ elements + families */
 // Awakening I: an element. It shapes your auto-attacks and powers techniques with the same tag by 25%.
@@ -109,16 +113,8 @@ function sellArm(u) {
   const a = armOf(u);
   if (!a || a.u === S.equipU) return;
   S.arms = S.arms.filter((x) => x !== a);
-  S.gold += ITEMS[a.id].value * (1 + a.ref);
+  S.gold += ITEMS[a.id].value;
   dirty = true;
-}
-function salvageArm(u) {
-  const a = armOf(u), it = a && ITEMS[a.id];
-  if (!a || a.u === S.equipU || !it.salvage) return null;
-  S.arms = S.arms.filter((x) => x !== a);
-  for (const k in it.salvage) addItem(k, it.salvage[k]);
-  dirty = true;
-  return it.salvage;
 }
 // Older saves kept weapons as stacks in the bank: turn each into a copy (the equipped one too).
 function migrateArms() {
@@ -151,15 +147,15 @@ hook('kill', (e) => {
 const REF_INGOT = [[30, 'reishi_ingot'], [100, 'silver_ingot'], [300, 'frost_ingot'], [700, 'void_ingot'], [1500, 'black_ingot'], [4000, 'star_ingot'], [15000, 'sun_ingot'], [Infinity, 'rift_ingot']];
 const REF_GEM = { 4: 'jade', 7: 'ruby', 10: 'void_diamond' };
 function refCost(a) {
-  const next = a.ref + 1, ing = REF_INGOT.find((x) => ITEMS[baseOf(a.id)].value < x[0])[1], c = { [ing]: 2 + 2 * a.ref };
+  const next = a.ref + 1, ing = REF_INGOT.find((x) => forgeVal(a.id) < x[0])[1], c = { [ing]: 2 + 2 * a.ref };
   if (REF_GEM[next]) c[REF_GEM[next]] = 1;
   return c;
 }
 // Gold for the forge (balance pass 2026-11-25): gold is what you save up for, not a score. Each refinement
 // costs more than the last, an awakening costs a small fortune; both scale with the weapon's worth.
 const FORGE_GOLD = { ref: 4, awk: [0, 60, 200] };
-const refGold = (a) => Math.round(ITEMS[baseOf(a.id)].value * FORGE_GOLD.ref * (a.ref + 1) * (a.ref + 1));
-const awkGold = (a) => Math.round(ITEMS[baseOf(a.id)].value * (FORGE_GOLD.awk[a.awk + 1] || 0));
+const refGold = (a) => Math.round(forgeVal(a.id) * FORGE_GOLD.ref * (a.ref + 1) * (a.ref + 1));
+const awkGold = (a) => Math.round(forgeVal(a.id) * (FORGE_GOLD.awk[a.awk + 1] || 0));
 function refReason(a) {
   if (!forgeOn()) return 'Locked';
   if (a.ref >= REF_MAX) return 'Fully refined';
@@ -189,7 +185,7 @@ const armBaseAtk = (a) => (ITEMS[a.id].stats.atk || 0);
 const inheritFrom = (b, a) => !!(a && b && a.u !== b.u && armBaseAtk(b) > armBaseAtk(a) && (a.xp > b.xp || a.ref > b.ref || a.awk > b.awk));
 function inheritCost(b, a) {
   const c = {}, add = (k, n) => { if (n > 0) c[k] = (c[k] || 0) + n; };
-  const ing = REF_INGOT.find((x) => ITEMS[baseOf(b.id)].value < x[0])[1];
+  const ing = REF_INGOT.find((x) => forgeVal(b.id) < x[0])[1];
   let n = 0;
   for (let r = b.ref; r < a.ref; r++) n += 2 + 2 * r;
   add(ing, Math.ceil(n / 2));
@@ -219,11 +215,13 @@ function inheritArm(bu, au) {
 }
 
 /* ------------------------------------------------------------ C. awakening */
-const AWK = [null, { lv: 25, ref: 5, name: 'Awakening I' }, { lv: 50, ref: 10, name: 'Awakening II' }];
-const AWK_RELIC = 'husk_heart';
+const AWK = [null, { lv: 15, ref: 3, name: 'Awakening I' }, { lv: 35, ref: 7, name: 'Awakening II' }];
+// Awakening II burns the guardian material of the weapon's world (its stage: 4 stages a world).
+const GUARD_MAT = ['ashen_tail', 'tide_heart', 'sovereign_shard', 'tyrant_horn', 'matriarch_eye', 'chimera_heart', 'lord_visage', 'rift_shard'];
+const awkRelic = (id) => GUARD_MAT[Math.max(0, Math.min(GUARD_MAT.length - 1, Math.floor((ITEMS[baseOf(id)].stage || 0) / 4)))];
 function awkCost(a) {
-  const next = a.awk + 1, tier = RELEASE_COST.find((c) => ITEMS[baseOf(a.id)].value < c[0]), c = Object.assign({}, tier[next]);
-  if (next === 2) c[AWK_RELIC] = (c[AWK_RELIC] || 0) + 3;
+  const next = a.awk + 1, tier = RELEASE_COST.find((c) => forgeVal(a.id) < c[0]), c = Object.assign({}, tier[next]);
+  if (next === 2) { const r = awkRelic(a.id); c[r] = (c[r] || 0) + 2; }
   return c;
 }
 function awkReason(a) {

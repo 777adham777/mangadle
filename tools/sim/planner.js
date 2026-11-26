@@ -158,10 +158,12 @@ function trainTask(skill) {
   if (skill === 'farming' || skill === 'voyaging') return null;   // background systems level them
   const acts = s.actions.filter((a) => skillLv(skill) >= a.level && (!a.schem || S.known[a.schem]) && !actionBlock(skill, a) && !a.beast && a.id !== 'awaken');
   // XP per second, counting ~4 s of gathering behind each input unit (or gear recipes look like free XP)
-  const eff = (a) => a.xp / (a.time + (a.in ? Object.values(a.in).reduce((t, n) => t + 4 * n, 0) : 0));
+  // La Forge: a piece never crafted pays its first-craft lump once (the task stops after one)
+  const outOf = (a) => Object.keys(a.out || {})[0], fresh = (a) => a.first > 0 && !(S.stats.made[outOf(a)] >= 1 - 1e-6);
+  const eff = (a) => (a.xp + (fresh(a) ? a.first : 0)) / (a.time + (a.in ? Object.values(a.in).reduce((t, n) => t + 4 * n, 0) : 0));
   acts.sort((a, b) => eff(b) - eff(a));
   for (const a of acts) {
-    if (!a.in || canAfford(a.in) || chainRates(skill, a, 0, true)) return { kind: 'act', skill, id: a.id };
+    if (!a.in || canAfford(a.in) || chainRates(skill, a, 0, true)) return Object.assign({ kind: 'act', skill, id: a.id }, fresh(a) ? { want: { id: outOf(a), n: stock(outOf(a)) + 1 } } : {});
     if (Object.keys(a.in).every((k) => foodGatherable(k))) {
       for (const k in a.in) if (stock(k) < a.in[k]) return needTask(k, a.in[k] * 60, 1);
     }
@@ -510,6 +512,26 @@ function withFood(t) {
   if (low || (have < need.n && !MAC.night && sched().toNext < 1800)) { const f = needTask(need.id, need.n); if (f) { MAC.foodWant = true; return Object.assign(f, { forFood: true }); } }
   return t;
 }
+// La Forge (P1): a player crafts each new piece once, for its first-craft XP: at once when the materials are
+// in the bank, or after a short gathering trip (60 units at most, gathered or crafted, never a rare drop).
+function forgeTask() {
+  if (!skillOpen('arts') || MAC.night) return null;
+  const lv = skillLv('arts');
+  let best = null, bc = Infinity;
+  for (const a of SKILLS.arts.actions) {
+    if (!(a.first > 0) || a.level > lv || (a.schem && !S.known[a.schem]) || actionBlock('arts', a)) continue;
+    const o = Object.keys(a.out)[0];
+    if (S.stats.made[o] >= 1 - 1e-6) continue;
+    const miss = Object.keys(a.in || {}).reduce((t, k) => t + Math.max(0, a.in[k] - stock(k)), 0);
+    if (miss < bc) { bc = miss; best = a; }
+  }
+  if (!best) return null;
+  const o = Object.keys(best.out)[0];
+  if (bc <= 0) return { kind: 'act', skill: 'arts', id: best.id, want: { id: o, n: stock(o) + 1 } };
+  if (bc > 60) return null;
+  for (const k in best.in) if (stock(k) < best.in[k]) return producerOf(k) ? needTask(k, best.in[k]) : null;
+  return null;
+}
 function plan() {
   let t = null;
   try { t = questTask(); } catch (e) { plog('ERR ' + e.message); P.note['planner error: ' + e.message] = (P.note['planner error: ' + e.message] || 0) + 1; }
@@ -520,5 +542,6 @@ function plan() {
     if (id) P.note['no plan: ' + id] = (P.note['no plan: ' + id] || 0) + 1;
     t = featureOpen('battle') && zoneOk(bestXpZone(), 0.9) ? fightTask(bestXpZone()) : trainTask('woodcutting');
   }
+  if (t && (t.kind === 'fight' || t.kind === 'act') && !t.forFood && !t.key && !(t.kind === 'fight' && ZONES[t.zi].boss)) { const f = forgeTask(); if (f) t = f; }
   return withFood(t);
 }
