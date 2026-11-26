@@ -55,7 +55,7 @@ function uxSettingsHTML() {
       <span class="uxs-seg" role="group" aria-label="${D.label}">${D.opts.map(([val, l]) => `<button class="${v === val ? 'on' : ''}" data-uxset="${k}:${val}" aria-pressed="${v === val}">${l}</button>`).join('')}</span></div>`;
   };
   return `<section class="win uxs">${hdr('Display')}${Object.keys(UXSET).map(row).join('')}
-    <div class="uxs-row"><span class="uxs-t"><b>Keyboard shortcuts</b></span><span class="uxs-seg"><button data-uxkeys>Show</button></span></div></section>`;
+    <div class="uxs-row uxs-keys"><span class="uxs-t"><b>Keyboard shortcuts</b></span><span class="uxs-seg"><button data-uxkeys>Show</button></span></div></section>`;
 }
 {
   const base = VIEWS.settings;

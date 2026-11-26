@@ -3,24 +3,39 @@
    ANIME IDLE RPG — daily and weekly objectives, on the Quests page (since 2026-11-25). Engine: tasks.js.
    ========================================================================== */
 
+// "40 Curry Pill" -> "40 Curry Pills": the head noun takes the plural ("Scale of X" -> "Scales of X").
+const PLURAL_IRR = { leaf: 'leaves', knife: 'knives', wolf: 'wolves', tooth: 'teeth', foot: 'feet', mouse: 'mice', loaf: 'loaves', man: 'men', fungus: 'fungi', octopus: 'octopuses' };
+const PLURAL_SAME = new Set(['fish', 'ore', 'wood', 'meat', 'rice', 'silk', 'sand', 'dust', 'ash', 'salt', 'ink', 'tea', 'bread', 'water', 'moss', 'clay', 'iron', 'steel', 'gold', 'silver', 'copper', 'bamboo', 'coral', 'venom', 'ice', 'sheep', 'deer', 'salmon', 'tuna', 'squid', 'shrimp', 'cod', 'trout', 'carp', 'koi', 'jerky', 'sushi', 'ramen', 'curry', 'stew', 'soup', 'sake', 'oil', 'resin', 'sap', 'charcoal', 'leather', 'cloth', 'honey', 'milk', 'ink', 'flour', 'tofu', 'mochi', 'seaweed', 'kelp', 'obsidian', 'quartz', 'jade', 'amber', 'bronze', 'mithril', 'tin', 'lead', 'coal', 'sulfur', 'mercury', 'tempura', 'sashimi', 'dango', 'onigiri', 'udon', 'soba', 'miso', 'katsu', 'yakitori', 'takoyaki', 'wasabi', 'ginseng', 'ginger', 'garlic', 'pepper', 'catfish', 'heartwood', 'starsteel']);
+function plural(name, n) {
+  if (n === 1) return name;
+  const of = name.search(/ (of|from|with|in) /i);
+  if (of > 0) return plural(name.slice(0, of), n) + name.slice(of);
+  const rom = name.match(/^(.+) ([IVX]+)$/);
+  if (rom) return plural(rom[1], n) + ' ' + rom[2];
+  const m = name.match(/^(.*?)([A-Za-z']+)$/);
+  if (!m) return name;
+  const [, pre, w] = m, lw = w.toLowerCase();
+  const out = PLURAL_IRR[lw] || (PLURAL_SAME.has(lw) || /s$/.test(lw) ? lw : /[^aeiou]y$/.test(lw) ? lw.slice(0, -1) + 'ies' : /(x|z|ch|sh)$/.test(lw) ? lw + 'es' : lw + 's');
+  return pre + (w[0] !== lw[0] ? out[0].toUpperCase() + out.slice(1) : out);
+}
 function taskText(t) {
   const W = REALMS[t.realm] ? REALMS[t.realm].name : '';
   if (t.kind === 'kill') return `Defeat ${fmt(t.n)} foes in ${ZONES.find((z) => z.id === t.target).name}`;
-  if (t.kind === 'boss') return `Defeat ${ZONES.find((z) => z.id === t.target).enemies[0].name} ${t.n} times`;
-  if (t.kind === 'gather') return `Gather ${fmt(t.n)} ${ITEMS[t.target].name}`;
-  if (t.kind === 'craft') return `Make ${fmt(t.n)} ${ITEMS[t.target].name}`;
-  if (t.kind === 'voyage') return `Bring ${t.n} ships back from expeditions`;
+  if (t.kind === 'boss') { const nm = ZONES.find((z) => z.id === t.target).enemies[0].name; return `Defeat ${/^(the|a|an) /i.test(nm) ? '' : 'the '}${nm} ${t.n} time${t.n === 1 ? '' : 's'}`; }
+  if (t.kind === 'gather') return `Gather ${fmt(t.n)} ${plural(ITEMS[t.target].name, t.n)}`;
+  if (t.kind === 'craft') return `Make ${fmt(t.n)} ${plural(ITEMS[t.target].name, t.n)}`;
+  if (t.kind === 'voyage') return `Bring ${t.n} ship${t.n === 1 ? '' : 's'} back from expeditions`;
   if (t.kind === 'tech') return `Use techniques ${fmt(t.n)} times in battle`;
   return W;
 }
 const taskIcon = (t) => (t.kind === 'kill' || t.kind === 'boss' ? ic('zone', t.target) : t.kind === 'voyage' ? ic('skill', 'voyaging') : t.kind === 'tech' ? ui('technique') : itemIc(t.target));
 const taskGo = (t) => (t.kind === 'kill' || t.kind === 'boss' || t.kind === 'tech' ? 'battle' : t.kind === 'voyage' ? 'realm:seas:voyaging' : `realm:${t.realm}:${t.skill}`);
 function taskRow(t, i) {
-  const p = taskProg(t), done = p >= t.n;
-  return `<div class="task ${t.claimed ? 'claimed' : done ? 'done' : ''}">${tile(null, null, { r: t.weekly ? 4 : 2, icon: taskIcon(t), cls: 'xs' })}
-    <span class="tk-main"><b>${esc(taskText(t))}</b><small>${t.realm && REALMS[t.realm] ? REALMS[t.realm].name + ' · ' : ''}${ui('gold')}${fmt(taskGold(t) * goldMult())} · ${taskScrolls(t)} scroll${taskScrolls(t) > 1 ? 's' : ''}${t.weekly && realmOpen('hex') ? ' · 5 Cursed Fragments' : ''}</small>
-      <span class="pbar"><i style="width:${(p / t.n) * 100}%"></i></span></span>
-    <span class="tk-cta">${t.claimed ? `<em class="ok">${ui('check')}Done</em>` : done ? gbtn('Claim', 'check', `data-task="${t.weekly ? 'w' : 'd'}:${i}"`, 'sm glow') : `<small>${fmt(p)} / ${fmt(t.n)}</small>${gbtn('Go', 'play', `data-nav="${taskGo(t)}"`, 'dark sm')}`}</span></div>`;
+  const p = taskProg(t), done = p >= t.n, go = !t.claimed && !done, sc = taskScrolls(t);
+  return `<div class="task ${t.claimed ? 'claimed' : done ? 'done' : 'go'}"${go ? ` data-nav="${taskGo(t)}"` : ''}${t.realm && REALMS[t.realm] ? ` title="${esc(REALMS[t.realm].name)}"` : ''}>${tile(null, null, { r: t.weekly ? 4 : 2, icon: taskIcon(t), cls: 'xs' })}
+    <span class="tk-main"><b>${esc(taskText(t))}</b><small>${ui('gold')}<em class="gold-n">${fmt(taskGold(t) * goldMult())}</em> · ${sc} scroll${sc > 1 ? 's' : ''}${t.weekly && realmOpen('hex') ? ' · 5 Cursed Fragments' : ''}</small>
+      <span class="tk-prog"><span class="pbar"><i style="width:${(p / t.n) * 100}%"></i></span>${t.claimed ? '' : `<small>${fmt(p)} / ${fmt(t.n)}</small>`}</span></span>
+    <span class="tk-cta">${t.claimed ? `<em class="ok">${ui('check')}Done</em>` : done ? gbtn('Claim', 'check', `data-task="${t.weekly ? 'w' : 'd'}:${i}"`, 'sm glow') : '<i class="row-go" aria-hidden="true">›</i>'}</span></div>`;
 }
 UIX.questsBottom.push(() => {
   if (!tasksOn()) return '';

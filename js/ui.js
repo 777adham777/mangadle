@@ -989,16 +989,17 @@ VIEWS.market = () => `
 /* ------------------------------------------------------------- settings */
 VIEWS.settings = () => `
   ${ptitle('System', 'Settings')}
-  ${fitCols('set-board', `${isStandalone() ? '' : `<section class="win install">${tile(null, null, { r: 4, icon: ui('play') })}
-    <span class="upg-t"><b>Install the game</b><small>Full screen, works offline.${installPrompt ? '' : ' iPhone: Share → Add to Home Screen. Elsewhere: browser menu → Install.'}</small></span>
-    ${installPrompt ? gbtn('Install', 'check', 'data-install') : ''}</section>`}
+  ${fitCols('set-board', `
   <section class="win">${hdr('Help')}
     <div class="btn-row">${gbtn(S.ui.noTips ? 'Turn hints on' : 'Turn hints off', 'info', 'data-toggletips', 'dark')}${gbtn('Show intro cards again', 'hero', 'data-reintro', 'dark')}</div></section>`,
   `<section class="win">${hdr('Save data', 'autosaves every 10 seconds')}
-    <div class="btn-row">${gbtn('Save now', 'check', 'data-save', 'dark')}${gbtn('Export', 'log', 'data-export', 'dark')}${gbtn('Import', 'open', 'data-import', 'dark')}${gbtn('Hard reset', 'close', 'data-wipe', 'danger')}</div>
+    <div class="btn-row">${gbtn('Save now', 'check', 'data-save', 'dark')}${gbtn('Export', 'log', 'data-export', 'dark')}${gbtn('Import', 'open', 'data-import', 'dark')}${gbtn('Hard reset…', 'close', 'data-wipe', 'danger')}</div>
     <textarea id="savebox" rows="5" placeholder="Paste a save here, then Import."></textarea>
     ${backupsHTML()}
-  </section>`)}`;
+  </section>
+  ${isStandalone() ? '' : `<section class="win install"${installPrompt || IS_IOS ? '' : ' title="Browser menu → Install"'}>${tile(null, null, { r: 4, icon: ui('play') })}
+    <span class="upg-t"><b>Install the game</b><small>${IS_IOS && !installPrompt ? 'Share → Add to Home Screen.' : 'Full screen, works offline.'}</small></span>
+    ${installPrompt ? gbtn('Install', 'check', 'data-install') : ''}</section>`}`)}`;
 // The last hourly copies (and the copies taken before an import, a restore or a reset).
 function backupsHTML() {
   const b = saveBackups();
@@ -1769,6 +1770,7 @@ function catchUp() {
 
 // "Install app" support (Android / desktop Chrome & Edge). iOS uses Share → Add to Home Screen.
 let installPrompt = null;
+const IS_IOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
 const isStandalone = () => matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
 window.addEventListener('beforeinstallprompt', (e) => { e.preventDefault(); installPrompt = e; dirty = true; });
 window.addEventListener('appinstalled', () => { installPrompt = null; toast('Installed! Launch Anime Idle RPG from your home screen.', 'good'); dirty = true; });
