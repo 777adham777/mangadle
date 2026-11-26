@@ -28,8 +28,8 @@ function dgCardHTML(d) {
   return `<div class="dg-card ${inside ? 'inside' : ''}" style="--rc:${rc(d.realm)}">${head}<span class="danger ${dc}">${dl}</span></div>
     <div class="dg-rows">
       <div class="dg-row"><small>Key</small><span class="dg-key">${tile(key, `<span data-count="${key}">${fmt(keys)}</span>`, { cls: 'xs' + (keys ? '' : ' dim') })}
-        ${recipe ? `<button class="dg-link" data-nav="realm:shinobi:arts" title="Crafting Lv ${recipe.level}: ${Object.entries(recipe.in).map(([k, n]) => `${n} ${ITEMS[k].name}`).join(', ')}">${ui('arts')}Craft · Lv ${recipe.level}</button>` : ''}</span></div>
-      <div class="dg-row"><small>Records</small><span class="dg-rec">${st.clears ? `<b>${fmt(st.clears)}</b> clear${st.clears > 1 ? 's' : ''} · best <b>${dgClock(st.best)}</b>${st.clean ? ` · <em title="Cleared without eating">${ui('check')}no food</em>` : ''}` : '<em class="muted">Never cleared</em>'}</span></div>
+        ${recipe && !keys ? `<button class="dg-link" data-nav="realm:shinobi:arts" title="Crafting Lv ${recipe.level}: ${Object.entries(recipe.in).map(([k, n]) => `${n} ${ITEMS[k].name}`).join(', ')}">${ui('arts')}Craft · Lv ${recipe.level}</button>` : ''}</span></div>
+      <div class="dg-row"><small>Records</small><span class="dg-rec">${st.clears ? `<b>${fmt(st.clears)}</b> clear${st.clears > 1 ? 's' : ''} · best <b>${dgClock(st.best)}</b>${st.clean ? ` · <em title="Cleared without eating">${ui('check')}no food</em>` : ''}` : '<span class="muted">Not cleared yet</span>'}</span></div>
       <div class="dg-row"><small>${esc(d.set.name)} set</small><span class="dg-set">${pieces}<b>${dgOwned(d.id)} / ${dgPieces(d.id).length}</b></span></div>
     </div>
     <div class="dg-cta">${inside ? `<span class="pill on">${ui('battle')}Inside · room ${dgRoom() + 1} / ${DG_ROOMS}</span>`

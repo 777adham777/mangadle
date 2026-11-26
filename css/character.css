@@ -154,3 +154,10 @@
 /* Page titles (2026-11-25): their controls (Bank | Collection, counters) follow the title instead of
    sitting in the top-right corner, where the notifications appear and covered them. */
 .ptitle { justify-content: flex-start; column-gap: 28px; }
+
+/* UX audit 2026-11-26: Combat keeps only what the big stats don't say (crit, dodge); perks read by name;
+   the slot panel's buttons sit in its header (what you wear is on the slot card) */
+.ch-nums.two { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.ch-perk { color: var(--gold); }
+.ch-list .hdr .chl-acts { order: 2; display: flex; gap: 6px; text-transform: none; letter-spacing: 0; }
+.ch-list .hdr small { order: 3; }

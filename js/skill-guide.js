@@ -51,7 +51,7 @@ const GUIDE_SK = {
     tip: ['i:grilled_minnow', 'The Coastal Run wants Grilled Minnows: keep the cook busy before the ship leaves.'] },
   character: { tag: 'You prepare. The fights play out.',
     steps: [['u:map', 'Pick a stage', 'Fights run on their own, offline too. Ten wins open the next stage.'],
-            ['u:food', 'Bring food', 'HP never comes back by itself: you eat your battle food when it runs low.'],
+            ['u:food', 'Bring food', 'Pick it under the stage. HP never comes back by itself: you eat when it runs low.'],
             ['u:technique', 'Read your scrolls', 'Foes drop their world\'s scrolls. Each one teaches or levels a technique.']],
     tip: ['u:skull', 'Every world ends with a guardian. If it hits too hard, gear up and stock food first: it is a test of preparation.'] },
   gravity: { tag: 'Heavier every day. Stronger every day.',
