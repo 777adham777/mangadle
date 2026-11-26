@@ -332,7 +332,15 @@ function checkUnlocks() {
   if (fresh.length) dirty = true;
   return fresh;
 }
-const nextUnlock = () => UNLOCKS.find((u) => !S.unlocked[u.id] && u.hint);
+// The next unlock of this build: the list is in play order and each world's unlocks follow its own entry,
+// so a world past the build ends it (beta.js worldInBuild).
+function nextUnlock() {
+  for (const u of UNLOCKS) {
+    if (u.id.startsWith('realm:') && typeof worldInBuild === 'function' && !worldInBuild(u.id.slice(6))) return null;
+    if (!S.unlocked[u.id] && u.hint) return u;
+  }
+  return null;
+}
 
 const synHits = (s, target) => s.to === target || s.to === 'all' || (SKILLS[target] && SKILLS[target].type === s.to);
 const synValue = (s) => (skillOpen(s.from) ? s.per * (skillLv(s.from) - 1) : 0);
@@ -910,9 +918,17 @@ function newGame() { S = defaultState(); checkUnlocks(); S.combat.hp = pMaxHp();
 /* --------------------------------------------------------------- goals */
 function goalState() {
   const g = GOALS[S.goal];
-  if (!g) return null;
+  if (!g || buildEnd()) return null;
   const cur = Math.min(g.n, g.prog()[0]);
   return { g, cur, done: cur >= g.n };
+}
+// The path reached a step that leads out of this build (a gate to a later world, or anything past it):
+// there is no step to do, and nothing may point there. Returns that world, or null. (beta.js worldInBuild)
+function buildEnd() {
+  const g = GOALS[S.goal];
+  if (!g || typeof worldInBuild !== 'function') return null;
+  const r = g.id.startsWith('gate_') ? g.id.slice(5) : typeof chapterAt === 'function' ? chapterAt(S.goal).realm : null;
+  return r && REALMS[r] && !worldInBuild(r) ? r : null;
 }
 function claimGoal() {
   const st = goalState();

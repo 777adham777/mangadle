@@ -6,7 +6,7 @@
    Loaded after ui.js.
    ========================================================================== */
 
-Object.assign(ICONS.ui, { missions: 'scroll-quill' });
+Object.assign(ICONS.ui, { missions: 'hourglass' });
 
 const msActIc = (m) => {
   if (m.k === 'zone') { const z = ZONES[msZoneIndex(m)]; return z ? ic('zone', z.id) : ui('battle'); }
@@ -37,7 +37,7 @@ const msSizeLabel = (m) => (m.n ? `×${fmt(m.n)}` : 'Until it stops');
 function msRow(m, i, cur) {
   const why = cur ? '' : msWhy(m), r = msRealm(m), a = m.k === 'act' && SKILLS[m.skill] ? findAction(m.skill, m.id) : null;
   const prep = !cur && msPrepOn() && a && a.in && m.n && !canAfford(Object.fromEntries(Object.entries(a.in).map(([k, n]) => [k, n * m.n])));
-  const where = m.k === 'zone' ? 'Battlefield' : SKILLS[m.skill] ? SKILLS[m.skill].name : '';
+  const where = m.k === 'zone' ? 'Combat' : SKILLS[m.skill] ? SKILLS[m.skill].name : '';
   return `<li class="ms-row ${cur ? 'run' : ''} ${why ? 'warn' : ''}" style="--rc:${rc(r)}">
     <span class="ms-rank ${cur ? 'now' : ''}" title="${cur ? 'Running' : 'Position in the queue'}">${cur ? ui('play') : i + 1 + (S.missions.cur ? 1 : 0)}</span>
     ${tile(null, null, { r: 3, icon: msActIc(m), cls: 'xs', title: msName(m) })}
@@ -65,7 +65,7 @@ function msOptions() {
   }
   if (isUnlocked('feature:battle')) {
     const zs = ZONES.map((z, i) => [z, i]).filter(([z, i]) => !z.dungeon && zoneUnlocked(i)).map(([z]) => [`z|${z.id}`, `${z.boss ? 'Boss · ' : ''}${z.name}`]);
-    if (zs.length) groups.push(['Battlefield', zs]);
+    if (zs.length) groups.push(['Combat', zs]);
   }
   return groups;
 }
@@ -108,7 +108,7 @@ function refreshBoard() { if (boardOpen()) $('#modal-body').innerHTML = boardHTM
 UIX.nowbar.push(() => {
   if (!msOn()) return '';
   const M = msState();
-  return `<button class="ms-chip ${M.cur ? 'run' : ''} ${M.paused && M.list.length ? 'paused' : ''}" data-msboard title="Task Queue">${ui('missions')}<b>${msUsed()}/${msSlots()}</b></button>`;
+  return `<button class="ms-chip ${M.cur ? 'run' : ''} ${M.paused && M.list.length ? 'paused' : ''}" data-msboard>${ui('missions')}<span class="nb-lbl">Queue</span><b>${msUsed()}/${msSlots()}</b></button>`;
 });
 
 on('mission', (d) => {

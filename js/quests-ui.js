@@ -42,20 +42,31 @@ const isGuardStep = (g, ch) => g && ch && g.id === (ch.step || ch.guard);
 function rewardTiles(gold, items) {
   return `${gold ? `<span class="q-reward">${ui('gold')}<b>${fmt(gold)}</b></span>` : ''}${Object.entries(items || {}).map(([k, n]) => tile(k, n > 1 ? fmt(n) : null, { cls: 'xs' })).join('')}`;
 }
+// One line of rewards for the done state: gold and item icons with their counts (the box keeps its height).
+function rewardMini(gold, items) {
+  return `${gold ? `<span class="q-mini g">${ui('gold')}<b>${fmt(gold)}</b></span>` : ''}${Object.entries(items || {}).map(([k, n]) => `<span class="q-mini">${itemIc(k)}${n > 1 ? `<b>×${fmt(n)}</b>` : ''}</span>`).join('')}`;
+}
+// The build's last step is done: a final state, nothing to click, no world outside the build named.
+function buildEndHTML() {
+  const n = WORLD_ORDER.filter((r) => r !== 'rift' && worldInBuild(r)).length;
+  return `<div class="quest path end"><div class="q-title"><i class="q-dia"></i><b>Pre-alpha</b><small>Done</small></div>
+    <div class="q-main"><span class="q-ic">${ui('check')}</span><span class="q-text">End of this build</span></div>
+    <div class="q-prog"><span class="xpbar thin gold"><i style="width:100%"></i></span><span>${n} / ${n} worlds</span></div></div>`;
+}
 goalHTML = function () {
   const st = goalState();
-  if (!st) return `<div class="quest path"><div class="q-title"><i class="q-dia"></i><b>Every step done</b></div>
+  if (!st) return buildEnd() ? buildEndHTML() : `<div class="quest path"><div class="q-title"><i class="q-dia"></i><b>Every step done</b></div>
     <div class="q-foot">${gbtn('Quests', 'quest', 'data-nav="quests"', 'dark sm')}</div></div>`;
   const { g, cur, done } = st, i = S.goal, ch = chapterAt(i), steps = chapterEnd(ch) - ch.from + 1, k = i - ch.from + 1;
-  const last = i === chapterEnd(ch), R = isGuardStep(g, ch) && !done ? readiness(ch) : null, tr = trialsOn() ? trialsReady() : 0;
+  const last = i === chapterEnd(ch), R = isGuardStep(g, ch) && !done ? readiness(ch) : null, opens = goalOpens();
   return `<div class="quest path ${done ? 'done' : ''}" style="--rc:${rc(ch.realm)}">
     <div class="q-title"><i class="q-dia"></i><b>${esc(ch.title)}</b><small>${k} / ${steps}</small></div>
-    <button class="q-main" data-nav="${g.go}" title="Go"><span class="q-ic">${ic('goal', i)}</span><span class="q-text">${g.text}</span></button>
+    <button class="q-main" data-nav="${g.go}" title="Go"><span class="q-ic">${ic('goal', i)}</span><span class="q-text">${g.text}${opens ? `<small class="q-opens">Opens ${esc(opens.name)}</small>` : ''}</span></button>
     ${R ? readyBar(R) : ''}
-    <div class="q-prog"><span class="xpbar thin gold"><i data-goalbar style="width:${(cur / g.n) * 100}%"></i></span><span data-goaltxt>${fmt(cur)} / ${fmt(g.n)}</span></div>
+    ${done ? `<div class="q-prog q-donerow"><span class="q-minis">${rewardMini(g.reward, g.items)}${last ? `<span class="q-mini" title="Chapter reward">${ui('crown')}</span>${rewardMini(0, ch.reward.items)}` : ''}</span>${gbtn('Claim', 'check', 'data-claim', 'sm glow')}</div>`
+    : `<div class="q-prog"><span class="xpbar thin gold"><i data-goalbar style="width:${(cur / g.n) * 100}%"></i></span><span data-goaltxt>${fmt(cur)} / ${fmt(g.n)}</span></div>
     <div class="q-rew">${rewardTiles(g.reward, g.items)}${last ? `<span class="q-chap" title="Chapter reward">${ui('crown')}</span>${rewardTiles(0, ch.reward.items)}` : ''}</div>
-    <div class="q-foot">${done ? gbtn('Claim', 'check', 'data-claim', 'sm glow') : gbtn('Go', 'play', `data-nav="${g.go}"`, 'dark sm')}
-      <button class="q-more ${tr ? 'hot' : ''}" data-nav="quests" title="All quests">${ui('quest')}${tr ? `<em>${tr}</em>` : ''}</button></div></div>`;
+    <div class="q-foot">${gbtn('Go', 'play', `data-nav="${g.go}"`, 'dark sm')}</div>`}</div>`;
 };
 
 /* ---------------------------------------------------------------- the Quests page */
@@ -66,6 +77,8 @@ function pathHTML() {
 
   const row = (g, k) => {
     const n = ch.from + k, now = n === S.goal && st, done = n < S.goal;
+    if (n === S.goal && buildEnd()) return `<li class="qs-step qs-end"><span class="qs-ic">${ic('realm', buildEnd())}</span><div class="qs-t"><b>End of this build</b><small>${esc(REALMS[buildEnd()].name)} comes in a later build.</small></div></li>`;
+    if (n > S.goal && buildEnd()) return '';
     if (now) {
       const c = st.cur;
       return `<li class="qs-step now ${st.done ? 'ready' : ''}"><span class="qs-ic">${ic('goal', n)}</span><div class="qs-t"><b>${g.text}</b>${g.why ? `<small>${esc(g.why)}</small>` : ''}
@@ -117,20 +130,10 @@ VIEWS.quests = () => `
     <div class="qs-side fcol">${trialsHTML()}</div>
   </div>`;
 
-// The Overview keeps one line of it (one information, one place): what waits on the Quests page.
-UIX.homeTop.push(() => {
-  const tr = trialsOn() ? trialsReady() : 0, T = typeof tasksOn === 'function' && tasksOn() ? S.tasks : null;
-  const dl = T ? [...(T.daily || []), ...(T.weekly || [])].filter((t) => !t.claimed && taskProg(t) >= t.n).length : 0;
-  if (!tr && !dl) return '';
-  return `<button class="win qs-sum" data-nav="quests">${ui('quest')}<span><b>Quests</b><small>${[tr ? `${tr} trial${tr > 1 ? 's' : ''} to claim` : '', dl ? `${dl} objective${dl > 1 ? 's' : ''} to claim` : ''].filter(Boolean).join(' · ')}</small></span>${ui('play')}</button>`;
-});
+// What waits on the Quests page is a badge on its menu entry (ui.js questsWaiting), not an Overview card.
 
 /* ---------------------------------------------------------------- moments */
-// A step claimed: the next one in a quiet line of the feed. A chapter done: a banner (no cutscene).
-on('goal', () => {
-  const st = goalState();
-  if (st) setTimeout(() => toast(`Next: ${st.g.text}`, 'good'), 700);
-});
+// A chapter done: a banner (no cutscene). The next step just shows in the quest box.
 on('chapter', (ch) => { bannerBurst(`${ch.title} complete`, 'The chapter reward is in your Bank', ic('realm', ch.realm === 'rift' ? 'rift' : ch.realm), rc(ch.realm), 'lvup'); });
 on('trialready', (t) => { toast(`Trial done: ${t.text}`, 'rare'); sideDirty = true; });
 on('trial', (d) => { toast(`Trial claimed: +${fmt(d.gold)} gold`, 'good'); sideDirty = true; });

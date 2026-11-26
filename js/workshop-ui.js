@@ -94,7 +94,8 @@ function wsSelected(skill) {
 }
 
 /* ------------------------------------------------------------- pieces */
-const wsGoIc = (st) => ui(st === 'active' ? 'stop' : st === 'missing' ? 'close' : st === 'blocked' ? 'lock' : 'play');
+// pk: a picker row, whose running action reads "Running" (its Stop is the focus panel's, one Stop on screen).
+const wsGoIc = (st, pk) => (pk && st === 'active' ? '<em class="pk-run">Running</em>' : ui(st === 'active' ? 'stop' : st === 'missing' ? 'close' : st === 'blocked' ? 'lock' : 'play'));
 // One gallery card. Anything you cannot make right now (locked, schematic missing, short of
 // ingredients) is greyed; the ▶ corner button starts it.
 function wsCard(skill, a, selId) {
@@ -223,7 +224,7 @@ UPD.push(() => {
   }
   for (const el of $$('.ws-go')) {
     const st = el.closest('[data-card]').dataset.state;
-    if (el.dataset.st !== st) { el.dataset.st = st; el.innerHTML = wsGoIc(st); }
+    if (el.dataset.st !== st) { el.dataset.st = st; el.innerHTML = wsGoIc(st, el.classList.contains('pk-go')); }
   }
   // The list scrolls on its own: keep its position across full redraws.
   const l = $('#ws-list');

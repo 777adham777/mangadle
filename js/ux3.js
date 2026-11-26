@@ -67,7 +67,7 @@ function uxSettingsHTML() {
 
 /* ---------------------------------------------------------------- 06 · keyboard shortcuts */
 const UXKEYS = [
-  ['1 … 9', 'Skills of the world you are in'], ['O', 'Overview'], ['C', 'Character'], ['B', 'Bank'], ['F', 'Battlefield'],
+  ['1 … 9', 'Skills of the world you are in'], ['O', 'Overview'], ['C', 'Character'], ['B', 'Bank'], ['F', 'Combat'],
   ['J', 'Journal'], ['M', 'Menu (phones)'], ['Space', 'Stop, or resume the last activity'], ['?', 'This list'], ['Esc', 'Close a window'],
 ];
 function uxKeysHTML() {

@@ -19,7 +19,7 @@ const GUIDE = {
   equip_sword: { equip: true, nav: 'Open your <b>Character</b>.' },
   pills5: { act: 'arts:soldier_pill', nav: 'Open <b>Crafting</b>.', start: 'Click <b>Soldier Pill</b>.' },
   food: { food: true, nav: 'Open your <b>Character</b>.' },
-  training10: { zone: 0, nav: 'Open the <b>Battlefield</b>.', start: 'Pick the <b>Training Grounds</b>.' },
+  training10: { zone: 0, nav: 'Open <b>Combat</b>.', start: 'Pick the <b>Training Grounds</b>.' },
   tech1: { scroll: true, nav: 'Open <b>Techniques</b>.' },
 };
 const GUIDE_N = Object.keys(GUIDE).length;
@@ -30,9 +30,19 @@ const STUCK_S = 15;   // seconds without input or progress before a hint shows
 const featureOpen = (f) => isUnlocked('feature:' + f);
 const VIEW_FEATURE = { 'hero:collection': 'collection', power: 'power', market: 'market', battle: 'battle' };
 const featureOfView = (key) => VIEW_FEATURE[key] || null;
+// 'at Woodcutting Lv 3' / 'after 5 Soldier Pills' (data.js UNLOCKS req), and how far along you are: 'Lv 2' / '3 / 5'.
+const unlockReq = (u) => (typeof u.req === 'function' ? u.req() : u.req) || (u.hint ? 'after: ' + u.hint() : '');
+function unlockProg(u) {
+  if (!u.prog) return '';
+  const [cur, n, lv] = u.prog();
+  return lv ? `Lv ${fmt(cur)}` : `${fmt(Math.min(cur, n))} / ${fmt(n)}`;
+}
+// A locked menu or panel: "Market opens at 500 gold · 50 / 500".
 function lockedNote(id) {
   const u = UNLOCK_BY[id.includes(':') ? id : 'feature:' + id];
-  return u && u.hint ? `Locked. ${u.hint()}` : 'Locked.';
+  if (!u || !u.hint) return 'Locked';
+  const p = unlockProg(u);
+  return `${u.name} opens ${unlockReq(u)}${p ? ' · ' + p : ''}`;
 }
 
 /* ------------------------------------------------------------ what to point at */
@@ -62,7 +72,8 @@ function stuck() {
   return performance.now() - pokeT > STUCK_S * 1000;
 }
 function guideStep() {
-  if (!guideOn() || $('#modal').classList.contains('show') || document.querySelector('.rv-wrap, .cx-wrap')) return null;
+  // the page's own help line already says it: no second voice
+  if (!guideOn() || $('#modal').classList.contains('show') || document.querySelector('.rv-wrap, .cx-wrap, .first-hint')) return null;
   const st = goalState();
   if (!st || st.done) return null;
   const G = curGuide(), id = GOALS[S.goal].id, go = st.g.go;

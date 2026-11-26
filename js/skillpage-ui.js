@@ -13,7 +13,7 @@ function pickRow(skill, a) {
     <span class="ws-nm"><b>${esc(actNm(skill, a))}</b><small>Lv ${a.level} · ${fmtTime(f.T)} · ${fmt(f.xph)} xp/h</small></span>
     ${a.in ? `<span class="pk-own" title="How many you can make with what you have"><small>Can make</small><b data-wscan="${skill}:${a.id}">${fmt(wsCan(a))}</b></span>`
     : o ? `<span class="pk-own" title="Owned"><small>Owned</small><b data-count="${o}">${fmt(count(o))}</b></span>` : ''}
-    <span class="ws-go">${wsGoIc(st)}</span><span class="ws-prog"><i data-cardfill></i></span></button>`;
+    <span class="ws-go pk-go">${wsGoIc(st, true)}</span><span class="ws-prog"><i data-cardfill></i></span></button>`;
 }
 function pickerHTML(skill) {
   const acts = wsActs(skill), open = acts.filter((a) => !wsLocked(actState(skill, a)));

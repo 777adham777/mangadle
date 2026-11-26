@@ -214,7 +214,6 @@ function renderHud() {
     <div id="nowbar" class="nowbar"></div>
     <div class="curs">
       <div class="cur gold" title="Gold — buys upgrades in the Market"><i>${ui('gold')}</i><b id="r-gold">0</b></div>
-      <div class="cur bounty" title="Bounty — earned by defeating enemies. Higher ranks give bonus damage."><i>${ui('bounty')}</i><b id="r-bounty">0</b></div>
     </div>
     <button class="hud-btn" data-nav="settings" title="Settings">${ui('settings')}</button>`;
 }
@@ -226,22 +225,36 @@ function isOn(key) {
 function navRow(key, icon, label, o) {
   o = o || {};
   const on = !o.noOn && isOn(key);
-  return `<button class="nav-row ${on ? 'on' : ''} ${o.sub ? 'sub' : ''}" data-nav="${key}" style="--rc:${o.color || rc('hub')}" ${o.skill ? `data-rtip="skill:${o.skill}"` : `title="${label}"`}>
-    <span class="nr-ic">${icon}</span><span class="nr-name">${label}</span>
+  return `<button class="nav-row ${on ? 'on' : ''} ${o.sub ? 'sub' : ''}" data-nav="${key}" style="--rc:${o.color || rc('hub')}" ${o.skill ? `data-rtip="skill:${o.skill}"` : ''}>
+    <span class="nr-ic">${icon}</span><span class="nr-name">${label}${o.note ? `<small class="nr-sub">${esc(o.note)}</small>` : ''}</span>
     ${o.skill ? `<span class="nr-lv" data-lv="${o.skill}">${skillLv(o.skill)}</span><span class="nr-xp"><i data-xpbar="${o.skill}"></i></span>` : ''}
-    ${o.busy ? '<i class="nr-busy"></i>' : ''}${S.ui.fresh && S.ui.fresh[key] ? '<em class="nr-new">New</em>' : o.skill && o.skill === guideSkill() && !o.busy ? '<i class="nr-goal" title="Current objective">!</i>' : ''}</button>`;
+    ${o.busy ? '<i class="nr-busy"></i>' : ''}${S.ui.fresh && S.ui.fresh[key] ? '<em class="nr-new">New</em>' : o.skill && o.skill === guideSkill() && !o.busy && !on ? '<i class="nr-goal" title="Current objective">!</i>' : ''}</button>`;
 }
+// The quick menu: [view, icon, label]. Menus not open yet stay out of it (the Next block names the coming one).
+const quickMenu = () => [['home', 'home', 'Overview'], ['character', 'character', 'Character'], ['hero', 'bank', 'Bank'], ['hero:collection', 'collection', 'Collection'], ['market', 'market', 'Market'], ['power', 'power', 'Energy'], ...UIX.quick.flatMap((f) => f()), ['settings', 'settings', 'Settings']]
+  .filter(([k]) => { const f = featureOfView(k); return !f || featureOpen(f); });
+// The label a view has in the menu (unlock notices name it exactly), or null when it has no menu entry.
+const menuLabel = (key) => (key === 'battle' ? 'Combat' : (quickMenu().find(([k]) => k === key) || [])[2] || null);
+// A menu badge: a count in a corner, never wider than "99+".
+const navBadge = (n, tip) => (n > 0 ? `<em class="nq-badge" title="${tip}">${n > 99 ? '99+' : n}</em>` : '');
+function questsWaiting() {
+  const tr = typeof trialsOn === 'function' && trialsOn() ? trialsReady() : 0, T = typeof tasksOn === 'function' && tasksOn() ? S.tasks : null;
+  return tr + (T ? [...(T.daily || []), ...(T.weekly || [])].filter((t) => !t.claimed && taskProg(t) >= t.n).length : 0);
+}
+// P20: the worlds fold only when the full list would not fit the menu's height (measured after drawing).
+let railFold = false;
 function renderRail() {
+  const rail = $('#rail');
+  railFold = false;
+  drawRail();
+  if (openRealms().length >= 3 && rail.scrollHeight > rail.clientHeight + 1) { railFold = true; drawRail(); }
+}
+function drawRail() {
   const groups = [];
-  const quick = [['home', 'home', 'Overview'], ['character', 'character', 'Character'], ['hero', 'bank', 'Bank'], ['hero:collection', 'collection', 'Collection'], ['market', 'market', 'Market'], ['power', 'power', 'Energy'], ...UIX.quick.flatMap((f) => f()), ['settings', 'settings', 'Settings']];
-  groups.push(`<div class="nav-quick">${quick.map(([k, icn, l]) => {
-    const f = featureOfView(k);
-    if (f && !featureOpen(f)) return `<button class="nq locked" data-locked="${f}" title="${esc(lockedNote(f))}">${ui('lock')}<span>${l}</span></button>`;
-    return `<button class="nq ${isOn(k) ? 'on' : ''} ${S.ui.fresh && S.ui.fresh[k] ? 'fresh' : ''}" data-nav="${k}" title="${l}">${ui(icn)}<span>${l}</span>${k === 'power' && energyUsed() > 0 ? '<i class="nr-busy"></i>' : ''}${k === 'techniques' && typeof techReady === 'function' && techReady() ? `<em class="nq-badge" title="Scrolls to read">${fmt(techReady())}</em>` : ''}</button>`;
-  }).join('')}</div>`);
+  groups.push(`<div class="nav-quick">${quickMenu().map(([k, icn, l]) => `<button class="nq ${isOn(k) ? 'on' : ''} ${S.ui.fresh && S.ui.fresh[k] ? 'fresh' : ''}" data-nav="${k}">${ui(icn)}<span>${l}</span>${k === 'power' && energyIdle() > 0 ? '<i class="nr-busy" title="Energy not in use"></i>' : ''}${k === 'techniques' && typeof techReady === 'function' ? navBadge(techReady(), 'Scrolls to read') : ''}${k === 'quests' ? navBadge(questsWaiting(), 'Rewards to claim') : ''}</button>`).join('')}</div>`);
   // Le menu qui tient: from 3 worlds on, the worlds you are not in fold to one line of skill chips (icon + level,
   // one click each). Open: the world on screen, the one working, the newest, and any you unfolded yourself.
-  const realms = openRealms(), fold = realms.length >= 3, ro = S.ui.railOpen || {};
+  const realms = openRealms(), fold = !!railFold && realms.length >= 3, ro = S.ui.railOpen || {};
   const [vn, vr] = S.ui.view.split(':');
   const auto = new Set([vn === 'realm' ? vr : null, S.action ? SKILLS[S.action.skill].realm : null, realms[realms.length - 1]]);
   for (const r of realms) {
@@ -251,15 +264,15 @@ function renderRail() {
     groups.push(open ? `<div class="nav-group">${head}
       ${ks.map((k) => navRow(`realm:${r}:${k}`, ic('skill', k), SKILLS[k].name, { skill: k, color: rc(r), busy: S.action && S.action.skill === k })).join('')}</div>`
       // Folded: the world's full name, then one chip per skill (icon, level, XP filling along its bottom edge).
-      : `<div class="nav-group folded">${head}<div class="nav-chips">${ks.map((k) => `<button class="nchip ${S.action && S.action.skill === k ? 'busy' : ''} ${k === guideSkill() ? 'goal' : ''} ${S.ui.fresh && S.ui.fresh[`realm:${r}:${k}`] ? 'fresh' : ''}" data-nav="realm:${r}:${k}" style="--rc:${rc(r)}" data-rtip="skill:${k}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><i class="nc-xp"><i data-xpbar="${k}"></i></i></button>`).join('')}</div></div>`);
+      : `<div class="nav-group folded">${head}<div class="nav-chips">${ks.map((k) => `<button class="nchip ${S.action && S.action.skill === k ? 'busy' : ''} ${k === guideSkill() && !isOn(`realm:${r}:${k}`) ? 'goal' : ''} ${S.ui.fresh && S.ui.fresh[`realm:${r}:${k}`] ? 'fresh' : ''}" data-nav="realm:${r}:${k}" style="--rc:${rc(r)}" data-rtip="skill:${k}">${ic('skill', k)}<b data-lv="${k}">${skillLv(k)}</b><i class="nc-xp"><i data-xpbar="${k}"></i></i></button>`).join('')}</div></div>`);
   }
   // Combat sits under the starting world: you fish and cook before you fight.
   if (featureOpen('battle')) groups.splice(Math.min(2, groups.length), 0, `<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
-    ${navRow('battle', ui('battle'), S.combat.zone != null ? ZONES[S.combat.zone].name : 'Battlefield', { color: rc('combat'), busy: S.combat.zone != null, skill: 'character' })}</div>`);
+    ${navRow('battle', ui('battle'), 'Combat', { color: rc('combat'), busy: S.combat.zone != null, skill: 'character', note: S.combat.zone != null ? ZONES[S.combat.zone].name : '' })}</div>`);
   $('#rail').innerHTML = `<div class="nav-quest" id="navquest">${goalHTML()}</div>${groups.join('')}${nextUnlockHTML('nav-next')}`;
   $('#tabbar').innerHTML = [
     `<button class="tab-btn" data-menu>${ui('menu')}<span>Menu</span></button>`,
-    ...[['home', 'home', 'Overview'], ['character', 'character', 'Character'], ['battle', 'battle', 'Battle'], ['hero', 'bank', 'Bank']]
+    ...[['home', 'home', 'Overview'], ['character', 'character', 'Character'], ['battle', 'battle', 'Combat'], ['hero', 'bank', 'Bank']]
       .map(([k, icn, l]) => {
         const f = featureOfView(k);
         if (f && !featureOpen(f)) return `<button class="tab-btn locked" data-locked="${f}">${ui('lock')}<span>${l}</span></button>`;
@@ -298,12 +311,25 @@ const unlockKind = (u) => ({ realm: 'New world', skill: 'New skill', feature: 'N
 // The one thing the player is working towards next. Only ever one, to keep the screen calm.
 function nextUnlockHTML(cls) {
   const u = nextUnlock();
-  if (!u) return '';
-  const r = u.id.startsWith('realm:') ? u.id.slice(6) : null, later = r && !worldInBuild(r);
-  const isGate = r && GATES[r] && !later;
+  if (!u || goalOpens() === u) return '';   // the quest already asks for it: the quest box says "Opens …"
+  const r = u.id.startsWith('realm:') ? u.id.slice(6) : null;
+  if (r && !worldInBuild(r)) return '';
+  const isGate = r && GATES[r];
   const tag = isGate ? 'button' : 'div';
   return `<${tag} class="nx ${cls}" ${isGate ? 'data-nav="home"' : ''}><span class="nx-ic">${unlockIcon(u)}<i>${ui('lock')}</i></span>
-    <span class="nx-t"><small>Next${r ? ' world' : ''}</small><b>${esc(u.name)}</b><em>${later ? 'Not in this build yet' : esc(u.hint())}</em></span></${tag}>`;
+    <span class="nx-t"><small>Next${r ? ' world' : ''}</small><b>${esc(u.name)}</b><em>${isGate ? gateStatus(r) : esc(u.hint())}</em></span></${tag}>`;
+}
+// Where a gate stands, as a state rather than an instruction: the guardian, then the offering and its first missing item.
+function gateStatus(r) {
+  const st = gateState(r), offer = Object.entries(st.g.offer);
+  if (!st.boss) return `Defeat the ${esc(bossName(st.g.boss))}`;
+  const miss = offer.find(([k, n]) => stock(k) < n);
+  return `Offering ${offer.filter(([k, n]) => stock(k) >= n).length} / ${offer.length}${miss ? ` · Get <u data-tip="${miss[0]}">${esc(ITEMS[miss[0]].name)}</u>` : ''}`;
+}
+// The next unlock, when the current quest step is exactly what opens it.
+function goalOpens() {
+  const st = goalState(), u = nextUnlock();
+  return st && u && u.hint && u.hint().toLowerCase() === st.g.text.toLowerCase() ? u : null;
 }
 // Iconic item id -> schematic id
 const SCHEM_OF = Object.fromEntries(Object.keys(ITEMS).filter((k) => ITEMS[k].type === 'schematic').map((k) => [ITEMS[k].teaches, k]));
@@ -486,26 +512,49 @@ VIEWS.home = () => {
   const skillCard = (k) => {
     const b = xpInfo(k), busy = (S.action && S.action.skill === k) || (SKILLS[k].realm === 'combat' && S.combat.zone != null);
     return `<button class="ov-skill ${busy ? 'busy' : ''}" data-nav="${skillView(k)}" style="--rc:${rc(SKILLS[k].realm)}">
-      <span class="ovs-ring" data-xpring="${k}" style="--p:${b.p}">${ic('skill', k)}</span><span class="ovs-main"><span class="ovs-top"><b>${SKILLS[k].name}</b><em><small>Lv</small> <span data-lv="${k}">${b.L}</span></em></span>
+      <span class="ovs-ring" data-xpring="${k}" style="--p:${b.p}">${ic('skill', k)}</span><span class="ovs-main"><span class="ovs-top"><b>${SKILLS[k].realm === 'combat' ? 'Combat' : SKILLS[k].name}</b><em><small>Lv</small> <span data-lv="${k}">${b.L}</span></em></span>
       <span class="xpbar thin"><i data-xpbar="${k}"></i></span></span></button>`;
   };
+  // What this build still holds shows as locked cards (worlds, Combat, skills, panels), each with what opens it.
+  const lockSkill = (k) => { const u = UNLOCK_BY['skill:' + k]; return u && u.req ? `<div class="ov-skill ov-locked"><span class="ovs-ring">${ic('skill', k)}</span><span class="ovs-main"><b>${SKILLS[k].name}</b><small>Unlocked ${esc(unlockReq(u))}</small></span></div>` : ''; };
+  const realmCard = (r) => {
+    if (r === 'combat') return featureOpen('battle') ? `<section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${ui('battle')}Combat</h3>${skillsOf(r).map(skillCard).join('')}</section>`
+      : lockCardHTML(ui('battle'), 'Combat', UNLOCK_BY['feature:battle'], 'ov-realm');
+    if (!realmOpen(r)) return lockCardHTML(ic('realm', r), REALMS[r].name, UNLOCK_BY['realm:' + r], 'ov-realm');
+    return `<section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${ic('realm', r)}${REALMS[r].name}</h3>
+      ${openSkillsOf(r).map(skillCard).join('')}${skillsOf(r).filter((k) => !skillOpen(k)).map(lockSkill).join('')}</section>`;
+  };
+  const worlds = WORLD_ORDER.filter((r) => r !== 'rift' && (realmOpen(r) || worldInBuild(r)));
+  const later = [['feature:huntlist', 'Hunt List', ui('hunt')]].filter(([id]) => !isUnlocked(id) && overviewSoon(id)).map(([id, n, icn]) => lockCardHTML(icn, n, UNLOCK_BY[id])).join('');
+  // the next gate's card waits for its guardian's stage
+  const gate = gateHTML(), gr = nextGate(), gz = gr && ZONES.find((z) => z.id === GATES[gr].boss);
+  const gateSoon = !gate && gr && gz && worldInBuild(gr) ? lockCardHTML(ui('gate'), GATES[gr].name, { req: `at the ${gz.name.replace(/^The /, '')}` }) : '';
   // One screen: what runs now and what waits on the left, every skill and your record on the right.
   return `
-  ${ptitle('Anime Idle RPG', 'Overview')}
+  ${ptitle('', 'Overview')}
   ${fitCols('ov-board', `<div class="ov-top">
     <section class="win">${farm || idlePicksHTML()}</section>
-    <section class="win quest-win phone-only">${goalHTML()}</section>
+    ${buildEnd() ? '' : `<section class="win quest-win phone-only">${goalHTML()}</section>`}
   </div>
-  ${gateHTML()}
-  ${uix('homeTop')}`, `${hdr('Skills', `Total level ${totalLevel()}`)}
-  <div class="ov-grid">${[...openRealms().slice(0, 1), ...(featureOpen('battle') ? ['combat'] : []), ...openRealms().slice(1)].map((r) => `
-    <section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${r === 'combat' ? ui('battle') : ic('realm', r)}${r === 'combat' ? 'Combat' : REALMS[r].name}</h3>
-      ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
-    ${gateHTML() ? '' : nextUnlockHTML('win ov-next phone-only')}</div>
+  ${gate || gateSoon}
+  ${uix('homeTop')}${later}`, `${hdr('Skills', `Total level ${totalLevel()}`)}
+  <div class="ov-grid">${[worlds[0], 'combat', ...worlds.slice(1)].map(realmCard).join('')}
+    ${gate || nextOnCard() ? '' : nextUnlockHTML('win ov-next phone-only')}</div>
   ${featureOpen('battle') ? `<section class="win adv-win">${hdr('Adventurer')}
-    <div class="stats">${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${featureOpen('collection') ? stat('Collection', Math.floor(collectionPct() * 100) + '%') : ''}${featureOpen('techniques') ? stat('Techniques', fmt(Object.keys(S.tech.lv).length)) : ''}${Object.keys(S.pets).length ? stat('Pets', fmt(Object.keys(S.pets).length)) : ''}</div>
-  </section>` : ''}`)}`;
+    <div class="stats">${stat('Bounty', `${rank[1]}<small class="adv-bounty">${fmt(S.bounty)}</small>`, `title="+${bountyRank() * 5}% damage${BOUNTY_RANKS[bountyRank() + 1] ? ` · ${BOUNTY_RANKS[bountyRank() + 1][1]} at ${fmt(BOUNTY_RANKS[bountyRank() + 1][0])}` : ''}"`)}${stat('Foes defeated', fmt(S.stats.kills))}${featureOpen('collection') ? stat('Collection', Math.floor(collectionPct() * 100) + '%') : ''}${featureOpen('techniques') ? stat('Techniques', fmt(Object.keys(S.tech.lv).length)) : ''}${Object.keys(S.pets).length ? stat('Pets', fmt(Object.keys(S.pets).length)) : ''}</div>
+  </section>` : lockCardHTML(ui('bounty'), 'Adventurer', UNLOCK_BY['feature:battle'])}`)}`;
 };
+// A card of something this build has not opened yet: its name and what opens it ("Unlocked at Woodcutting Lv 3").
+function lockCardHTML(icon, name, u, cls) {
+  return `<section class="win ov-lock ${cls || ''}"><span class="ol-ic">${icon}<i>${ui('lock')}</i></span><span class="ol-t"><b>${esc(name)}</b>${u && u.req ? `<small>Unlocked ${esc(unlockReq(u))}</small>` : ''}</span></section>`;
+}
+// The next unlock already has its locked card on the Overview (a skill, a world, Combat, the Hunt List).
+const nextOnCard = () => { const u = nextUnlock(); return !!u && (/^(skill|realm):/.test(u.id) || u.id === 'feature:battle' || u.id === 'feature:huntlist'); };
+// A later panel of the Overview shows locked only when its world is in this build.
+function overviewSoon(id) {
+  const i = UNLOCKS.findIndex((u) => u.id === id), w = UNLOCKS.slice(0, i).reverse().find((u) => u.id.startsWith('realm:'));
+  return i >= 0 && (!w || worldInBuild(w.id.slice(6)));
+}
 
 // Idle Overview: up to three one-click picks (resume, the objective, the closest level-up) instead of an explanation.
 // The "how idle games work" line stays only until the first objective is done.
@@ -526,17 +575,11 @@ function closestLevel() {
 }
 const FOCUS_NONE_IDLE = { voyage: 1, farm: 1 };
 function idlePicksHTML() {
-  const re = resumeInfo(), st = goalState(), cl = closestLevel(), picks = [];
+  // Resume lives in the activity bar and the objective in the sidebar (phones: the quest card above): only what neither shows.
+  const re = resumeInfo(), cl = closestLevel(), picks = [];
   const card = (cls, kick, icon, name, sub, btn) => `<div class="ip-card ${cls}"><small>${kick}</small><div class="ip-main"><span class="ip-ic">${icon}</span><span><b>${name}</b><em>${sub}</em></span></div>${btn}</div>`;
-  if (re) {
-    const L = S.ui.last, z = L[0] === 'z', a = !z && findAction(L[1], L[2]);
-    picks.push(card('resume', 'Resume', z ? ic('enemy', ZONES[L[1]].enemies[ZONES[L[1]].enemies.length - 1].name) : tile(null, null, { r: actRarity(a), icon: actIc(L[1], a), cls: 'xs' }),
-      esc(re.name), z ? 'Battlefield' : `${SKILLS[L[1]].name} ${skillLv(L[1])}`, gbtn('Resume', 'play', re.attr, 'sm go')));
-  }
-  if (st && !st.done) picks.push(card('goal', 'Objective', ic('goal', S.goal), st.g.text, `${fmt(st.cur)} / ${fmt(st.g.n)}`, gbtn('Go', 'play', `data-nav="${st.g.go}"`, 'sm dark')));
-  else if (st && st.done) picks.push(card('goal', 'Objective', ic('goal', S.goal), st.g.text, 'Done: claim the reward', gbtn('Claim', 'check', 'data-claim', 'sm glow')));
   if (cl && !(re && S.ui.last[1] === cl.k && S.ui.last[2] === cl.a.id)) picks.push(card('level', 'Closest level-up', ic('skill', cl.k), `${SKILLS[cl.k].name} → ${cl.L + 1}`, `${esc(cl.a.name)} · ${fmtTime(cl.t)}`, gbtn('Start', 'play', `data-act="${cl.k}:${cl.a.id}"`, 'sm dark')));
-  return `<div class="idle-picks">${hdr('Nothing running')}
+  return `<div class="idle-picks">${hdr('Pick up where you left off')}
     ${picks.length ? `<div class="ip-grid">${picks.join('')}</div>` : '<p class="muted ip-note">Pick a skill in the menu.</p>'}</div>`;
 }
 
@@ -701,7 +744,7 @@ function gsTopHTML(z) {
     : `<div class="gs-prog"><small>Next stage · ${esc(N.name)}</small><span class="xpbar thin gold"><i data-gsnext style="width:${(N.have / N.need) * 100}%"></i></span><b data-gsnexttxt>${N.boss ? (N.have ? 'Boss defeated' : 'Defeat the boss') : `${N.have} / ${N.need} kills`}</b></div>`;
   return `<div class="gs-top">
     ${z ? arrow(prev, '‹', 'Previous stage') : ''}
-    <div class="gs-where"><span class="gs-ric">${z ? ic('realm', z.realm) : ui('battle')}</span><span>${z ? `<small>${esc(REALMS[z.realm].name)}</small>` : ''}<b>${z ? esc(z.name) : 'Battlefield'}</b></span>${z ? `<span class="danger ${dc}">${dl}</span>` : ''}</div>
+    <div class="gs-where"><span class="gs-ric">${z ? ic('realm', z.realm) : ui('battle')}</span><span>${z ? `<small>${esc(REALMS[z.realm].name)}</small>` : ''}<b>${z ? esc(z.name) : 'Combat'}</b></span>${z ? `<span class="danger ${dc}">${dl}</span>` : ''}</div>
     ${z ? arrow(next, '›', 'Next stage') : ''}
     ${prog}
     <div class="gs-acts">${typeof dgOn === 'function' && dgOn() ? gbtn('Dungeons', 'chest', 'data-nav="battle#gs-dungeons"', 'dark sm') : ''}${gbtn('Stages', 'map', 'data-gostages', 'dark sm')}${z ? gbtn('Retreat', 'stop', 'data-stopcombat', 'sm hot') : ''}${typeof skGuideBtn === 'function' ? skGuideBtn('character') : ''}</div>
@@ -1031,8 +1074,13 @@ function nowHTML() {
   }
   // Idle: offer the last activity back. The objective lives in the sidebar; only phones (no sidebar) see it here.
   const re = resumeInfo();
-  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>${re ? esc(re.name) : 'Nothing running'}</b></span>
-    ${re ? gbtn('Resume', 'play', re.attr, 'sm go nb-resume') : ''}${claim || (gs && !re && S.ui.view !== 'home' ? gbtn('Next: ' + esc(gs.g.text), 'play', `data-nav="${gs.g.go}"`, 'sm nb-goal') : '')}${uix('nowbar')}${journalBtn()}</div>`;
+  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>${re ? 'Last: ' + esc(re.name) : 'Nothing running'}</b></span>
+    ${re ? gbtn('Resume', 'play', re.attr, 'sm go nb-resume') : ''}${claim || (gs && !re && S.ui.view !== 'home' ? `<button class="nb-goal nb-next" data-nav="${gs.g.go}"><span><small>Next goal</small><b>${gs.g.text}</b></span><i>${ui('play')}</i></button>` : '')}${uix('nowbar')}${journalBtn()}</div>`;
+}
+// The activity bar steps aside on the page of what it shows: that page has its own Stop (one Stop on screen).
+function nowOwnPage() {
+  const v = S.ui.view;
+  return S.action ? v === skillView(S.action.skill) : S.combat.zone != null && v === 'battle';
 }
 // The last thing that ran (kept in S.ui.last by update()), if it can run again.
 function resumeInfo() {
@@ -1060,6 +1108,7 @@ function renderSide() {
   const nb = $('#nowbar');
   nb.innerHTML = nowHTML();
   nb.classList.toggle('active', !!(S.action || S.combat.zone != null));
+  nb.classList.toggle('here', nowOwnPage());
   const st = goalState();
   lastGoalDone = st ? st.done : null;
   for (const q of $$('#navquest, .quest-win')) q.innerHTML = goalHTML();
@@ -1126,7 +1175,7 @@ function feedDrop(f) {
   const i = feedRows.indexOf(f); if (i >= 0) feedRows.splice(i, 1);
 }
 // A message row (what used to be a toast). Same text twice in a row counts up instead of stacking.
-function feedMsg(msg, cls) {
+function feedMsg(msg, cls, nav) {
   journalAdd(ui(TOAST_IC[cls] || 'info'), msg, 0, 'msg ' + (cls || ''));
   const box = $('#feed');
   let f = feedRows.find((x) => x.msg === msg);
@@ -1136,6 +1185,7 @@ function feedMsg(msg, cls) {
     el.className = `ob-row msg ${cls || ''}`;
     el.innerHTML = `<span class="ob-ic">${ui(TOAST_IC[cls] || 'info')}</span><span class="ob-name"></span><b></b>`;
     el.querySelector('.ob-name').textContent = msg;
+    if (nav) { el.dataset.nav = nav; el.classList.add('go'); }
     box.appendChild(el);
     f = { msg, k: 1, el, name: null, cls: 'msg', born: Date.now() };
     feedRows.push(f);
@@ -1153,7 +1203,7 @@ const feedItem = (id, n) => {
   if (f && freshItems.delete(id)) retrigger(f.el, 'fresh');
 };
 const feedGold = (n, label) => { journalAdd(ui('gold'), label || 'Gold', n, 'g'); if (feedShows('loot', 1)) feedAdd(ui('gold'), label || 'Gold', n, 'g', 3); };
-const journalBtn = () => `<button class="mini-btn nb-journal" data-journal title="Journal: everything you got and every message">${ui('log')}</button>`;
+const journalBtn = () => `<button class="mini-btn nb-journal" data-journal>${ui('log')}<span class="nb-lbl">Journal</span></button>`;
 function journalHTML() {
   const ago = (t) => { const m = Math.floor((Date.now() - t) / 60000); return m < 1 ? 'now' : m < 60 ? m + ' min' : Math.floor(m / 60) + ' h'; };
   const rows = JOURNAL.map((j) => `<div class="jr-row ${j.cls}"><span class="jr-ic">${j.icon}</span><span class="jr-t">${j.cls.includes('new') ? '<em class="jr-new">New</em>' : ''}${esc(j.text)}</span>${j.n ? `<b>${j.n > 0 ? '+' : ''}${fmt(j.n)}</b>` : '<b></b>'}<time>${ago(j.t)}</time></div>`).join('');
@@ -1301,7 +1351,10 @@ on('renown', (d) => {
   if (d.level % 25 === 0) burst('Ascension unlocked', `${REALMS[d.realm].name} · ${ASC[d.level / 25].name} stages`, ic('realm', d.realm), rc(d.realm));
   else if (d.level % 10 === 0) toast(`${REALMS[d.realm].name} Renown ${d.level}: +3% speed, damage and defense there.`, 'rare');
 });
-on('goal', (g) => { toast(`Done: ${g.text} · +${fmt(g.reward)} gold`, 'good'); });
+on('goal', (g) => {
+  for (const f of feedRows.filter((x) => x.msg && x.msg.startsWith('Objective complete:'))) { clearTimeout(f.t); feedDrop(f); }
+  toast(`Done: ${g.text} · +${fmt(g.reward)} gold`, 'good');
+});
 
 /* =============================================================== unlock announcements */
 // New worlds get a full reveal; skills and menus get a banner. Waits for any open modal to close.
@@ -1318,7 +1371,10 @@ function pollUnlocks() {
     const key = navKeyOf(u.id);
     if (key) { S.ui.fresh = S.ui.fresh || {}; S.ui.fresh[key] = 1; sideDirty = true; }
     if (kind === 'realm' || (kind === 'skill' && realms.includes(SKILLS[ref].realm))) continue;
-    toast(`New ${kind === 'skill' ? 'skill' : 'in the menu'}: ${u.name}`, 'rare');
+    const menu = kind === 'feature' && key && menuLabel(key);
+    if (kind === 'skill') feedMsg(`New skill: ${u.name}`, 'rare', key);
+    else if (menu) feedMsg(`New in the menu: ${menu}`, 'rare', key);
+    else feedMsg(`New: ${u.name}${u.at ? ' · ' + u.at[0] : ''}`, 'rare', u.at && u.at[1]);
   }
   if (realms.length) showRealmOpen(realms[0]);
   for (const r of realms.slice(1)) toast(`New world unlocked: ${REALMS[r].name}`, 'rare');
@@ -1332,11 +1388,11 @@ function showRealmOpen(r) {
     <small>A new world opens</small>
     <h2>${R.name}</h2>
     <p>${R.tagline}</p>
-    ${ks.length ? `<ul class="wl-points">${ks.map((k) => `<li><i>${ic('skill', k)}</i><span><b>${SKILLS[k].name}.</b> ${SKILLS[k].desc}</span></li>`).join('')}</ul>` : '<p class="muted">A final stage waits at the end of the Battlefield.</p>'}
+    ${ks.length ? `<ul class="wl-points">${ks.map((k) => `<li><i>${ic('skill', k)}</i><span><b>${SKILLS[k].name}.</b> ${SKILLS[k].desc}</span></li>`).join('')}</ul>` : '<p class="muted">A final stage waits at the end of Combat.</p>'}
     ${r !== 'rift' && skillsOf(r).length > ks.length ? `<p class="muted small">${skillsOf(r).length - ks.length} more skill${skillsOf(r).length - ks.length > 1 ? 's' : ''} hide in this world. Explore to find them.</p>` : ''}
-    <p class="muted small">New enemies, relics and schematics wait on the Battlefield.</p>
+    <p class="muted small">New enemies, relics and schematics wait in Combat.</p>
     ${links.length ? `<div class="ro-syn"><small>New synergies</small>${links.map((s) => `<span>${ic('skill', s.from)}<b>${s.name}</b><em>${SKILLS[s.from].name} → ${synTargetName(s)}</em></span>`).join('')}</div>` : ''}
-    <div class="wl-cta">${gbtn(ks.length ? 'Go to ' + SKILLS[ks[0]].name : 'To the Battlefield', 'play', `data-realmgo="${go}"`)}${gbtn('Later', '', 'data-closemodal', 'dark')}</div>
+    <div class="wl-cta">${gbtn(ks.length ? 'Go to ' + SKILLS[ks[0]].name : 'To Combat', 'play', `data-realmgo="${go}"`)}${gbtn('Later', '', 'data-closemodal', 'dark')}</div>
   </div>`, null, true);
 }
 
@@ -1385,8 +1441,6 @@ function update() {
   const goldEl = $('#r-gold');
   setText(goldEl, fmt(S.gold));
   if (Math.floor(S.gold) !== lastGold) { if (S.gold > lastGold) retrigger(goldEl.parentElement, 'bump'); lastGold = Math.floor(S.gold); }
-  setText($('#r-bounty'), fmt(S.bounty));
-  $('#r-bounty').parentElement.hidden = !(S.bounty > 0);
 
   // levels / xp
   for (const el of $$('[data-lv]')) setText(el, String(skillLv(el.dataset.lv)));
@@ -1496,7 +1550,7 @@ document.addEventListener('click', (ev) => {
   if (t.disabled) return;
   const d = t.dataset;
   if ('menu' in d) { document.body.classList.toggle('menu-open'); updateCoach(true); }
-  else if (d.locked) { retrigger(t, 'shake'); toast(lockedNote(d.locked), 'bad'); }
+  else if (d.locked) { retrigger(t, 'shake'); toast(lockedNote(d.locked)); }
   else if ('skiptips' in d) { S.ui.noTips = 1; clearCoach(); toast('Tips turned off. Turn them back on anytime in Settings.', 'good'); dirty = true; }
   else if ('toggletips' in d) { S.ui.noTips = S.ui.noTips ? 0 : 1; S.ui.hintOff = {}; if (S.ui.noTips) clearCoach(); dirty = true; }
   else if ('reintro' in d) { S.ui.introSeen = {}; S.ui.hintOff = {}; toast('The page cards will show again.', 'good'); dirty = true; }
@@ -1750,7 +1804,7 @@ function boot() {
   window.addEventListener('pagehide', saveGame);
   window.addEventListener('beforeunload', saveGame);
   $('#modal-close').addEventListener('click', () => { $('#modal').classList.remove('show'); updateCoach(true); });
-  addEventListener('resize', () => updateCoach(true));
+  addEventListener('resize', () => { updateCoach(true); sideDirty = true; });
   $('#main').addEventListener('scroll', () => updateCoach(true), { passive: true });
 }
 

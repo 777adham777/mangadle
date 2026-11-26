@@ -8,7 +8,7 @@
    Loaded after ui.js and arena.js.
    ========================================================================== */
 
-EXTRA_USES.push(...DUNGEONS.map((d) => [dgKey(d.id), `Opens ${d.name} (Battlefield) for one run`]));
+EXTRA_USES.push(...DUNGEONS.map((d) => [dgKey(d.id), `Opens ${d.name} (Combat) for one run`]));
 
 // How hard a run is for you now: the share of your HP the five rooms take, with no regeneration.
 function dgDanger(id) {
@@ -84,7 +84,7 @@ on('dgend', (d) => {
   else if (d.why === 'left') toast(`You left ${D.name}. The key is spent.`, 'bad');
   dirty = true;
 });
-on('dgopen', (id) => { toast(`${DG_BY[id].name} is open: its key is in your Bank (Battlefield → Dungeons).`, 'rare'); dirty = true; });
+on('dgopen', (id) => { toast(`${DG_BY[id].name} is open: its key is in your Bank (Combat → Dungeons).`, 'rare'); dirty = true; });
 
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-dgenter], [data-dgleave], [data-godungeons]');
