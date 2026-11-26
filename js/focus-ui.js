@@ -127,6 +127,8 @@ function focusHTML(skill) {
     const np = (SKILL_PERKS[skill] || []).find((p) => xpInfo(skill).L < p.lv);
     if (np) body += `<button class="fo-perk" data-skinfo="${skill}:milestones" title="Open this skill's path">${ui('star')}<span><small>Next perk · Lv ${np.lv}</small><b>${esc(np.name)}</b><em>${esc(np.desc)}</em></span></button>`;
     body += `<div class="fo-mast" title="Mastery: each level makes this action 0.3% faster and adds 0.1% chance to double">${ui('mastery')}<span>Mastery <b data-mlv="${skill}:${a.id}">${masteryLv(skill, a.id)}</b></span><span class="bar"><i data-mfill="${skill}:${a.id}"></i></span></div>`;
+    // La Forge P10: gear's Perfect chance, and the Care switch (+50% materials, Perfect ×3)
+    if (skill === 'arts' && typeof isGearAct === 'function' && isGearAct(a)) body += `<button class="fo-care ${S.care && S.care.arts ? 'on' : ''}" data-care title="Care: +50% materials, Perfect chance ×3. Forging a recipe often raises its Perfect chance.">${ui('star')}<span>Care</span><b>Perfect ${pct(perfectChance('arts', a))}</b></button>`;
   }
   const last = SPOT['last_' + skill];
   const go = FC.includes(skill) ? FC_TXT[skill].go : s.type === 'voyage' ? 'Set sail' : s.type === 'craft' ? 'Craft' : 'Start';
@@ -193,6 +195,7 @@ document.addEventListener('keydown', (ev) => {
   craftNGo(skill, id, f);
 });
 document.addEventListener('click', (ev) => {
+  if (ev.target.closest('[data-care]')) { toggleCare(); return; }
   const b = ev.target.closest('[data-craftn]');
   if (!b) return;
   const [skill, id] = b.dataset.craftn.split(':');

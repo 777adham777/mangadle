@@ -80,7 +80,11 @@ function ensureVariant(id) {
     Object.defineProperty(it, 'heal', { enumerable: true, get: () => Math.round(b.heal * (p ? 1.5 : 1) * (1 + heal * spicePower(p))) });
   }
   if (b.buff && v.q === 'p') it.buff = Object.assign({}, b.buff, { val: Math.round(b.buff.val * 1.5 * 1000) / 1000 });
-  if (b.stats && v.q === 'p') it.stats = Object.fromEntries(Object.entries(b.stats).map(([k, x]) => [k, x < 1 ? Math.round(x * 1.2 * 1000) / 1000 : Math.round(x * 1.2)]));
+  // A Perfect piece of gear (La Forge P10): its perks ×1.5; a piece without a perk gets +20% to its stats.
+  if (b.stats && v.q === 'p') {
+    const core = { atk: 1, def: 1, hp: 1 }, perky = Object.keys(b.stats).some((k) => !core[k] && b.stats[k] > 0);
+    it.stats = Object.fromEntries(Object.entries(b.stats).map(([k, x]) => { const m = perky ? (core[k] ? 1 : 1.5) : 1.2; return [k, x < 1 ? Math.round(x * m * 1000) / 1000 : Math.round(x * m)]; }));
+  }
   ITEMS[id] = it;
   (VARIANTS[v.base] = VARIANTS[v.base] || []).push(id);
   if (typeof ICONS !== 'undefined') ICONS.item[id] = ICONS.item[v.base];
@@ -99,7 +103,13 @@ const qKind = (skill) => (QUALITY[skill] ? QUALITY[skill].kind : null);
 function shinyChance(skill, act) {
   return QUALITY[skill].base * (1 + masteryLv(skill, act.id) / 99) * luckMult() * (1 + qFx('shiny')) * hmul('shiny', skill);
 }
-function perfectChance(skill, act) {
+function perfectChance(skill, act, rolling) {
+  // La Forge P10: a piece of gear's Perfect chance grows with how often you forged it (1% → 8% at 40),
+  // ×3 with Care (forge.js: +50% materials)
+  if (skill === 'arts' && act.out && ITEMS[Object.keys(act.out)[0]] && ITEMS[Object.keys(act.out)[0]].type === 'equip') {
+    const made = S.mastery['arts:' + act.id] || 0, care = rolling ? CARE_NOW : careOn(act);
+    return Math.min(0.5, (0.01 + 0.07 * Math.min(1, made / 40)) * (care ? 3 : 1) * (1 + qFx('perfect')) * hmul('perfect', skill));
+  }
   const over = Math.max(0, Math.min(60, skillLv(skill) - act.level));
   return Math.min(0.5, (QUALITY[skill].base + 0.0005 * masteryLv(skill, act.id) + 0.0005 * over) * (1 + qFx('perfect')) * hmul('perfect', skill));
 }
@@ -198,7 +208,8 @@ hook('action', (skill, act, mult, gains) => {
     return;
   }
   // Perfect, and seasoning (one per dish while the spice rack has some)
-  const pc = kind === 'perfect' ? perfectChance(skill, act) : 0, made = {};
+  const pc = kind === 'perfect' ? perfectChance(skill, act, true) : 0, made = {};
+  CARE_NOW = 0;
   let perfects = 0, seasoned = 0, lastP = null;
   for (let i = 0, n = gains[out]; i < n; i++) {
     const p = pc > 0 && Math.random() < pc, s = spice && useSpice(spice) ? spice : '';

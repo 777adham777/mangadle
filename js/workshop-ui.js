@@ -37,6 +37,7 @@ const wsLocked = (st) => st === 'locked' || st === 'schem';
 // until you reach that world, unless you already hold its schematic or a world gate asks for it.
 function wsShown(a) {
   const id = wsOut(a), t = id && typeof GEAR_TIERS !== 'undefined' && GEAR_TIERS[id];
+  if (t && typeof gearKnown === 'function' && !gearKnown(id)) return false;   // La Forge P12: found by forging
   if (!t || (a.schem && S.known[a.schem]) || (typeof OFFERED !== 'undefined' && OFFERED.has(id))) return true;
   const z = ZONES[Math.min(ZONES.length - 1, Math.floor(t[0]))];
   return !z || realmOpen(z.realm);

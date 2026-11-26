@@ -334,3 +334,50 @@ const armTechMult = (id) => { const el = armEl(curArm()); return el && id && TEC
 
 // Bank: what the awakening souls are for.
 for (const c of AWK_SOULS) for (const o of [c[1], c[2]]) for (const k in o) if (!EXTRA_USES.some((u) => u[0] === k && u[1].startsWith('Weapon'))) EXTRA_USES.push([k, 'Weapon awakening (souls burned on awakening)']);
+
+/* ------------------------------------------------------------ Care (La Forge P10) */
+// Crafting a piece of gear with Care costs half its materials again and triples its Perfect chance
+// (quality.js perfectChance). One switch for every gear recipe, kept in the save.
+const isGearAct = (act) => !!(act && act.out && ITEMS[Object.keys(act.out)[0]] && ITEMS[Object.keys(act.out)[0]].type === 'equip');
+const careExtra = (act) => Object.fromEntries(Object.entries(act.in || {}).map(([k, n]) => [k, Math.ceil(n * 0.5)]));
+const careAll = (act) => Object.fromEntries(Object.entries(act.in || {}).map(([k, n]) => [k, n + Math.ceil(n * 0.5)]));
+const careOn = (act) => !!(S.care && S.care.arts && isGearAct(act) && canAfford(careAll(act)));
+let CARE_NOW = 0;   // set for the craft being finished (its materials are already taken), read by the roll
+hook('action', (skill, act) => {
+  CARE_NOW = 0;
+  if (skill !== 'arts' || !S.care || !S.care.arts || !isGearAct(act)) return;
+  const x = careExtra(act);
+  if (!canAfford(x)) return;
+  for (const k in x) takeStock(k, x[k]);
+  CARE_NOW = 1;
+});
+function toggleCare() { S.care = S.care || {}; S.care.arts = !S.care.arts; dirty = true; }
+
+/* ------------------------------------------------------------ discovery (La Forge P12) */
+// A gear recipe shows once you have forged the one before it (same slot; for weapons, same family), or once
+// you hold its shard or its set's sigil. The first of each line, schematic recipes and what a quest asks for
+// are always known. The list grows as you forge.
+let GEAR_PREV = null;
+function gearPrev() {
+  if (GEAR_PREV) return GEAR_PREV;
+  GEAR_PREV = {};
+  const acts = SKILLS.arts.actions.filter(isGearAct).sort((a, b) => a.level - b.level), last = {};
+  for (const a of acts) {
+    const id = Object.keys(a.out)[0], it = ITEMS[id];
+    if (it.frag || it.set || a.schem) continue;   // shards, sigils and schematics reveal their own
+    const line = it.slot === 'weapon' ? 'w:' + armFamily(id) : it.slot;
+    GEAR_PREV[id] = last[line] || null;
+    last[line] = id;
+  }
+  return GEAR_PREV;
+}
+function gearKnown(id) {
+  const it = ITEMS[id];
+  if (!it || it.type !== 'equip' || S.found[id] || S.stats.made[id] || (typeof QUEST_MADE !== 'undefined' && QUEST_MADE.has(id))) return true;
+  if (it.frag) return !!S.found[id + '_shard'];
+  if (it.set) return !!S.found['sig_' + it.set];
+  const p = gearPrev()[id];
+  return p === undefined || !p || !!S.stats.made[p] || !!S.found[p];
+}
+const gearHint = (id) => { const it = ITEMS[id]; if (it.frag) return `Find a ${ITEMS[id + '_shard'].name}`; if (it.set) return `Find a ${ITEMS['sig_' + it.set].name}`; const p = gearPrev()[id]; return p ? `Forge ${ITEMS[p].name} first` : ''; };
+hook('block', (skill, act) => (skill === 'arts' && isGearAct(act) && !gearKnown(Object.keys(act.out)[0]) ? gearHint(Object.keys(act.out)[0]) || 'Undiscovered' : ''));

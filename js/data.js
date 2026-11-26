@@ -531,7 +531,8 @@ const SHOP = [
 // its guardian, its dungeon, its gate). prog() returns [current]; go = the view the Go button opens.
 // Saves store the index (S.goal) and the path version (S.goalV): game.js maps an old index through
 // OLD_GOAL_IDS. Keep ICONS.goal (icons.js, by id) and GUIDE (guide.js, by id) in step.
-const gMade = (id) => () => [S.stats.made[id] || 0];
+const QUEST_MADE = new Set();   // items a quest step asks you to make (forge.js: always discovered)
+const gMade = (id) => { QUEST_MADE.add(id); return () => [S.stats.made[id] || 0]; };
 const gKills = (zone) => () => [S.combat.kills[zone] || 0];
 const gLvl = (k) => () => [S.skills[k] ? skillLv(k) : 0];
 const gGate = (r) => () => [S.gates[r] ? 1 : 0];

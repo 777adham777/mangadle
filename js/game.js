@@ -59,6 +59,7 @@ function defaultState() {
     gear: {},                           // armour id -> { gems: [], tier } (forge.js: socket, reforge)
     arms: [], armSeq: 0, equipU: null,   // weapon copies and the one you wield (forge.js)
     wm: {},                             // weapon mastery: family -> battle XP (forge.js)
+    care: {},                           // Care switch per crafting skill (forge.js: +50% materials, Perfect ×3)
     tech: { loadout: [null, null, null, null, null, null, null], lv: {}, pity: 0, v: 3 },   // techniques.js
     ki: { form: null, stamina: 100 },
     farm: { plots: [], auto: false },
