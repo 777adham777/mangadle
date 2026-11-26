@@ -41,10 +41,10 @@ function buildHTML() {
   rows.unshift(['pk_crit', 'Critical hits', `${pct(critChance())} · ×${critMult().toFixed(2)}`]);
   const sets = SETS.filter((s) => setWorn(s) > 0);
   const name = arch.length ? arch.map((a) => ARCHES[a].name).join(' · ') : 'Balanced';
-  return `${hdr('Build', 'gear perks and sets make your fighting style')}
-    <div class="build-id">${ui(arch.length ? 'arch_' + arch[0] : 'battle')}<span><b>${esc(name)}</b><small>${arch.length ? arch.map((a) => ARCHES[a].desc).join(' · ') : 'Mix perks from your gear to shape a style'}</small></span></div>
+  return `${hdr('Build')}
+    <div class="build-id">${ui(arch.length ? 'arch_' + arch[0] : 'battle')}<span><b>${esc(name)}</b><small>${arch.length ? arch.map((a) => ARCHES[a].desc).join(' · ') : 'Gear perks set your style'}</small></span></div>
     ${attrList(rows)}
-    ${sets.length ? `<div class="bsets">${sets.map(setLine).join('')}</div>` : '<p class="muted small">Wear 2 or 3 pieces of a set for its bonuses (see a piece in the Bank).</p>'}`;
+    ${sets.length ? `<div class="bsets">${sets.map(setLine).join('')}</div>` : '<p class="muted small">No set bonus yet.</p>'}`;
 }
 UIX.equipBottom = UIX.equipBottom || [];
 UIX.equipBottom.push(() => (featureOpen('battle') ? buildHTML() : ''));

@@ -196,7 +196,7 @@ function chWornHTML(s) {
 }
 function chListHTML(s, cands) {
   const rows = cands.map((c) => `<div class="ch-row ${c.score > 0 ? 'better' : ''}">${c.tile}<span class="chr-t"><b>${esc(c.name)}</b><small>${c.sub}</small><span class="chr-d">${c.diff}</span></span>${c.btn}</div>`).join('');
-  const empty = { weapon: 'No other weapon. Craft or find one.', armor: 'No armor in your bag yet.', accessory: 'No accessory in your bag yet.', food: 'No food. Cook or brew some.', fruit: 'No fruit in your bag.' }[s];
+  const empty = { weapon: 'No other weapon.', armor: 'No armor yet.', accessory: 'No accessory yet.', food: 'No food yet.', fruit: 'No fruit.' }[s];
   const bare = !chWornTile(s) && !cands.length;
   return `<section class="win ch-list ${bare ? 'bare' : ''}">
     ${hdr(CH_LABEL[s] === 'Food' ? 'Battle food' : CH_LABEL[s] === 'Fruit' ? 'Abyss Fruit' : CH_LABEL[s], cands.length ? `${cands.length} owned` : '')}

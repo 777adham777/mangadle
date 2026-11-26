@@ -75,7 +75,7 @@ function stageHTML() {
   const C = S.combat, e = curEnemy(), z = C.zone != null ? ZONES[C.zone] : null;
   const realm = z ? z.realm : WORLD_ORDER[0];
   let plate = '', foe = '', side = '';
-  if (!z) foe = `<div class="f-empty">${ui('map')}<b>Choose a stage</b><small>Start with an <em>Easy</em> one in the list below.</small></div>`;
+  if (!z) foe = `<div class="f-empty">${ui('map')}<b>Choose a stage</b></div>`;
   else if (!e) foe = `<div class="f-empty searching">${ui('battle')}<b>Searching for a foe…</b></div>`;
   else {
     const boss = z.boss, K = kitOf(e), n = e.base || e.name, sp = foeSprite(e), cr = !sp && creatureOf(n);

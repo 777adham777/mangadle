@@ -138,7 +138,7 @@ UIX.realmSide.unshift((realm, skill) => (QUALITY[skill] && skillOpen(skill) ? qL
 UIX.collectionTop.push(() => {
   const ks = Object.keys(QUALITY).filter(skillOpen);
   if (!ks.length) return '';
-  return `${hdr('Shiny & Perfect', 'gathering skills bring up shiny finds, crafting skills make perfect ones · full logs pay bonuses')}<div class="qlog-row">${ks.map((k) => qLogHTML(k, true)).join('')}</div>`;
+  return `${hdr('Shiny & Perfect')}<div class="qlog-row">${ks.map((k) => qLogHTML(k, true)).join('')}</div>`;
 });
 
 /* ================================================================ inspector */

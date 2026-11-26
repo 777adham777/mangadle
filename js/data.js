@@ -519,10 +519,10 @@ const SHOP = [
   { id: 'tools_soul',    cat: 'Tools', name: 'Soul Lantern',       icon: '🏮', desc: '+10% speed for Soul City skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
   { id: 'tools_seas',    cat: 'Tools', name: 'Ship Upgrades',      icon: '🛠️', desc: '+10% speed for Orange Town skills per tier.', costs: [150, 1200, 6000, 30000, 150000] },
   { id: 'abundance',     cat: 'Charms', name: 'Abundance Charm',   icon: '🍀', desc: '+5% chance per tier to double gathering output.', costs: [500, 5000, 50000, 500000] },
-  { id: 'lucky_coin',    cat: 'Charms', name: 'Lucky Coin',        icon: '🎲', desc: '+8 Luck per tier: every rare find is more likely (chests, gems, pets, rare drops).', costs: [2000, 20000, 200000] },
-  { id: 'satchel',       cat: 'Charms', name: 'Auto-Eat Satchel',  icon: '👝', desc: 'Raises the auto-eat threshold: 40% → 55% → 70% HP.', costs: [1000, 20000] },
-  { id: 'buy_pills',     cat: 'Supplies', name: '10× Soldier Pill',   icon: '💊', desc: 'Emergency pills for a struggling adventurer.', cost: 80, give: ['soldier_pill', 10] },
-  { id: 'buy_shards',    cat: 'Supplies', name: '20× Chakra Shard',   icon: '🔹', desc: 'A pouch of raw chakra crystals.', cost: 60, give: ['chakra_shard', 20] },
+  { id: 'lucky_coin',    cat: 'Charms', name: 'Lucky Coin',        icon: '🎲', desc: '+8 Luck per tier.', costs: [2000, 20000, 200000] },
+  { id: 'satchel',       cat: 'Charms', name: 'Auto-Eat Satchel',  icon: '👝', desc: 'Eat earlier: 40% → 55% → 70% HP.', costs: [1000, 20000] },
+  { id: 'buy_pills',     cat: 'Supplies', name: '10× Soldier Pill',   icon: '💊', desc: 'Heals in battle.', cost: 80, give: ['soldier_pill', 10] },
+  { id: 'buy_shards',    cat: 'Supplies', name: '20× Chakra Shard',   icon: '🔹', desc: 'Crafting material.', cost: 60, give: ['chakra_shard', 20] },
 ];
 
 /* ------------------------------------------------------------ the path (main quests) */
@@ -544,7 +544,7 @@ const gStep = (id, text, go, n, prog, reward, items, why) => ({ id, ch: PATH_CH,
 const stage10 = (id, zone, name, reward, items, why, n) => Object.assign(gStep(id, `Defeat ${n || 10} foes in ${name}`, 'battle', n || 10, gKills(zone), reward, items, why), { zone });
 const GOALS = [
   gChapter('leaf'),
-  gStep('chop10', 'Chop 10 Pine Logs', 'realm:shinobi:woodcutting', 10, gMade('pine_log'), 20, { healing_leaf: 6 }, 'Wood starts everything here. It keeps going while you are away.'),
+  gStep('chop10', 'Chop 10 Pine Logs', 'realm:shinobi:woodcutting', 10, gMade('pine_log'), 20, { healing_leaf: 6 }),
   gStep('wc5', 'Reach Woodcutting level 3', 'realm:shinobi:woodcutting', 3, gLvl('woodcutting'), 25, { bird_nest: 1 }, 'Level 3 opens Crafting.'),
   gStep('sword', 'Carve a Wooden Sword', 'realm:shinobi:arts', 1, gMade('training_kunai'), 30, { soldier_pill: 3 }, 'Crafting turns wood into gear. This is your first weapon.'),
   gStep('equip_sword', 'Equip your Wooden Sword', 'character', 1, () => [S.equip.weapon ? 1 : 0], 30, { chakra_shard: 10 }, 'Gear does nothing in the Bank: wear it.'),

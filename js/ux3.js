@@ -7,11 +7,11 @@
    ========================================================================== */
 
 const UXSET = {
-  motion: { label: 'Motion', help: 'Combat, loot and unlock animations. Auto follows your device.', opts: [['auto', 'Auto'], ['reduced', 'Reduced']], def: 'auto' },
-  reveal: { label: 'Reveals', help: 'Which finds open the full-screen reveal. Others still show in Le Fil and the Journal.', opts: [['4', '4★ and 5★'], ['5', '5★ only'], ['off', 'Off']], def: '5' },
-  notif: { label: 'Notifications', help: 'What the feed shows on screen. The Journal always keeps everything.', opts: [['all', 'All'], ['new', 'New + rare'], ['rare', 'Rare only']], def: 'all' },
-  text: { label: 'Text size', help: 'The whole interface: menus, pages and the top bar.', opts: [['100', '100%'], ['115', '115%'], ['130', '130%']], def: '100' },
-  num: { label: 'Numbers', help: 'How large numbers are written.', opts: [['short', '184.2K'], ['full', '184,200']], def: 'short' },
+  motion: { label: 'Animations', help: '', opts: [['auto', 'Auto'], ['reduced', 'Reduced']], def: 'auto' },
+  reveal: { label: 'Full-screen reveals', help: '', opts: [['4', '4★ and 5★'], ['5', '5★ only'], ['off', 'Off']], def: '5' },
+  notif: { label: 'Notifications', help: '', opts: [['all', 'All'], ['new', 'New + rare'], ['rare', 'Rare only']], def: 'all' },
+  text: { label: 'Text size', help: '', opts: [['100', '100%'], ['115', '115%'], ['130', '130%']], def: '100' },
+  num: { label: 'Numbers', help: '', opts: [['short', '184.2K'], ['full', '184,200']], def: 'short' },
 };
 function uxSet(k) {
   if (!S.ui.set || typeof S.ui.set !== 'object') S.ui.set = {};
@@ -51,11 +51,11 @@ if (typeof dropReveal === 'function') {
 function uxSettingsHTML() {
   const row = (k) => {
     const D = UXSET[k], v = uxSet(k);
-    return `<div class="uxs-row"><span class="uxs-t"><b>${D.label}</b><small>${D.help}</small></span>
+    return `<div class="uxs-row"><span class="uxs-t"><b>${D.label}</b>${D.help ? `<small>${D.help}</small>` : ''}</span>
       <span class="uxs-seg" role="group" aria-label="${D.label}">${D.opts.map(([val, l]) => `<button class="${v === val ? 'on' : ''}" data-uxset="${k}:${val}" aria-pressed="${v === val}">${l}</button>`).join('')}</span></div>`;
   };
-  return `<section class="win uxs">${hdr('Display', 'your game, your way')}${Object.keys(UXSET).map(row).join('')}
-    <div class="uxs-row"><span class="uxs-t"><b>Keyboard shortcuts</b><small>Skills, menus, stop and resume without the mouse.</small></span><span class="uxs-seg"><button data-uxkeys>Show the list</button></span></div></section>`;
+  return `<section class="win uxs">${hdr('Display')}${Object.keys(UXSET).map(row).join('')}
+    <div class="uxs-row"><span class="uxs-t"><b>Keyboard shortcuts</b></span><span class="uxs-seg"><button data-uxkeys>Show</button></span></div></section>`;
 }
 {
   const base = VIEWS.settings;

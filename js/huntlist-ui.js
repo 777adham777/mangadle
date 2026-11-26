@@ -48,7 +48,7 @@ function huntListHTML(where) {
   const H = hlState();
   if (!H.list.length && where === 'home') return '';
   return `<section class="win hl-win">${hdr('Hunt List', `Licence · ${H.list.length} / ${HUNT_MAX}${H.done ? ` · ${H.done} hunted` : ''}`)}
-    ${H.list.length ? `<div class="hl-grid">${H.list.map(huntCard).join('')}</div>` : `<p class="muted small hl-empty">${ui('hunt')}<span>Pick an item in the Collection or the Bank and press <b>Hunt it</b>: the list shows where it drops, your odds and how long it should take.</span></p>`}</section>`;
+    ${H.list.length ? `<div class="hl-grid">${H.list.map(huntCard).join('')}</div>` : `<p class="muted small hl-empty">${ui('hunt')}<span>Select an item, then <b>Hunt it</b>.</span></p>`}</section>`;
 }
 UIX.homeTop.push(() => huntListHTML('home'));
 
@@ -56,7 +56,7 @@ function colTiersHTML() {
   if (!featureOpen('collection')) return '';
   const T = colTiers(), rs = WORLD_ORDER.filter((r) => T[r] && realmOpen(r));
   if (!rs.length) return '';
-  return `<section class="win col-tiers">${hdr('World collections', `+${fmt(colLuck())} Luck · +0.5 at 25 / 50 / 75 / 100% of a world`)}
+  return `<section class="win col-tiers">${hdr('World collections', `+${fmt(colLuck())} Luck`)}
     <div class="ct-grid">${rs.map((r) => { const t = T[r]; return `<div class="ct-w" style="--rc:${rc(r)}">${ic('realm', r)}<span><b>${REALMS[r].name}</b><small>${t.got} / ${t.all} · ${Math.floor(t.p * 100)}%</small></span><span class="pips">${[1, 2, 3, 4].map((i) => `<i class="${t.tier >= i ? 'on' : ''}"></i>`).join('')}</span></div>`; }).join('')}</div></section>`;
 }
 UIX.collectionTop.unshift(() => huntListHTML('col') + colTiersHTML());

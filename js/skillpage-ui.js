@@ -20,7 +20,7 @@ function pickerHTML(skill) {
   // Recipes: what you can make right now first, best first.
   if (SKILLS[skill].type === 'craft') open.sort((a, b) => WS_SORTS.best[1](skill, a, b));
   const next = acts.filter((a) => wsLocked(actState(skill, a))).sort((a, b) => a.level - b.level)[0];
-  return `<section class="win pick-win">${hdr(PICK_TITLE[skill] || 'Actions', `${open.length} / ${acts.length} · click to start`)}
+  return `<section class="win pick-win">${hdr(PICK_TITLE[skill] || 'Actions', `${open.length} / ${acts.length}`)}
     <div class="pk-list">${open.map((a) => pickRow(skill, a)).join('')}
     ${next ? `<div class="ws-next pk-next">${actTile(skill, next, { cls: 'xs' })}
       <span><small>Next unlock</small><b>${esc(actNm(skill, next))}</b></span><em>${next.schem && !S.known[next.schem] ? ui('schematic') : ui('lock')}Lv ${next.level}</em></div>` : ''}</div></section>`;

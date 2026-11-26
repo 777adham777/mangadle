@@ -30,7 +30,7 @@ const BETA = {
   navigator.serviceWorker.addEventListener('controllerchange', () => {
     ask(navigator.serviceWorker.controller);
     if (!had) { had = true; return; }        // first install, nothing new to load
-    betaBar('update', 'A new version of the game is ready.', gbtn('Reload', 'check', 'data-betareload', 'sm'));
+    betaBar('update', 'New version ready.', gbtn('Reload', 'check', 'data-betareload', 'sm'));
   });
   // a tab left open for days still learns about new versions
   setInterval(() => navigator.serviceWorker.getRegistration().then((r) => r && r.update()).catch(() => {}), 30 * 60 * 1000);
@@ -55,13 +55,17 @@ const betaUncover = () => { const el = document.getElementById('beta-cover'); if
 
 function betaNotice() {
   betaCover(`<small class="beta-tag">Pre-alpha</small><h2>Welcome, tester!</h2>
-    <p>Thanks for playing this early build of <b>Anime Idle RPG</b>. A few things to know:</p>
-    <ul><li>Things <b>will</b> break, and numbers will change between versions.</li>
-      <li>This build has <b>${BETA.worlds} worlds</b> open. The others come later.</li>
-      <li>Your save stays in this browser. We try hard never to reset it; a backup is kept every hour (Settings → Save data).</li>
-      <li>The game is in English only for now.</li>
-      <li>Found a bug or have an idea? <b>Settings → Report a bug</b> collects everything we need.</li></ul>
+    <ul><li>Things will break and numbers will change.</li>
+      <li><b>${BETA.worlds} worlds</b> are open in this build.</li>
+      <li>Bugs and ideas: <b>Settings → Report a bug</b>.</li></ul>
     <div class="btn-row">${gbtn('Let\'s go', 'check', 'data-betaok')}</div>`);
+}
+// Worlds past the build's last one stay out of the menus, lists and counts (dev mode shows everything).
+// The Rift sits after every world.
+function worldInBuild(r) {
+  if (typeof devOn === 'function' && devOn()) return true;
+  const wi = r === 'rift' ? WORLD_ORDER.length : WORLD_ORDER.indexOf(r);
+  return wi >= 0 && wi < BETA.worlds;
 }
 
 function betaLoadFail() {
@@ -116,7 +120,7 @@ let betaErrShown = false;
 function betaOnError() {
   if (betaErrShown || typeof toast !== 'function') return;
   betaErrShown = true;
-  betaBar('err', 'Something went wrong in the game. A short report helps us fix it.', gbtn('Report a bug', 'info', 'data-betareport', 'sm'));
+  betaBar('err', 'Something went wrong.', gbtn('Report a bug', 'info', 'data-betareport', 'sm'));
 }
 
 /* ---------------------------------------------------------------- Settings → Pre-alpha */
@@ -126,7 +130,6 @@ function betaOnError() {
     // in the Save data column: the first column is already full (one screen per page)
     const h = base(...a), sd = h.indexOf('<span>Save data</span>'), i = sd < 0 ? h.indexOf('<section') : h.lastIndexOf('<section', sd);
     const sec = `<section class="win beta-set">${hdr('Pre-alpha', 'version ' + esc(BETA.version))}
-      <p class="muted small">Thank you for testing! Bugs, ideas, anything that felt wrong: tell us.</p>
       <div class="btn-row">${gbtn('Report a bug', 'info', 'data-betareport')}${BETA.feedback ? `<a class="gbtn dark" href="${esc(BETA.feedback)}" target="_blank" rel="noopener"><span>Feedback</span></a>` : ''}${gbtn('About this build', 'hero', 'data-betanote', 'dark')}</div></section>`;
     return i < 0 ? h + sec : h.slice(0, i) + sec + h.slice(i);
   };
@@ -138,7 +141,7 @@ function betaOnError() {
   openGate = function (r) {
     const wi = WORLD_ORDER.indexOf(r);
     if ((wi < 0 || wi >= BETA.worlds) && !(typeof devOn === 'function' && devOn())) {
-      toast(`${REALMS[r] ? REALMS[r].name : 'This world'} is not in this pre-alpha build yet. You reached the end of it: thank you! Tell us how it felt (Settings → Report a bug).`, 'rare');
+      toast(`${REALMS[r] ? REALMS[r].name : 'This world'} is not in this build yet.`, 'rare');
       return false;
     }
     return baseOpen(r);

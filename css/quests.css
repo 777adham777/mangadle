@@ -127,8 +127,8 @@
    ========================================================================== */
 .first-hint { display: flex; align-items: center; gap: 12px; padding: 10px 14px; background: linear-gradient(90deg, rgba(244, 198, 106, 0.12), transparent 70%); border-left: 3px solid var(--gold); }
 .first-hint .fh-ic .gi { width: 28px; height: 28px; fill: var(--gold); }
-.first-hint p { margin: 0; font-size: 13.5px; color: var(--text); }
-.first-hint p b:first-child { display: block; font: 700 15px var(--display); color: #fff; }
+.first-hint p { margin: 0; font: 600 15px var(--display); color: var(--text); }
+.first-hint p b { color: #fff; }
 .intro-card { position: relative; display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: start; padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); border-left: 3px solid var(--gold); }
 .ic-ic { width: 40px; height: 40px; display: grid; place-items: center; background: rgba(244, 198, 106, 0.1); border: 1px solid rgba(244, 198, 106, 0.4); }
 .ic-ic .gi { width: 24px; height: 24px; fill: var(--gold); }

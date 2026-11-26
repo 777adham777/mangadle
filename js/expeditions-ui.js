@@ -17,10 +17,10 @@ function harbourHTML() {
       <button class="mini-btn" data-recall="${i}" title="Call the ship back (its hull wood and provisions are lost)">${ui('close')}</button></div>`;
   };
   const rows = E.ships.map(ship);
-  for (let i = E.ships.length; i < n; i++) rows.push(`<div class="ship-row free">${ui('play')}<span>Free ship · pick a destination below</span></div>`);
+  for (let i = E.ships.length; i < n; i++) rows.push(`<div class="ship-row free">${ui('play')}<span>Free ship</span></div>`);
   if (n < 2) rows.push(`<div class="ship-row locked">${ui('lock')}<span>Second ship at Voyaging 30</span></div>`);
   const L = E.last, la = L && findAction('voyaging', L.id);
-  return `<section class="win harbour">${hdr('Harbour', `${E.ships.length} / ${n} at sea · they sail while you do anything else`)}
+  return `<section class="win harbour">${hdr('Harbour', `${E.ships.length} / ${n} at sea`)}
     <div class="ships">${rows.join('')}</div>
     <div class="exp-ctl">
       <div class="ctrl"><label>Trip</label><div class="seg">${EXP_DURS.map(([d, l, b]) => `<button class="${E.dur === d ? 'on' : ''}" data-expdur="${d}" title="${b ? `+${b * 100}% hauls` : 'Shortest trip'}"><span>${l}</span></button>`).join('')}</div></div>
@@ -44,7 +44,7 @@ function expCard(a) {
     <div class="ac-io"><small>Hull</small>${io(c.hull, c.hullN)}<small>Food</small>${io(c.dish, c.dishN, true)}</div>
     <div class="ac-io"><small>Per haul</small>${tile(null, `${fmt(a.loot.gold[0] * goldMult())}+`, { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}${a.loot.table.map(([k]) => tile(k, null, { cls: 'xs', unknown: !isFound(k) })).join('')}${(a.extra || []).map(([k, ch]) => tile(k, fmtRate(ch), { cls: 'xs', unknown: !isFound(k), r: rarity(k) })).join('')}</div>
     <div class="ac-io"><small>Rare</small>${a.loot.rare.map(([k, ch]) => tile(k, fmtRate(ch * luckMult()), { cls: 'xs', unknown: !isFound(k), r: rarity(k) })).join('')}</div>
-    <div class="ac-foot"><span class="ac-own">${S.exped.ships.filter((s) => s.id === a.id).length ? `${ui('check')} A ship sails here` : 'Provisions are optional'}</span>
+    <div class="ac-foot"><span class="ac-own">${S.exped.ships.filter((s) => s.id === a.id).length ? `${ui('check')} A ship sails here` : ''}</span>
       <span class="ac-m" title="Mastery: one point per haul">${ui('mastery')}<b>${masteryLv('voyaging', a.id)}</b></span></div>
   </button>`;
 }

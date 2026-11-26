@@ -44,14 +44,13 @@ function rewardTiles(gold, items) {
 }
 goalHTML = function () {
   const st = goalState();
-  if (!st) return `<div class="quest path"><div class="q-title"><i class="q-dia"></i><b>Every step done</b></div><p class="q-why">Trials, dungeons and Ascension still wait in every world.</p>
+  if (!st) return `<div class="quest path"><div class="q-title"><i class="q-dia"></i><b>Every step done</b></div>
     <div class="q-foot">${gbtn('Quests', 'quest', 'data-nav="quests"', 'dark sm')}</div></div>`;
   const { g, cur, done } = st, i = S.goal, ch = chapterAt(i), steps = chapterEnd(ch) - ch.from + 1, k = i - ch.from + 1;
   const last = i === chapterEnd(ch), R = isGuardStep(g, ch) && !done ? readiness(ch) : null, tr = trialsOn() ? trialsReady() : 0;
   return `<div class="quest path ${done ? 'done' : ''}" style="--rc:${rc(ch.realm)}">
     <div class="q-title"><i class="q-dia"></i><b>${esc(ch.title)}</b><small>${k} / ${steps}</small></div>
     <button class="q-main" data-nav="${g.go}" title="Go"><span class="q-ic">${ic('goal', i)}</span><span class="q-text">${g.text}</span></button>
-    ${g.why ? `<p class="q-why">${esc(g.why)}</p>` : ''}
     ${R ? readyBar(R) : ''}
     <div class="q-prog"><span class="xpbar thin gold"><i data-goalbar style="width:${(cur / g.n) * 100}%"></i></span><span data-goaltxt>${fmt(cur)} / ${fmt(g.n)}</span></div>
     <div class="q-rew">${rewardTiles(g.reward, g.items)}${last ? `<span class="q-chap" title="Chapter reward">${ui('crown')}</span>${rewardTiles(0, ch.reward.items)}` : ''}</div>
@@ -62,9 +61,9 @@ goalHTML = function () {
 /* ---------------------------------------------------------------- the Quests page */
 function pathHTML() {
   const i = Math.min(S.goal, GOALS.length - 1), ch = chapterAt(i), st = goalState();
-  const steps = chapterSteps(ch), R = readiness(ch), gz = ZONES.find((z) => z.id === ch.guard), D = typeof DUNGEONS !== 'undefined' && DUNGEONS.find((d) => d.guard === ch.guard);
-  const gate = ch.realm !== 'rift' && GATES[WORLD_ORDER[WORLD_ORDER.indexOf(ch.realm) + 1]];
-  const aim = [gz ? `beat <b>${esc(gz.enemies[0].name)}</b>` : '', D ? `clear <b>${esc(D.name)}</b>` : '', gate ? `open <b>${esc(gate.name)}</b>` : ''].filter(Boolean);
+  const steps = chapterSteps(ch), R = readiness(ch);
+
+
   const row = (g, k) => {
     const n = ch.from + k, now = n === S.goal && st, done = n < S.goal;
     if (now) {
@@ -78,8 +77,7 @@ function pathHTML() {
   };
   const past = CHAPTERS.filter((c) => c.from >= 0 && chapterEnd(c) < S.goal);
   return `<section class="win qs-path" style="--rc:${rc(ch.realm)}">
-    <div class="qs-head"><span class="qs-wic">${ic('realm', ch.realm === 'rift' ? 'rift' : ch.realm)}</span><div><small>Chapter ${ch.n} · ${S.goal - ch.from} / ${steps.length} steps</small><h2>${esc(ch.title)}</h2>
-      ${aim.length ? `<p class="qs-aim">Goal: ${aim.join(', then ')}.</p>` : ''}</div>
+    <div class="qs-head"><span class="qs-wic">${ic('realm', ch.realm === 'rift' ? 'rift' : ch.realm)}</span><div><small>Chapter ${ch.n} · ${S.goal - ch.from} / ${steps.length}</small><h2>${esc(ch.title)}</h2></div>
       <div class="qs-rew"><small>Chapter reward</small><div>${rewardTiles(0, ch.reward.items)}</div></div></div>
     ${R && !R.beaten ? readyBar(R, true) : ''}
     ${(() => {
@@ -93,7 +91,7 @@ function pathHTML() {
 function trialCardHTML(t) {
   const got = trialGot(t), p = trialProg(t), done = !got && p >= t.n;
   return `<div class="tr-card ${got ? 'got' : done ? 'ready' : ''}">
-    <div class="tr-t"><b>${esc(t.text)}</b><small>${esc(t.how)}</small></div>
+    <div class="tr-t"><b>${esc(t.text)}</b>${t.how ? `<small>${esc(t.how)}</small>` : ''}</div>
     ${got ? `<span class="tr-got">${ui('check')}Claimed</span>` : `<span class="q-prog"><span class="xpbar thin gold"><i style="width:${(p / t.n) * 100}%"></i></span><span>${fmt(p)} / ${fmt(t.n)}</span></span>`}
     <div class="tr-foot"><span class="q-rew">${rewardTiles(Math.round(trialGold(t) * goldMult()), t.items)}</span>
       ${got ? '' : done ? gbtn('Claim', 'check', `data-trclaim="${t.id}"`, 'sm glow') : gbtn('Go', 'play', `data-nav="${t.go}"`, 'dark sm')}</div></div>`;
@@ -107,9 +105,9 @@ function trialsHTML() {
   if (!worlds.includes(w)) w = worlds[worlds.length - 1];
   const list = trialsOf(w), got = list.filter(trialGot).length;
   const tabs = worlds.map((r) => { const n = trialsOf(r).filter(trialDone).length; return `<button class="${r === w ? 'on' : ''}" data-trw="${r}" style="--rc:${rc(r)}">${ic('realm', r)}<span>${esc(REALMS[r].name)}</span>${sealOf(r) ? `<i class="tr-seal" title="Seal earned">${ui('crown')}</i>` : n ? `<em>${n}</em>` : ''}</button>`; }).join('');
-  return `<section class="win qs-trials" style="--rc:${rc(w)}">${hdr('World trials', 'medium-term goals beside the path')}
+  return `<section class="win qs-trials" style="--rc:${rc(w)}">${hdr('World trials')}
     <nav class="seg tr-tabs">${tabs}</nav>
-    <div class="tr-seal-row ${sealOf(w) ? 'on' : ''}">${ui('crown')}<span>${sealOf(w) ? `<b>${esc(REALMS[w].name)} Seal</b> · its skills work 5% faster and earn 5% more XP.` : `<b>${got} / ${list.length}</b> claimed · all six give the <b>${esc(REALMS[w].name)} Seal</b>: +5% speed and XP for its skills, for good.`}</span></div>
+    <div class="tr-seal-row ${sealOf(w) ? 'on' : ''}">${ui('crown')}<span>${sealOf(w) ? `<b>${esc(REALMS[w].name)} Seal</b> · +5% speed and XP for its skills` : `<b>${got} / ${list.length}</b> · all six: <b>${esc(REALMS[w].name)} Seal</b> (+5% speed and XP for its skills)`}</span></div>
     <div class="tr-cards">${list.map(trialCardHTML).join('')}</div></section>`;
 }
 VIEWS.quests = () => `
@@ -134,7 +132,7 @@ on('goal', () => {
   if (st) setTimeout(() => toast(`Next: ${st.g.text}`, 'good'), 700);
 });
 on('chapter', (ch) => { bannerBurst(`${ch.title} complete`, 'The chapter reward is in your Bank', ic('realm', ch.realm === 'rift' ? 'rift' : ch.realm), rc(ch.realm), 'lvup'); });
-on('trialready', (t) => { toast(`Trial done: ${t.text}. Claim it in Quests.`, 'rare'); sideDirty = true; });
+on('trialready', (t) => { toast(`Trial done: ${t.text}`, 'rare'); sideDirty = true; });
 on('trial', (d) => { toast(`Trial claimed: +${fmt(d.gold)} gold`, 'good'); sideDirty = true; });
 on('seal', (r) => bannerBurst(`${REALMS[r].name} Seal`, 'Every trial done: its skills +5% speed and XP', ic('realm', r), rc(r), 'lvup'));
 

@@ -66,7 +66,7 @@ UIX.realmTop.push((realm, skill) => {
       <span class="pbar"><i data-plotfill="${i}" style="width:${Math.min(100, (p.t / T) * 100)}%"></i></span>
       ${ready ? gbtn('Harvest', 'check', `data-harvest="${i}"`, 'sm glow') : `<small class="muted">Yields ${c.yield[0]}-${c.yield[1]} · ${fmt(c.xp)} XP</small>`}</div>`;
   };
-  return `${hdr('Plots', `${P.length} plots · +1 every 20 levels (max 7) · they grow while you do anything else`)}
+  return `${hdr('Plots', `${P.length} plots`)}
     <div class="farm-tools">${autoTendOn() ? `<label class="tog"><input type="checkbox" data-autotend ${S.farm.auto ? 'checked' : ''}><span>Auto-tend: harvest and replant on its own</span></label>` : '<span class="muted small">Auto-tend unlocks at Farming 15.</span>'}</div>
     <div class="plots">${P.map(plot).join('')}</div>
     ${hdr('Crops', 'what each crop is for')}

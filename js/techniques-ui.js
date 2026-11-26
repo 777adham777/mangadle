@@ -15,6 +15,8 @@ const scrollName = (r) => SCROLL_NAME[r] || `${REALMS[r].name} Scroll`;
 const techWorlds = () => WORLD_ORDER.filter((r) => TECH_POOLS[r] && realmOpen(r));
 const rarName = (r) => RARITY_NAME[r] || '';
 const KIND_HOW = { active: 'fire in this order', passive: 'always on', ultimate: 'fires when ready' };
+// Slots that a world of this build can open (a slot from a later world stays out of sight).
+const buildSlots = (kind) => TECH_SLOTS.filter((s) => s.kind === kind && (!s.world || worldInBuild(s.world)));
 
 // The slot an Equip button fills for a technique: the picked slot if it is the right kind, else a free
 // one of that kind, else the last open one of that kind.
@@ -35,7 +37,7 @@ function tkWorld() {
 /* ------------------------------------------------------------ the loadout */
 function tkSlotHTML(sl, opts) {
   const o = opts || {}, n = `<span class="tk-n">${ui(TECH_CATS[sl.kind === 'active' ? 'attack' : sl.kind].icon)}</span>`;
-  if (!sl.open()) return `<li class="tk-slot locked">${n}<span class="tk-lock">${ui('lock')}<span>Opens at <b>${esc(sl.hint)}</b></span></span></li>`;
+  if (!sl.open()) return `<li class="tk-slot locked">${n}<span class="tk-lock">${ui('lock')}<span>${esc(sl.hint)}</span></span></li>`;
   const id = loadout()[sl.i], sel = !o.compact && S.ui.tkSlot === sl.i;
   if (!id || !techLv(id)) {
     return `<li class="tk-slot empty ${sel ? 'sel' : ''}" ${o.compact ? '' : `data-tkslot="${sl.i}"`}>${n}<span class="tk-empty">${esc(sl.name)} · empty${sel ? ': Equip puts the next one here' : ''}</span></li>`;
@@ -51,14 +53,14 @@ function tkSlotHTML(sl, opts) {
     ${T.cd && o.compact ? `<span class="tk-cdbar"><i data-techcd="${id}"></i></span>` : ''}</li>`;
 }
 function tkGroupHTML(kind, opts) {
-  const slots = TECH_SLOTS.filter((s) => s.kind === kind), open = slots.filter((s) => s.open()).length;
+  const slots = buildSlots(kind), open = slots.filter((s) => s.open()).length;
   const shown = opts && opts.compact ? slots.filter((s, i) => s.open() || i === open) : slots;
   if (!shown.length) return '';
   return `<div class="tk-group"><h4>${SLOT_KINDS[kind]} <small>${open} / ${slots.length} · ${KIND_HOW[kind]}</small></h4>
     <ol class="tk-slots ${opts && opts.compact ? 'compact' : ''}">${shown.map((s) => tkSlotHTML(s, opts)).join('')}</ol></div>`;
 }
 function tkLoadoutHTML() {
-  return `<section class="win tk-load">${hdr('Loadout', 'click a slot, then Equip')}
+  return `<section class="win tk-load">${hdr('Loadout')}
     ${['active', 'passive', 'ultimate'].map((k) => tkGroupHTML(k)).join('')}</section>`;
 }
 
@@ -72,13 +74,9 @@ function tkShelfHTML() {
     return tiles ? `<div class="tk-shelfrow" style="--rc:${rc(r)}"><span><b>${esc(REALMS[r].name)}</b><small>${TECH_POOLS[r].filter(techLv).length} / ${TECH_POOLS[r].length} learned</small></span><span class="tk-scrs">${tiles}</span></div>` : '';
   }).join('');
   const n = techReady(), cf = Math.floor(count('cursed_fragment'));
-  return `<section class="win tk-wallet">${hdr('Scrolls', n ? `${fmt(n)} to read` : 'foes drop them')}
-    ${rows ? `<div class="tk-shelf">${rows}</div>${gbtn(`Read every scroll ×${fmt(n)}`, 'play', 'data-readscroll="*"', 'sm tk-readall')}` : '<p class="muted small">No scroll yet: every foe can drop its world\'s scrolls; guardians drop them far more often.</p>'}
-    <ul class="tk-how">
-      <li>${ui('rare')}<span>Four rarities. <b>Rarer scrolls draw rarer techniques</b>: a Common one mostly Common ones, a Legendary one mostly Epic and Legendary.</span></li>
-      <li>${ui('plus')}<span>A technique you already know goes up <b>one level</b> (max 10). Levels 5 and 10 change how it works.</span></li>
-      ${cf || realmOpen('hex') ? `<li>${ui('frag')}<span><b>${CURSED_PER_LEVEL} Cursed Fragments</b> raise the technique of your choice by one level (you hold ${fmt(cf)}).</span></li>` : ''}
-    </ul></section>`;
+  return `<section class="win tk-wallet">${hdr('Scrolls', n ? `${fmt(n)} to read` : '')}
+    ${rows ? `<div class="tk-shelf">${rows}</div>${gbtn(`Read every scroll ×${fmt(n)}`, 'play', 'data-readscroll="*"', 'sm tk-readall')}` : '<p class="muted small">No scrolls. Foes drop them.</p>'}
+    ${cf || realmOpen('hex') ? `<ul class="tk-how"><li>${ui('frag')}<span><b>${CURSED_PER_LEVEL} Cursed Fragments</b>: +1 level to any technique (you have ${fmt(cf)})</span></li></ul>` : ''}</section>`;
 }
 
 /* ------------------------------------------------------------ the book */
@@ -100,11 +98,11 @@ function tkRowHTML(id) {
   return `<div class="tk-row r${r} ${L ? '' : 'unk'} ${eq ? 'eq' : ''}" style="--rc:${rc(T.realm)}">
     <span class="tk-big">${ic('technique', id)}</span>
     <div class="tk-main">
-      <div class="tk-top"><b>${esc(T.name)}</b><span class="tk-rar r${r}">${rarName(r)}</span><span class="tk-cat c-${T.cat}">${catIc(T.cat)}${TECH_CATS[T.cat].name}</span>${T.cd ? `<span class="tk-cd">${ui('spd')}${techCd(id)}s</span>` : ''}</div>
+      <div class="tk-top"><b>${esc(T.name)}</b><span class="tk-rar r${r}" ${L < TECH_MAX && odds ? `title="Per scroll: ${odds}"` : ''}>${rarName(r)}</span><span class="tk-cat c-${T.cat}">${catIc(T.cat)}${TECH_CATS[T.cat].name}</span>${T.cd ? `<span class="tk-cd">${ui('spd')}${techCd(id)}s</span>` : ''}</div>
       <p class="tk-desc">${T.desc(Math.max(1, L))}</p>
       <div class="tk-meta">${tkPips(L)}<span class="tk-lv">${L ? `Lv <b>${L}</b>/${TECH_MAX}` : 'Not learned'}</span>
         ${nextTier ? `<span class="tk-next"><em>Lv ${nextTier}</em>${esc(T.tiers[nextTier])}</span>` : `<span class="tk-next done"><em>Mastered</em>${esc(T.tiers[10])}</span>`}</div>
-      <small class="tk-when">${esc(TECH_CATS[T.cat].how)}${L < TECH_MAX && odds ? ` · per scroll: ${odds}` : ''}</small>
+      ${T.cat === 'defense' ? `<small class="tk-when">${esc(TECH_CATS[T.cat].how)}</small>` : ''}
     </div>
     <div class="tk-act">${slotBtn}${inf}</div></div>`;
 }
@@ -120,7 +118,7 @@ function tkBookHTML() {
 }
 
 VIEWS.techniques = () => {
-  const ids = Object.keys(TECHNIQUES), known = ids.filter(techLv).length;
+  const ids = Object.keys(TECHNIQUES).filter((id) => worldInBuild(TECHNIQUES[id].realm)), known = ids.filter(techLv).length;
   return `${ptitle('Your build', 'Techniques', `<span class="pill">${known} / ${ids.length} learned</span>`)}
   ${fitCols('tq-board tk-page', `${introCardHTML('feature:techniques')}${tkLoadoutHTML()}${tkShelfHTML()}`, tkBookHTML())}`;
 };

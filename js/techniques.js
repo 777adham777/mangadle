@@ -34,8 +34,8 @@ const TECH_SLOTS = [
   { kind: 'active',   open: () => charLv() >= 20, hint: 'Character level 20' },
   { kind: 'passive',  open: () => charLv() >= 12, hint: 'Character level 12' },
   { kind: 'passive',  open: () => !!S.gates.soul, hint: 'Reach Soul City' },
-  { kind: 'passive',  open: () => !!S.gates.ki,   hint: 'Reach Titan Planet' },
-  { kind: 'ultimate', open: () => !!S.gates.hex,  hint: 'Reach Shinjuku' },
+  { kind: 'passive',  open: () => !!S.gates.ki,   hint: 'Reach Titan Planet', world: 'ki' },
+  { kind: 'ultimate', open: () => !!S.gates.hex,  hint: 'Reach Shinjuku', world: 'hex' },
 ].map((s, i, all) => Object.assign(s, { i, name: `${SLOT_KINDS[s.kind]} ${all.slice(0, i + 1).filter((x) => x.kind === s.kind).length}` }));
 const loadout = () => { const L = Array.isArray(S.tech.loadout) ? S.tech.loadout : (S.tech.loadout = []); while (L.length < TECH_SLOTS.length) L.push(null); return L; };
 const slotOpen = (i) => !!(TECH_SLOTS[i] && TECH_SLOTS[i].open());

@@ -100,7 +100,7 @@ hook('action', (skill, act, mult, gains) => {
   cargo('ghostfleet', ['gold_saffron', 0.2, [1, 2]]);
   cargo('worldsedge', ['gold_saffron', 0.3, [1, 3]]);
   ITEMS.sunken_chest.loot.push(['peppercorns', 8, [3, 8]], ['coral_lemon', 6, [2, 5]], ['gold_saffron', 4, [1, 2]]);
-  SHOP.push({ id: 'buy_pepper', cat: 'Supplies', realm: 'seas', name: '20× Peppercorns', icon: '🧂', desc: 'Ship-chandler pepper. Season battle food in the Cooking spice rack.', cost: 150, give: ['peppercorns', 20] });
+  SHOP.push({ id: 'buy_pepper', cat: 'Supplies', realm: 'seas', name: '20× Peppercorns', icon: '🧂', desc: 'Seasons dishes (Cooking).', cost: 150, give: ['peppercorns', 20] });
   for (const [id, ch, , lv] of BYCATCH) EXTRA_SOURCES.push([id, 'skill', 'fishing', `Fishing · ${lv > 1 ? `fish of level ${lv}+` : 'any catch'} (spice rack open)`, ch]);
   for (const k of SPICE_ORDER) EXTRA_USES.push([SPICES[k].item, 'Cooking spice rack: seasons battle food']);
 })();

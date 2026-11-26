@@ -15,7 +15,8 @@ const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&
 const skillsOf = (realm) => Object.keys(SKILLS).filter((k) => SKILLS[k].realm === realm);
 const openSkillsOf = (realm) => skillsOf(realm).filter(skillOpen);
 const openRealms = () => WORLD_ORDER.filter(realmOpen);   // in the order they open
-const totalLevel = () => Object.keys(SKILLS).reduce((a, k) => a + skillLv(k), 0);
+// Skills you have opened only: a new player is not level 15 at one skill.
+const totalLevel = () => Object.keys(SKILLS).filter((k) => SKILLS[k].realm === 'combat' ? featureOpen('battle') : skillOpen(k)).reduce((a, k) => a + skillLv(k), 0);
 
 // UI accent per world
 const RC = { shinobi: '#ff9a4d', soul: '#a98bff', seas: '#4cc3ff', combat: '#ff5d73', rift: '#ff5bd8', hub: '#f4c66a' };
@@ -298,10 +299,11 @@ const unlockKind = (u) => ({ realm: 'New world', skill: 'New skill', feature: 'N
 function nextUnlockHTML(cls) {
   const u = nextUnlock();
   if (!u) return '';
-  const isGate = u.id.startsWith('realm:') && GATES[u.id.slice(6)];
+  const r = u.id.startsWith('realm:') ? u.id.slice(6) : null, later = r && !worldInBuild(r);
+  const isGate = r && GATES[r] && !later;
   const tag = isGate ? 'button' : 'div';
   return `<${tag} class="nx ${cls}" ${isGate ? 'data-nav="home"' : ''}><span class="nx-ic">${unlockIcon(u)}<i>${ui('lock')}</i></span>
-    <span class="nx-t"><small>Next unlock${isGate ? ' · new world' : ''}</small><b>${esc(u.name)}</b><em>${esc(u.hint())}</em></span></${tag}>`;
+    <span class="nx-t"><small>Next${r ? ' world' : ''}</small><b>${esc(u.name)}</b><em>${later ? 'Not in this build yet' : esc(u.hint())}</em></span></${tag}>`;
 }
 // Iconic item id -> schematic id
 const SCHEM_OF = Object.fromEntries(Object.keys(ITEMS).filter((k) => ITEMS[k].type === 'schematic').map((k) => [ITEMS[k].teaches, k]));
@@ -313,9 +315,12 @@ function gateHTML() {
   if (!r) return '';
   const st = gateState(r), g = st.g, bz = ZONES.findIndex((z) => z.id === g.boss), boss = ZONES[bz].enemies[0];
   if (!st.boss && !zoneUnlocked(bz)) return '';
+  // The build's last world is done: no offering to gather for a gate that cannot open.
+  if (!worldInBuild(r)) return st.boss ? `<section class="win gate" style="--rc:${rc(r)}"><div class="gt-head"><span class="gt-ic">${ic('realm', r)}</span>
+      <div class="gt-t"><small>End of this build</small><h2>${esc(REALMS[r].name)}</h2><p>Coming in a later build. Thanks for playing this far!</p></div></div></section>` : '';
   return `<section class="win gate" style="--rc:${rc(r)}">
     <div class="gt-head"><span class="gt-ic">${ic('realm', r)}</span>
-      <div class="gt-t"><small>Gate to ${REALMS[r].name}</small><h2>${esc(g.name)}</h2><p>${esc(g.lore)}</p></div></div>
+      <div class="gt-t"><small>Gate to ${REALMS[r].name}</small><h2>${esc(g.name)}</h2></div></div>
     <div class="gt-req">
       <div class="gt-step ${st.boss ? 'ok' : ''}"><i>${st.boss ? ui('check') : ic('enemy', boss.name)}</i><span>Defeat the <b>${boss.name}</b></span><em>${st.boss ? 'Done' : 'Not yet'}</em></div>
       <div class="gt-step ${st.items ? 'ok' : ''}"><i>${st.items ? ui('check') : ui('gate')}</i><span>Make the offering</span>
@@ -329,7 +334,7 @@ const synTargetName = (s) => (SKILLS[s.to] ? SKILLS[s.to].name : { gather: 'all 
 // dir 'in': shows the skill giving the bonus. dir 'out': shows who receives it.
 function synRow(s, dir) {
   const otherOpen = dir === 'in' ? skillOpen(s.from) : synTargetOpen(s);
-  if (!otherOpen) return `<div class="syn hidden"><span class="syn-ic">${ui('lock')}</span><span class="syn-t"><b>Undiscovered synergy</b><small>Links to a skill you have not unlocked yet</small></span></div>`;
+  if (!otherOpen) return '';
   const icon = dir === 'in' ? ic('skill', s.from) : SKILLS[s.to] ? ic('skill', s.to) : s.to === 'combat' ? ui('battle') : ui('star');
   const v = synValue(s);
   return `<div class="syn ${v > 0 ? 'on' : ''}"><span class="syn-ic">${icon}</span>
@@ -337,8 +342,8 @@ function synRow(s, dir) {
     <span class="syn-v"><b>+${pct(v)}</b><small>${SYN_KIND[s.kind]} · +${pct(s.per)}/lv</small></span></div>`;
 }
 function synergyHTML(into, from) {
-  const col = (title, list, dir) => `<div class="syn-col"><small class="syn-h">${title}</small>${list.length ? list.map((s) => synRow(s, dir)).join('') : '<div class="muted small">None</div>'}</div>`;
-  return `${hdr('Synergies', 'every level here also helps another skill')}
+  const col = (title, list, dir) => { const rows = list.map((s) => synRow(s, dir)).join(''); return `<div class="syn-col"><small class="syn-h">${title}</small>${rows || '<div class="muted small">None yet</div>'}</div>`; };
+  return `${hdr('Synergies')}
   <div class="syn-grid">${col('Boosted by', into, 'in')}${col('Boosts', from, 'out')}</div>`;
 }
 
@@ -492,14 +497,14 @@ VIEWS.home = () => {
     <section class="win quest-win phone-only">${goalHTML()}</section>
   </div>
   ${gateHTML()}
-  ${uix('homeTop')}`, `${hdr('Skills', `Total level ${totalLevel()} · ${UNLOCKS.filter((u) => S.unlocked[u.id]).length} / ${UNLOCKS.length} discovered`)}
+  ${uix('homeTop')}`, `${hdr('Skills', `Total level ${totalLevel()}`)}
   <div class="ov-grid">${[...openRealms().slice(0, 1), ...(featureOpen('battle') ? ['combat'] : []), ...openRealms().slice(1)].map((r) => `
     <section class="win ov-realm" style="--rc:${rc(r)}"><h3 class="ov-rh">${r === 'combat' ? ui('battle') : ic('realm', r)}${r === 'combat' ? 'Combat' : REALMS[r].name}</h3>
       ${(r === 'combat' ? skillsOf(r) : openSkillsOf(r)).map(skillCard).join('')}</section>`).join('')}
-    ${gateHTML() ? '' : nextUnlockHTML('win ov-next')}</div>
-  <section class="win adv-win">${hdr('Adventurer')}
-    <div class="stats">${stat('Total level', totalLevel())}${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${stat('Collection', Math.floor(collectionPct() * 100) + '%')}${stat('Pets', `${Object.keys(S.pets).length} / ${PETS.length}`)}${stat('Character', 'Lv ' + charLv())}${stat('Techniques', `${Object.keys(S.tech.lv).length} / ${Object.keys(TECHNIQUES).length}`)}</div>
-  </section>`)}`;
+    ${gateHTML() ? '' : nextUnlockHTML('win ov-next phone-only')}</div>
+  ${featureOpen('battle') ? `<section class="win adv-win">${hdr('Adventurer')}
+    <div class="stats">${stat('Bounty rank', rank[1])}${stat('Foes defeated', fmt(S.stats.kills))}${featureOpen('collection') ? stat('Collection', Math.floor(collectionPct() * 100) + '%') : ''}${featureOpen('techniques') ? stat('Techniques', fmt(Object.keys(S.tech.lv).length)) : ''}${Object.keys(S.pets).length ? stat('Pets', fmt(Object.keys(S.pets).length)) : ''}</div>
+  </section>` : ''}`)}`;
 };
 
 // Idle Overview: up to three one-click picks (resume, the objective, the closest level-up) instead of an explanation.
@@ -531,9 +536,7 @@ function idlePicksHTML() {
   if (st && !st.done) picks.push(card('goal', 'Objective', ic('goal', S.goal), st.g.text, `${fmt(st.cur)} / ${fmt(st.g.n)}`, gbtn('Go', 'play', `data-nav="${st.g.go}"`, 'sm dark')));
   else if (st && st.done) picks.push(card('goal', 'Objective', ic('goal', S.goal), st.g.text, 'Done: claim the reward', gbtn('Claim', 'check', 'data-claim', 'sm glow')));
   if (cl && !(re && S.ui.last[1] === cl.k && S.ui.last[2] === cl.a.id)) picks.push(card('level', 'Closest level-up', ic('skill', cl.k), `${SKILLS[cl.k].name} → ${cl.L + 1}`, `${esc(cl.a.name)} · ${fmtTime(cl.t)}`, gbtn('Start', 'play', `data-act="${cl.k}:${cl.a.id}"`, 'sm dark')));
-  const first = S.goal < 1;
-  return `<div class="idle-picks">${hdr('Nothing is running', picks.length ? 'pick one' : '')}
-    ${first ? `<p class="muted ip-note">${ui('sleep')}Idle games only progress while an activity runs.</p>` : ''}
+  return `<div class="idle-picks">${hdr('Nothing running')}
     ${picks.length ? `<div class="ip-grid">${picks.join('')}</div>` : '<p class="muted ip-note">Pick a skill in the menu.</p>'}</div>`;
 }
 
@@ -541,8 +544,11 @@ function idlePicksHTML() {
 // The skill's title banner: icon, name, XP bar, speed / XP / luck modifiers, level ring.
 function skBannerHTML(realm, skill) {
   const R = REALMS[realm], s = SKILLS[skill], b = xpInfo(skill);
-  const mods = [`<span class="pill" title="Action speed">${ui('spd')} Speed ×${skillSpeed(skill).toFixed(2)}</span>`, `<span class="pill" title="XP multiplier">${ui('xp')} XP ×${skillXpMult(skill).toFixed(2)}</span>`];
-  if (rareMult(skill) > 1) mods.push(`<span class="pill" title="Rare find multiplier">${ui('rare')} Luck ×${rareMult(skill).toFixed(2)}</span>`);
+  // Only the boosts you actually have: a ×1.00 chip says nothing.
+  const mods = [];
+  if (skillSpeed(skill).toFixed(2) !== '1.00') mods.push(`<span class="pill" title="Action speed">${ui('spd')} Speed ×${skillSpeed(skill).toFixed(2)}</span>`);
+  if (skillXpMult(skill).toFixed(2) !== '1.00') mods.push(`<span class="pill" title="XP multiplier">${ui('xp')} XP ×${skillXpMult(skill).toFixed(2)}</span>`);
+  if (rareMult(skill).toFixed(2) !== '1.00') mods.push(`<span class="pill" title="Rare find multiplier">${ui('rare')} Luck ×${rareMult(skill).toFixed(2)}</span>`);
   if (skill === 'fishing' && S.fruit) mods.push(`<span class="pill bad" title="Abyss Fruit eaters fish 40% slower">${ui('fruit')} −40% speed</span>`);
   // Compact (2026-11-24): the level ring is the XP bar, and the buffs and Path / Rare finds / Synergies share one
   // line, so the focus panel's button stays above the fold at 860 px.
@@ -644,6 +650,7 @@ VIEWS.battle = () => {
   ZONES.forEach((z, i) => {
     if (z.dungeon || (REALMS[z.realm].hidden && !zoneUnlocked(i))) return;
     const sealed = !realmOpen(z.realm);
+    if (sealed && !worldInBuild(z.realm)) return;
     if (z.realm !== lastRealm) {
       lastRealm = z.realm;
       groups += sealed
@@ -694,7 +701,7 @@ function gsTopHTML(z) {
     : `<div class="gs-prog"><small>Next stage · ${esc(N.name)}</small><span class="xpbar thin gold"><i data-gsnext style="width:${(N.have / N.need) * 100}%"></i></span><b data-gsnexttxt>${N.boss ? (N.have ? 'Boss defeated' : 'Defeat the boss') : `${N.have} / ${N.need} kills`}</b></div>`;
   return `<div class="gs-top">
     ${z ? arrow(prev, '‹', 'Previous stage') : ''}
-    <div class="gs-where"><span class="gs-ric">${z ? ic('realm', z.realm) : ui('battle')}</span><span><small>${z ? esc(REALMS[z.realm].name) : 'Battlefield'}</small><b>${z ? esc(z.name) : 'Choose a stage'}</b></span>${z ? `<span class="danger ${dc}">${dl}</span>` : ''}</div>
+    <div class="gs-where"><span class="gs-ric">${z ? ic('realm', z.realm) : ui('battle')}</span><span>${z ? `<small>${esc(REALMS[z.realm].name)}</small>` : ''}<b>${z ? esc(z.name) : 'Battlefield'}</b></span>${z ? `<span class="danger ${dc}">${dl}</span>` : ''}</div>
     ${z ? arrow(next, '›', 'Next stage') : ''}
     ${prog}
     <div class="gs-acts">${typeof dgOn === 'function' && dgOn() ? gbtn('Dungeons', 'chest', 'data-nav="battle#gs-dungeons"', 'dark sm') : ''}${gbtn('Stages', 'map', 'data-gostages', 'dark sm')}${z ? gbtn('Retreat', 'stop', 'data-stopcombat', 'sm hot') : ''}${typeof skGuideBtn === 'function' ? skGuideBtn('character') : ''}</div>
@@ -891,13 +898,14 @@ const inColGroup = (k, g) => (g === 'relic' ? !!ITEMS[k].relic : g === 'res' ? I
 function collectionHTML() {
   const pctAll = collectionPct();
   const groups = COL_GROUPS.map(([type, label]) => {
-    const ids = Object.keys(ITEMS).filter((k) => !ITEMS[k].variant && inColGroup(k, type));
+    const ids = Object.keys(ITEMS).filter((k) => colItem(k) && inColGroup(k, type));
+    if (!ids.length) return '';
     const n = ids.filter((k) => S.found[k]).length;
     return `${hdr(label, `${n} / ${ids.length}`)}<div class="col-grid">${ids.map((id) => tile(id, null, { tag: 'button', unknown: !S.found[id], cls: selCol === id ? 'on' : '', attrs: `data-col="${id}"` })).join('')}</div>`;
   }).join('');
-  const petsN = PETS.filter((pt) => S.pets[pt.id]).length;
-  const pets = `${hdr('Pets', `${petsN} / ${PETS.length}`)}<div class="col-grid">${PETS.map((pt) => petTile(pt, { tag: 'button', cls: selCol === 'pet:' + pt.id ? 'on' : '', attrs: `data-col="pet:${pt.id}"` })).join('')}</div>`;
-  let detail = `<div class="empty-note big">${ui('collection')}<span>Select a tile to see where it drops and how rare it is.</span></div>`;
+  const petList = PETS.filter(inBuildPet), petsN = petList.filter((pt) => S.pets[pt.id]).length;
+  const pets = `${hdr('Pets', `${petsN} / ${petList.length}`)}<div class="col-grid">${petList.map((pt) => petTile(pt, { tag: 'button', cls: selCol === 'pet:' + pt.id ? 'on' : '', attrs: `data-col="pet:${pt.id}"` })).join('')}</div>`;
+  let detail = `<div class="empty-note big">${ui('collection')}<span>Select an item.</span></div>`;
   if (selCol && selCol.startsWith('pet:')) {
     const pt = PET_BY[selCol.slice(4)], got = S.pets[pt.id];
     detail = `<div class="dt-hero r${got ? 5 : 0}"><div class="dt-name"><small>Pet${got ? ' · in your party' : ''}</small><h2>${got ? pt.name : '???'}</h2>${got ? stars(5) : ''}</div><div class="dt-art ${got ? '' : 'sil'}">${got ? ic('pet', pt.id) : silArt(ic('pet', pt.id))}</div></div>
@@ -908,8 +916,7 @@ function collectionHTML() {
     const teach = rec ? attrList([['star', 'Teaches', `${ITEMS[it.teaches].name} · ${SKILLS[rec.skill].name} Lv ${rec.act.level}`]]) : '';
     detail = `${itemHead(selCol, !got)}<div class="dt-body">${got && it.type === 'equip' ? attrList(statRows(it.stats)) : ''}${teach}${uix('colDetail', selCol)}${hdr('Where to find')}${sourcesHTML(selCol)}</div>`;
   }
-  const real = (k) => ITEMS[k] && !ITEMS[k].variant;
-  const found = Object.keys(S.found).filter(real).length + Object.keys(S.pets).length, all = Object.keys(ITEMS).filter(real).length + PETS.length;
+  const found = Object.keys(S.found).filter(colItem).length + petsN, all = Object.keys(ITEMS).filter(colItem).length + petList.length;
   return `
   ${ptitle('Hero', 'Collection', heroTabs('collection'))}
   ${fitCols('col-board', `<section class="win col-win">${groups}${pets}</section>`,
@@ -950,13 +957,13 @@ VIEWS.power = () => {
         ${gbtn('Release all', 'close', 'data-releaseall', 'dark sm')}</div>
     </div>
     <div class="pool-bar">${TRAININGS.map((t) => `<i style="width:${((E.alloc[t.id] || 0) / cap) * 100}%;background:${TRAIN_COLORS[t.id]}" title="${t.name}"></i>`).join('')}</div>
-    <p class="muted small en-help">Split your energy between your disciplines: each one levels up forever, even offline. Every world you reach teaches a new one.</p>
+
   </section>
   <section class="win">${hdr('Gold upgrades')}
     <div class="upg">${tile(null, null, { r: 4, icon: ui('energy') })}<span class="upg-t"><b>Bigger Vessel</b><small>+25 energy capacity · now ${fmt(cap)}</small></span>${gbtn(fmt(capCost()), 'gold', `data-buycap data-cost="${capCost()}"`, 'sm')}</div>
     <div class="upg">${tile(null, null, { r: 4, icon: ui('power') })}<span class="upg-t"><b>Purer Energy</b><small>+10% training speed · now ×${energyPower().toFixed(2)}</small></span>${gbtn(fmt(powCost()), 'gold', `data-buypow data-cost="${powCost()}"`, 'sm')}</div>
   </section>`, `<div class="train-grid">${TRAININGS.map((t) => {
-    if (!disciplineOpen(t)) return `<section class="win train locked"><div class="tr-top"><span class="tr-ic">${ui('lock')}</span><span class="tr-main"><b>${t.name}</b><small>Learned in ${REALMS[t.world].name}</small></span></div></section>`;
+    if (!disciplineOpen(t)) return worldInBuild(t.world) ? `<section class="win train locked"><div class="tr-top"><span class="tr-ic">${ui('lock')}</span><span class="tr-main"><b>${t.name}</b><small>Learned in ${REALMS[t.world].name}</small></span></div></section>` : '';
     const a = E.alloc[t.id] || 0, L = tl(t.id), rate = (a * energyPower()) / trainCost(t.id, L);
     return `<section class="win train ${a ? 'active' : ''}" style="--tc:${TRAIN_COLORS[t.id]}">
       <div class="tr-top"><span class="tr-ic">${ic('training', t.id)}</span><span class="tr-main"><b>${t.name}</b><small>${REALMS[t.world].name} · per level: ${t.desc}</small></span>
@@ -984,22 +991,21 @@ VIEWS.market = () => `
 VIEWS.settings = () => `
   ${ptitle('System', 'Settings')}
   ${fitCols('set-board', `${isStandalone() ? '' : `<section class="win install">${tile(null, null, { r: 4, icon: ui('play') })}
-    <span class="upg-t"><b>Play it like an app</b><small>Install Anime Idle RPG on your phone or computer: full screen, its own icon, works offline.${installPrompt ? '' : ' iPhone / iPad: Share → Add to Home Screen. Android / desktop: browser menu → Install app.'}</small></span>
+    <span class="upg-t"><b>Install the game</b><small>Full screen, works offline.${installPrompt ? '' : ' iPhone: Share → Add to Home Screen. Elsewhere: browser menu → Install.'}</small></span>
     ${installPrompt ? gbtn('Install', 'check', 'data-install') : ''}</section>`}
   <section class="win">${hdr('Help')}
-    <div class="btn-row">${gbtn(S.ui.noTips ? 'Turn hints on' : 'Turn hints off', 'info', 'data-toggletips', 'dark')}${gbtn('Show the page cards again', 'hero', 'data-reintro', 'dark')}</div>
-    <p class="muted small">During your first ${GUIDE_N} steps, a small hint points at the next click if nothing moves for a while. Each new skill or menu explains itself once, at the top of its page.</p></section>`,
+    <div class="btn-row">${gbtn(S.ui.noTips ? 'Turn hints on' : 'Turn hints off', 'info', 'data-toggletips', 'dark')}${gbtn('Show intro cards again', 'hero', 'data-reintro', 'dark')}</div></section>`,
   `<section class="win">${hdr('Save data', 'autosaves every 10 seconds')}
     <div class="btn-row">${gbtn('Save now', 'check', 'data-save', 'dark')}${gbtn('Export', 'log', 'data-export', 'dark')}${gbtn('Import', 'open', 'data-import', 'dark')}${gbtn('Hard reset', 'close', 'data-wipe', 'danger')}</div>
-    <textarea id="savebox" rows="5" placeholder="Export puts your save here. To import, paste a save here and press Import."></textarea>
+    <textarea id="savebox" rows="5" placeholder="Paste a save here, then Import."></textarea>
     ${backupsHTML()}
   </section>`)}`;
 // The last hourly copies (and the copies taken before an import, a restore or a reset).
 function backupsHTML() {
   const b = saveBackups();
-  if (!b.length) return '<p class="muted small">A backup copy is kept every hour (the last ' + BAK_KEEP + ').</p>';
+  if (!b.length) return '<p class="muted small">A backup is made every hour.</p>';
   const why = { auto: 'hourly copy', 'before import': 'before an import', 'before restore': 'before a restore', 'before reset': 'before a reset' };
-  return `<div class="bak-list"><small class="muted">Backups (one per hour, the last ${BAK_KEEP})</small>${b.map((x, i) => `<div class="bak-row"><span>${esc(new Date(x.t).toLocaleString())} <em class="muted">· ${esc(why[x.why] || x.why)}</em></span>${gbtn('Restore', 'open', `data-restore="${i}"`, 'dark sm')}</div>`).join('')}</div>`;
+  return `<div class="bak-list"><small class="muted">Backups</small>${b.map((x, i) => `<div class="bak-row"><span>${esc(new Date(x.t).toLocaleString())} <em class="muted">· ${esc(why[x.why] || x.why)}</em></span>${gbtn('Restore', 'open', `data-restore="${i}"`, 'dark sm')}</div>`).join('')}</div>`;
 }
 
 /* =============================================================== activity bar + objective */
@@ -1026,7 +1032,7 @@ function nowHTML() {
   }
   // Idle: offer the last activity back. The objective lives in the sidebar; only phones (no sidebar) see it here.
   const re = resumeInfo();
-  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>${re ? esc(re.name) : 'Nothing is farming'}</b></span>
+  return `<div class="nb idle">${ui('sleep')}<span class="nb-txt"><small>Idle</small><b>${re ? esc(re.name) : 'Nothing running'}</b></span>
     ${re ? gbtn('Resume', 'play', re.attr, 'sm go nb-resume') : ''}${claim || (gs && !re && S.ui.view !== 'home' ? gbtn('Next: ' + esc(gs.g.text), 'play', `data-nav="${gs.g.go}"`, 'sm nb-goal') : '')}${uix('nowbar')}${journalBtn()}</div>`;
 }
 // The last thing that ran (kept in S.ui.last by update()), if it can run again.

@@ -141,7 +141,7 @@ function updateCoach(force) {
     coachEl = el;
   }
   const box = $('#coach');
-  const html = `<div class="cm-text"><small>Need a hand?</small>${text}</div><button class="cm-x" data-hintoff title="Hide this hint">×</button><button class="cm-skip" data-skiptips>No hints</button><i class="cm-arrow"></i>`;
+  const html = `<div class="cm-text">${text}</div><button class="cm-x" data-hintoff title="Hide this hint">×</button><button class="cm-skip" data-skiptips>No hints</button><i class="cm-arrow"></i>`;
   if (html !== coachHTML) { box.innerHTML = html; coachHTML = html; }
   box.classList.add('show', 'quiet');
   // place the bubble next to the target, inside the viewport
@@ -177,43 +177,42 @@ function showWelcome() {
 }
 function firstHintHTML(realm, skill) {
   if (skill !== 'woodcutting' || (S.stats.actions || 0) > 0 || S.action) return '';
-  return `<div class="first-hint"><span class="fh-ic">${ic('skill', 'woodcutting')}</span><p><b>Leaf Village, at dawn. You have a hatchet.</b>
-    Click <b>Pine Log</b> to start chopping. Wood starts everything here, and the work goes on while you are away.</p></div>`;
+  return `<div class="first-hint"><span class="fh-ic">${ic('skill', 'woodcutting')}</span><p>Click <b>Pine Log</b> to start chopping.</p></div>`;
 }
 
 /* ------------------------------------------------------------ first visits */
 // A skill or menu explains itself once, in a card at the top of its page.
 const INTRO = {
   'skill:arts': { icon: () => ic('skill', 'arts'), kicker: 'New skill', title: 'Crafting',
-    text: 'Wood, herbs and battle spoils become gear, pills and scrolls.',
-    points: [[() => ic('item', 'pine_log'), `Pine Logs → ${ITEMS.training_kunai.name}`, 'Your very first weapon.'],
-             [() => ic('item', 'healing_leaf'), 'Healing Leaves → Soldier Pills', 'The undergrowth you clear while chopping becomes pills that heal you.'],
+    text: '',
+    points: [[() => ic('item', 'pine_log'), `Pine Logs → ${ITEMS.training_kunai.name}`, 'Your first weapon.'],
+             [() => ic('item', 'healing_leaf'), 'Healing Leaves → Soldier Pills', 'Pills heal you in battle.'],
              [() => ui('lock'), 'Brew 5 Soldier Pills', 'Then the Battlefield opens.']] },
   'skill:cooking': { icon: () => ic('skill', 'cooking'), kicker: 'New skill', title: 'Cooking',
-    text: 'Fish become dishes, and dishes heal far more than pills.',
-    points: [[() => ic('item', 'minnow'), '1 Minnow → 1 Grilled Minnow', 'Each dish uses fish you caught.'],
+    text: 'Dishes heal far more than pills.',
+    points: [[() => ic('item', 'minnow'), '1 Minnow → 1 Grilled Minnow', ''],
              [() => ui('hp'), 'Food heals', 'Equip a dish as your battle food.'],
              [() => ui('lock'), 'Cooking level 10', 'Opens Voyaging.']] },
   'feature:battle': { icon: () => ui('battle'), kicker: 'New menu', title: 'The Battlefield',
-    text: 'Fights run on their own: you prepare, they play out, offline too.',
+    text: 'Fights run on their own, offline too.',
     points: [[() => ui('food'), 'Equip your pills', 'Character → Food slot. You eat when your HP drops low.'],
              [() => ui('map'), 'Ten wins open the next stage', 'Every world ends with a guardian.'],
              [() => ui('gold'), 'Loot', 'Gold, gear, scrolls and the materials for new worlds.']] },
   'feature:techniques': { icon: () => ui('technique'), kicker: 'New menu', title: 'Techniques',
-    text: "Foes drop their world's scrolls, in four rarities. Read them here: each one teaches a technique of that world, or levels one you know.",
-    points: [[() => ui('technique'), 'Rarer scroll, rarer technique', 'Common scrolls drop often; Legendary ones are a chase.'],
-             [() => ui('plus'), '3 Active, 3 Passive, 1 Ultimate', 'Slots open as you grow. Actives fire in order; passives are always on.']] },
+    text: 'Foes drop scrolls. Each one teaches a technique, or levels up one you know.',
+    points: [[() => ui('technique'), 'Rarer scroll, rarer technique', ''],
+             [() => ui('plus'), 'More slots as you level', 'Actives fire in order; passives are always on.']] },
   'feature:dungeons': { icon: () => ui('map'), kicker: 'New on the Battlefield', title: 'Dungeons',
-    text: 'Five rooms in a row and no rest between them. A key per run, a chest and a set at the end.',
+    text: 'Five rooms in a row, no rest. One key per run.',
     points: [[() => ui('food'), 'Bring food', 'Your HP does not come back between rooms.'],
              [() => ui('gold'), 'A set per dungeon', 'The first clear always gives a piece.']] },
 };
 function introCardHTML(id) {
   const I = INTRO[id];
   if (!I || !isUnlocked(id) || (S.ui.introSeen || {})[id]) return '';
-  return `<section class="intro-card"><span class="ic-ic">${I.icon()}</span><div class="ic-body"><small>${I.kicker}</small><b>${I.title}</b><p>${I.text}</p>
-    ${I.points ? `<ul>${I.points.map(([icn, b, t]) => `<li><i>${icn()}</i><span><b>${b}.</b> ${t}</span></li>`).join('')}</ul>` : ''}</div>
-    <button class="ic-ok" data-introok="${id}" title="Got it">Got it</button></section>`;
+  return `<section class="intro-card"><span class="ic-ic">${I.icon()}</span><div class="ic-body"><small>${I.kicker}</small><b>${I.title}</b>${I.text ? `<p>${I.text}</p>` : ''}
+    ${I.points ? `<ul>${I.points.map(([icn, b, t]) => `<li><i>${icn()}</i><span><b>${b}${t ? '.' : ''}</b> ${t}</span></li>`).join('')}</ul>` : ''}</div>
+    <button class="ic-ok" data-introok="${id}">Got it</button></section>`;
 }
 if (typeof document !== 'undefined') document.addEventListener('click', (ev) => {
   const t = ev.target.closest('[data-introok]');

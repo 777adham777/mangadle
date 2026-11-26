@@ -261,10 +261,14 @@ const DRY_FREE = 800;
 const dryMult = () => 1 + Math.max(0, (S.stats.dry || 0) - DRY_FREE) / DRY_FREE;
 const rareMult = (skill) => (1 + milestoneFx(skill).rare) * luckMult() * (1 + synergyBonus('rare', skill)) * hmul('rare', skill) * (1 + skPerk(skill, 'rare'));
 // Shiny / perfect / seasoned variants have their own logs (quality.js): they do not count here.
+// What this build holds (beta.js caps the worlds): items and pets from later worlds are left out of the log.
+const buildWorld = (r) => !r || r === 'combat' || typeof worldInBuild !== 'function' || worldInBuild(r);
+const inBuildItem = (k) => buildWorld(typeof itemWorld === 'function' ? itemWorld(k) : null);
+const inBuildPet = (pt) => buildWorld(SKILLS[pt.skill] ? SKILLS[pt.skill].realm : pt.zone ? (ZONES.find((z) => z.id === pt.zone) || {}).realm : null);
+const colItem = (k) => ITEMS[k] && !ITEMS[k].variant && inBuildItem(k);
 function collectionPct() {
-  const real = (k) => ITEMS[k] && !ITEMS[k].variant;
-  const total = Object.keys(ITEMS).filter(real).length + PETS.length;
-  return (Object.keys(S.found).filter(real).length + Object.keys(S.pets).length) / total;
+  const pets = PETS.filter(inBuildPet), total = Object.keys(ITEMS).filter(colItem).length + pets.length;
+  return (Object.keys(S.found).filter(colItem).length + pets.filter((pt) => S.pets[pt.id]).length) / total;
 }
 
 function dmgMult()  { return hmul('dmg') * (1 + synergyBonus('dmg', 'combat')) * (1 + discFx('dmg')) * (1 + (fruitFx().dmg || 0)) * (1 + 0.05 * bountyRank()) * (1 + 0.04 * combatMilestones()) * (1 + 0.03 * bossPets()); }

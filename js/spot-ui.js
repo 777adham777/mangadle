@@ -96,7 +96,7 @@ function fcPickHTML(skill, sel) {
     const n = acts.filter((a) => ['ready', 'active'].includes(actState('cooking', a))).length, f = S.ui.fcF || 'all';
     tools = `<nav class="seg fc-seg">${[['all', 'All', open], ['ready', 'Can cook', n]].map(([k, l, c]) => `<button class="${f === k ? 'on' : ''}" data-fcf="${k}"><span>${l}</span><em>${c}</em></button>`).join('')}</nav>`;
   }
-  return `<section class="fc-pick"><div class="fcp-h"><h3>${FC_TXT[skill].pick}</h3><small>${open} / ${acts.length} unlocked · click to ${skill === 'fishing' ? 'fish' : 'cook'}</small>${tools}</div>
+  return `<section class="fc-pick"><div class="fcp-h"><h3>${FC_TXT[skill].pick}</h3><small>${open} / ${acts.length}</small>${tools}</div>
     ${skill === 'fishing' ? `<div class="fc-zones">${fcFishGrid(sel)}</div>` : fcCookGrid(sel)}</section>`;
 }
 
@@ -104,7 +104,7 @@ function fcPickHTML(skill, sel) {
 function fcSpiceHTML() {
   if (!isUnlocked('feature:spices')) return `<div class="fcl-spice off">${ui('lock')}<span><b>Seasoning</b><small>${esc(lockedNote('feature:spices').replace('Locked. ', ''))}</small></span></div>`;
   const cur = S.kitchen.spice, sp = cur && SPICES[cur];
-  const line = sp ? (count(sp.item) ? `<b style="color:color-mix(in srgb, ${sp.col} 70%, #fff)">${esc(sp.adj)}</b> · ${esc(spiceText(cur))}` : `<b class="bad">No ${esc(sp.name)} left</b> · dishes come out plain`) : 'Plain · pick one: each dish uses 1';
+  const line = sp ? (count(sp.item) ? `<b style="color:color-mix(in srgb, ${sp.col} 70%, #fff)">${esc(sp.adj)}</b> · ${esc(spiceText(cur))}` : `<b class="bad">No ${esc(sp.name)} left</b> · dishes come out plain`) : 'Plain';
   return `<div class="fcl-spice"><div class="fcs-h"><b>${ui('spices')}Seasoning</b><small>${line}</small></div>
     <div class="fcs-slots">${SPICE_ORDER.map((k) => {
       const s = SPICES[k], got = S.found[s.item], n = count(s.item), src = sourcesOf(s.item)[0];

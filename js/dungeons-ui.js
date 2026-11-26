@@ -19,14 +19,13 @@ function dgDanger(id) {
 }
 function dgCardHTML(d) {
   const open = dgOpen(d.id), st = dgState(d.id), key = dgKey(d.id), keys = count(key), z = ZONES[d.zi];
-  const head = `<div class="dg-head"><span class="dg-ric">${ic('realm', d.realm)}</span><span class="dg-tt"><small>${esc(REALMS[d.realm].name)} · 5 rooms · Rec. Lv ${z.rec}</small><b>${esc(d.name)}</b></span>`;
+  const head = `<div class="dg-head"><span class="dg-ric">${ic('realm', d.realm)}</span><span class="dg-tt" title="${esc(d.blurb)}"><small>${esc(REALMS[d.realm].name)} · 5 rooms · Rec. Lv ${z.rec}</small><b>${esc(d.name)}</b></span>`;
   if (!open) return `<div class="dg-card locked" style="--rc:${rc(d.realm)}">${head}<span class="dg-lock">${ui('lock')}</span></div>
     <p class="dg-blurb">Defeat <b>${esc(bossName(d.guard))}</b> to open it.</p></div>`;
   const [dl, dc] = dgDanger(d.id), block = dgBlock(d.id), inside = dgIn() && dgRun().id === d.id;
   const recipe = SKILLS.arts.actions.find((a) => a.out && a.out[key]);
   const pieces = dgPieces(d.id).map((p) => tile(p, null, { cls: 'xs', unknown: !S.found[p] })).join('');
   return `<div class="dg-card ${inside ? 'inside' : ''}" style="--rc:${rc(d.realm)}">${head}<span class="danger ${dc}">${dl}</span></div>
-    <p class="dg-blurb">${esc(d.blurb)}</p>
     <div class="dg-rows">
       <div class="dg-row"><small>Key</small><span class="dg-key">${tile(key, `<span data-count="${key}">${fmt(keys)}</span>`, { cls: 'xs' + (keys ? '' : ' dim') })}
         ${recipe ? `<button class="dg-link" data-nav="realm:shinobi:arts" title="Crafting Lv ${recipe.level}: ${Object.entries(recipe.in).map(([k, n]) => `${n} ${ITEMS[k].name}`).join(', ')}">${ui('arts')}Craft · Lv ${recipe.level}</button>` : ''}</span></div>
@@ -34,7 +33,7 @@ function dgCardHTML(d) {
       <div class="dg-row"><small>${esc(d.set.name)} set</small><span class="dg-set">${pieces}<b>${dgOwned(d.id)} / 3</b></span></div>
     </div>
     <div class="dg-cta">${inside ? `<span class="pill on">${ui('battle')}Inside · room ${dgRoom() + 1} / ${DG_ROOMS}</span>`
-      : gbtn('Enter', 'play', `data-dgenter="${d.id}" ${block ? `disabled title="${esc(block)}"` : ''}`, 'sm')}${!inside && block ? `<small class="muted">${esc(block)}${!keys && recipe ? ` Craft one (Crafting Lv ${recipe.level}).` : ''}</small>` : ''}</div></div>`;
+      : gbtn('Enter', 'play', `data-dgenter="${d.id}" ${block ? `disabled title="${esc(block)}"` : ''}`, 'sm')}${!inside && block && keys ? `<small class="muted">${esc(block)}</small>` : ''}</div></div>`;
 }
 function dungeonsWinHTML() {
   if (!dgOn()) return '';
@@ -42,7 +41,7 @@ function dungeonsWinHTML() {
   // the ones you hold a key for first (newest first), then the others, then the next one to open
   const rank = (d) => (count(dgKey(d.id)) ? 0 : 1);
   const list = open.slice().reverse().sort((a, b) => rank(a) - rank(b)).concat(next ? [next] : []);
-  return `<section class="win dgs" id="gs-dungeons">${hdr('Dungeons', 'five rooms in a row · no rest · a chest and a set at the end')}
+  return `<section class="win dgs" id="gs-dungeons">${hdr('Dungeons')}
     <div class="dg-cards">${list.map(dgCardHTML).join('')}</div>
     <label class="dg-auto"><input type="checkbox" data-dgauto ${S.dgAuto ? 'checked' : ''}><span>Run again while I have keys</span></label></section>`;
 }
