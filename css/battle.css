@@ -171,3 +171,90 @@
 @media (prefers-reduced-motion: reduce) {
   .gs-me.jolt, .gs-me.jolt .hpbar, .gs-tech.fire, .gs-stage .ar-floor .foe-png.atk, .gs-me.stunned .stunmark { animation: none; }
 }
+
+/* ==========================================================================
+   UX audit 2026-11-26 (combat). Prefixed with body where fit.css / review.css (loaded later) set the same thing.
+   ========================================================================== */
+/* B01: out of the food you picked (or none at all): the picker says so, in red */
+.gs-food.empty .gs-fsel small { color: #ff8d84; }
+.gs-food.empty select { border-color: #e05a4f; color: #ffb3ab; box-shadow: inset 0 0 0 1px #e05a4f; }
+.gs-food.empty > .tile { outline: 2px solid #e05a4f; outline-offset: -1px; }
+.gs-food > .gbtn { flex-shrink: 0; align-self: flex-end; }
+/* B02: each stage row says what it really gives you per hour */
+.z-xph { color: var(--text); font-weight: 600; }
+/* B07: no fight: one readable box over the painting */
+.gs-stage .ar-floor .f-empty.gs-pick { bottom: auto; top: 50%; transform: translateY(-50%); flex-direction: row; justify-content: center; gap: 12px; width: max-content; max-width: 90%;
+  padding: 14px 22px; background: rgba(10, 11, 15, 0.82); border: 1px solid rgba(255, 255, 255, 0.14); border-left: 3px solid var(--gold); color: var(--text); cursor: pointer; pointer-events: auto; }
+.gs-stage .ar-floor .f-empty.gs-pick .gi { width: 30px; height: 30px; font-size: 30px; fill: var(--gold); color: var(--gold); }
+.gs-stage .ar-floor .f-empty.gs-pick b { font: 700 22px var(--display); letter-spacing: 0.08em; color: #fff; }
+.gs-stage .ar-floor .f-empty.gs-pick:hover { border-color: var(--gold); }
+/* B04: what beat you stays on the stage until you pick a stage again */
+.gs-dead { position: absolute; z-index: 2; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; align-items: center; gap: 16px; width: max-content; max-width: 92%;
+  padding: 14px 20px 14px 14px; background: rgba(18, 8, 10, 0.92); border: 1px solid rgba(224, 90, 79, 0.5); border-left: 3px solid #e05a4f; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); pointer-events: auto; }
+.gd-art { flex-shrink: 0; display: grid; place-items: center; width: 120px; height: 120px; }
+.gd-art { overflow: hidden; }
+body .gd-art img.foe-png { width: 100%; height: 100%; object-fit: contain; object-position: 50% 50%; animation: none; transform: none; filter: drop-shadow(0 4px 8px #000) saturate(0.85); }
+.gd-art svg, .gd-art .creature { width: 100%; height: 100%; font-size: 96px; }
+.gd-txt { min-width: 0; }
+.gd-txt small { display: block; margin-bottom: 4px; font: 700 11px var(--display); letter-spacing: 0.16em; text-transform: uppercase; color: #ff8d84; }
+.gd-txt > b { font: 800 22px/1.1 var(--display); color: #fff; margin-right: 8px; }
+.gd-txt .danger { vertical-align: 3px; }
+.gd-txt p { margin: 6px 0 10px; font-size: 14px; color: #cfc9b8; }
+.gd-acts { display: flex; flex-wrap: wrap; gap: 8px; }
+/* B06 + B20: one row of the 6 rarest drops, smaller, "+N" opens the Drops tab; long rates shrink to fit */
+body .gs-drops .drops { flex-wrap: nowrap; gap: 3px; }
+.gs-drops .tile.xs { --ts: 34px; }
+.gs-drops .tile.xs .tile-n { font-size: 9.5px; padding-inline: 1px; }
+body .gs-drops .tile.xs .tile-n.tight { font-size: 8px; letter-spacing: -0.04em; text-overflow: clip; }
+.gs-dmore { padding: 0; border: 0; cursor: pointer; background: none; }
+.gs-dmore .tile-art { font: 800 13px var(--display); color: var(--text); background: rgba(255, 255, 255, 0.08); box-shadow: inset 0 0 0 1px var(--line2); }
+.gs-dmore { align-self: stretch; }
+.gs-dmore .tile-art { aspect-ratio: auto; height: 100%; border-radius: 4px; }
+.gs-dmore:hover .tile-art { color: #fff; box-shadow: inset 0 0 0 1px var(--gold); }
+/* B09: the stage bar's buttons say what they do (a narrow column keeps the icons: the stage name comes first) */
+@container (min-width: 761px) { body .gs-acts .gbtn span { display: inline; } }
+/* B12: every Battlefield tab on one line */
+@media (min-width: 701px) {
+  body .gs-tabs .sk-tabs { flex-wrap: nowrap; overflow: hidden; }
+  body .gs-tabs .sk-tabs button { flex: 1 1 auto; min-width: 0; padding: 0 3px; font-size: 10.5px; letter-spacing: 0.01em; white-space: nowrap; overflow: hidden; }
+  /* more than 7 tabs: two even rows */
+  body .gs-tabs .sk-tabs:has(> button:nth-child(8)) { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+/* B14: a sealed world on one line: its name, then what opens it */
+.chapter.sealed b, .chapter.sealed small { white-space: nowrap; }
+.chapter.sealed small { overflow: hidden; text-overflow: ellipsis; letter-spacing: 0.08em; }
+/* B19: synergies under the stats */
+.char-stats .syn-win { margin-top: 14px; }
+
+@media (max-width: 700px) {
+  /* P13: the tabs are on the first screen; Dungeons is one of them. Retreat and ? share the stage line */
+  .gs-acts .gs-dgbtn { display: none; }
+  body .gs-acts { order: 0; flex-basis: auto; margin-left: auto; }
+  body .gs-acts .gbtn { flex: 0 0 auto; }
+  body .gs-acts .gbtn span { display: none; }
+  /* the food source button goes under the picker */
+  .gs-food { flex-wrap: wrap; }
+  .gs-food > .gbtn { margin-left: auto; }
+  .gs-food .gs-fsel { flex: 1 1 calc(100% - 60px); }
+  /* B18: technique slots stay small squares in one row, the food stays on screen */
+  body .gs-techs { grid-auto-columns: 52px; justify-content: start; }
+  /* B22 / P14: drops = 6 tiles + "+N" in 7 even columns */
+  body .gs-drops .drops { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); }
+  .gs-drops .tile.xs { --ts: 100%; }
+  /* P15: tabs in an even grid (3 columns, 4 from 7 tabs) */
+  body .gs-tabs .sk-tabs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); overflow: visible; }
+  body .gs-tabs .sk-tabs:has(> button:nth-child(7)) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  body .gs-tabs .sk-tabs button { min-width: 0; padding: 0 4px; font-size: 10.5px; letter-spacing: 0.02em; overflow: hidden; text-overflow: ellipsis; }
+  /* P12: no fight: the stage shrinks to a band and the stage list comes right under it, then your dock */
+  .gs-board:has(#stage:not(.fighting):not(.down)) > .gs { display: contents; }
+  .gs-board:has(#stage:not(.fighting):not(.down)) > .gs > .gs-top { order: 1; }
+  .gs-board:has(#stage:not(.fighting):not(.down)) > .gs > #stage { order: 2; }
+  .gs-board:has(#stage:not(.fighting):not(.down)) > .gs-panel { order: 3; }
+  .gs-board:has(#stage:not(.fighting):not(.down)) > .gs > .gs-dock { order: 4; }
+  body #stage.gs-stage:not(.fighting):not(.down) { height: 84px; }
+  .gs-stage .ar-floor .f-empty.gs-pick { padding: 8px 14px; }
+  .gs-stage .ar-floor .f-empty.gs-pick b { font-size: 16px; }
+  .gs-dead { gap: 10px; padding: 10px; }
+  .gd-art { width: 72px; height: 72px; }
+  .gd-txt > b { font-size: 18px; }
+}

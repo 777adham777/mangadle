@@ -206,7 +206,7 @@ const INTRO = {
              [() => ui('lock'), 'Cooking level 10', 'Opens Voyaging.']] },
   'feature:battle': { icon: () => ui('battle'), kicker: 'New menu', title: 'The Battlefield',
     text: 'Fights run on their own, offline too.',
-    points: [[() => ui('food'), 'Equip your pills', 'Character → Food slot. You eat when your HP drops low.'],
+    points: [[() => ui('food'), 'Pick your food under the stage', 'You eat when your HP drops low.'],
              [() => ui('map'), 'Ten wins open the next stage', 'Every world ends with a guardian.'],
              [() => ui('gold'), 'Loot', 'Gold, gear, scrolls and the materials for new worlds.']] },
   'feature:techniques': { icon: () => ui('technique'), kicker: 'New menu', title: 'Techniques',

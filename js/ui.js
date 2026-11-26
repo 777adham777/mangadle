@@ -461,7 +461,7 @@ function farmRates(skill, a) {
 function combatRates() {
   const z = ZONES[S.combat.zone], e = z.enemies[0];
   const kph = 3600 / (timeToKill(e) + (z.boss ? BOSS_RESPAWN : FOE_RESPAWN));
-  return { z, kph, xph: kph * e.xp * 1.33 * xpMult(), goldh: kph * (e.gold[0] + e.gold[1]) / 2 * goldMult() };
+  return { z, kph, xph: z.dungeon ? kph * e.xp * 1.33 * xpMult() * xpFalloff(z) : zoneXphReal(S.combat.zone), goldh: kph * (e.gold[0] + e.gold[1]) / 2 * goldMult() };
 }
 // The big "now farming" block (overview + the active skill page).
 function farmPanel() {
@@ -697,7 +697,7 @@ VIEWS.battle = () => {
     if (z.realm !== lastRealm) {
       lastRealm = z.realm;
       groups += sealed
-        ? `<div class="chapter sealed" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ui('lock')}</span><b>${REALMS[z.realm].name}</b><small>Sealed · ${GATES[z.realm] ? esc(GATES[z.realm].name) : ''}</small></div>`
+        ? `<div class="chapter sealed" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ui('lock')}</span><b>${REALMS[z.realm].name}</b><small title="Sealed${GATES[z.realm] ? ' · ' + esc(GATES[z.realm].name) : ''}">${WORLD_ORDER.indexOf(z.realm) > 0 ? `Clear ${REALMS[WORLD_ORDER[WORLD_ORDER.indexOf(z.realm) - 1]].name}` : 'Sealed'}</small></div>`
         : `<div class="chapter" style="--rc:${rc(z.realm)}"><span class="ch-ic">${ic('realm', z.realm)}</span><b>${REALMS[z.realm].name}</b>${ascTier(z.realm) ? `<em class="asc-tag t${ascTier(z.realm)}">${ASC[ascTier(z.realm)].name}</em>` : ''}</div>`;
     }
     if (!sealed) groups += zoneRow(z, i);
@@ -710,15 +710,14 @@ VIEWS.battle = () => {
     `<section class="win stages" id="gs-stages">${hdr('Stages', `${ZONES.filter((x, i) => !x.dungeon && zoneUnlocked(i)).length} open`)}${tierSwitchHTML()}<div class="stage-list">${groups}</div>${uix('stagesTop')}</section>`,
     typeof dungeonsWinHTML === 'function' ? dungeonsWinHTML() : '',
     ...UIX.battleSide.map(part),
-    `<section class="win char-stats">${hdr('Stats', `Lv ${charLv()}`)}${charStatsHTML()}</section>`,
+    `<section class="win char-stats" style="--rc:${rc('combat')}">${hdr('Stats')}${charStatsHTML()}<div class="syn-win">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), synergiesFrom('character'))}</div></section>`,
     `<section class="win log-win">${hdr('Log')}<div class="log" id="clog">${logHTML()}</div></section>`,
     ...(UIX.battleBottom || []).map(part),
-    `<section class="win syn-win" style="--rc:${rc('combat')}">${synergyHTML(SYNERGIES.filter((x) => x.to === 'combat'), synergiesFrom('character'))}</section>`,
   ]);
   return `<div class="gs-board fit">
   <div class="gs" style="--rc:${rc(z ? z.realm : 'combat')}">
     ${gsTopHTML(z)}
-    <section id="stage" class="arena gs-stage ${C.zone != null ? 'fighting' : ''}">${stageHTML()}</section>
+    <section id="stage" class="arena gs-stage ${C.zone != null ? 'fighting' : C.down ? 'down' : ''}">${stageHTML()}</section>
     ${gsDockHTML(foods)}
   </div>
   <div class="gs-panel">${uix('battleTop')}${tabPanelHTML('battle', tabs, 'gs-tabs')}</div>
@@ -747,7 +746,7 @@ function gsTopHTML(z) {
     <div class="gs-where"><span class="gs-ric">${z ? ic('realm', z.realm) : ui('battle')}</span><span>${z ? `<small>${esc(REALMS[z.realm].name)}</small>` : ''}<b>${z ? esc(z.name) : 'Combat'}</b></span>${z ? `<span class="danger ${dc}">${dl}</span>` : ''}</div>
     ${z ? arrow(next, '›', 'Next stage') : ''}
     ${prog}
-    <div class="gs-acts">${typeof dgOn === 'function' && dgOn() ? gbtn('Dungeons', 'chest', 'data-nav="battle#gs-dungeons"', 'dark sm') : ''}${gbtn('Stages', 'map', 'data-gostages', 'dark sm')}${z ? gbtn('Retreat', 'stop', 'data-stopcombat', 'sm hot') : ''}${typeof skGuideBtn === 'function' ? skGuideBtn('character') : ''}</div>
+    <div class="gs-acts">${typeof dgOn === 'function' && dgOn() ? gbtn('Dungeons', 'chest', 'data-nav="battle#gs-dungeons"', 'dark sm gs-dgbtn') : ''}${z ? `<button class="gbtn sm hot" data-stopcombat title="Retreat"><i class="gbtn-ic">${gi('run')}</i><span>Retreat</span></button>` : ''}${typeof skGuideBtn === 'function' ? skGuideBtn('character').replace(/title="[^"]*"/, 'title="Guide: Battlefield"') : ''}</div>
   </div>`;
 }
 function gsTechHTML() {
@@ -774,12 +773,38 @@ function gsDockHTML(foods) {
       <div class="stunmark">${gi('circle-sparks')}</div>
     </div>
     ${gsTechHTML()}
-    <div class="gs-food" title="Eaten when your HP drops below ${pct(autoEatThreshold())}">
-      ${C.food && count(C.food) ? tile(C.food, `<span data-count="${C.food}">${fmt(count(C.food))}</span>`, { cls: 'xs' }) : `<span class="tile r0 xs"><span class="tile-art">${ui('food')}</span></span>`}
-      <span class="gs-fsel"><small>Food · eats below ${pct(autoEatThreshold())}</small>
-      <select data-food>${foods.length ? (C.food ? '' : '<option value="" selected>No food equipped</option>') : '<option value="">No food: cook some first</option>'}${foods.map((f) => `<option value="${f}" ${C.food === f ? 'selected' : ''}>${ITEMS[f].name} ×${fmt(count(f))} (+${foodHeal(f)} HP)</option>`).join('')}</select></span>
-    </div>
+    ${gsFoodHTML(foods)}
   </div>`;
+}
+// Where food comes from right now: the furthest open skill that makes it (Crafting pills in Leaf Village, Cooking later).
+function foodSource() {
+  let best = null;
+  for (const k in SKILLS) {
+    if (!skillOpen(k)) continue;
+    const acts = SKILLS[k].actions.filter((a) => Object.keys(a.out || {}).some((id) => ITEMS[id] && ITEMS[id].type === 'food'));
+    if (!acts.length) continue;
+    const w = WORLD_ORDER.indexOf(SKILLS[k].realm);
+    if (!best || w > best.w) best = { k, w, act: acts.filter((a) => a.level <= skillLv(k)).pop() || acts[0] };
+  }
+  if (!best) return null;
+  const k = best.k, f = Object.keys(best.act.out)[0];
+  return { k, say: k === 'arts' ? `craft ${ITEMS[f].name}s` : k === 'cooking' ? 'cook some' : `make some in ${SKILLS[k].name}`,
+    btn: `<button class="gbtn dark sm" data-nav="realm:${SKILLS[k].realm}:${k}"><i class="gbtn-ic">${ic('skill', k)}</i><span>${SKILLS[k].name}</span></button>` };
+}
+// The food picker never shows a food you are not eating as picked: run out of it and it says so, in red.
+function gsFoodHTML(foods) {
+  const C = S.combat, thr = pct(autoEatThreshold());
+  foods = foods.filter((f) => count(f) > 0);
+  const out = C.food && ITEMS[C.food] && !count(C.food), src = foods.length ? null : foodSource();
+  const head = out ? `<option value="${C.food}" selected>Out of ${esc(ITEMS[C.food].name)}${foods.length ? ': pick another food' : ''}</option>`
+    : !foods.length ? `<option value="" selected>No food${src ? ': ' + src.say : ''}</option>`
+    : !C.food ? '<option value="" selected>No food equipped</option>' : '';
+  return `<div class="gs-food ${out || !foods.length ? 'empty' : ''}" title="Eaten when your HP drops below ${thr}">
+      ${C.food && count(C.food) ? tile(C.food, `<span data-count="${C.food}">${fmt(count(C.food))}</span>`, { cls: 'xs' }) : `<span class="tile r0 xs"><span class="tile-art">${ui('food')}</span></span>`}
+      <span class="gs-fsel"><small>Food · ${out || !foods.length ? 'empty' : 'eats below ' + thr}</small>
+      <select data-food>${head}${foods.map((f) => `<option value="${f}" ${C.food === f ? 'selected' : ''}>${ITEMS[f].name} ×${fmt(count(f))} (+${foodHeal(f)} HP)</option>`).join('')}</select></span>
+      ${src ? src.btn : ''}
+    </div>`;
 }
 document.addEventListener('click', (ev) => {
   if (!ev.target.closest('[data-gostages]')) return;
@@ -815,11 +840,13 @@ function zoneXph(zi) {
   for (let j = 0; j < n; j++) { const e = enemyAt(zi, j); t += timeToKill(e); x += e.xp; }
   return (3600 / (t / n + (z.boss ? BOSS_RESPAWN : FOE_RESPAWN))) * (x / n);
 }
+// What a stage really gives you per hour: your XP bonuses, and less once you outlevel it (xpFalloff).
+const zoneXphReal = (zi) => zoneXph(zi) * 1.33 * xpMult() * xpFalloff(ZONES[zi]);
 function bestZone() {
   let best = -1, bx = 0;
   ZONES.forEach((z, i) => {
     if (z.dungeon || !realmOpen(z.realm) || !zoneUnlocked(i) || !['easy', 'fair'].includes(zoneDanger(i)[1])) return;
-    const x = zoneXph(i);
+    const x = zoneXphReal(i);
     if (x > bx) { bx = x; best = i; }
   });
   return best;
@@ -844,7 +871,7 @@ function zoneRow(z, i) {
   const [dl, dc] = zoneDanger(i);
   return `<button class="zrow ${z.boss ? 'boss' : ''} ${C.zone === i ? 'on' : ''} ${i === bestZoneI ? 'best' : ''}" data-zone="${i}" style="--rc:${rc(z.realm)}">
     <span class="z-ic">${ic('enemy', z.enemies[z.enemies.length - 1].name)}</span>
-    <span class="z-main"><b>${z.name}</b><small>${i === bestZoneI ? `<em class="z-best">${ui('star')}Best XP/h for you</em> · ` : ''}${z.boss ? 'Boss · ' : ''}Rec. Lv ${z.rec} · ${z.enemies.map((e) => e.name).join(' · ')}</small></span>
+    <span class="z-main"><b>${z.name}</b><small>${i === bestZoneI ? `<em class="z-best">${ui('star')}Best for you</em> · ` : ''}${z.boss ? 'Boss · ' : ''}<span class="z-xph" title="Recommended Lv ${z.rec}">≈${fmt(zoneXphReal(i))} XP/h</span> · ${z.enemies.map((e) => e.name).join(' · ')}</small></span>
     <span class="z-tail"><span class="danger ${dc}">${dl}</span><span class="z-k">${ui('skull')}<b data-kills="${z.id}">${fmt(C.kills[z.id] || 0)}</b></span></span></button>`;
 }
 // stageHTML(): the battle arena lives in arena.js

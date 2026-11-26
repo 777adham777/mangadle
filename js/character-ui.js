@@ -68,7 +68,9 @@ function chDiff(base, next) {
   return { score, html: chips.length ? chips.join('') : '<span class="chd eq">No change</span>' };
 }
 const chPerks = (id) => (typeof PERKS === 'undefined' ? [] : Object.keys(ITEMS[id].stats || {}).filter((k) => PERKS[k]).map((k) => PERKS[k].name));
-const chStatLine = (id) => statInline(Object.fromEntries(Object.keys(ITEMS[id].stats || {}).map((k) => [k, itemStat(id, k)])));
+// Base stats with their icon; perks by name ("Opening strike +100%"), so a perk never reads as more Attack.
+const chStatLine = (id) => statRows(Object.fromEntries(Object.keys(ITEMS[id].stats || {}).map((k) => [k, itemStat(id, k)])))
+  .map(([icn, name, v]) => (icn.startsWith('pk_') && PERKS[icn.slice(3)] ? `<span class="ch-perk" title="${esc(PERKS[icn.slice(3)].tip || name)}">${esc(name)} ${v}</span>` : `<span>${ui(icn)}${v}</span>`)).join('');
 
 /* ------------------------------------------------------------ candidates per slot */
 // Each: { tile, name, sub, diff, btn, score }
@@ -194,13 +196,23 @@ function chWornHTML(s) {
   return card(chWornTile(s), `Worn${chPerks(id).length ? ' · ' + chPerks(id).join(' · ') : ''}`, esc(ITEMS[id].name), chStatLine(id),
     (gearOn() ? gbtn('Forge', 'forge', `data-chinspect="${id}"`, 'dark sm') : '') + un(`data-unequip="${s}"`));
 }
+// What you wear in this slot is on its card above: the panel header keeps only its buttons (Forge, Unequip).
+function chWornActs(s) {
+  const un = (attrs) => gbtn('Unequip', 'close', attrs, 'dark sm');
+  if (s === 'weapon') { const a = curArm(); return a ? (forgeOn() ? gbtn('Forge', 'forge', `data-chforge="${a.u}"`, 'dark sm') : '') + un('data-unequip="weapon"') : ''; }
+  if (s === 'food') return S.combat.food && count(S.combat.food) ? un('data-unfood') : '';
+  if (s === 'fruit') return '';
+  const id = S.equip[s];
+  return id ? (gearOn() ? gbtn('Forge', 'forge', `data-chinspect="${id}"`, 'dark sm') : '') + un(`data-unequip="${s}"`) : '';
+}
 function chListHTML(s, cands) {
   const rows = cands.map((c) => `<div class="ch-row ${c.score > 0 ? 'better' : ''}">${c.tile}<span class="chr-t"><b>${esc(c.name)}</b><small>${c.sub}</small><span class="chr-d">${c.diff}</span></span>${c.btn}</div>`).join('');
   const empty = { weapon: 'No other weapon.', food: 'No food yet.', fruit: 'No fruit.' }[s] || 'Nothing for this slot yet.';
   const bare = !chWornTile(s) && !cands.length;
+  const title = CH_LABEL[s] === 'Food' ? 'Battle food' : CH_LABEL[s] === 'Fruit' ? 'Abyss Fruit' : CH_LABEL[s], acts = chWornActs(s);
   return `<section class="win ch-list ${bare ? 'bare' : ''}">
-    ${hdr(CH_LABEL[s] === 'Food' ? 'Battle food' : CH_LABEL[s] === 'Fruit' ? 'Abyss Fruit' : CH_LABEL[s], cands.length ? `${cands.length} owned` : '')}
-    ${bare ? '' : chWornHTML(s)}
+    <h3 class="hdr"><span>${title}</span>${acts ? `<span class="chl-acts">${acts}</span>` : ''}${cands.length ? `<small>${cands.length} owned</small>` : ''}</h3>
+    ${bare || s !== 'fruit' ? '' : chWornHTML(s)}
     <div class="ch-cands">${rows || `<div class="empty-note">${empty}</div>`}</div>
   </section>`;
 }
@@ -212,7 +224,7 @@ function chStatsHTML() {
   const num = (icn, label, val, tip) => `<div class="ch-num" title="${esc(tip)}"><span class="chn-ic">${ui(icn)}</span><small>${label}</small><b>${val}</b></div>`;
   const crit = typeof critChance === 'function' ? critChance() : 0;
   return `<section class="win ch-stats">
-    ${hdr('Stats', `Character Lv ${charLv()}`)}
+    ${hdr('Stats')}
     <div class="ch-sts">
       ${big('atk', 'Attack', fmt(statAtk()), `Max hit ${fmt(pMaxHit())}`, 'Raises the damage you deal')}
       ${big('def', 'Defense', fmt(statDef()), `−${pct(1 - mitig(pDef()))} damage taken`, 'Reduces the damage you take')}
@@ -221,13 +233,9 @@ function chStatsHTML() {
       ${big('luck', 'Luck', fmt(statLuck()), `Rare finds ×${luckMult().toFixed(2)}`, 'Each point: +1% chance on every rare find')}
     </div>
     <h4 class="ch-sub">Combat</h4>
-    <div class="ch-nums">
-      ${num('atk', 'Max hit', fmt(pMaxHit()), 'Your biggest normal hit')}
-      ${num('hp', 'Max HP', fmt(pMaxHp()), 'Health in battle')}
-      ${num('spd', 'Attack', pSpeed().toFixed(2) + 's', 'Time between attacks')}
+    <div class="ch-nums two">
       ${num('pk_crit', 'Crit', pct(crit), 'Chance to land a critical hit')}
       ${num('dodge', 'Dodge', pct(pDodge()), 'Chance to avoid a hit')}
-      ${num('def', 'Armor', '−' + pct(1 - mitig(pDef())), 'Damage taken is reduced by this much')}
     </div>
     <h4 class="ch-sub">Fortune</h4>
     <div class="ch-nums">

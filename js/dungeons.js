@@ -264,6 +264,7 @@ hook('eat', () => { const r = dgRun(); if (r && dgIn()) r.ate++; });
       clog(`${e.name} drives you out of ${DG_BY[r.id].name}.`, 'lose');
       emit('death', e);
       dgEnd('defeat');
+      noteDown(e);
       stopCombat();
       return;
     }

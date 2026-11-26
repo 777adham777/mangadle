@@ -568,7 +568,7 @@ function startCombat(zi) {
   const C = S.combat;
   if (C.zone === zi) return;
   S.action = null;
-  C.zone = zi; C.enemy = null; C.respawn = 0.6;
+  C.zone = zi; C.enemy = null; C.respawn = 0.6; C.down = null;
   clog(`Entered ${ZONES[zi].name}.`, 'sys');
   dirty = true;
 }
@@ -734,8 +734,14 @@ function playerDown(e) {
     clog(`You were defeated by ${e.name}. Retreating to recover...`, 'lose');
     toast(`Defeated by ${e.name}! Train harder or bring more food.`, 'bad');
     emit('death', e);
+    noteDown(e);
     stopCombat();
   }
+}
+// What beat you, kept for the stage's "Defeated" card until you pick a stage again (arena.js).
+function noteDown(e) {
+  const C = S.combat;
+  C.down = { name: e.name, base: e.base || e.name, zone: C.zone, atk: e.atk, hp: Math.round(pMaxHp()), food: C.food && count(C.food) ? count(C.food) : 0 };
 }
 function autoEat() {
   if (typeof pactOn === 'function' && pactOn('fast')) return;
@@ -746,6 +752,7 @@ function autoEat() {
     emit('eat', { id: C.food, heal: foodHeal(C.food) });
     hrun('eat', C.food);             // seasoned dishes start their battle buff (also offline)
     removeItem(C.food, 1);
+    if (!count(C.food)) dirty = true;   // the food picker shows "Out of ..."
   }
 }
 

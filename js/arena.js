@@ -70,12 +70,28 @@ function gsRatesHTML() {
   const c = combatRates();
   return `<div class="gs-rates"><div><small>Kills / h</small><b>≈${fmt(c.kph)}</b></div><div><small>XP / h</small><b>≈${fmt(c.xph)}</b></div><div><small>Gold / h</small><b>≈${fmt(c.goldh)}</b></div></div>`;
 }
+// The drops strip on the stage: one row, the 6 rarest drops, then "+N" opening the Drops tab (full list there).
+const GS_DROPS = 6;
+function gsDropTiles(e) {
+  const keep = new Set(e.drops.map((d, i) => [i, rarity(d[0]), d[1]]).sort((a, b) => b[1] - a[1] || a[2] - b[2]).slice(0, GS_DROPS).map((x) => x[0]));
+  const more = e.drops.length - keep.size;
+  return e.drops.filter((d, i) => keep.has(i)).map(([id, ch]) => {
+    const r = fmtRate(ch < 0.2 ? ch * luckMult() : ch);
+    return tile(id, r, { cls: 'xs', unknown: !isFound(id), r: rarity(id), nattrs: `title="${r}"` });
+  }).join('') + (more ? `<button class="tile r0 xs gs-dmore" data-gsdrops title="All drops"><span class="tile-art">+${more}</span></button>` : '');
+}
+document.addEventListener('click', (ev) => {
+  if (!ev.target.closest('[data-gsdrops]')) return;
+  const el = document.querySelector('.gs-tabs .sk-pane[data-pane="drops"] > *');
+  showPaneOf(el);
+  if (el) el.scrollIntoView({ behavior: calmMotion() ? 'auto' : 'smooth', block: 'nearest' });
+});
 // The stage: the foe's plate, the foe, its drops, the rates. Redrawn on every spawn (ui.js).
 function stageHTML() {
   const C = S.combat, e = curEnemy(), z = C.zone != null ? ZONES[C.zone] : null;
   const realm = z ? z.realm : WORLD_ORDER[0];
   let plate = '', foe = '', side = '';
-  if (!z) foe = `<div class="f-empty">${ui('map')}<b>Choose a stage</b></div>`;
+  if (!z) foe = C.down ? gsDownHTML(C.down) : `<div class="f-empty gs-pick" data-gostages>${ui('map')}<b>Choose a stage</b></div>`;
   else if (!e) foe = `<div class="f-empty searching">${ui('battle')}<b>Searching for a foe…</b></div>`;
   else {
     const boss = z.boss, K = kitOf(e), n = e.base || e.name, sp = foeSprite(e), cr = !sp && creatureOf(n);
@@ -86,7 +102,7 @@ function stageHTML() {
       <div class="hpbar enemy"><i data-ehp></i><b class="shieldbar" data-eshield></b>${ticks}<span data-ehptext></span></div>
       <div class="castbar" data-ecast><div class="atkbar enemy"><i data-eatk></i></div><span data-ecastname></span></div>
       <div class="ftags">${foeTagsHTML(e)}</div><div class="stchips foe" data-est></div></div>`;
-    side = `<div class="gs-drops"><small>Drops</small><div class="drops">${e.drops.map(([id, ch]) => tile(id, fmtRate(ch < 0.2 ? ch * luckMult() : ch), { cls: 'xs', unknown: !isFound(id), r: rarity(id) })).join('')}${tile(null, fmt(e.gold[0]) + '+', { r: 3, icon: ui('gold'), cls: 'xs', title: 'Gold' })}${z.dungeon ? `<span class="dg-clear" title="Clear all five rooms: the chest, and a chance at a set piece"><small>Clear</small>${tile(dgChest(z.dungeon), null, { cls: 'xs', unknown: !isFound(dgChest(z.dungeon)) })}${dgPieces(z.dungeon).map((p) => tile(p, null, { cls: 'xs', unknown: !S.found[p] })).join('')}</span>` : ''}</div></div>`;
+    side = `<div class="gs-drops"><small>Drops</small><div class="drops">${gsDropTiles(e)}${z.dungeon ? `<span class="dg-clear" title="Clear all five rooms: the chest, and a chance at a set piece"><small>Clear</small>${tile(dgChest(z.dungeon), null, { cls: 'xs', unknown: !isFound(dgChest(z.dungeon)) })}${dgPieces(z.dungeon).map((p) => tile(p, null, { cls: 'xs', unknown: !S.found[p] })).join('')}</span>` : ''}</div></div>`;
     const size = cr && cr[1].size ? cr[1].size : 1;
     const kind = sp ? 'foe-png' : cr ? 'foe-cr' : 'foe-beast';
     foe = `<div class="fighter enemy enter ${boss ? 'boss' : ''} ${kind} ${e.rank ? 'rank' + e.rank : ''}" style="--sz:${size}${sp ? `;--mh:${sp.h};--ma:${sp.a}` : ''}"><div class="f-art" data-portrait="enemy">${foeArtHTML(e, realm)}</div><div class="windmark">!</div></div>`;
@@ -97,6 +113,21 @@ function stageHTML() {
       ${foe}
     </div>
     ${plate}${z && e && !z.dungeon ? gsRatesHTML() : ''}${side}`;
+}
+
+// After a defeat, until you pick a stage again: what beat you and why, and where to go now.
+function gsDownHTML(d) {
+  const zi = d.zone, z = ZONES[zi], realm = z ? z.realm : WORLD_ORDER[0];
+  const safe = typeof bestZone === 'function' ? bestZone() : -1;
+  const [dl, dc] = z && !z.dungeon ? zoneDanger(zi) : ['', ''];
+  const food = d.food ? `${fmt(d.food)} food left` : 'no food left';
+  const retry = z && !z.dungeon ? gbtn('Retry', 'battle', `data-zone="${zi}"`, 'sm') : z ? gbtn('Dungeons', 'chest', 'data-nav="battle#gs-dungeons"', 'sm') : '';
+  const go = safe >= 0 && safe !== zi ? gbtn(`${esc(ZONES[safe].name)} · ${zoneDanger(safe)[0]}`, 'map', `data-zone="${safe}"`, 'dark sm') : '';
+  return `<div class="gs-dead" style="--rc:${rc(realm)}">
+    <span class="gd-art">${foeArtHTML({ name: d.name, base: d.base }, realm, { still: true })}</span>
+    <div class="gd-txt"><small>Defeated</small><b>${esc(d.name)}</b>${dl ? `<span class="danger ${dc}">${dl}</span>` : ''}
+      <p>Hits ${fmt(d.atk)} · your HP ${fmt(d.hp)} · ${food}</p>
+      <div class="gd-acts">${retry}${go}</div></div></div>`;
 }
 
 /* ------------------------------------------------------------- live HUD */
@@ -504,10 +535,10 @@ on('kill', (d) => {
   }, delay);
 });
 // You fall: the stage goes red and dark for a moment.
-on('death', () => {
+on('death', (e) => {
   if (!cbOk()) return;
   const st = document.querySelector('#stage');
-  if (st) { const v = document.createElement('div'); v.className = 'gs-down'; v.innerHTML = '<b>Defeated</b><small>Back on your feet in a moment</small>'; st.appendChild(v); setTimeout(() => v.remove(), 2400); }
+  if (st) { const v = document.createElement('div'); v.className = 'gs-down'; v.innerHTML = `<b>Defeated</b>${e && e.rank ? '<small>Back on your feet in a moment</small>' : ''}`; st.appendChild(v); setTimeout(() => v.remove(), 2400); }
   cbShake(6);
 });
 on('spawn', () => { cbS.e.coil = 0; });

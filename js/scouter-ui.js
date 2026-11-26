@@ -43,7 +43,7 @@ function scanStart(zi) {
 }
 const scColor = (p) => (p >= 0.7 ? 'var(--act)' : p >= 0.35 ? 'var(--sel)' : 'var(--hot)');
 function scoutResultHTML() {
-  if (SC.zi == null || (!SC.base && !SC.running)) return `<p class="muted small sc-hint">${ui('info')}Pick a stage you have fought and press <b>Scan</b>. The Power Visor plays the fight out on a copy of your save.</p>`;
+  if (SC.zi == null || (!SC.base && !SC.running)) return `<p class="muted small sc-hint">${ui('info')}<span>Pick a stage, then Scan.</span></p>`;
   const z = ZONES[SC.zi], b = SC.base, p = scoutPct(b), cause = b && b.wins < b.n ? scoutCause(b) : null;
   const done = !SC.running;
   const fixes = done ? SC.fixes.map((f) => ({ f, p: scoutPct(SC.fres[f.key]) })).filter((x) => x.p >= p + 0.08 || (p < 1 && x.p === 1 && p < 0.95)).sort((x, y) => y.p - x.p).slice(0, 2) : [];
@@ -66,9 +66,9 @@ function scoutWinHTML() {
   const seen = ZONES.map((z, i) => [z, i]).filter(([z, i]) => !z.dungeon && scoutSeen(i));
   const zi = scoutZoneDefault();
   if (SC.zi == null && zi != null && !SC.running) SC.zi = zi;
-  return `<section class="win scout-win" id="scouter">${hdr('Power Visor', 'Plays the fight out before you take it')}
+  return `<section class="win scout-win" id="scouter">${hdr('Power Visor')}
     <div class="sc-top"><span class="sc-dev">${ui('scouter')}</span>
-      <select id="sc-zone" data-sczone aria-label="Stage to scan">${seen.length ? seen.map(([z, i]) => `<option value="${i}" ${i === SC.zi ? 'selected' : ''}>${z.boss ? 'Boss · ' : ''}${esc(z.name)}${S.scout.lost && S.scout.lost[z.id] ? ' (lost here)' : ''}</option>`).join('') : '<option value="">No stage fought yet</option>'}</select>
+      <select id="sc-zone" data-sczone aria-label="Stage to scan">${seen.length ? seen.map(([z, i]) => `<option value="${i}" ${i === SC.zi ? 'selected' : ''}>${z.boss ? 'Boss · ' : ''}${esc(z.name)}${S.scout.last === z.id ? ' (last defeat)' : ''}</option>`).join('') : '<option value="">No stage fought yet</option>'}</select>
       ${gbtn(SC.running ? 'Scanning' : 'Scan', 'scouter', `data-scscan ${SC.running || !seen.length ? 'disabled' : ''}`, 'sm')}</div>
     <div data-scres>${scoutResultHTML()}</div></section>`;
 }
