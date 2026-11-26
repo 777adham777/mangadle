@@ -39,7 +39,7 @@ function foePowerLevel(zi) {
 }
 
 /* ---------------------------------------------------------------- fixes */
-const SCOUT_SLOTS = ['armor', 'accessory'];
+const SCOUT_SLOTS = ARMOR_SLOTS;   // gear.js
 const gearScore = (id) => { const s = ITEMS[id].stats || {}; return (s.def || 0) * 2 + (s.hp || 0) / 4 + (s.atk || 0) * 1.5 + (s.spd || 0) * 3 + (s.luck || 0); };
 const zoneWeak = (zi) => { const K = typeof kitOf === 'function' ? kitOf(ZONES[zi].enemies[ZONES[zi].enemies.length - 1]) : null; return K && K.weak ? K.weak : null; };
 // Candidate changes, as functions that work on whatever S is (the copy, or your save when applied).
@@ -52,7 +52,7 @@ function scoutFixes(zi) {
   }
   for (const slot of SCOUT_SLOTS) {
     const cur = S.equip[slot], best = Object.keys(S.items).filter((k) => ITEMS[k] && ITEMS[k].type === 'equip' && ITEMS[k].slot === slot && count(k) > 0).sort((a, b) => gearScore(b) - gearScore(a))[0];
-    if (best && (!cur || gearScore(best) > gearScore(cur))) out.push({ key: 'equip:' + best, kind: 'item', id: best, label: `Wear ${ITEMS[best].name}`, sub: slot === 'armor' ? 'armour' : 'accessory', apply: () => { equip(best); } });
+    if (best && (!cur || gearScore(best) > gearScore(cur))) out.push({ key: 'equip:' + best, kind: 'item', id: best, label: `Wear ${ITEMS[best].name}`, sub: SLOT_INFO[slot].name.toLowerCase(), apply: () => { equip(best); } });
   }
   if (weak && typeof armEl === 'function' && S.arms) {
     const w = S.arms.filter((a) => a.u !== S.equipU && armEl(a) === weak).sort((a, b) => armAtk(b) - armAtk(a))[0];

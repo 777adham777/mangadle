@@ -41,7 +41,10 @@ Parts de l'armure (DEF et PV) : torse 40 %, jambes 25 %, casque 20 %, bottes 15 
 | Frénésie, accélération | `calm` : réduit le bonus de dégâts de l'enrage et de la hâte |
 | Coup chargé annoncé | `parry` : dégâts des coups télégraphiés réduits |
 | Coups multiples | `brace` : dégâts des attaques en plusieurs coups réduits |
-| Feu, foudre, vent | `rFire`, `rLightning`, `rWind` : dégâts des coups de cet élément réduits |
+| Perce-armure | `steady` : la part de défense ignorée est réduite |
+
+Les coups des monstres n'ont pas d'élément propre : la brûlure (`rBurn`) tient lieu de défense contre le feu.
+Un palier qu'un set ne fixe pas est lu dans les kits de ses monstres (les deux mécaniques les plus utilisées).
 
 ### Matériaux rares (P6)
 Toute arme ou pièce de set qui tombait devient une recette : le monstre lâche un **fragment** de la pièce, et 3 fragments + les matériaux du monde la forgent.

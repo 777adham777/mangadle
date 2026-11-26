@@ -33,7 +33,10 @@ const stOf = (side, id) => RT.st[side][id];
 const stOn = (side, id) => { const s = RT.st[side][id]; return !!(s && s.t > 0); };
 const stN = (side, id) => (stOn(side, id) ? RT.st[side][id].n : 0);
 // v: power (damage per second for damage over time, absorb left for shields).
+// Resistances (set counters) shorten and soften what lands on you.
+const STATUS_RES = { poison: 'rPoison', bleed: 'rBleed', burn: 'rBurn', weaken: 'rWeaken', stun: 'rStun' };
 function addStatus(side, id, t, v) {
+  if (side === 'p' && STATUS_RES[id]) { const r = ward(STATUS_RES[id]); if (r > 0) { t *= 1 - r; if (v) v *= 1 - r; } }
   const D = STATUS[id], cur = RT.st[side][id];
   if (cur && cur.t > 0) {
     cur.t = Math.max(cur.t, t);
@@ -71,6 +74,8 @@ const AFFIXES = [['evasive', 0.2], ['armored', 0.35], ['regen', 0.012], ['vampir
 const WEAK_MULT = 1.3, RESIST_MULT = 0.75;
 // Life steal is capped per blow (share of the foe's max HP): late foes hit far harder than their own HP.
 const DRAIN_CAP = 0.06, VAMP_CAP = 0.03;
+// Set counters (La Forge, sets.js): each answers one mechanic, capped at 80%. perk() lives in builds.js.
+const ward = (k) => (typeof perk === 'function' ? Math.min(0.8, perk(k)) : 0);
 
 /* ------------------------------------------------------------ moves */
 // m: damage per hit (× a normal swing) · n: hits · tele: telegraphed one swing ahead · pierce: share of your defense ignored
@@ -300,9 +305,9 @@ hook('spawn', (e) => {
 hook('tick', () => { if (S.combat.zone == null) { clearStatus('p'); clearStatus('e'); RT.foe.next = null; } });
 
 // Attack speed and power of the foe.
-hook('espd', () => 1 / ((stOn('e', 'haste') ? 1.3 : 1) * (1 + 0.08 * stN('e', 'enrage'))));
+hook('espd', () => 1 / (1 + ((stOn('e', 'haste') ? 1.3 : 1) * (1 + 0.08 * stN('e', 'enrage')) - 1) * (1 - ward('calm'))));
 // RT.foeMult / RT.foePierce: set while a move's hit goes through the normal swing.
-hook('taken', () => (RT.foeMult || 1) * (1 + 0.15 * stN('e', 'enrage')));
+hook('taken', () => (RT.foeMult || 1) * (1 + 0.15 * stN('e', 'enrage') * (1 - ward('calm'))));
 hook('def', () => 1 - (RT.foePierce || 0));
 hook('edef', () => (stOn('e', 'harden') ? 2 : 1));
 hook('dmg', () => (stOn('p', 'weaken') ? 0.75 : 1));
@@ -313,7 +318,7 @@ function foeLands(e, dmg, m) {
   if (m && m.st) { const [id, s, p] = m.st; addStatus('p', id, s, p ? p * e.atk * mitig(pDef()) : 0); }
   if (m && m.stun) addStatus('p', 'stun', m.stun);
   if (tr.burning) addStatus('p', 'burn', 4, 0.1 * e.atk * mitig(pDef()));
-  const heal = Math.min(e.hp * DRAIN_CAP, dmg * ((m && m.drain) || 0)) + Math.min(e.hp * VAMP_CAP, dmg * (tr.vampiric || 0));
+  const heal = (Math.min(e.hp * DRAIN_CAP, dmg * ((m && m.drain) || 0)) + Math.min(e.hp * VAMP_CAP, dmg * (tr.vampiric || 0))) * (1 - ward('wounds'));
   if (heal > 0 && C.enemy != null) { C.eHp = Math.min(e.hp, C.eHp + heal); emit('foeheal', { amt: Math.round(heal) }); }
 }
 function foeMove(e, m, base) {
@@ -321,9 +326,9 @@ function foeMove(e, m, base) {
   clog(`${e.name} uses ${m.name}!`, 'foe');
   emit('foemove', { e, m });
   if (m.self) { const [id, s, v] = m.self; addStatus('e', id, s || 1e9, id === 'shield' ? Math.round(e.hp * v) : v); }
-  if (m.heal) { C.eHp = Math.min(e.hp, C.eHp + e.hp * m.heal); emit('foeheal', { amt: Math.round(e.hp * m.heal) }); }
+  if (m.heal) { const h = e.hp * m.heal * (1 - ward('wounds')); C.eHp = Math.min(e.hp, C.eHp + h); emit('foeheal', { amt: Math.round(h) }); }
   for (let i = 0; i < m.n && m.m; i++) {
-    RT.foeMult = m.m; RT.foePierce = m.pierce || 0;
+    RT.foeMult = m.m * (m.tele ? 1 - ward('parry') : 1) * (m.n > 1 ? 1 - ward('brace') : 1); RT.foePierce = (m.pierce || 0) * (1 - ward('steady'));
     base(e);
     RT.foeMult = 1; RT.foePierce = 0;
     if (C.zone == null || C.enemy == null) return;
@@ -347,7 +352,7 @@ function foeMove(e, m, base) {
   const base = playerHit;
   playerHit = function (e) {
     const tr = foeTraits();
-    if (tr.evasive && Math.random() < tr.evasive) {
+    if (tr.evasive && Math.random() < tr.evasive * (1 - ward('acc'))) {
       clog(`${e.name} evades your attack.`, 'sys');
       emit('hit', { target: 'enemy', dodge: true });
       return;
@@ -375,12 +380,12 @@ function hitTags() {
       else if (K.resist && tags.includes(K.resist)) { dmg *= RESIST_MULT; extra.elem = 'resist'; }
     }
     const tr = foeTraits();
-    if (RT.auto && tr.armored) dmg *= 1 - tr.armored;
+    if (RT.auto && tr.armored) dmg *= 1 - tr.armored * (1 - ward('pierce'));
     dmg = Math.max(1, Math.round(dmg));
     const sh = stOf('e', 'shield');
     if (sh && sh.t > 0 && sh.v > 0) {
-      const a = Math.min(sh.v, dmg);
-      sh.v -= a; dmg -= a;
+      const sb = 1 + ward('shieldBreak'), a = Math.min(sh.v, dmg * sb);
+      sh.v -= a; dmg = Math.max(0, Math.round(dmg - a / sb));
       if (sh.v <= 0) { sh.t = 0; clog(`${e.name}'s shield breaks!`, 'sys'); emit('status', { side: 'e', id: 'shield', broke: true }); }
       if (!dmg) { emit('hit', { target: 'enemy', dmg: a, blocked: a, label }); return; }
       extra.blocked = a;
@@ -407,7 +412,7 @@ hook('combat', (dt, e) => {
   const C = S.combat;
   if (!e || C.enemy == null) return;
   const tr = foeTraits();
-  if (tr.regen && C.eHp < e.hp) C.eHp = Math.min(e.hp, C.eHp + e.hp * tr.regen * dt);
+  if (tr.regen && C.eHp < e.hp) C.eHp = Math.min(e.hp, C.eHp + e.hp * tr.regen * (1 - ward('wounds')) * dt);
   for (const id of ['poison', 'bleed', 'burn']) {
     const s = RT.st.p[id];
     if (!s || s.t <= 0) continue;

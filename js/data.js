@@ -555,7 +555,7 @@ const GOALS = [
   gStep('char10', 'Reach Character level 10', 'battle', 10, () => [charLv()], 200, { crystal_kunai: 1 }, 'Every level raises your five stats. Fights give the XP.'),
   gStep('market', 'Buy any upgrade in the Market', 'market', 1, () => [['tools_shinobi', 'tools_soul', 'tools_seas', 'abundance', 'satchel', 'lucky_coin'].reduce((a, k) => a + (S.shop[k] || 0), 0)], 300, { sealed_scroll: 1 }, 'Gold buys tools that make a whole world faster.'),
   stage10('mist10', 'mist', 'the Misty Forest', 400, { mist_steel: 2 }, 'Opens Fang Ravine. Its steel goes into better blades.'),
-  gStep('wear3', 'Wear a weapon, an armor and an accessory', 'character', 3, () => [['weapon', 'armor', 'accessory'].filter((s) => S.equip[s]).length], 450, { chakra_orb: 6 }, 'Three slots, three sets of stats. Crafting makes all of them.'),
+  gStep('wear3', 'Wear three pieces of gear', 'character', 3, () => [GEAR_SLOTS.filter((s) => S.equip[s]).length], 450, { chakra_orb: 6 }, 'A weapon and six armour slots. Crafting makes all of them.'),
   gStep('techup', 'Level up a technique', 'techniques', 1, () => [Object.values(S.tech.lv).some((l) => l > 1) ? 1 : 0], 500, { scroll_shinobi: 2 }, 'A scroll that draws a technique you know raises it one level. Levels 5 and 10 change how it works.'),
   gStep('char20', 'Reach Character level 20', 'battle', 20, () => [charLv()], 500, { moon_pill: 10 }, 'Level 20 opens the Energy Disciplines.'),
   gStep('energy', 'Put energy into any training', 'power', 1, () => [energyUsed() > 0 ? 1 : 0], 500, { chakra_orb: 10 }, 'Disciplines grow on their own, even offline, and never reset.'),

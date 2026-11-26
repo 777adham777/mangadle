@@ -19,11 +19,12 @@ let EPOCH = 0, EQV = 0;
 // gear swaps bump EQV (equip / equipArm, and the planner's trial swaps)
 { const e1 = equip, e2 = equipArm; equip = function (...a) { EQV++; return e1.apply(this, a); }; equipArm = function (...a) { EQV++; return e2.apply(this, a); }; }
 // one cache per gear combination (trial swaps go back and forth), all dropped when EPOCH moves
-let MEMO_W, MEMO_A, MEMO_C, MEMO_U, MEMO_K = '';
+let MEMO_K = '';
 const memoCombo = () => {
   const E = S.equip;
-  if (E.weapon !== MEMO_W || E.armor !== MEMO_A || E.accessory !== MEMO_C || S.equipU !== MEMO_U) { MEMO_W = E.weapon; MEMO_A = E.armor; MEMO_C = E.accessory; MEMO_U = S.equipU; MEMO_K = MEMO_W + '|' + MEMO_A + '|' + MEMO_C + '|' + MEMO_U; }
-  return MEMO_K;
+  let k = S.equipU || '';
+  for (const s of GEAR_SLOTS) k += '|' + (E[s] || '');
+  return (MEMO_K = k);
 };
 const memo = (fn) => {
   let ep = -1, cas = null, combos = new Map();

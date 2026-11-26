@@ -205,7 +205,7 @@ const INTRO = {
   'feature:dungeons': { icon: () => ui('map'), kicker: 'New on the Battlefield', title: 'Dungeons',
     text: 'Five rooms in a row, no rest. One key per run.',
     points: [[() => ui('food'), 'Bring food', 'Your HP does not come back between rooms.'],
-             [() => ui('gold'), 'A set per dungeon', 'The first clear always gives a piece.']] },
+             [() => ui('gold'), 'A set per dungeon', 'Every clear gives a sigil of its set.']] },
 };
 function introCardHTML(id) {
   const I = INTRO[id];

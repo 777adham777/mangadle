@@ -2,7 +2,7 @@
    Bump VERSION on every deploy so players get the new files. */
 // Only the game itself is cached at install (~2 MB). Pictures (item icons, foes, scenes: ~33 MB) are cached
 // the first time the game shows them, so a phone does not download every world on the first visit.
-const VERSION = 'anime-idle-rpg-v181';
+const VERSION = 'anime-idle-rpg-v182';
 // Pictures live in their own cache, kept across versions: served at once, refreshed in the background.
 const ART_CACHE = 'anime-idle-rpg-art';
 const SHELL = [
@@ -42,6 +42,7 @@ const SHELL = [
   './js/armory.js',
   './js/depth.js',
   './js/tiers.js',
+  './js/gear.js',
   './js/loot.js',
   './js/item-art.js',
   './js/item-images.js',
@@ -60,6 +61,7 @@ const SHELL = [
   './js/techniques.js',
   './js/expeditions.js',
   './js/forge.js',
+  './js/sets.js',
   './js/chamber.js',
   './js/tasks.js',
   './js/missions.js',

@@ -4,7 +4,7 @@
    - The Dungeons window on the Battlefield (above the stage list): one card per open dungeon
      (and the next one, locked, as a goal): its rooms, danger, key, records, set.
    - Inside a run the Grand Stage top bar becomes the dungeon's: five room pips, the clock, Leave.
-   - A clear: a banner, the chest in the feed, the set piece revealed.
+   - A clear: a banner, the chest and the set's sigil in the feed, a weapon shard revealed.
    Loaded after ui.js and arena.js.
    ========================================================================== */
 
@@ -30,7 +30,7 @@ function dgCardHTML(d) {
       <div class="dg-row"><small>Key</small><span class="dg-key">${tile(key, `<span data-count="${key}">${fmt(keys)}</span>`, { cls: 'xs' + (keys ? '' : ' dim') })}
         ${recipe ? `<button class="dg-link" data-nav="realm:shinobi:arts" title="Crafting Lv ${recipe.level}: ${Object.entries(recipe.in).map(([k, n]) => `${n} ${ITEMS[k].name}`).join(', ')}">${ui('arts')}Craft · Lv ${recipe.level}</button>` : ''}</span></div>
       <div class="dg-row"><small>Records</small><span class="dg-rec">${st.clears ? `<b>${fmt(st.clears)}</b> clear${st.clears > 1 ? 's' : ''} · best <b>${dgClock(st.best)}</b>${st.clean ? ` · <em title="Cleared without eating">${ui('check')}no food</em>` : ''}` : '<em class="muted">Never cleared</em>'}</span></div>
-      <div class="dg-row"><small>${esc(d.set.name)} set</small><span class="dg-set">${pieces}<b>${dgOwned(d.id)} / 3</b></span></div>
+      <div class="dg-row"><small>${esc(d.set.name)} set</small><span class="dg-set">${pieces}<b>${dgOwned(d.id)} / ${dgPieces(d.id).length}</b></span></div>
     </div>
     <div class="dg-cta">${inside ? `<span class="pill on">${ui('battle')}Inside · room ${dgRoom() + 1} / ${DG_ROOMS}</span>`
       : gbtn('Enter', 'play', `data-dgenter="${d.id}" ${block ? `disabled title="${esc(block)}"` : ''}`, 'sm')}${!inside && block && keys ? `<small class="muted">${esc(block)}</small>` : ''}</div></div>`;
@@ -74,7 +74,8 @@ on('dgclear', (d) => {
   const D = DG_BY[d.id];
   bannerBurst('Dungeon cleared', `${D.name} · ${dgClock(d.t)}${d.newBest ? ' · new best' : ''}`, ic('realm', D.realm), rc(D.realm), 'lvup');
   feedItem(dgChest(d.id), 1);
-  if (d.piece) { feedItem(d.piece, 1); if (!(typeof dropReveal === 'function' && dropReveal(d.piece, D.name))) toast(`${ITEMS[d.piece].name}: a piece of the ${D.set.name} set`, 'rare'); }
+  if (d.sigil) feedItem(d.sigil, d.first ? 2 : 1);
+  if (d.piece) { feedItem(d.piece, 1); if (!(typeof dropReveal === 'function' && dropReveal(d.piece, D.name))) toast(ITEMS[d.piece].name, 'rare'); }
   dirty = true;
 });
 on('dgend', (d) => {

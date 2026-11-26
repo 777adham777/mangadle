@@ -5,9 +5,9 @@
 const fs = require('fs'), vm = require('vm'), path = require('path');
 
 const ROOT = path.resolve(__dirname, '../..') + '/';
-const ENGINE = ['data', 'curve', 'worlds', 'lore', 'armory', 'depth', 'tiers', 'loot', 'game', 'systems', 'techniques', 'expeditions', 'forge',
+const ENGINE = ['data', 'curve', 'worlds', 'lore', 'armory', 'depth', 'tiers', 'gear', 'loot', 'game', 'systems', 'techniques', 'expeditions', 'forge',
   'chamber', 'tasks', 'missions', 'report', 'huntlist', 'scouter', 'hardcore', 'omens', 'poster', 'quality', 'seas', 'soul', 'kaio', 'hex',
-  'hunt', 'echo', 'leaf', 'foes', 'builds', 'dungeons', 'economy', 'trials', 'story', 'guide'];
+  'hunt', 'echo', 'leaf', 'foes', 'builds', 'dungeons', 'sets', 'economy', 'trials', 'story', 'guide'];
 const SIM = ['model', 'planner', 'macro'];
 
 function load(opts) {

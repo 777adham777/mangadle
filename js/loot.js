@@ -178,8 +178,10 @@ function worldLock() {
   // A chest holds its own world's things (a chest's world is where it is found).
   for (const id in ITEMS) if (ITEMS[id].type === 'chest' && ITEMS[id].loot) keep(ITEMS[id].loot, homeOf(id), id);
 }
+gearPass();   // gear.js: six slots, generic pieces, sets and their sigils, weapons from shards
 worldLock();
 computeRarity();
+gearRarity();
 
 /* ------------------------------------------------------------ drop rate pass */
 // Balance pass (2026-11-23): an Epic or Legendary drop must be an event. The rates above were set one by one
@@ -199,7 +201,7 @@ function capRates() {
   const cap = (list, kind) => {
     for (const d of list) {
       const id = d[0], it = ITEMS[id];
-      if (id === 'GEM' || (it && (it.relic || it.type === 'schematic' || OFFERED.has(id)))) continue;
+      if (id === 'GEM' || (it && (it.relic || it.shardOf || it.sigil || it.type === 'schematic' || OFFERED.has(id)))) continue;   // shards and sigils keep their pace (gear.js)
       const r = id === 'FRUIT' ? 5 : it ? it.rarity : 0;
       if (r >= 3) d[1] = Math.min(d[1], RATE_CAP[kind][r]);
     }

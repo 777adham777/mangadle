@@ -35,8 +35,8 @@ const guardTrial = (r, zone, name, items) => trialDef(`${r}_clean`, r, `Defeat $
   'Unequip your food first.', 'battle');
 const fastTrial = (r, d, sec, items) => trialDef(`${r}_fast`, r, `Clear ${DG_BY[d].name} in under ${dgClock(sec)}`, 1, tFast(d, sec), items,
   '', 'battle#gs-dungeons');
-const setTrial = (r, d, items) => trialDef(`${r}_set`, r, `Collect the ${DG_BY[d].set.name} set`, 3, tSet(d), items,
-  `Drops in ${DG_BY[d].name}.`, 'battle#gs-dungeons');
+const setTrial = (r, d, items) => trialDef(`${r}_set`, r, `Forge 4 pieces of the ${DG_BY[d].set.name} set`, 4, tSet(d), items,
+  `Its sigils come from ${DG_BY[d].name}.`, 'battle#gs-dungeons');
 const TRIALS = [
   // Leaf Village
   trialDef('shinobi_wc', 'shinobi', 'Reach Woodcutting level 30', 30, tLv('woodcutting'), { sealed_scroll: 2 }, '', 'realm:shinobi:woodcutting'),

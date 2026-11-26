@@ -6,9 +6,10 @@
    - No breather: your HP does not regenerate between rooms (food and techniques do).
    - A run costs a key: crafted in Crafting from the world's materials, or dropped by its
      foes (the guardian drops one often, and its first defeat gives one).
-   - Clear: a dungeon chest (gold, the world's relics, gems, scrolls, materials) and a chance
-     at a piece of the dungeon's set (3 pieces, a set bonus each). The first clear always
-     gives a piece; after 4 dry clears the next one does too.
+   - Clear: a dungeon chest (gold, the world's relics, gems, scrolls, materials), its set's
+     sigil (La Forge: the set has 6 pieces, forged from sigils, gear.js) and a chance at a shard
+     of its weapon (3 shards forge it). The first clear always gives a shard; after 3 dry
+     clears the next one does too.
    - Defeat or leaving the dungeon ends the run; the key is spent.
    - "Run again" (S.dgAuto) starts the next run on its own while you have keys, offline too.
    Records per dungeon: clears, best time, cleared without eating.
@@ -79,8 +80,8 @@ const DUNGEONS = [
 ];
 const DG_BY = Object.fromEntries(DUNGEONS.map((d) => [d.id, d]));
 const DG_ROOMS = 5;
-const DG_PITY = 4;              // dry clears before a set piece is certain
-const DG_PIECE = 0.2;           // chance of a set piece on a clear (the first clear: certain)
+const DG_PITY = 3;              // dry clears before a weapon shard is certain
+const DG_PIECE = 0.35;          // chance of a weapon shard on a clear (the first clear: certain)
 const dgKey = (id) => 'key_' + id;
 const dgChest = (id) => 'chest_' + id;
 
@@ -107,18 +108,25 @@ const DUNGEON_TIERS = {};       // economy.js reads it like GEAR_TIERS
     ].filter(([k]) => ITEMS[k])));
     Object.assign(ITEMS[dgChest(d.id)], { glyph: 'locked-chest', color: '#e8a040', rarity: 4, rolls: 3, lore: `Brought back from ${d.name}: gold and three finds.` });
     SKILLS.arts.actions.push(craft(dgKey(d.id), KEY_ARTS[d.realm] || 30, 6, Object.assign({}, d.key)));
-    // the set: three drop-only pieces a little above the guardian's stage
+    // its weapon (forged from shards) and its set: the two old pieces plus four new, forged from sigils (gear.js)
     const ids = [];
     d.set.pieces.forEach(([id, name, perks, x], i) => {
       const slot = ['weapon', 'armor', 'accessory'][i];
       defItem(id, name, '⚔️', 100, Object.assign(eq(slot, Object.assign({}, perks)), { glyph: x.g, color: x.c, dungeon: d.id, rarity: 4,
-        lore: `${d.set.name} set · found in ${d.name}.` }, x.fam ? { fam: x.fam } : {}));
+        lore: `${d.set.name} · ${d.name}.` }, x.fam ? { fam: x.fam } : {}));
+      if (i) ITEMS[id].slot = i === 1 ? SLOT_OVERRIDE[id] || 'chest' : slotFor(id);
       DUNGEON_TIERS[id] = [d.stage, 'boss', slot === 'accessory' ? (perks.guard || perks.regen || perks.wind || perks.thorns ? 'def' : 'off') : undefined];
       ids.push(id);
     });
-    const set = { id: d.set.id, name: d.set.name, pieces: ids, b2: d.set.b2, b3: d.set.b3 };
-    SETS.push(set);
-    for (const id of ids) (SET_OF[id] = SET_OF[id] || []).push(set);
+    d.weapon = ids[0];
+    const S0 = { id: d.set.id, realm: d.realm, name: d.set.name, stage: d.stage, color: d.set.pieces[1][3].c, dungeon: d.id,
+      pieces: { [ITEMS[ids[1]].slot]: ids[1], [ITEMS[ids[2]].slot]: ids[2] }, from: d.rooms, b2: d.set.b2, b4: d.set.b3 };
+    GEAR_SETS.push(S0);
+    makeSet(S0);
+    ITEMS[sigilOf(S0.id)].rarity = 3;
+    for (const s of ARMOR_SLOTS) ITEMS[S0.slots[s]].rarity = 4;
+    makeShard(d.weapon); ITEMS[shardOf(d.weapon)].rarity = 4;
+    shardRecipe(d.weapon, d.stage);
   }
 }
 
@@ -128,6 +136,8 @@ if (typeof ICONS !== 'undefined') for (const d of DUNGEONS) {
   ICONS.item[dgChest(d.id)] = 'locked-chest'; ICON_COLOR[dgChest(d.id)] = '#e8a040';
   ICONS.zone['dg_' + d.id] = 'stone-tower';
   for (const [id, , , x] of d.set.pieces) { ICONS.item[id] = x.g; ICON_COLOR[id] = x.c; }
+  const S0 = GEAR_SETS.find((s) => s.dungeon === d.id);
+  for (const id of [...Object.values(S0.slots), sigilOf(S0.id), shardOf(d.weapon)]) { const it = ITEMS[id]; if (!ICONS.item[id] && it.glyph) ICONS.item[id] = it.glyph; if (!ICON_COLOR[id] && it.color) ICON_COLOR[id] = it.color; }
 }
 
 /* ---------------------------------------------------------------- the dungeon zones */
@@ -177,7 +187,7 @@ const dgOpen = (id) => { const d = DG_BY[id]; return !!d && realmOpen(d.realm) &
 const dgRun = () => (S.dungeon && DG_BY[S.dungeon.id] ? S.dungeon : null);
 const dgIn = () => { const r = dgRun(), z = S.combat.zone != null ? ZONES[S.combat.zone] : null; return !!(r && z && z.dungeon === r.id); };
 const dgRoom = () => { const r = dgRun(); return r ? Math.min(DG_ROOMS - 1, r.room) : 0; };
-const dgPieces = (id) => DG_BY[id].set.pieces.map((p) => p[0]);
+const dgPieces = (id) => { const S0 = GEAR_SETS.find((s) => s.dungeon === id); return ARMOR_SLOTS.map((s) => S0.slots[s]); };
 const dgOwned = (id) => dgPieces(id).filter((p) => S.found[p]).length;
 // Why you can't enter (or '').
 function dgBlock(id) {
@@ -229,14 +239,14 @@ hook('kill', (e, z) => {
   if (newBest) st.best = Math.round(r.t);
   if (!r.ate) st.clean = 1;
   addItem(dgChest(r.id), 1);
+  // the set's sigil every clear (two the first time), the weapon's shard by chance
+  const sigil = sigilOf(d.set.id);
+  addItem(sigil, first ? 2 : 1);
   let piece = null;
-  const missing = dgPieces(r.id).filter((p) => !S.found[p]);
-  if (first || st.dry >= DG_PITY || Math.random() < DG_PIECE * luckMult()) {
-    piece = pick(missing.length ? missing : dgPieces(r.id));
-    addItem(piece, 1); st.dry = 0;
-  } else st.dry++;
+  if (first || st.dry >= DG_PITY || Math.random() < DG_PIECE * luckMult()) { piece = shardOf(d.weapon); addItem(piece, 1); st.dry = 0; }
+  else st.dry++;
   S.stats.dungeons = (S.stats.dungeons || 0) + 1;
-  emit('dgclear', { id: r.id, t: r.t, ate: r.ate, first, piece, best: st.best, newBest: newBest && !first });
+  emit('dgclear', { id: r.id, t: r.t, ate: r.ate, first, piece, sigil, best: st.best, newBest: newBest && !first });
   const again = S.dgAuto && count(dgKey(r.id)) > 0;
   dgEnd('clear');
   if (again) { removeItem(dgKey(r.id), 1); S.dungeon = { id: r.id, room: 0, t: 0, ate: 0 }; dgState(r.id).runs++; S.combat.hp = pMaxHp(); }

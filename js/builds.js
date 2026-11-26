@@ -12,7 +12,7 @@
    - Duelist: dodge, and every dodge strikes back
    - Hunter: a huge opening strike, more damage to bosses, Elites and Alphas
    Perk values live in ITEMS[id].stats with the other stats (gearStat sums them, reforge and
-   perfect copies grow them). Sets: 2 and 3 pieces worn. Loaded after foes.js (wraps its
+   perfect copies grow them). Sets: 2, 4 and 6 pieces worn (sets.js). Loaded after foes.js (wraps its
    dealDamage / enemyHit / playerHit).
    ========================================================================== */
 
@@ -86,40 +86,25 @@ const GEAR_PERKS = {
 for (const id in GEAR_PERKS) if (ITEMS[id]) Object.assign(ITEMS[id].stats, GEAR_PERKS[id]);
 
 /* ------------------------------------------------------------ sets */
-// A piece slot may accept alternatives (an array). b2 / b3: perks for 2 / 3 pieces worn.
-const SETS = [
-  { id: 'genin',   name: 'Genin Kit',        pieces: ['chakra_blade', 'chakra_mesh', 'shinobi_headband'], b2: { tech: 0.1 }, b3: { cdr: 0.12 } },
-  { id: 'feral',   name: 'Feral Hunter',     pieces: ['senbon', 'puppet_plating', 'wolf_fang'], b2: { bleedP: 0.3 }, b3: { bleedHit: 0.1, crit: 0.04 } },
-  { id: 'mist',    name: 'Hidden Mist',      pieces: ['fog_cleaver', 'puppet_plating', 'sealing_talisman'], b2: { bleedP: 0.5 }, b3: { bleedHit: 0.15, crit: 0.05 } },
-  { id: 'fox',     name: 'Ashen Fox',        pieces: ['ashen_fang', 'beast_cloak', 'fox_tail_charm'], b2: { tag_fire: 0.2 }, b3: { burnHit: 1 } },
-  { id: 'lev',     name: 'Leviathan',        pieces: ['corsair_cutlass', 'leviathan_mail', 'shark_tooth'], b2: { thorns: 0.15 }, b3: { regen: 0.01 } },
-  { id: 'tide',    name: 'Tide Emperor',     pieces: ['stormcaller', ['admiral_coat', 'tide_mantle'], ['storm_crown', 'kraken_compass']], b2: { gold: 0.15 }, b3: { tag_lightning: 0.3, cdr: 0.1 } },
-  { id: 'reaper',  name: 'Ferryman',         pieces: ['reapers_edge', 'ferryman_robe', 'reaper_scarf'], b2: { leech: 0.03 }, b3: { killHeal: 0.15, exec: 0.15 } },
-  { id: 'sov',     name: 'Masked Sovereign', pieces: ['eclipse_blade', 'sovereign_cloak', 'sovereign_mask'], b2: { crit: 0.08 }, b3: { critDmg: 0.5 } },
-  { id: 'saiyan',  name: 'Gravity Warrior',  pieces: ['power_gauntlets', 'battle_armor', 'gravity_bracer'], b2: { counter: 0.5, guard: 0.05 }, b3: { formDrain: 0.4 } },
-  { id: 'curse',   name: 'Curse Bearer',     pieces: ['cursed_cleaver', 'grudge_mail', 'hex_eye'], b2: { berserk: 0.2 }, b3: { leech: 0.05, exec: 0.25 } },
-  { id: 'star',    name: 'Star Hunter',      pieces: ['hunter_glaive', 'wildhide_coat', 'star_badge'], b2: { boss: 0.15 }, b3: { first: 2, crit: 0.06 } },
-  { id: 'ancient', name: 'Ancient Relics',   pieces: [['ancient_fog_cleaver', 'ancient_stormcaller'], 'ancient_ferryman_robe', 'ancient_gravity_bracer'], b2: { tech: 0.15, guard: 0.06 }, b3: { bleedHit: 0.2, leech: 0.04, counter: 1 } },
-  // the manga armory (armory.js): one crew per world, from Orange Town on
-  { id: 'strawhat', name: 'Red Vest Crew',  pieces: [['wado_blade', 'weather_baton', 'black_leg_boots'], 'red_vest', ['straw_hat', 'sniper_goggles']], b2: { gold: 0.1, wind: 0.1 }, b3: { crit: 0.06, rare: 0.05 } },
-  { id: 'captain', name: 'Court Captain',    pieces: [['asauchi', 'bankai_blade'], 'captain_haori', ['flash_sandals', 'hollow_mask_half']], b2: { cdr: 0.08 }, b3: { tech: 0.12, crit: 0.05 } },
-  { id: 'turtle',  name: 'Iron Shell School',    pieces: [['power_pole', 'z_sword'], 'turtle_gi', ['nimbus_charm', 'senzu_pouch']], b2: { counter: 0.5 }, b3: { first: 1, formDrain: 0.3 } },
-  { id: 'jujutsu', name: 'Sorcery High',     pieces: [['resonance_hammer', 'playful_cloud', 'inverted_spear'], 'jujutsu_uniform', ['limitless_blindfold', 'cursed_finger', 'sealing_cube']], b2: { tech: 0.1 }, b3: { cdr: 0.1, exec: 0.15 } },
-  { id: 'exam',    name: 'Hunter Selection',      pieces: [['hunter_rod', 'steel_yoyos', 'joker_cards'], 'ten_vest', ['steel_skateboard', 'chain_of_judgement', 'medic_briefcase']], b2: { first: 1 }, b3: { crit: 0.06, boss: 0.15 } },
-  { id: 'slayer',  name: 'Dusk Slayer Corps', pieces: ['nichirin_blade', ['slayer_uniform', 'checkered_haori'], ['fox_warding_mask', 'hanafuda_earrings']], b2: { exec: 0.15 }, b3: { tag_fire: 0.25, burnHit: 1 } },
-];
-const SET_OF = {};
-for (const s of SETS) for (const p of s.pieces) for (const id of [].concat(p)) (SET_OF[id] = SET_OF[id] || []).push(s);
+// La Forge (2026-11-26): sets have six armour pieces (gear.js GEAR_SETS), bonuses at 2, 4 and 6 worn.
+// sets.js fills SETS and SET_OF once every set exists (dungeons.js adds one per world).
+const SETS = [], SET_OF = {};
 const worn = () => Object.values(S.equip).filter(Boolean);
 // How many pieces of a set you wear (base ids: a perfect copy counts as its item).
 function setWorn(s) {
   const w = worn().map((id) => (ITEMS[id] && ITEMS[id].base) || id);
-  return s.pieces.filter((p) => [].concat(p).some((id) => w.includes(id))).length;
+  return s.pieces.filter((id) => w.includes(id)).length;
 }
+// The bonuses you have, summed once per change of gear (perk() is read on every hit).
+const SFX = { sig: null, fx: {} };
 function setFx(k) {
-  let v = 0;
-  for (const s of SETS) { const n = setWorn(s); if (n >= 2) v += s.b2[k] || 0; if (n >= 3) v += s.b3[k] || 0; }
-  return v;
+  const sig = Object.values(S.equip).join('|');
+  if (sig !== SFX.sig) {
+    SFX.sig = sig; SFX.fx = {};
+    const add = (b) => { for (const x in b || {}) SFX.fx[x] = (SFX.fx[x] || 0) + b[x]; };
+    for (const s of SETS) { const n = setWorn(s); if (n >= 2) add(s.b2); if (n >= 4) add(s.b4); if (n >= 6) add(s.b6); }
+  }
+  return SFX.fx[k] || 0;
 }
 // A perk's total: gear + sets.
 const perk = (k) => gearStat(k) + setFx(k);

@@ -9,7 +9,7 @@ Object.assign(ICONS.ui, { search: 'ws-search', sort: 'ws-sort' });
 
 // Families of what a recipe makes. Gear splits by slot; colours reuse the bank's family colours.
 const WS_CATS = [
-  ['weapon', 'weapon', 'Weapons', 'equip'], ['armor', 'armor', 'Armor', 'equip'], ['accessory', 'accessory', 'Accessories', 'equip'],
+  ['weapon', 'weapon', 'Weapons', 'equip'], ['armor', 'chest', 'Armor', 'equip'], ['jewel', 'amulet', 'Jewellery', 'equip'], ['set', 'set', 'Sets', 'equip'],
   ['food', 'k-food', 'Consumables', 'food'], ['scroll', 'k-scroll', 'Scrolls', 'scroll'], ['tool', 'k-tool', 'Tools', 'tool'],
   ['res', 'k-res', 'Materials', 'res'], ['trade', 'gold', 'Trade goods', 'chest'], ['chest', 'k-chest', 'Treasure', 'chest'],
 ];
@@ -29,7 +29,8 @@ const WS_SORTS = {
 function wsCat(a) {
   const o = wsOut(a), it = o && ITEMS[o];
   if (!it) return 'res';
-  return it.type === 'equip' ? it.slot : it.type === 'trade' ? 'trade' : itemKind(o);
+  if (it.type === 'equip') return it.set ? 'set' : it.slot === 'weapon' ? 'weapon' : SLOT_INFO[it.slot] && SLOT_INFO[it.slot].kind === 'jewel' ? 'jewel' : 'armor';
+  return it.type === 'trade' ? 'trade' : itemKind(o);
 }
 const wsLocked = (st) => st === 'locked' || st === 'schem';
 // No overload: a piece of gear whose world is not open yet stays out of the workshop (and its counts)

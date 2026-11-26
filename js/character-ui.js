@@ -10,7 +10,7 @@
    ========================================================================== */
 
 let chSlot = 'weapon';
-const CH_GEAR = [['weapon', 'Weapon'], ['armor', 'Armor'], ['accessory', 'Accessory']];
+const CH_GEAR = GEAR_SLOTS.map((s) => [s, SLOT_INFO[s].name]);   // gear.js
 const chBagOf = (type) => Object.keys(S.items).filter((k) => ITEMS[k] && ITEMS[k].type === type && S.items[k] > 0);
 const chFoodOn = () => featureOpen('battle');
 const chFruitOn = () => !!S.fruit || chBagOf('fruit').length > 0;
@@ -115,8 +115,8 @@ function chCands(slot) {
 }
 
 /* ------------------------------------------------------------ the paper doll */
-const CH_EMPTY_IC = { weapon: 'weapon', armor: 'armor', accessory: 'accessory', food: 'food', fruit: 'fruit' };
-const CH_LABEL = { weapon: 'Weapon', armor: 'Armor', accessory: 'Accessory', food: 'Food', fruit: 'Fruit' };
+const CH_EMPTY_IC = Object.assign({ food: 'food', fruit: 'fruit' }, Object.fromEntries(GEAR_SLOTS.map((s) => [s, s])));
+const CH_LABEL = Object.assign({ food: 'Food', fruit: 'Fruit' }, Object.fromEntries(CH_GEAR));
 function chWornTile(s) {
   if (s === 'weapon') return curArm() ? armTile(curArm(), { tag: 'span', attrs: '', cls: '' }) : null;
   if (s === 'food') return S.combat.food && count(S.combat.food) ? tile(S.combat.food, `<span data-count="${S.combat.food}">${fmt(count(S.combat.food))}</span>`) : null;
@@ -196,7 +196,7 @@ function chWornHTML(s) {
 }
 function chListHTML(s, cands) {
   const rows = cands.map((c) => `<div class="ch-row ${c.score > 0 ? 'better' : ''}">${c.tile}<span class="chr-t"><b>${esc(c.name)}</b><small>${c.sub}</small><span class="chr-d">${c.diff}</span></span>${c.btn}</div>`).join('');
-  const empty = { weapon: 'No other weapon.', armor: 'No armor yet.', accessory: 'No accessory yet.', food: 'No food yet.', fruit: 'No fruit.' }[s];
+  const empty = { weapon: 'No other weapon.', food: 'No food yet.', fruit: 'No fruit.' }[s] || 'Nothing for this slot yet.';
   const bare = !chWornTile(s) && !cands.length;
   return `<section class="win ch-list ${bare ? 'bare' : ''}">
     ${hdr(CH_LABEL[s] === 'Food' ? 'Battle food' : CH_LABEL[s] === 'Fruit' ? 'Abyss Fruit' : CH_LABEL[s], cands.length ? `${cands.length} owned` : '')}
@@ -279,7 +279,7 @@ document.addEventListener('click', (ev) => {
     S.ui.bank = ['all', 'equip'].includes(S.ui.bank) ? S.ui.bank : 'equip';
     setView('hero');
   } else if (t.dataset.chinspect) {
-    // worn armor and accessories: sockets and reforge live in the Bank inspector
+    // worn armour: socket and reforge live in the Bank inspector
     selItem = t.dataset.chinspect; selArm = null;
     setView('hero');
   }

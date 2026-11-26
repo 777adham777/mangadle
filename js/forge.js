@@ -161,8 +161,10 @@ function migrateArms() {
 /* ------------------------------------------------------------ B. refinement */
 const REF_INGOT = [[30, 'reishi_ingot'], [100, 'silver_ingot'], [300, 'frost_ingot'], [700, 'void_ingot'], [1500, 'black_ingot'], [4000, 'star_ingot'], [15000, 'sun_ingot'], [Infinity, 'rift_ingot']];
 const REF_GEM = { 4: 'jade', 7: 'ruby', 10: 'void_diamond' };
+// A weapon forged from shards (gear.js) takes one of its own shards instead of the ingots, while you have one.
+const refShard = (a) => { const sh = a.id + '_shard'; return ITEMS[sh] && ITEMS[sh].shardOf === a.id && count(sh) >= 1 ? sh : null; };
 function refCost(a) {
-  const next = a.ref + 1, ing = REF_INGOT.find((x) => forgeVal(a.id) < x[0])[1], c = { [ing]: 2 + 2 * a.ref };
+  const next = a.ref + 1, sh = refShard(a), ing = REF_INGOT.find((x) => forgeVal(a.id) < x[0])[1], c = sh ? { [sh]: 1 } : { [ing]: 2 + 2 * a.ref };
   if (REF_GEM[next]) c[REF_GEM[next]] = 1;
   return c;
 }

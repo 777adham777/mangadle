@@ -29,11 +29,11 @@ const perkVal = (k, v) => {
 /* ---------------------------------------------------------------- the build panel */
 function setLine(s) {
   const n = setWorn(s), w = worn().map((id) => (ITEMS[id] && ITEMS[id].base) || id);
-  const pieces = s.pieces.map((p) => { const ids = [].concat(p), on = ids.find((id) => w.includes(id)); return { id: on || ids[0], on: !!on }; });
+  const pieces = s.pieces.map((id) => ({ id, on: w.includes(id) }));
   const bon = (b, need) => `<li class="${n >= need ? 'on' : ''}"><b>${need}</b><span>${Object.entries(b).map(([k, v]) => (PERKS[k] ? `${PERKS[k].name} ${perkVal(k, v)}` : k === 'gold' ? `Gold +${pct(v)}` : k === 'dodge' ? `Dodge +${pct(v)}` : k)).join(' · ')}</span></li>`;
   return `<div class="bset ${n >= 2 ? 'on' : ''}"><div class="bset-h"><b>${esc(s.name)}</b><em>${n} / ${s.pieces.length}</em></div>
     <div class="bset-p">${pieces.map((p) => tile(p.id, null, { cls: 'xs ' + (p.on ? '' : 'dim'), unknown: !S.found[p.id] })).join('')}</div>
-    <ul class="bset-b">${bon(s.b2, 2)}${bon(s.b3, 3)}</ul></div>`;
+    <ul class="bset-b">${bon(s.b2, 2)}${bon(s.b4, 4)}${bon(s.b6, 6)}</ul>${s.from.length ? `<small class="muted">${ui('set')}Sigil: ${esc(s.from.join(', '))}</small>` : ''}</div>`;
 }
 function buildHTML() {
   const arch = buildArch(), rows = [];
@@ -52,7 +52,7 @@ UIX.equipBottom.push(() => (featureOpen('battle') ? buildHTML() : ''));
 UIX.inspector.push((id) => {
   const b = (ITEMS[id] && ITEMS[id].base) || id, sets = SET_OF[b];
   if (!sets) return '';
-  return `${hdr('Set', 'wear 2 or 3 pieces')}${sets.map(setLine).join('')}`;
+  return `${hdr('Set', '2, 4 and 6 pieces')}${sets.map(setLine).join('')}`;
 });
 // A perk's meaning, on hover in the build list.
 document.addEventListener('mouseover', (ev) => {

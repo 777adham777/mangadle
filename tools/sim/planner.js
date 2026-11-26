@@ -49,7 +49,7 @@ const FR = new Map();
 let FRK = null;
 const PK = { ep: -1, c: '', v: '' };
 const powerKey = () => { const c = memoCombo(); if (PK.ep === EPOCH && PK.c === c) return PK.v; PK.ep = EPOCH; PK.c = c; return (PK.v = powerKeyNow()); };
-const powerKeyNow = () => charLv() + '|' + S.equip.armor + S.equip.accessory + S.equipU + '|' + equipped().map((id) => id + techLv(id)).join(',') + '|' + Math.floor(totalTrain() / 10)
+const powerKeyNow = () => charLv() + '|' + ARMOR_SLOTS.map((x) => S.equip[x]).join(',') + S.equipU + '|' + equipped().map((id) => id + techLv(id)).join(',') + '|' + Math.floor(totalTrain() / 10)
   + '|' + (S.fruit || '') + fruitRank() + '|' + Object.keys(S.gates).length + '|' + (S.combat.food && count(S.combat.food) >= 1 ? S.combat.food : '') + '|' + (S.shop.lucky_coin || 0) + (S.shop.satchel || 0) + '|' + Object.keys(P.fail).length;
 function frate(zi) {
   const k = powerKey();
@@ -164,6 +164,10 @@ function trainTask(skill) {
   acts.sort((a, b) => eff(b) - eff(a));
   for (const a of acts) {
     if (!a.in || canAfford(a.in) || chainRates(skill, a, 0, true)) return Object.assign({ kind: 'act', skill, id: a.id }, fresh(a) ? { want: { id: outOf(a), n: stock(outOf(a)) + 1 } } : {});
+    // a new piece whose materials can be had (gathered, crafted or dropped where you can fight): go get them
+    if (fresh(a) && Object.keys(a.in).every((k) => stock(k) >= a.in[k] || producerOf(k) || (DROPS[k] || []).some((x) => zoneOk(x.zi)))) {
+      for (const k in a.in) if (stock(k) < a.in[k]) { const t = needTask(k, a.in[k]); if (t) return t; }
+    }
     if (Object.keys(a.in).every((k) => foodGatherable(k))) {
       for (const k in a.in) if (stock(k) < a.in[k]) return needTask(k, a.in[k] * 60, 1);
     }
@@ -234,18 +238,18 @@ function evalWith(slot, id, u, zi) {
 const EB = new Map();
 function equipBest(zi) {
   const owned = Object.keys(S.items).filter((k) => ITEMS[k] && ITEMS[k].type === 'equip' && S.items[k] >= 1);
-  const sig = ZONES[zi].realm + (ZONES[zi].boss ? 'B' : '') + '|' + Math.floor(charLv() / 15) + '|' + S.arms.map((a) => a.u + ':' + a.ref + a.awk).join(',') + '|' + owned.concat([S.equip.armor, S.equip.accessory]).sort().join(',');
+  const sig = ZONES[zi].realm + (ZONES[zi].boss ? 'B' : '') + '|' + Math.floor(charLv() / 15) + '|' + S.arms.map((a) => a.u + ':' + a.ref + a.awk).join(',') + '|' + owned.concat(ARMOR_SLOTS.map((x) => S.equip[x])).sort().join(',');
   const got = EB.get(sig);
   if (got) {
     if (got.u && S.equipU !== got.u && S.arms.some((a) => a.u === got.u)) equipArm(got.u);
-    for (const slot of ['armor', 'accessory']) if (got[slot] && S.equip[slot] !== got[slot] && count(got[slot]) >= 1) equip(got[slot]);
+    for (const slot of ARMOR_SLOTS) if (got[slot] && S.equip[slot] !== got[slot] && count(got[slot]) >= 1) equip(got[slot]);
     return;
   }
   equipBestNow(zi);
-  EB.set(sig, { u: S.equipU, armor: S.equip.armor, accessory: S.equip.accessory });
+  EB.set(sig, Object.assign({ u: S.equipU }, Object.fromEntries(ARMOR_SLOTS.map((x) => [x, S.equip[x]]))));
 }
 function equipBestNow(zi) {
-  for (const slot of ['weapon', 'armor', 'accessory']) {
+  for (const slot of GEAR_SLOTS) {
     let best = null, bu = null, br = evalWith(slot, S.equip[slot], S.equipU, zi);
     if (slot === 'weapon') {
       for (const a of S.arms.slice().sort((x, y) => armBaseAtk(y) - armBaseAtk(x)).slice(0, 2)) { const r = evalWith(slot, a.id, a.u, zi); if (r < br - 1e-9) { br = r; best = a.id; bu = a.u; } }
@@ -264,20 +268,19 @@ function worldGear(zi) {
   const best = {};
   for (const id in PROD) {
     const it = ITEMS[id];
-    if (!it || it.type !== 'equip' || !['armor', 'accessory'].includes(it.slot) || it.stage == null) continue;
+    if (!it || it.type !== 'equip' || !ARMOR_SLOTS.includes(it.slot) || it.stage == null || it.set) continue;
     if (it.stage > zi + 0.7 || it.stage < (lo == null ? 0 : lo)) continue;
     if (!PROD[id].some((p) => SKILLS[p.skill].type === 'craft')) continue;
     const v = (it.stats.hp || 0) + 4 * (it.stats.def || 0);
     if (!best[it.slot] || v > best[it.slot].v) best[it.slot] = { id, v };
   }
-  return { armor: best.armor && best.armor.id, accessory: best.accessory && best.accessory.id };
+  return Object.fromEntries(ARMOR_SLOTS.map((x) => [x, best[x] && best[x].id]));
 }
 function worldGearEat(zi) {
-  const g = worldGear(zi), keep = { armor: S.equip.armor, accessory: S.equip.accessory };
-  if (g.armor) S.equip.armor = g.armor;
-  if (g.accessory) S.equip.accessory = g.accessory;
+  const g = worldGear(zi), keep = Object.fromEntries(ARMOR_SLOTS.map((x) => [x, S.equip[x]]));
+  for (const x of ARMOR_SLOTS) if (g[x]) S.equip[x] = g[x];
   const r = { eat: autoEatThreshold() * pMaxHp(), def: pDef(), taken: hmul('taken'), gear: g };
-  S.equip.armor = keep.armor; S.equip.accessory = keep.accessory;
+  Object.assign(S.equip, keep);
   return r;
 }
 function gearProject(zi) {
@@ -335,7 +338,7 @@ function combatGoal(zi) {
   // a guardian whose blow you cannot stand yet: its world's armour and accessory first
   if (ZONES[zi].boss && frate(zi).blow >= eatLine()) {
     const g = worldGear(zi);
-    for (const slot of ['armor', 'accessory']) { const id = g[slot]; if (id && S.equip[slot] !== id && count(id) < 1 && !(P.noProj[id] > simH())) { const t = needTask(id, 1); if (t) return t; P.noProj[id] = simH() + 6; } }
+    for (const slot of ARMOR_SLOTS) { const id = g[slot]; if (id && S.equip[slot] !== id && count(id) < 1 && !(P.noProj[id] > simH())) { const t = needTask(id, 1); if (t) return t; P.noProj[id] = simH() + 6; } }
   }
   return powerUp(zi);
 }
@@ -358,8 +361,9 @@ function questTask() {
     if (count(dgKey(id)) < 1) return needTask(dgKey(id), 1) || fightTask(gzi);
     return { kind: 'dungeon', id };
   }
-  if (/^Wear a weapon, an armor/.test(txt)) {
-    for (const slot of ['armor', 'accessory']) {
+  if (/^Wear three pieces/.test(txt)) {
+    for (const slot of ARMOR_SLOTS) {
+      if (GEAR_SLOTS.filter((x) => S.equip[x]).length >= 3) break;
       if (S.equip[slot]) continue;
       const own = Object.keys(S.items).find((k) => ITEMS[k] && ITEMS[k].type === 'equip' && ITEMS[k].slot === slot && S.items[k] >= 1);
       if (own) { equip(own); continue; }
@@ -513,7 +517,7 @@ function withFood(t) {
   return t;
 }
 // La Forge (P1): a player crafts each new piece once, for its first-craft XP: at once when the materials are
-// in the bank, or after a short gathering trip (60 units at most, gathered or crafted, never a rare drop).
+// in the bank, or after a short trip for what is missing (60 units at most: gathered, crafted or dropped).
 function forgeTask() {
   if (!skillOpen('arts') || MAC.night) return null;
   const lv = skillLv('arts');
@@ -529,7 +533,7 @@ function forgeTask() {
   const o = Object.keys(best.out)[0];
   if (bc <= 0) return { kind: 'act', skill: 'arts', id: best.id, want: { id: o, n: stock(o) + 1 } };
   if (bc > 60) return null;
-  for (const k in best.in) if (stock(k) < best.in[k]) return producerOf(k) ? needTask(k, best.in[k]) : null;
+  for (const k in best.in) if (stock(k) < best.in[k]) return producerOf(k) || (DROPS[k] || []).some((x) => zoneOk(x.zi)) ? needTask(k, best.in[k]) : null;
   return null;
 }
 function plan() {

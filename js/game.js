@@ -42,7 +42,7 @@ function defaultState() {
     action: null,                       // { skill, id, prog }
     combat: { zone: null, enemy: null, eHp: 0, pT: 0, eT: 0, respawn: 0, hp: 50,
               food: null, kills: {}, log: [] },   // food is equipped by the player
-    equip: { weapon: null, armor: null, accessory: null },   // your first weapon is carved in Crafting
+    equip: { weapon: null, head: null, chest: null, legs: null, feet: null, amulet: null, ring: null },   // gear.js GEAR_SLOTS; your first weapon is carved in Crafting
     fruit: null, fruitRank: 0,          // eating copies of your fruit raises its rank (max FRUIT_RANK_MAX)
     shop: {},
     energy: { capLv: 0, powLv: 0, alloc: {}, lvl: {}, prog: {}, step: '10' },
@@ -101,6 +101,12 @@ function sanitize() {
   for (const id in S.items) if (!ITEMS[id] || !(S.items[id] > 0)) delete S.items[id];
   for (const k in S.skills) if (!SKILLS[k]) delete S.skills[k];
   delete S.equip.gadget;   // the gadget slot is gone (GDD: no Tinkering)
+  // La Forge: armour and accessory became six slots; what you wore goes to its new slot
+  for (const old of ['armor', 'accessory']) {
+    if (!(old in S.equip)) continue;
+    const id = S.equip[old]; delete S.equip[old];
+    if (id && ITEMS[id]) { if (!S.equip[ITEMS[id].slot]) S.equip[ITEMS[id].slot] = id; else addItem(id, 1); }
+  }
   for (const slot in S.equip) if (S.equip[slot] && !ITEMS[S.equip[slot]]) S.equip[slot] = null;
   if (S.fruit && !ITEMS[S.fruit]) S.fruit = null;
   if (S.action && (!SKILLS[S.action.skill] || !findAction(S.action.skill, S.action.id))) S.action = null;

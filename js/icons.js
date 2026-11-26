@@ -989,6 +989,13 @@ Object.assign(ICONS.item, { pine_crate: 'cargo-crate', cedar_toolbox: 'toolbox',
 Object.assign(ICON_COLOR, { pine_crate: '#d8b27a', cedar_toolbox: '#c8703e', bamboo_puppet: '#9fdc6a', mist_mask: '#a8b8d8',
   ironwood_beam: '#8a9098', blossom_lantern: '#ff9ec4', oak_totem: '#7fe0b0', heart_shrine: '#ffd36a' });
 for (const id in ITEMS) if (ITEMS[id].type === 'tool') ICON_COLOR[id] = ['#d48b4c', '#d3dae4', '#ffd23f'][Math.min(2, (ITEMS[id].tier || 1) - 1)];
+// La Forge (gear.js): the three armour slots game-icons had no glyph for, drawn plainly.
+Object.assign(GI, {
+  'pf-helm': 'M256 36C146 36 76 118 76 230v120c0 20 8 36 24 48l52 40h48V300h-64v-40h240v40h-64v138h48l52-40c16-12 24-28 24-48V230C436 118 366 36 256 36zm-24 40h48v120h-48z',
+  'pf-greaves': 'M118 40h104v110l-20 30 20 30v262h-92l8-262-20-30 20-30zM290 40h104l-12 110 20 30-20 30 8 262h-92V210l20-30-20-30z',
+  'pf-boot': 'M168 32h136v224c0 28 18 42 44 52l92 34c26 10 40 30 40 58v52H72v-56c0-18 8-30 24-38l72-36zM72 468h368v24H72z',
+});
+Object.assign(ICONS.ui, { head: 'pf-helm', chest: 'chest-armor', legs: 'pf-greaves', feet: 'pf-boot', amulet: 'gem-pendant', ring: 'ring', set: 'rune-stone' });
 // Items that bring their own fallback glyph and colour (armory.js) until their painted icon exists.
 for (const id in ITEMS) {
   const it = ITEMS[id];
