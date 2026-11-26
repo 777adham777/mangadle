@@ -161,3 +161,12 @@
 .ch-perk { color: var(--gold); }
 .ch-list .hdr .chl-acts { order: 2; display: flex; gap: 6px; text-transform: none; letter-spacing: 0; }
 .ch-list .hdr small { order: 3; }
+
+/* ---------- 1280-class screens: the eight slots sit on one row, so the slot list and stats keep room below */
+@media (min-width: 861px) and (max-width: 1380px) and (min-height: 620px) {
+  .ch-layout.fit .ch-stage { grid-template-columns: repeat(auto-fit, minmax(96px, 1fr)); gap: 8px; padding: 10px 12px 12px; }
+  .ch-layout.fit .ch-slot { padding: 8px 6px; gap: 6px; }
+  .ch-layout.fit .ch-slot .tile { --ts: 56px; }
+  .ch-layout.fit .chs-t b { font-size: 12.5px; }
+  .ch-layout.fit .chs-t .es-st { font-size: 10.5px; }
+}
