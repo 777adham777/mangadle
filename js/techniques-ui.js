@@ -118,8 +118,8 @@ function tkBookHTML() {
 
 VIEWS.techniques = () => {
   const ids = Object.keys(TECHNIQUES).filter((id) => worldInBuild(TECHNIQUES[id].realm)), known = ids.filter(techLv).length;
-  return `${ptitle('Your build', 'Techniques', `<span class="pill">${known} / ${ids.length} learned</span>`)}
-  ${fitCols('tq-board tk-page', `${introCardHTML('feature:techniques')}${tkLoadoutHTML()}${tkShelfHTML()}`, tkBookHTML())}`;
+  return `${ptitle('Your build', 'Techniques', `<span class="pill">${known} / ${ids.length} learned</span>${typeof skGuideBtn === 'function' ? skGuideBtn('techniques') : ''}`)}
+  ${fitCols('tq-board tk-page', `${tkLoadoutHTML()}${tkShelfHTML()}`, tkBookHTML())}`;
 };
 
 /* ------------------------------------------------------------ reading */

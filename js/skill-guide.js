@@ -10,14 +10,17 @@
    5. One tip worth knowing, then what makes it faster.
    Words are hand-written per skill (GUIDE_SK); everything else comes from the game data.
    Only skills you have opened are named, so nothing is spoiled.
+   A page's guide opens by itself, full screen, the first time you visit it (S.ui.guideSeen); this
+   replaced the intro cards. Pages that are not a skill (Techniques, Dungeons, the Spice Rack) have a
+   short guide of their own (GUIDE_PG).
    ========================================================================== */
 
 // Icon specs: 'i:item', 'u:ui icon', 's:skill'.
 const GUIDE_SK = {
   woodcutting: { tag: 'Every journey starts with an axe and a tree.',
-    steps: [['i:pine_log', 'Chop a Pine Log', 'Click a tree in the list. You keep chopping on your own, even while you are away.'],
-            ['i:healing_leaf', 'Mind the undergrowth', 'Chops also turn up herbs like Healing Leaves and Chakra Sap. Crafting turns them into pills.'],
-            ['i:cedar_log', 'Climb to bigger trees', 'Cedar opens at level 10. Better logs mean better gear, and the forge and the ships need wood too.']],
+    steps: [['i:pine_log', 'Chop a Pine Log', 'Press Start. You keep chopping on your own, even while you are away.'],
+            ['i:healing_leaf', 'Mind the undergrowth', 'Chops also turn up herbs. Crafting turns them into pills.'],
+            ['i:cedar_log', 'Climb to bigger trees', 'A new tree opens at level 10. Better logs mean better gear.']],
     tip: ['u:rare', 'Rare finds hide in the canopy: amber, nests, pouches. Amber Eye (Lv 70) makes them 50% more common.'] },
   arts: { tag: 'Wood and herbs go in, weapons and pills come out.',
     steps: [['i:training_kunai', 'Make your first weapon', 'A Training Kunai only needs Pine Logs. Equip it from your Character page.'],
@@ -105,7 +108,8 @@ const sgIc = (spec) => {
   return ui(k === 'u' ? id : 'star') || ui('star');
 };
 
-const skGuideBtn = (skill) => (SKILLS[skill] ? `<button class="sk-help" data-skguide="${skill}" title="Guide: how ${esc(SKILLS[skill].name)} works">?</button>` : '');
+const guideName = (k) => (SKILLS[k] ? SKILLS[k].name : GUIDE_PG[k] ? GUIDE_PG[k].title : '');
+const skGuideBtn = (k) => (guideName(k) ? `<button class="sk-help" data-skguide="${k}" title="Guide: how ${esc(guideName(k))} works">?</button>` : '');
 const sgActs = (skill) => (typeof wsActs === 'function' ? wsActs(skill) : SKILLS[skill].actions);
 const sgOuts = (a) => Object.keys(a.out || {}).concat((a.extra || []).map(([t]) => t)).filter((k) => ITEMS[k]);
 const sgSkillOpen = (k) => SKILLS[k] && skillOpen(k) && (SKILLS[k].realm === 'combat' || realmOpen(SKILLS[k].realm));
@@ -194,9 +198,73 @@ function skillGuideHTML(skill) {
   </div>`;
 }
 
+/* ---- pages that are not a skill: the same frame, shorter */
+const GUIDE_PG = {
+  techniques: { title: 'Techniques', icon: 'u:technique', bg: 'shinobi', unlock: 'feature:techniques', kick: 'Your build',
+    tag: 'Foes drop scrolls. Each one teaches a technique.',
+    steps: [['u:technique', 'Read your scrolls', 'A scroll teaches a technique, or levels up one you know. Rarer scroll, rarer technique.'],
+            ['u:plus', 'Fill your slots', 'More slots open as you level. Actives fire in order; passives are always on.']] },
+  dungeons: { title: 'Dungeons', icon: 'u:map', bg: 'shinobi', unlock: 'feature:dungeons', kick: 'Battlefield',
+    tag: 'Five rooms in a row, no rest. One key per run.',
+    steps: [['u:food', 'Bring food', 'Your HP does not come back between rooms.'],
+            ['u:gold', 'A set per dungeon', 'Every clear gives a sigil of its set.']] },
+  spices: { title: 'The Spice Rack', icon: 'u:spices', bg: 'seas', unlock: 'feature:spices', kick: 'Cooking',
+    tag: 'Plain fish fills you up. Seasoned fish wins fights.',
+    steps: [['u:spices', 'Pick a seasoning', 'Every dish uses one and comes out seasoned. Run out and dishes come out plain.'],
+            ['u:hp', 'Battle buffs', 'Salt heals more, pepper hits harder, lemon guards, chili speeds you up.'],
+            ['u:perfect', 'Perfect dishes', 'Now and then a dish comes out Perfect: 50% stronger.']] },
+};
+function pageGuideHTML(k) {
+  const G = GUIDE_PG[k];
+  return `<div class="sg sg-pg" style="--rc:${rc(G.bg)}">
+    <header class="sg-hero" style="background-image:url('assets/backgrounds/combat/${G.bg}.webp')">
+      <span class="sg-ic">${sgIc(G.icon)}</span>
+      <div class="sg-hero-t"><small>${esc(G.kick)} · Guide</small><h2>${esc(G.title)}</h2><p>${esc(G.tag)}</p></div>
+      <button class="sg-x" data-sgclose title="Close (Esc)">${ui('close')}</button>
+    </header>
+    <section class="sg-steps">${G.steps.map(([icn, t, d], i) => `<div class="sg-step"><span class="sg-n">${i + 1}</span><span class="sg-big">${sgIc(icn)}</span><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('')}</section>
+  </div>`;
+}
+const guideHTML = (k) => (SKILLS[k] ? skillGuideHTML(k) : pageGuideHTML(k));
+
+/* ---- first visit: the page's guide opens by itself, once */
+// Older saves: a page you already used (or whose intro card you closed) counts as seen, so nobody gets a pile of guides.
+function guideSeen() {
+  if (S.ui.guideSeen) return S.ui.guideSeen;
+  const G = (S.ui.guideSeen = {}), was = S.ui.introSeen || {};
+  for (const k in SKILLS) if ((S.skills[k] && S.skills[k].xp > 0) || was['skill:' + k]) G[k] = 1;
+  if (S.stats.kills || was['feature:battle']) G.character = 1;
+  if (Object.keys(S.tech.lv).length || was['feature:techniques']) G.techniques = 1;
+  if (Object.values(S.dg || {}).some((d) => d && d.runs) || was['feature:dungeons']) G.dungeons = 1;
+  if (S.stats.seasoned || was['feature:spices']) G.spices = 1;
+  delete S.ui.introSeen;
+  return G;
+}
+// The guides of the page on screen, in the order they open.
+function viewGuides() {
+  const v = S.ui.view || '';
+  if (v.startsWith('realm:')) { const k = v.split(':')[2]; return [k, k === 'cooking' ? 'spices' : null]; }
+  if (v === 'battle') return ['character', 'dungeons'];
+  if (v === 'techniques') return ['techniques'];
+  return [];
+}
+const guideReady = (k) => !!k && (SKILLS[k] ? !!GUIDE_SK[k] : !!GUIDE_PG[k] && isUnlocked(GUIDE_PG[k].unlock));
+let guideT = 0;
+UPD.push(() => {
+  const now = performance.now();
+  if (now - guideT < 400) return;
+  guideT = now;
+  // never over another window, the beta cover, a reveal, or a hidden tab
+  if (document.hidden || $('#modal').classList.contains('show') || document.querySelector('#beta-cover.show, .rv-wrap, .cx-wrap')) return;
+  const seen = guideSeen(), k = viewGuides().find((x) => guideReady(x) && !seen[x]);
+  if (!k) return;
+  seen[k] = 1;
+  openModal(guideHTML(k), 'Got it');
+});
+
 document.addEventListener('click', (ev) => {
   const g = ev.target.closest('[data-skguide]');
-  if (g) { openModal(skillGuideHTML(g.dataset.skguide), 'Close', true); return; }
+  if (g) { openModal(guideHTML(g.dataset.skguide), 'Close', true); return; }
   if (ev.target.closest('[data-sgclose]')) { $('#modal').classList.remove('show', 'nofoot'); return; }
   const a = ev.target.closest('[data-sgo]');
   if (!a || ev.target.closest('.sg-it')) return;   // a loose item icon only shows its card

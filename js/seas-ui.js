@@ -207,11 +207,3 @@ on('qtier', (d) => {
   burst(`${Q_TITLE[qKind(d.skill)]} bonus`, d.tier.text, ui(qKind(d.skill) === 'shiny' ? 'shiny' : 'perfect'), '#ffd75e');
   toast(`${Q_TITLE[qKind(d.skill)]} (${SKILLS[d.skill].name}) reached ${d.tier.need}: ${d.tier.text}.`, 'rare');
 });
-
-/* ================================================================ first look at the spice rack */
-INTRO['feature:spices'] = { icon: () => ui('spices'), kicker: 'New in Cooking', title: 'The Spice Rack',
-  text: 'The galley cook slides her spice box across the counter. "Plain fish fills you up. Seasoned fish wins fights."',
-  points: [[() => ui('spices'), 'Pick a seasoning', 'Every dish you cook uses one and comes out seasoned. Run out and dishes come out plain.'],
-           [() => ui('hp'), 'Battle buffs', 'Salt heals more, pepper hits harder, lemon guards, chili speeds you up...'],
-           [() => ui('perfect'), 'Perfect dishes', 'Now and then a dish comes out Perfect: 50% stronger, and logged in the Perfect Log.']],
-  go: 'realm:seas:cooking', btn: 'Open the spice rack' };

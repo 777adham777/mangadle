@@ -17,13 +17,13 @@ function harbourHTML() {
       <button class="mini-btn" data-recall="${i}" title="Call the ship back (its hull wood and provisions are lost)">${ui('close')}</button></div>`;
   };
   const rows = E.ships.map(ship);
-  for (let i = E.ships.length; i < n; i++) rows.push(`<div class="ship-row free">${ui('play')}<span>Free ship</span></div>`);
+  for (let i = E.ships.length; i < n; i++) rows.push(`<div class="ship-row free">${gi('anchor')}<span>Docked · ready to sail</span></div>`);
   if (n < 2) rows.push(`<div class="ship-row locked">${ui('lock')}<span>Second ship at Voyaging 30</span></div>`);
   const L = E.last, la = L && findAction('voyaging', L.id);
   return `<section class="win harbour">${hdr('Harbour', `${E.ships.length} / ${n} at sea`)}
     <div class="ships">${rows.join('')}</div>
     <div class="exp-ctl">
-      <div class="ctrl"><label>Trip</label><div class="seg">${EXP_DURS.map(([d, l, b]) => `<button class="${E.dur === d ? 'on' : ''}" data-expdur="${d}" title="${b ? `+${b * 100}% hauls` : 'Shortest trip'}"><span>${l}</span></button>`).join('')}</div></div>
+      <div class="ctrl"><label>Trip</label><div class="seg exp-dur">${EXP_DURS.map(([d, l, b]) => `<button class="${E.dur === d ? 'on' : ''}" data-expdur="${d}" title="${b ? `+${b * 100}% hauls` : 'Shortest trip'}"><span class="wl-l">${l}</span><span class="wl-s">${l.replace(/ hours?/, ' h')}</span></button>`).join('')}</div></div>
       <label class="tog"><input type="checkbox" data-expfood ${E.food ? 'checked' : ''}><span>Pack provisions (+${EXP_FOOD * 100}% hauls)</span></label>
       <label class="tog"><input type="checkbox" data-exprepeat ${E.repeat ? 'checked' : ''}><span>Send ships out again on return</span></label>
     </div>

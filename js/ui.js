@@ -500,10 +500,8 @@ const VIEWS = {};
 // realmScene: an animated scene under a skill's banner (seas-ui.js); when one is shown it carries the farm numbers.
 const UIX = { realmIntro: [], bagTop: [], quick: [], homeTop: [], questsBottom: [], realmSide: [], realmTop: [], realmScene: [], battleTop: [], battleSide: [], stageMe: [], inspector: [], inspectorAny: [], actLines: [], collectionTop: [], nowbar: [], colDetail: [], stagesTop: [] };
 const uix = (k, ...a) => UIX[k].map((f) => f(...a) || '').join('');
-// The quiet guide (guide.js): the first line of help on Woodcutting, and each skill's card on its first visit.
-// One intro card at a time: the next one shows once this one is read.
-UIX.realmIntro.push((realm, skill) => firstHintHTML(realm, skill) + (introCardHTML('skill:' + skill) || (skill === 'cooking' ? introCardHTML('feature:spices') : '')));
-UIX.battleTop.push(() => introCardHTML('feature:battle') || introCardHTML('feature:dungeons'));
+// The quiet guide (guide.js): the first line of help on Woodcutting. A page's guide opens by itself on the first visit (skill-guide.js).
+UIX.realmIntro.push((realm, skill) => firstHintHTML(realm, skill));
 
 /* ------------------------------------------------------------- overview */
 VIEWS.home = () => {
@@ -615,7 +613,7 @@ VIEWS.realm = (realm, skill) => {
   if (s.type === 'craft') list = [LIST.craft, workshopHTML(skill, scene ? { detail: false } : {})];
   else if (scene && (s.type === 'gather' || s.type === 'bond')) list = [PICK_TITLE[skill] || 'Actions', pickerHTML(skill)];
   else if (grid && s.actions.length) list = [LIST[s.type] || 'Gathering', `<div class="act-grid" style="--rc:${rc(realm)}">${s.actions.filter((x) => x.level <= b.L).map((x) => actCard(skill, x)).join('')}</div>
-    ${open < s.actions.length ? `<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div>` : ''}`];
+    ${open < s.actions.length ? `<section class="win lock-win">${hdr(s.type === 'voyage' ? 'Later destinations' : 'Later')}<div class="lock-strip">${s.actions.filter((x) => x.level > b.L).map((x) => `<div class="lchip" data-card="${skill}:${x.id}" data-state="${actState(skill, x)}" title="${esc(x.name)}: requires ${s.name} level ${x.level}${x.schem && !S.known[x.schem] ? ' and its schematic' : ''}">${tile(null, null, { r: actRarity(x), icon: actIc(skill, x), cls: 'xs' })}<span><b>${esc(x.name)}</b><small>${x.schem && !S.known[x.schem] ? ui('schematic') : ui('lock')}Lv ${x.level}</small></span></div>`).join('')}</div></section>` : ''}`];
   // the first-visit card, then the focus panel, then the skill's own panels (heat, plots, companions...)
   const intro = uix('realmIntro', realm, skill);
   const main = scene ? `${intro}${scene}${top}` : `${intro}${active ? `<section class="win farm-win">${farmPanel()}</section>` : ''}${top}`;
@@ -680,7 +678,7 @@ function rareTiles(skill) {
     } else out.push(tile(id, fmtRate(c * m), { unknown: !isFound(id) }));
   }
   const pet = PETS.find((x) => x.skill === skill);
-  if (pet) out.push(petTile(pet, { n: S.pets[pet.id] ? 'Owned' : `~${PET_HOURS}h`, reveal: false }));
+  if (pet) out.push(petTile(pet, { n: S.pets[pet.id] ? 'Owned' : `1 / ${PET_HOURS}h`, reveal: false }));
   return out;
 }
 
@@ -1096,7 +1094,7 @@ VIEWS.settings = () => `
   ${ptitle('System', 'Settings')}
   ${fitCols('set-board', `
   <section class="win">${hdr('Help')}
-    <div class="btn-row">${gbtn(S.ui.noTips ? 'Turn hints on' : 'Turn hints off', 'info', 'data-toggletips', 'dark')}${gbtn('Show intro cards again', 'hero', 'data-reintro', 'dark')}</div></section>`,
+    <div class="btn-row">${gbtn(S.ui.noTips ? 'Turn hints on' : 'Turn hints off', 'info', 'data-toggletips', 'dark')}${gbtn('Show page guides again', 'hero', 'data-reintro', 'dark')}</div></section>`,
   `<section class="win">${hdr('Save data', 'autosaves every 10 seconds')}
     <div class="btn-row">${gbtn('Save now', 'check', 'data-save', 'dark')}${gbtn('Export', 'log', 'data-export', 'dark')}${gbtn('Import', 'open', 'data-import', 'dark')}${gbtn('Hard reset…', 'close', 'data-wipe', 'danger')}</div>
     <textarea id="savebox" rows="5" placeholder="Paste a save here, then Import."></textarea>
@@ -1275,19 +1273,20 @@ function journalHTML() {
 
 /* =============================================================== FX */
 let floatCount = 0;
-function floatAt(el, html, cls, dx, dy, delay) {
-  if (!el || floatCount > 24) return;
+function floatAt(el, html, cls, dx, dy, delay, still) {
+  if (!el || floatCount > 24) return null;
   const r = el.getBoundingClientRect();
   if (!r.width || r.bottom < 0 || r.top > innerHeight) return;
   const f = document.createElement('div');
   f.className = 'float ' + (cls || '');
   f.innerHTML = html;
-  f.style.left = r.left + r.width / 2 + (dx || 0) + (Math.random() * 30 - 15) + 'px';
+  f.style.left = r.left + r.width / 2 + (dx || 0) + (still ? 0 : Math.random() * 30 - 15) + 'px';
   f.style.top = r.top + r.height * 0.35 + (dy || 0) + 'px';
   if (delay) f.style.animationDelay = delay + 'ms';
   $('#fx').appendChild(f);
   floatCount++;
   setTimeout(() => { f.remove(); floatCount--; }, 1100 + (delay || 0));
+  return f;
 }
 function retrigger(el, cls) { if (!el) return; el.classList.remove(cls); void el.offsetWidth; el.classList.add(cls); }
 let burstBusy = false;
@@ -1312,20 +1311,37 @@ function burst(title, sub, icon, color, kind) { return bannerBurst(title, sub, i
 }
 function flash() { const f = document.createElement('div'); f.className = 'flash'; document.body.appendChild(f); setTimeout(() => f.remove(), 500); }
 function inBattleView() { return S.ui.view === 'battle'; }
+// One float per action, one line per gain then the XP. Results of the same frame add up (catch-up, a tab
+// coming back), and a new action replaces the float still rising, so numbers never pile up.
+let actBatch = null, actFloatEl = null;
+function actFloat(anchor, d) {
+  if (!anchor) return;
+  if (!actBatch || actBatch.anchor !== anchor) {
+    const B = (actBatch = { anchor, gains: {}, gold: 0, xp: 0, dbl: false });
+    requestAnimationFrame(() => {
+      if (actBatch === B) actBatch = null;
+      if (!B.anchor.isConnected) return;
+      const ids = Object.keys(B.gains);
+      const lines = ids.map((id, i) => `<span class="fl-l gain r${rarity(id)}">+${fmt(B.gains[id])}${itemIc(id)}${i === 0 && B.dbl ? '<em>×2</em>' : ''}</span>`);
+      if (B.gold) lines.push(`<span class="fl-l gold">+${fmt(B.gold)}${ui('gold')}</span>`);
+      if (B.xp) lines.push(`<span class="fl-l xp">+${fmt(B.xp)} XP</span>`);
+      if (!lines.length) return;
+      if (actFloatEl && actFloatEl.isConnected) actFloatEl.remove();
+      actFloatEl = floatAt(B.anchor, lines.join(''), 'act', 0, 0, 0, true);
+    });
+  }
+  for (const id in d.gains) actBatch.gains[id] = (actBatch.gains[id] || 0) + d.gains[id];
+  actBatch.gold += d.gold || 0;
+  actBatch.xp += d.xp || 0;
+  actBatch.dbl = actBatch.dbl || !!d.double;
+}
 
 on('action', (d) => {
   const card = $(`[data-card="${d.skill}:${d.act.id}"]`);
   // The numbers rise from the item being made or gathered: the focus panel's big icon, else its card, else the activity bar.
   const anchor = $(`[data-focus="${d.skill}"] .fo-tile`) || (card ? $('.tile', card) : $('#nowbar .tile'));
   const fast = actionTime(d.skill, d.act) < 0.8;
-  if (!fast) {
-    let i = 0;
-    for (const id in d.gains) { floatAt(anchor, `+${fmt(d.gains[id])}${itemIc(id)}`, 'gain r' + rarity(id), 0, -i * 24, i * 70); i++; }
-    if (d.gold) floatAt(anchor, `+${fmt(d.gold)}${ui('gold')}`, 'gold', 40, 0, i * 70);
-    floatAt(anchor, `+${fmt(d.xp)} XP`, 'xp', 50, 24, 120);
-    if (d.double) floatAt(anchor, '×2', 'gold double', -50, 0, 60);
-    retrigger(card, 'pop');
-  }
+  if (!fast) { actFloat(anchor, d); retrigger(card, 'pop'); }
   for (const id in d.gains) feedItem(id, d.gains[id]);
   if (d.gold) feedGold(d.gold);
 });
@@ -1616,7 +1632,7 @@ document.addEventListener('click', (ev) => {
   else if (d.locked) { retrigger(t, 'shake'); toast(lockedNote(d.locked)); }
   else if ('skiptips' in d) { S.ui.noTips = 1; clearCoach(); toast('Tips turned off. Turn them back on anytime in Settings.', 'good'); dirty = true; }
   else if ('toggletips' in d) { S.ui.noTips = S.ui.noTips ? 0 : 1; S.ui.hintOff = {}; if (S.ui.noTips) clearCoach(); dirty = true; }
-  else if ('reintro' in d) { S.ui.introSeen = {}; S.ui.hintOff = {}; toast('The page cards will show again.', 'good'); dirty = true; }
+  else if ('reintro' in d) { S.ui.guideSeen = {}; S.ui.hintOff = {}; toast('Each page shows its guide again on your next visit.', 'good'); dirty = true; }
   else if ('journal' in d) openModal(journalHTML(), 'Close');
   else if (d.nav) { const [v, anchor] = d.nav.split('#'); setView(v); navAnchor = anchor || null; }
   else if (d.act) {

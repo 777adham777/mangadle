@@ -13,7 +13,7 @@ const WS_CATS = [
   ['food', 'k-food', 'Consumables', 'food'], ['scroll', 'k-scroll', 'Scrolls', 'scroll'], ['tool', 'k-tool', 'Tools', 'tool'],
   ['res', 'k-res', 'Materials', 'res'], ['trade', 'gold', 'Trade goods', 'chest'], ['chest', 'k-chest', 'Treasure', 'chest'],
 ];
-const WS_STATUS = [['all', 'All'], ['open', 'Unlocked'], ['ready', 'Craftable'], ['locked', 'Locked']];
+const WS_STATUS = [['all', 'All', 'All'], ['open', 'Unlocked', 'Open'], ['ready', 'Craftable', 'Ready'], ['locked', 'Locked', 'Locked']];
 const wsCan = (a) => (a.in ? Math.min(...Object.entries(a.in).map(([k, n]) => Math.floor(stock(k) / n))) : Infinity);
 const wsOut = (a) => (a.out ? Object.keys(a.out)[0] : null);
 const WS_SORTS = {
@@ -67,6 +67,9 @@ function wsGuideId(skill) {
   if (G && G.skill === skill) { const best = SKILLS[skill].actions.filter((a) => actState(skill, a) === 'ready').pop(); return best ? best.id : null; }
   return null;
 }
+// Few recipes open (a new skill): no search, filters or sort, just the cards (they come once the list needs them).
+const WS_SIMPLE = 10;
+const wsSimple = (skill) => wsActs(skill).filter((a) => !wsLocked(actState(skill, a))).length < WS_SIMPLE;
 // Search never finds what is still hidden (a locked recipe's name, an ingredient you never had).
 const wsText = (skill, a) => (actNm(skill, a) + ' ' + Object.keys(a.in || {}).map(matNm).join(' ')).toLowerCase();
 function wsMatch(skill, a, W, q, o) {
@@ -80,7 +83,8 @@ function wsMatch(skill, a, W, q, o) {
 }
 function wsRecipes(skill, o) {
   o = o || {};
-  const W = wsState(skill), q = (wsQuery[skill] || '').trim().toLowerCase(), g = wsGuideId(skill);
+  const simple = wsSimple(skill), W = simple ? { st: 'all', cat: 'all', sort: 'best' } : wsState(skill);
+  const q = simple ? '' : (wsQuery[skill] || '').trim().toLowerCase(), g = wsGuideId(skill);
   const list = wsActs(skill).filter((a) => a.id === g || wsMatch(skill, a, W, q, o));
   // "Upcoming" reads best soonest-first, so the default level sort flips there.
   const key = W.st === 'locked' && (W.sort === 'lvd' || W.sort === 'best') ? 'lva' : W.sort;
@@ -90,6 +94,8 @@ function wsSelected(skill) {
   const W = wsState(skill), acts = wsActs(skill);
   const pick = (id) => id && acts.find((a) => a.id === id);
   if (wsNarrow()) return pick(W.sel) || null;
+  // The card framed in the gallery is the recipe in the focus panel: one selection, not two.
+  if (typeof focusAct === 'function' && !FOCUS_NONE[skill]) return focusAct(skill);
   return pick(W.sel) || pick(wsGuideId(skill)) ||(S.action && S.action.skill === skill && pick(S.action.id)) || wsRecipes(skill)[0] || acts[0];
 }
 
@@ -119,11 +125,24 @@ function wsNext(skill) {
     <span><small>Next unlock</small><b>${esc(actNm(skill, next))}</b></span><em>${next.schem && !S.known[next.schem] ? ui('schematic') : ui('lock')}Lv ${next.level}</em></button>`;
 }
 function wsListHTML(skill) {
-  const W = wsState(skill), list = wsRecipes(skill), sel = wsSelected(skill);
+  const W = wsState(skill), sel = wsSelected(skill), simple = wsSimple(skill);
+  let list = wsRecipes(skill), more = 0;
   if (!list.length) {
     return `<div class="ws-empty">${ui('search')}<b>No recipe matches</b><span>${W.st === 'ready' ? 'Nothing can be made with what you have right now.' : 'Try another family or search.'}</span>${gbtn('Clear filters', 'close', `data-wsclear="${skill}"`, 'dark sm')}</div>`;
   }
-  return list.map((a) => wsCard(skill, a, sel && sel.id)).join('') + (W.st === 'open' && !(wsQuery[skill] || '').trim() ? wsNext(skill) : '');
+  // "All" shows what is open and the next three locked recipes; the Locked filter still lists them all.
+  if (simple || (W.st === 'all' && !(wsQuery[skill] || '').trim())) {
+    const locked = list.filter((a) => wsLocked(actState(skill, a))).sort((a, b) => a.level - b.level);
+    if (locked.length > 3) {
+      const keep = new Set(locked.slice(0, 3));
+      more = locked.length - 3;
+      list = list.filter((a) => !wsLocked(actState(skill, a)) || keep.has(a));
+    }
+  }
+  const moreTxt = `${ui('lock')}<span>+${more} more recipes at higher levels</span>`;
+  return list.map((a) => wsCard(skill, a, sel && sel.id)).join('')
+    + (!more ? '' : simple ? `<div class="fc-more ws-more">${moreTxt}</div>` : `<button class="fc-more ws-more" data-wsst="${skill}:locked" title="Show every locked recipe">${moreTxt}</button>`)
+    + (!simple && W.st === 'open' && !(wsQuery[skill] || '').trim() ? wsNext(skill) : '');
 }
 function wsCatsHTML(skill) {
   const W = wsState(skill), acts = wsActs(skill);
@@ -136,12 +155,25 @@ function wsCatsHTML(skill) {
     return `<button class="${W.cat === k ? 'on' : ''} ${kc ? 'k-' + kc : ''} ${c ? '' : 'none'}" data-wscat="${skill}:${k}" title="${l}">${ui(icn)}<span>${l}</span><em>${c}</em></button>`;
   }).join('')}</nav>`;
 }
-function wsStatusHTML(skill) {
+function wsStCounts(skill) {
   const W = wsState(skill), q = (wsQuery[skill] || '').trim().toLowerCase();
   const pool = wsActs(skill).filter((a) => wsMatch(skill, a, W, q, { noSt: true }));
   const n = { all: pool.length, open: 0, ready: 0, locked: 0 };
   for (const a of pool) { const st = actState(skill, a); if (wsLocked(st)) n.locked++; else { n.open++; if (st === 'ready' || st === 'active') n.ready++; } }
-  return `<nav class="seg ws-st" id="ws-st">${WS_STATUS.map(([k, l]) => `<button class="${W.st === k ? 'on' : ''}" data-wsst="${skill}:${k}"><span>${l}</span><em>${n[k]}</em></button>`).join('')}</nav>`;
+  return n;
+}
+function wsStatusHTML(skill) {
+  const W = wsState(skill), n = wsStCounts(skill);
+  return `<nav class="seg ws-st" id="ws-st">${WS_STATUS.map(([k, l, sh]) => `<button class="${W.st === k ? 'on' : ''}" data-wsst="${skill}:${k}"><span class="wl-l">${l}</span><span class="wl-s">${sh}</span><em>${n[k]}</em></button>`).join('')}</nav>`;
+}
+// K22: in a narrow column, status and family are two menus beside the sort (css/skills-ux.css shows one look or the other).
+function wsMenusHTML(skill) {
+  const W = wsState(skill), n = wsStCounts(skill), acts = wsActs(skill);
+  const present = WS_CATS.filter((c) => acts.some((a) => wsCat(a) === c[0]));
+  const pool = wsRecipes(skill, { noCat: true }), nc = (k) => pool.filter((a) => k === 'all' || wsCat(a) === k).length;
+  const st = `<label class="ws-sort ws-menu" title="Show"><select data-wsstsel="${skill}">${WS_STATUS.map(([k, l]) => `<option value="${k}" ${W.st === k ? 'selected' : ''}>${l} · ${n[k]}</option>`).join('')}</select></label>`;
+  const cat = present.length < 2 ? '' : `<label class="ws-sort ws-menu" title="Family"><select data-wscatsel="${skill}"><option value="all">Family: all · ${nc('all')}</option>${present.map(([k, , l]) => `<option value="${k}" ${W.cat === k ? 'selected' : ''}>${l} · ${nc(k)}</option>`).join('')}</select></label>`;
+  return `<span class="ws-menus" id="ws-menus">${st}${cat}</span>`;
 }
 
 function wsDetail(skill, a) {
@@ -186,15 +218,16 @@ function wsDetail(skill, a) {
 function workshopHTML(skill, o) {
   o = o || {};
   const s = SKILLS[skill], acts = wsActs(skill), W = wsState(skill), sel = wsSelected(skill);
-  const open = acts.filter((x) => !wsLocked(actState(skill, x))).length;
+  const open = acts.filter((x) => !wsLocked(actState(skill, x))).length, simple = open < WS_SIMPLE;
   return `${hdr('Recipes', `${open} / ${acts.length} unlocked`)}
-  <section class="ws" data-ws="${skill}">
-    <div class="ws-bar">
+  <section class="ws ${simple ? 'ws-simple' : ''}" data-ws="${skill}">
+    ${simple ? '' : `<div class="ws-bar">
       <label class="ws-q">${ui('search')}<input id="ws-q" type="search" data-wsq="${skill}" placeholder="Search a recipe or an ingredient" value="${esc(wsQuery[skill] || '')}" autocomplete="off"></label>
       ${wsStatusHTML(skill)}
-      <label class="ws-sort" title="Sort">${ui('sort')}<select data-wssort="${skill}">${Object.entries(WS_SORTS).map(([k, [l]]) => `<option value="${k}" ${W.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
+      ${wsMenusHTML(skill)}
+      <label class="ws-sort ws-sortby" title="Sort">${ui('sort')}<select data-wssort="${skill}">${Object.entries(WS_SORTS).map(([k, [l]]) => `<option value="${k}" ${W.sort === k ? 'selected' : ''}>${l}</option>`).join('')}</select></label>
     </div>
-    ${wsCatsHTML(skill)}
+    ${wsCatsHTML(skill)}`}
     <div class="ws-body ${wsNarrow() ? 'narrow' : o.detail === false ? 'solo' : ''}">
       ${sel && (wsNarrow() || o.detail !== false) ? wsDetail(skill, sel) : ''}
       <div class="ws-list" id="ws-list" data-wslist="${skill}">${wsListHTML(skill)}</div>
@@ -208,6 +241,7 @@ function wsRefresh(skill) {
   const l = $('#ws-list'); if (l) { l.innerHTML = wsListHTML(skill); l.scrollTop = 0; }
   const c = $('#ws-cats'); if (c) c.outerHTML = wsCatsHTML(skill);
   const s = $('#ws-st'); if (s) s.outerHTML = wsStatusHTML(skill);
+  const m = $('#ws-menus'); if (m) m.outerHTML = wsMenusHTML(skill);
   update();
 }
 UPD.push(() => {
@@ -254,6 +288,8 @@ document.addEventListener('input', (ev) => {
 document.addEventListener('change', (ev) => {
   const t = ev.target;
   if (t.dataset && t.dataset.wssort) { wsState(t.dataset.wssort).sort = t.value; wsRefresh(t.dataset.wssort); }
+  if (t.dataset && t.dataset.wsstsel) { wsState(t.dataset.wsstsel).st = t.value; wsRefresh(t.dataset.wsstsel); }
+  if (t.dataset && t.dataset.wscatsel) { wsState(t.dataset.wscatsel).cat = t.value; wsRefresh(t.dataset.wscatsel); }
 });
 document.addEventListener('keydown', (ev) => {
   if (ev.key === 'Escape' && ev.target.id === 'ws-q' && ev.target.value) { ev.target.value = ''; wsQuery[ev.target.dataset.wsq] = ''; wsRefresh(ev.target.dataset.wsq); }

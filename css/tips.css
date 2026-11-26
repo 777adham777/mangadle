@@ -157,3 +157,5 @@ a.sg-node:hover .sg-dot { transform: scale(1.08); }
   .sg-step .sg-big { grid-row: span 2; }
   .sg-route { grid-auto-columns: minmax(64px, 1fr); overflow-x: auto; }
 }
+/* page guides (Techniques, Dungeons, Spice Rack): as many columns as steps */
+@media (min-width: 641px) { .sg-pg .sg-steps { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); } }

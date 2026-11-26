@@ -6,7 +6,7 @@
    - Hints only when you look stuck: for the first steps of the Leaf Village, a small
      bubble points at the next click if nothing has moved for a while. It never shows
      while the right thing is running, and × hides it for that step.
-   - A new skill or menu explains itself once, in a card at the top of its page (no window).
+   - A new skill or menu opens its guide once, on the first visit (skill-guide.js; the intro cards are gone).
    - Feature gates: advanced menus unlock one at a time (UNLOCKS in data.js).
    Loaded before ui.js; everything here runs at call time, after boot.
    ========================================================================== */
@@ -190,45 +190,3 @@ function firstHintHTML(realm, skill) {
   if (skill !== 'woodcutting' || (S.stats.actions || 0) > 0 || S.action) return '';
   return `<div class="first-hint"><span class="fh-ic">${ic('skill', 'woodcutting')}</span><p>Press <b>Start</b> to chop your first Pine Logs.</p></div>`;
 }
-
-/* ------------------------------------------------------------ first visits */
-// A skill or menu explains itself once, in a card at the top of its page.
-const INTRO = {
-  'skill:arts': { icon: () => ic('skill', 'arts'), kicker: 'New skill', title: 'Crafting',
-    text: '',
-    points: [[() => ic('item', 'pine_log'), `Pine Logs → ${ITEMS.training_kunai.name}`, 'Your first weapon.'],
-             [() => ic('item', 'healing_leaf'), 'Healing Leaves → Soldier Pills', 'Pills heal you in battle.'],
-             [() => ui('lock'), 'Brew 5 Soldier Pills', 'Then the Battlefield opens.']] },
-  'skill:cooking': { icon: () => ic('skill', 'cooking'), kicker: 'New skill', title: 'Cooking',
-    text: 'Dishes heal far more than pills.',
-    points: [[() => ic('item', 'minnow'), '1 Minnow → 1 Grilled Minnow', ''],
-             [() => ui('hp'), 'Food heals', 'Equip a dish as your battle food.'],
-             [() => ui('lock'), 'Cooking level 10', 'Opens Voyaging.']] },
-  'feature:battle': { icon: () => ui('battle'), kicker: 'New menu', title: 'The Battlefield',
-    text: 'Fights run on their own, offline too.',
-    points: [[() => ui('food'), 'Pick your food under the stage', 'You eat when your HP drops low.'],
-             [() => ui('map'), 'Ten wins open the next stage', 'Every world ends with a guardian.'],
-             [() => ui('gold'), 'Loot', 'Gold, gear, scrolls and the materials for new worlds.']] },
-  'feature:techniques': { icon: () => ui('technique'), kicker: 'New menu', title: 'Techniques',
-    text: 'Foes drop scrolls. Each one teaches a technique, or levels up one you know.',
-    points: [[() => ui('technique'), 'Rarer scroll, rarer technique', ''],
-             [() => ui('plus'), 'More slots as you level', 'Actives fire in order; passives are always on.']] },
-  'feature:dungeons': { icon: () => ui('map'), kicker: 'New on the Battlefield', title: 'Dungeons',
-    text: 'Five rooms in a row, no rest. One key per run.',
-    points: [[() => ui('food'), 'Bring food', 'Your HP does not come back between rooms.'],
-             [() => ui('gold'), 'A set per dungeon', 'Every clear gives a sigil of its set.']] },
-};
-function introCardHTML(id) {
-  const I = INTRO[id];
-  if (!I || !isUnlocked(id) || (S.ui.introSeen || {})[id]) return '';
-  return `<section class="intro-card"><span class="ic-ic">${I.icon()}</span><div class="ic-body"><small>${I.kicker}</small><b>${I.title}</b>${I.text ? `<p>${I.text}</p>` : ''}
-    ${I.points ? `<ul>${I.points.map(([icn, b, t]) => `<li><i>${icn()}</i><span><b>${b}${t ? '.' : ''}</b> ${t}</span></li>`).join('')}</ul>` : ''}</div>
-    <button class="ic-ok" data-introok="${id}">Got it</button></section>`;
-}
-if (typeof document !== 'undefined') document.addEventListener('click', (ev) => {
-  const t = ev.target.closest('[data-introok]');
-  if (!t) return;
-  S.ui.introSeen = S.ui.introSeen || {};
-  S.ui.introSeen[t.dataset.introok] = 1;
-  dirty = true;
-});
