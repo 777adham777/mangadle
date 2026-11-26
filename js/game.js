@@ -56,8 +56,9 @@ function defaultState() {
     known: {},                          // schematic id -> 1 once learned
     renown: {},                         // world id -> renown points (see systems.js)
     asc: {},                            // world id -> chosen Ascension tier for its zones
-    gear: {},
-    arms: [], armSeq: 0, equipU: null,   // weapon copies and the one you wield (weapons.js)                           // equipment id -> { xp, rel, gems: [], tier } (awakening, sockets, reforge)
+    gear: {},                           // armour id -> { gems: [], tier } (forge.js: socket, reforge)
+    arms: [], armSeq: 0, equipU: null,   // weapon copies and the one you wield (forge.js)
+    wm: {},                             // weapon mastery: family -> battle XP (forge.js)
     tech: { loadout: [null, null, null, null, null, null, null], lv: {}, pity: 0, v: 3 },   // techniques.js
     ki: { form: null, stamina: 100 },
     farm: { plots: [], auto: false },
@@ -156,7 +157,7 @@ let EMIT_TAP = null;
 function emit(ev, d) { if (EMIT_TAP) EMIT_TAP(ev, d); if (!SIM && BUS[ev]) for (const fn of BUS[ev]) fn(d); }
 
 /* -------------------------------------------------------------- items */
-// Weapons are individual copies (weapons.js): armCount counts the spare ones.
+// Weapons are individual copies (forge.js): armCount counts the spare ones.
 const count = (id) => (ITEMS[id] && ITEMS[id].slot === 'weapon' && ITEMS[id].type === 'equip' && typeof armCount === 'function' ? armCount(id) : S.items[id] || 0);
 function addItem(id, n) {
   if (n <= 0) return;
@@ -218,7 +219,7 @@ const hook = (name, fn) => HOOKS[name].push(fn);
 function hmul(name, ...a) { let m = 1; for (const f of HOOKS[name]) m *= f(...a); return m; }
 function hadd(name, ...a) { let m = 0; for (const f of HOOKS[name]) m += f(...a); return m; }
 function hrun(name, ...a) { for (const f of HOOKS[name]) f(...a); }
-// Per-item stats: systems.js wraps this to add reforge tiers, awakening and gems.
+// Per-item stats: forge.js replaces this (mastery, refinement, reforge tiers).
 let itemStat = (id, k) => ITEMS[id].stats[k] || 0;
 // Enemy as fought: systems.js wraps this to scale Ascended zones.
 let scaleEnemy = (zi, e) => e;

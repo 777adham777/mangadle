@@ -15,7 +15,7 @@
      of them come out Pure.
    - Pure ingots (the Perfect version of every ingot, for the Perfect Log) refine weapons
      at half the cost: a refinement takes them first when you have enough.
-   Loaded after quality.js and weapons.js.
+   Loaded after quality.js and forge.js.
    ========================================================================== */
 
 /* ------------------------------------------------------------ quality */

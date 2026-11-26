@@ -172,24 +172,7 @@ for (const r in TECH_POOLS) defItem('scroll_' + r, SCROLL_NAME[r] || `${REALMS[r
 SKILLS.arts.actions.push(craft('scroll_shinobi', 10, 6, { chakra_shard: 8, healing_leaf: 6, chakra_orb: 2 }));
 SKILLS.arts.actions.sort((a, b) => a.level - b.level);
 
-/* ========================================== SOUL: awakening, gems, reforge */
-// Weapons earn XP in battle and are released twice with souls. Sockets take gems. Reforge raises any
-// piece of gear (+12% stats per tier, max 5) with the newest world's relics, so favourites never go stale.
-const RELEASE = [
-  null,
-  { name: 'First Release', atk: 0.4, smith: 15 },
-  { name: 'Final Release', atk: 1.0, smith: 50 },
-];
-// Souls burned per release, by how strong the weapon is (item value).
-const RELEASE_COST = [
-  [200,      { soul_fragment: 20, wisp_flame: 8 },      { spirit_core: 20, husk_mask: 6 }],
-  [1000,     { spirit_core: 15, husk_mask: 5 },         { grave_dust: 15, abyssal_essence: 6 }],
-  [5000,     { grave_dust: 15, abyssal_essence: 6 },    { phantom_silk: 12, echo_soul: 4 }],
-  [Infinity, { phantom_silk: 10, echo_soul: 4 },        { echo_soul: 12, sovereign_shard: 2 }],
-];
-const GEM_FX = { jade: { hp: 0.06 }, sapphire: { def: 0.06 }, ruby: { dmg: 0.06 }, void_diamond: { dmg: 0.04, def: 0.04, hp: 0.04 } };
-// Tiers 1-5 cost the newest world's relics; tier 6 (Rift-forged) costs a Rift Shard.
-const REFORGE_MAX = 6;
+/* SOUL: the forge (awakening, gems, reforge) lives in forge.js. */
 
 /* ======================================================= WORLDS 4-7 (below) */
 const CROPS = [];          // Farming (Kaio Planet)

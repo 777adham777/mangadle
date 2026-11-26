@@ -11,7 +11,7 @@
    Kits are power-neutral on average: each foe's attack and HP are scaled down
    by what its moves and traits add, so the tuned progression keeps its pace,
    but fights now have peaks to prepare for (food, defensive techniques, element).
-   Loaded after techniques.js and weapons.js (wraps playerHit / enemyHit / dealDamage).
+   Loaded after techniques.js and forge.js (wraps playerHit / enemyHit / dealDamage).
    ========================================================================== */
 
 /* ------------------------------------------------------------ statuses */

@@ -394,7 +394,7 @@ function questTask() {
   if (/Awaken a weapon/.test(txt)) {
     const a = curArm();
     if (!a) return fightTask(bestXpZone());
-    if (armLv(a) < 25 || a.ref < 5) { const r = refineTask(); if (r && armLv(a) >= 5 * (a.ref + 1)) return r; return fightTask(bestXpZone()); }
+    if (armLv(a) < AWK[1].lv || a.ref < AWK[1].ref) { const r = refineTask(); if (r && armLv(a) >= 5 * (a.ref + 1)) return r; return fightTask(bestXpZone()); }
     const c = awkCost(a); for (const k in c) if (stock(k) < c[k]) return needTask(k, c[k]);
     return null;
   }

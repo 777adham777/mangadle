@@ -7,21 +7,10 @@
 const costTiles = (cost) => Object.entries(cost).map(([k, n]) => tile(k, `<em data-have="${k}" data-n="${n}">${fmt(count(k))}</em>/${fmt(n)}`, { cls: 'xs ' + (count(k) < n ? 'short' : ''), title: ITEMS[k].name })).join('');
 // Techniques: techniques-ui.js
 
-/* ======================================================= AWAKENING + FORGE */
+/* ======================================================= FORGE: armour (forge.js) */
 UIX.inspector.push((id) => {
   if (!gearOn() || !ITEMS[id] || ITEMS[id].type !== 'equip' || ITEMS[id].slot === 'weapon') return '';
-  const it = ITEMS[id], g = gearOf(id), out = [];
-  if (it.slot === 'weapon') {
-    const next = RELEASE[g.rel + 1];
-    if (next) {
-      const need = relNeed(id, g.rel), why = awakenReason(id);
-      out.push(`${hdr('Awakening', g.rel ? RELEASE[g.rel].name : 'Sealed')}
-        <div class="aw-row"><span class="pbar"><i style="width:${Math.min(100, (g.xp / need) * 100)}%"></i></span><small>${fmt(g.xp)} / ${fmt(need)} battle XP</small></div>
-        <p class="muted small">${next.name}: +${next.atk * 100}% weapon attack${g.rel === 0 ? ' and a gem socket' : ' and a 2nd socket'}. Needs Smelting ${next.smith}.</p>
-        <div class="aw-cost">${costTiles(relCost(id, g.rel))}</div>
-        ${gbtn(why || next.name, 'awaken', `data-awaken="${id}" ${why ? 'disabled' : ''}`, 'sm')}`);
-    } else out.push(`${hdr('Awakening', RELEASE[g.rel].name)}<p class="muted small">Fully released: +${RELEASE[g.rel].atk * 100}% weapon attack.</p>`);
-  }
+  const g = gearOf(id), out = [];
   const ns = socketCount(id);
   if (ns) {
     const gems = Object.keys(GEM_FX).filter((k) => count(k) > 0);
@@ -33,13 +22,11 @@ UIX.inspector.push((id) => {
     }).join('')}</div>`);
   }
   const c = reforgeCost(id), why = reforgeReason(id);
-  out.push(`${hdr('Reforge', `tier ${g.tier} / ${REFORGE_MAX}`)}
-    <p class="muted small">+12% to every stat per tier. Costs the newest world's relics, so any favourite can keep up. Tier 6 is Rift-forged with a Rift Shard.</p>
+  out.push(`${hdr('Reforge', `tier ${g.tier} / ${REFORGE_MAX} · +12% stats each`)}
     ${g.tier < REFORGE_MAX ? `<div class="aw-cost">${tile(null, fmt(c.gold), { r: 3, icon: ui('gold'), cls: 'xs ' + (S.gold < c.gold ? 'short' : ''), title: 'Gold' })}${c.relic ? costTiles({ [c.relic]: c.n }) : ''}</div>
     ${gbtn(why || `Reforge to tier ${g.tier + 1}`, 'reforge', `data-reforge="${id}" ${why ? 'disabled' : ''}`, 'sm')}` : ''}`);
   return `<div class="forge-box">${out.join('')}</div>`;
 });
-on('awaken', (d) => burst(RELEASE[d.rel].name, ITEMS[d.id].name, itemIc(d.id), rc('soul')));
 on('reforge', (d) => toast(`${ITEMS[d.id].name} reforged to tier ${d.tier}.`, 'rare'));
 
 /* ============================================================ shared: labels */
@@ -350,8 +337,7 @@ document.addEventListener('click', (ev) => {
   const t = ev.target.closest('button');
   if (!t || t.disabled) return;
   const d = t.dataset;
-  if (d.awaken) awaken(d.awaken);
-  else if (d.socket) { const [id, i, gm] = d.socket.split(':'); socketGem(id, +i, gm); }
+  if (d.socket) { const [id, i, gm] = d.socket.split(':'); socketGem(id, +i, gm); }
   else if (d.reforge) reforge(d.reforge);
 });
 

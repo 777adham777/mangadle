@@ -66,7 +66,7 @@ Le recyclage disparaît. Les reliques qu'il donnait viennent des gardiens.
 - Les familles des armes de donjon (lance, faux, poing, couperet, griffe) sont rattachées aux 5 familles.
 
 ### Code (P5)
-Une seule forge : `js/forge.js` (puissance d'une pièce, raffinage, éveil, transfert, maîtrise, reforge, sockets, sets).
+Une seule forge : `js/forge.js` (puissance d'une pièce, raffinage, éveil, transfert, maîtrise, reforge, sockets). Les sets et les parades vivent dans `js/sets.js` (chargé après `foes.js`, dont ils enveloppent les mécaniques).
 Supprimés : l'ancien éveil par objet (`RELEASE`, `awaken`, `relNeed`), les sockets d'arme, la reforge d'arme cachée, l'héritage, le recyclage.
 Trois paires de noms en double sont renommées.
 

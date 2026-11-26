@@ -115,9 +115,9 @@ function tipEffect(id) {
   return { rows, text };
 }
 
-// A unique weapon (a copy from the weapon rack, weapons.js) shows its own level, refinement and awakening.
+// A unique weapon (a copy from the weapon rack, forge.js) shows its family mastery, refinement and awakening.
 function armTipRows(a) {
-  const rows = [['atk', 'Weapon attack', fmt(armAtk(a))], ['star', 'Level', `${armLv(a)} / ${ARM_MAX}`]];
+  const rows = [['atk', 'Weapon attack', fmt(armAtk(a))], ['star', FAMILIES[armFamily(a.id)].name + ' mastery', `${armLv(a)} / ${ARM_MAX}`]];
   if (a.ref) rows.push(['upgrade', 'Refinement', `+${a.ref} / ${REF_MAX}`]);
   if (armEl(a)) rows.push(['awaken', 'Element', ELEMENTS[a.el].name]);
   if (armFam(a)) rows.push(['star', 'Family', FAMILIES[armFamily(a.id)].name]);
@@ -131,7 +131,7 @@ function tipHTML(id, arm, stackN) {
   let { rows, text } = tipEffect(id);
   if (arm) {
     rows = [...armTipRows(arm), ...rows.filter((r) => r[0] !== 'atk')];
-    text = armFresh(arm) ? (arm.u === S.equipU ? 'Wielded: it becomes a unique weapon as soon as it gains a level.' : '') : `Unique weapon${arm.u === S.equipU ? ' · wielded' : ''}: it keeps its own level, refinement and awakening.`;
+    text = armFresh(arm) ? '' : `Unique weapon${arm.u === S.equipU ? ' · wielded' : ''}: it keeps its refinement and awakening.`;
   }
   const src = sourcesOf(it.base || id).slice(0, 6);
   const uses = usesOf(it.base || id).slice(0, 6);

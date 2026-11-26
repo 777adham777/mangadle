@@ -1,24 +1,30 @@
 'use strict';
 /* ==========================================================================
-   ANIME IDLE RPG — weapons (GDD §2.3), DOM-free. Every weapon you craft or find is its own copy
-   with its own progression; nothing replaces or destroys it when a better one drops.
-   S.arms = [{ u, id, xp, ref, awk, el }], S.equipU = the copy you wield (S.equip.weapon = its item id).
-   A. Level (1-50): the wielded weapon earns battle XP. +2% weapon attack per level.
-   B. Refinement (+1 to +10, Soul City): ingots of the weapon's tier, plus a gem at +4, +7 and +10.
-      +10% weapon attack per step. Step +n needs weapon level 5n.
-   C. Awakening: I at level 15 and +3 (choose an element), II at level 35 and +7 (the passive of its
-      family). Costs the souls of Soul City; II also the guardian material of the weapon's world
-      (La Forge, 2026-11-26: the first awakening now happens before the end of the beta).
-   Armor and accessories keep the simpler shared progression (sockets, reforge) in systems.js.
+   ANIME IDLE RPG — the forge (La Forge, 2026-11-26, docs/FORGE.md). DOM-free.
+   One place for the power of a piece of gear and everything that raises it:
+   - itemStat: base stats × the wielded weapon's mastery and refinement, × the reforge tier of armour.
+   - Weapons (GDD §2.3): every weapon you craft is its own copy; nothing replaces or destroys it.
+     S.arms = [{ u, id, ref, awk, el }], S.equipU = the copy you wield (S.equip.weapon = its item id).
+     A. Mastery (1-50): battle XP goes to the FAMILY of the wielded weapon (S.wm), so a new sword
+        starts at your sword mastery. +2% weapon attack per mastery level.
+     B. Refinement (+1 to +10): ingots of the weapon's tier, a gem at +4, +7 and +10. +10% weapon
+        attack per step; step +n needs mastery 5n.
+     C. Awakening: I at mastery 15 and +3 (choose an element), II at mastery 35 and +7 (the passive of
+        its family). Souls of Soul City; II also the guardian material of the weapon's world.
+     D. Transfer: a stronger weapon takes over the refinement, awakening and element of an older one,
+        for free. The old one stays in your rack, back to +0: nothing is melted.
+   - Armour and jewellery: one gem socket (Smelting 25) and reforge tiers (+12% stats each).
+   Replaces weapons.js and the forge part of systems.js (the per-item awakening, weapon sockets, the
+   hidden weapon reforge and inheritance are gone).
    ========================================================================== */
 
 const isWeapon = (id) => !!(ITEMS[id] && ITEMS[id].type === 'equip' && ITEMS[id].slot === 'weapon');
 const ARM_MAX = 50, REF_MAX = 10;
-const armXpAt = (L) => Math.round(60 * Math.pow(L - 1, 2.5));        // total XP to reach level L
-const armLv = (a) => { let L = 1; while (L < ARM_MAX && a.xp >= armXpAt(L + 1)) L++; return L; };
+const armXpAt = (L) => Math.round(60 * Math.pow(L - 1, 2.5));        // total mastery XP to reach level L
 const armOf = (u) => S.arms.find((a) => a.u === u) || null;
 const curArm = () => (S.equipU ? armOf(S.equipU) : null);
 const forgeOn = () => isUnlocked('feature:awakening');
+const gearOn = forgeOn;
 // Forge costs (refinement, awakening, reforge) follow the stage band of a piece (economy.js sets it.tv);
 // its value is its sale price (materials + a margin), which would make them explode.
 const forgeVal = (id) => { const it = ITEMS[baseOf(id)] || ITEMS[id]; return it.tv || it.value; };
@@ -32,7 +38,7 @@ const ELEMENTS = {
   bleed:     { name: 'Bleed',     icon: 'fangs',         desc: 'Auto-attacks ignore 20% of the foe\'s defense.' },
   drain:     { name: 'Drain',     icon: 'heart-plus',    desc: 'Auto-attacks heal you for 8% of the damage dealt.' },
 };
-// Awakening II: the passive of the weapon's family.
+// The five families: mastery and the Awakening II passive.
 const FAMILIES = {
   short:   { name: 'Short blade', desc: 'You attack 15% faster.' },
   blade:   { name: 'Sword',       desc: 'Your techniques recharge 15% faster.' },
@@ -40,8 +46,11 @@ const FAMILIES = {
   ranged:  { name: 'Ranged',      desc: 'The first hit of every fight deals triple damage.' },
   cutlass: { name: 'Cutlass',     desc: '+10 Luck.' },
 };
+// Dungeon weapons name their own kind (dungeons.js): each belongs to one of the five families.
+const FAM_ALIAS = { lance: 'heavy', sickle: 'heavy', fist: 'heavy', cleaver: 'heavy', claw: 'heavy' };
 function armFamily(id) {
-  if (ITEMS[id].fam) return ITEMS[id].fam;   // set when a manga name hides the family (lore.js)
+  const f = ITEMS[id].fam;   // set when a manga name hides the family (lore.js, dungeons.js)
+  if (f) return FAMILIES[f] ? f : FAM_ALIAS[f] || 'heavy';
   const n = ITEMS[id].name.toLowerCase();
   if (/bow|cannon|gun/.test(n)) return 'ranged';
   if (/hammer|cleaver|axe|claw|lance|sickle|gauntlet|fist/.test(n)) return 'heavy';
@@ -52,31 +61,45 @@ function armFamily(id) {
 const armEl = (a) => (a && a.awk >= 1 ? a.el : null);
 const armFam = (a) => (a && a.awk >= 2 ? armFamily(a.id) : null);
 
-/* ------------------------------------------------------------ stats */
+/* ------------------------------------------------------------ A. mastery */
+const famXp = (f) => (S.wm && S.wm[f]) || 0;
+const famLv = (f) => { let L = 1; while (L < ARM_MAX && famXp(f) >= armXpAt(L + 1)) L++; return L; };
+const armLv = (a) => famLv(armFamily(a.id));
+function addFamXp(f, x) {
+  if (!S.wm) S.wm = {};
+  const before = famLv(f);
+  S.wm[f] = Math.min(armXpAt(ARM_MAX), famXp(f) + x);
+  if (famLv(f) > before) emit('famlevel', { f, lv: famLv(f) });
+}
+hook('kill', (e) => { const a = curArm(); if (a) addFamXp(armFamily(a.id), e.xp * (1 + discFx('wxp'))); });
+
+/* ------------------------------------------------------------ the power of a piece */
 const armMult = (a) => (1 + 0.02 * (armLv(a) - 1)) * (1 + 0.1 * a.ref);
 const armAtk = (a) => Math.round((ITEMS[a.id].stats.atk || 0) * armMult(a));
-{
-  const base = itemStat;
-  itemStat = (id, k) => {
-    const v = base(id, k), a = curArm();
-    return k === 'atk' && a && a.id === id && v ? Math.round(v * armMult(a)) : v;
-  };
-}
+const REFORGE_STEP = 0.12;
+itemStat = (id, k) => {
+  const it = ITEMS[id], v = (it.stats && it.stats[k]) || 0;
+  if (!v) return 0;
+  if (it.slot === 'weapon') { const a = curArm(); return k === 'atk' && a && a.id === id ? Math.round(v * armMult(a)) : v; }
+  const t = gearOn() ? gearOf(id).tier : 0;
+  if (!t) return v;
+  const m = 1 + REFORGE_STEP * t;
+  return Number.isInteger(v) ? Math.round(v * m) : v * m;   // perks and other fractional stats keep their decimals
+};
 
 /* ------------------------------------------------------------ copies in the bank */
 // Weapons never sit in S.items: count/add/remove go through the copies.
 function newArm(id) {
   S.armSeq = (S.armSeq || 0) + 1;
-  const a = { u: 'w' + S.armSeq, id, xp: 0, ref: 0, awk: 0, el: null };
+  const a = { u: 'w' + S.armSeq, id, ref: 0, awk: 0, el: null };
   S.arms.push(a);
   return a;
 }
-const armWorth = (a) => a.awk * 1e9 + a.ref * 1e7 + a.xp;
+const armWorth = (a) => a.awk * 1e9 + a.ref * 1e7 + (ITEMS[a.id].stats.atk || 0);
 const spareArms = (id) => S.arms.filter((a) => a.id === id && a.u !== S.equipU);
-// New copies stack: a copy that never gained battle XP, a refinement or an awakening is interchangeable
-// with every other new copy of the same weapon (the bank shows them as one tile ×N). Once it levels up
-// or is refined it is a unique weapon of its own.
-const armFresh = (a) => !a.xp && !a.ref && !a.awk;
+// New copies stack: a copy that was never refined or awakened is interchangeable with every other new
+// copy of the same weapon (the bank shows them as one tile ×N). A refined copy is a weapon of its own.
+const armFresh = (a) => !a.ref && !a.awk;
 const freshArms = (id) => spareArms(id).filter(armFresh);
 function equipArm(u) {
   const a = armOf(u);
@@ -116,32 +139,24 @@ function sellArm(u) {
   S.gold += ITEMS[a.id].value;
   dirty = true;
 }
-// Older saves kept weapons as stacks in the bank: turn each into a copy (the equipped one too).
+// Older saves: weapons kept as stacks in the bank; per-copy battle XP (now the family's mastery).
 function migrateArms() {
   if (!Array.isArray(S.arms)) S.arms = [];
+  if (!S.wm) S.wm = {};
   for (const id in S.items) if (isWeapon(id)) { const n = S.items[id]; delete S.items[id]; for (let i = 0; i < n; i++) newArm(id); }
-  if (S.equip.weapon && !curArm()) {
-    const a = newArm(S.equip.weapon);
-    a.xp = (S.gear[S.equip.weapon] && S.gear[S.equip.weapon].xp) || 0;
-    S.equipU = a.u;
-  }
+  if (S.equip.weapon && !curArm()) { const a = newArm(S.equip.weapon); S.equipU = a.u; }
   S.arms = S.arms.filter((a) => isWeapon(a.id));
+  for (const a of S.arms) {
+    if (a.xp) { const f = armFamily(a.id); S.wm[f] = Math.max(famXp(f), a.xp); }
+    delete a.xp;
+  }
   if (S.equipU && !curArm()) { S.equipU = null; S.equip.weapon = null; }
-  for (const id in S.gear) if (isWeapon(id)) delete S.gear[id];
+  for (const id in S.gear) if (isWeapon(id) || !ITEMS[id]) delete S.gear[id];
 }
 {
   const base = sanitize;
   sanitize = function () { base(); migrateArms(); };
 }
-
-/* ------------------------------------------------------------ A. battle XP */
-hook('kill', (e) => {
-  const a = curArm();
-  if (!a || armLv(a) >= ARM_MAX) return;
-  const before = armLv(a);
-  a.xp = Math.min(armXpAt(ARM_MAX), a.xp + e.xp * (1 + discFx('wxp')));
-  if (armLv(a) > before) emit('armlevel', { a, lv: armLv(a) });
-});
 
 /* ------------------------------------------------------------ B. refinement */
 const REF_INGOT = [[30, 'reishi_ingot'], [100, 'silver_ingot'], [300, 'frost_ingot'], [700, 'void_ingot'], [1500, 'black_ingot'], [4000, 'star_ingot'], [15000, 'sun_ingot'], [Infinity, 'rift_ingot']];
@@ -151,15 +166,15 @@ function refCost(a) {
   if (REF_GEM[next]) c[REF_GEM[next]] = 1;
   return c;
 }
-// Gold for the forge (balance pass 2026-11-25): gold is what you save up for, not a score. Each refinement
-// costs more than the last, an awakening costs a small fortune; both scale with the weapon's worth.
+// Gold for the forge (balance pass 2026-11-25): each refinement costs more than the last, an awakening
+// costs a small fortune; both scale with the weapon's stage band.
 const FORGE_GOLD = { ref: 4, awk: [0, 60, 200] };
 const refGold = (a) => Math.round(forgeVal(a.id) * FORGE_GOLD.ref * (a.ref + 1) * (a.ref + 1));
 const awkGold = (a) => Math.round(forgeVal(a.id) * (FORGE_GOLD.awk[a.awk + 1] || 0));
 function refReason(a) {
   if (!forgeOn()) return 'Locked';
   if (a.ref >= REF_MAX) return 'Fully refined';
-  if (armLv(a) < 5 * (a.ref + 1)) return `Needs weapon level ${5 * (a.ref + 1)}`;
+  if (armLv(a) < 5 * (a.ref + 1)) return `Needs ${FAMILIES[armFamily(a.id)].name} mastery ${5 * (a.ref + 1)}`;
   if (!canAfford(refCost(a))) return 'Missing materials';
   if (S.gold < refGold(a)) return 'Not enough gold';
   return '';
@@ -176,51 +191,20 @@ function refine(u) {
   return true;
 }
 
-/* ------------------------------------------------------------ B2. inheritance */
-// A stronger weapon can take over an older one's level, refinement and awakening (the old one is
-// melted down), so a new weapon is a real choice instead of a reset. It pays half of what its own
-// tier would have cost: half the refinement ingots (the gems are already set) and half of each
-// awakening. Levels carry over from the start; refinement and awakening once the forge opens.
-const armBaseAtk = (a) => (ITEMS[a.id].stats.atk || 0);
-const inheritFrom = (b, a) => !!(a && b && a.u !== b.u && armBaseAtk(b) > armBaseAtk(a) && (a.xp > b.xp || a.ref > b.ref || a.awk > b.awk));
-function inheritCost(b, a) {
-  const c = {}, add = (k, n) => { if (n > 0) c[k] = (c[k] || 0) + n; };
-  const ing = REF_INGOT.find((x) => forgeVal(b.id) < x[0])[1];
-  let n = 0;
-  for (let r = b.ref; r < a.ref; r++) n += 2 + 2 * r;
-  add(ing, Math.ceil(n / 2));
-  for (let k = b.awk; k < a.awk; k++) { const ac = awkCost({ id: b.id, awk: k }); for (const m in ac) add(m, Math.ceil(ac[m] / 2)); }
-  return c;
-}
-// The copy that would give b the most.
-const inheritDonor = (b) => S.arms.filter((a) => inheritFrom(b, a)).sort((x, y) => armWorth(y) - armWorth(x))[0] || null;
-function inheritReason(b, a) {
-  if (!inheritFrom(b, a)) return 'Nothing to inherit';
-  if (!canAfford(inheritCost(b, a))) return 'Missing materials';
-  return '';
-}
-function inheritArm(bu, au) {
-  const b = armOf(bu), a = armOf(au);
-  if (!b || !a || inheritReason(b, a)) return false;
-  const c = inheritCost(b, a);
-  for (const k in c) takeStock(k, c[k]);
-  b.xp = Math.max(b.xp, a.xp); b.ref = Math.max(b.ref, a.ref);
-  if (a.awk > b.awk) { b.awk = a.awk; if (!b.el) b.el = a.el; }
-  const wasEq = a.u === S.equipU;
-  S.arms = S.arms.filter((x) => x !== a);
-  if (wasEq) equipArm(b.u);
-  emit('inherit', { a: b, from: a.id });
-  dirty = true;
-  return true;
-}
-
 /* ------------------------------------------------------------ C. awakening */
 const AWK = [null, { lv: 15, ref: 3, name: 'Awakening I' }, { lv: 35, ref: 7, name: 'Awakening II' }];
-// Awakening II burns the guardian material of the weapon's world (its stage: 4 stages a world).
+// Souls burned per awakening, by the weapon's stage band (forgeVal).
+const AWK_SOULS = [
+  [200,      { soul_fragment: 20, wisp_flame: 8 },      { spirit_core: 20, husk_mask: 6 }],
+  [1000,     { spirit_core: 15, husk_mask: 5 },         { grave_dust: 15, abyssal_essence: 6 }],
+  [5000,     { grave_dust: 15, abyssal_essence: 6 },    { phantom_silk: 12, echo_soul: 4 }],
+  [Infinity, { phantom_silk: 10, echo_soul: 4 },        { echo_soul: 12, sovereign_shard: 2 }],
+];
+// Awakening II also burns the guardian material of the weapon's world (its stage: 4 stages a world).
 const GUARD_MAT = ['ashen_tail', 'tide_heart', 'sovereign_shard', 'tyrant_horn', 'matriarch_eye', 'chimera_heart', 'lord_visage', 'rift_shard'];
 const awkRelic = (id) => GUARD_MAT[Math.max(0, Math.min(GUARD_MAT.length - 1, Math.floor((ITEMS[baseOf(id)].stage || 0) / 4)))];
 function awkCost(a) {
-  const next = a.awk + 1, tier = RELEASE_COST.find((c) => forgeVal(a.id) < c[0]), c = Object.assign({}, tier[next]);
+  const next = a.awk + 1, tier = AWK_SOULS.find((c) => forgeVal(a.id) < c[0]), c = Object.assign({}, tier[next]);
   if (next === 2) { const r = awkRelic(a.id); c[r] = (c[r] || 0) + 2; }
   return c;
 }
@@ -228,7 +212,7 @@ function awkReason(a) {
   const next = AWK[a.awk + 1];
   if (!forgeOn()) return 'Locked';
   if (!next) return 'Fully awakened';
-  if (armLv(a) < next.lv) return `Needs weapon level ${next.lv}`;
+  if (armLv(a) < next.lv) return `Needs ${FAMILIES[armFamily(a.id)].name} mastery ${next.lv}`;
   if (a.ref < next.ref) return `Needs refinement +${next.ref}`;
   if (!canAfford(awkCost(a))) return 'Missing materials';
   if (S.gold < awkGold(a)) return 'Not enough gold';
@@ -244,6 +228,76 @@ function awakenArm(u, el) {
   if (a.awk === 1) a.el = el;
   S.stats.awakened = (S.stats.awakened || 0) + 1;
   emit('awakenarm', { a });
+  dirty = true;
+  return true;
+}
+
+/* ------------------------------------------------------------ D. transfer */
+// A stronger weapon takes over an older one's refinement, awakening and element, for free. The older one
+// stays in the rack, back to +0. Mastery belongs to the family, so a new weapon is never a reset.
+const armBaseAtk = (a) => (ITEMS[a.id].stats.atk || 0);
+const transferFrom = (b, a) => !!(a && b && a.u !== b.u && armBaseAtk(b) > armBaseAtk(a) && (a.ref > b.ref || a.awk > b.awk));
+// The copy that would give b the most.
+const transferDonor = (b) => S.arms.filter((a) => transferFrom(b, a)).sort((x, y) => armWorth(y) - armWorth(x))[0] || null;
+function transferArm(bu, au) {
+  const b = armOf(bu), a = armOf(au);
+  if (!transferFrom(b, a)) return false;
+  b.ref = Math.max(a.ref, b.ref);
+  if (a.awk > b.awk) { b.awk = a.awk; b.el = a.el; }
+  a.ref = 0; a.awk = 0; a.el = null;
+  if (a.u === S.equipU) equipArm(b.u);
+  emit('transfer', { a: b, from: a.id });
+  dirty = true;
+  return true;
+}
+
+/* ------------------------------------------------------------ armour: reforge and the gem socket */
+// Per item (all copies share it): { gems: [], tier }.
+const GEAR0 = Object.freeze({ gems: [], tier: 0 });
+const gearOf = (id) => S.gear[id] || GEAR0;
+const gearMut = (id) => S.gear[id] || (S.gear[id] = { gems: [], tier: 0 });
+const ownsGear = (id) => count(id) > 0 || Object.values(S.equip).includes(id);
+const GEM_FX = { jade: { hp: 0.06 }, sapphire: { def: 0.06 }, ruby: { dmg: 0.06 }, void_diamond: { dmg: 0.04, def: 0.04, hp: 0.04 } };
+// Tiers 1-5 cost the newest world's relics; tier 6 (Rift-forged) costs a Rift Shard.
+const REFORGE_MAX = 6;
+const socketCount = (id) => (!gearOn() || isWeapon(id) ? 0 : skillLv('smithing') >= 25 ? 1 : 0);
+const reforgeRelic = () => relicsOf(frontier()).sort((a, b) => ITEMS[a].value - ITEMS[b].value)[0];
+const reforgeCost = (id) => {
+  const t = gearOf(id).tier, gold = Math.round(forgeVal(id) * 2 * (t + 1) + 200 * (t + 1));
+  if (t >= REFORGE_MAX - 1) return { gold, relic: 'rift_shard', n: 1, smith: 90 };   // Rift-forging
+  return { gold, relic: reforgeRelic(), n: t + 1, smith: 15 * (t + 1) };
+};
+function gemSum(k) {
+  let s = 0;
+  for (const slot in S.equip) { const id = S.equip[slot]; if (id) for (const gm of gearOf(id).gems) if (gm && GEM_FX[gm][k]) s += GEM_FX[gm][k]; }
+  return s;
+}
+hook('dmg', () => 1 + gemSum('dmg'));
+hook('def', () => 1 + gemSum('def'));
+hook('hp', () => 1 + gemSum('hp'));
+function socketGem(id, i, gem) {
+  if (!ownsGear(id) || i >= socketCount(id) || !GEM_FX[gem] || count(gem) < 1) return false;
+  removeItem(gem, 1);
+  const g = gearMut(id); g.gems[i] = gem;
+  dirty = true;
+  return true;
+}
+function reforgeReason(id) {
+  const c = reforgeCost(id);
+  if (!gearOn()) return 'Locked';
+  if (isWeapon(id)) return 'Weapons are refined';
+  if (gearOf(id).tier >= REFORGE_MAX) return 'Max tier';
+  if (skillLv('smithing') < c.smith) return `Needs Smelting ${c.smith}`;
+  if (S.gold < c.gold) return 'Not enough gold';
+  if (!c.relic || count(c.relic) < c.n) return 'Missing relics';
+  return '';
+}
+function reforge(id) {
+  if (!ownsGear(id) || reforgeReason(id)) return false;
+  const c = reforgeCost(id);
+  S.gold -= c.gold; removeItem(c.relic, c.n);
+  gearMut(id).tier++;
+  emit('reforge', { id, tier: gearOf(id).tier });
   dirty = true;
   return true;
 }
@@ -275,3 +329,6 @@ hook('luckStat', () => (armFam(curArm()) === 'cutlass' ? 10 : 0));
 hook('combat', (dt) => { if (armFam(curArm()) === 'blade') for (const k in RT.cd) RT.cd[k] -= dt * 0.15; });
 // A technique whose tag matches your weapon's element is 25% stronger (techniques.js reads this).
 const armTechMult = (id) => { const el = armEl(curArm()); return el && id && TECHNIQUES[id].tags.includes(el) ? 1.25 : 1; };
+
+// Bank: what the awakening souls are for.
+for (const c of AWK_SOULS) for (const o of [c[1], c[2]]) for (const k in o) if (!EXTRA_USES.some((u) => u[0] === k && u[1].startsWith('Weapon'))) EXTRA_USES.push([k, 'Weapon awakening (souls burned on awakening)']);

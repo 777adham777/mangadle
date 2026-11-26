@@ -86,7 +86,6 @@ EXTRA_USES.push(
   ['rift_shard', 'Rift-forge any gear to tier 6 (Bank → gear → Reforge)'],
   ['jade', 'Gem socket: +6% max HP'], ['sapphire', 'Gem socket: +6% defense'], ['ruby', 'Gem socket: +6% damage'], ['void_diamond', 'Gem socket: +4% damage, defense and HP'],
 );
-for (const c of RELEASE_COST) for (const o of [c[1], c[2]]) for (const k in o) if (!EXTRA_USES.some((u) => u[0] === k && u[1].startsWith('Weapon'))) EXTRA_USES.push([k, 'Weapon awakening (souls burned on release)']);
 for (const f of FRUITS) EXTRA_USES.push([f, 'Eat a copy of the fruit you already ate to raise its rank (max 5)']);
 
 /* ------------------------------------------------------------------ rarity */

@@ -191,7 +191,7 @@ hook('kill', (e, z, loot, dropped) => {
 });
 
 /* ------------------------------------------------------------ in battle */
-// Chakra / Cursed Energy, and a weapon whose awakened element matches the technique's tag (weapons.js).
+// Chakra / Cursed Energy, and a weapon whose awakened element matches the technique's tag (forge.js).
 const domainOpen = () => (RT.fx.domain || 0) > 0;
 // A technique sharing an element tag with the open domain is 50% stronger.
 const domainMult = (id) => (id && domainOpen() && RT.domainTags && TECHNIQUES[id].tags.some((t) => t !== 'domain' && RT.domainTags.includes(t)) ? 1.5 : 1);

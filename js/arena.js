@@ -176,7 +176,7 @@ function cbFam(id) {
   if (!id || !ITEMS[id]) return 'fist';
   const k = weaponKind(id);
   if (k !== 'cutlass') return CB_KIND[k] || 'blade';
-  // a plain sword shape: the item's own family (weapons.js, or it.fam behind a manga name) refines it
+  // a plain sword shape: the item's own family (forge.js, or it.fam behind a manga name) refines it
   const af = ITEMS[id].fam || (typeof armFamily === 'function' ? armFamily(id) : '');
   return af === 'short' ? 'quick' : 'blade';
 }

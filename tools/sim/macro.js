@@ -207,7 +207,7 @@ function applyJump(R, dtSim) {
   // what the engine's hooks would have done along the way
   for (const w in R.renown) addRenown(w, R.renown[w] * dtSim);
   if (R.harvests) addRenown('ki', 5 * R.harvests * dtSim);
-  if (R.wxp) { const a = curArm(); if (a) a.xp = Math.min(armXpAt(ARM_MAX), a.xp + R.wxp * dtSim); }
+  if (R.wxp) { const a = curArm(); if (a) addFamXp(armFamily(a.id), R.wxp * dtSim); }
   if (R.seasoned) S.stats.seasoned = (S.stats.seasoned || 0) + R.seasoned * dtSim;
   if (R.fight && S.ki.form && FORM_BY[S.ki.form] && formOpen(FORM_BY[S.ki.form])) {   // stamina cycles: on at 60%, drains, refills at 3/s
     const f = FORM_BY[S.ki.form], m = staminaMax() * 0.6;
@@ -329,7 +329,7 @@ function recordRefs(fightZi) {
 
 /* ------------------------------------------------------------ the run */
 const statSig = () => { let sk = 0; for (const k in S.skills) sk += skillLv(k); let ren = 0; for (const r of WORLD_ORDER) ren += Math.floor(renownLv(r) / 5);
-  return sk + '|' + totalTrain() + '|' + Math.floor(S.stats.actions / 400) + '|' + Object.keys(S.found).length + '|' + ren + '|' + S.arms.map((a) => Math.floor(Math.sqrt(a.xp) / 20) + '.' + a.ref + a.awk).join() + '|' + Math.floor(Math.log2(1 + S.bounty)); };
+  return sk + '|' + totalTrain() + '|' + Math.floor(S.stats.actions / 400) + '|' + Object.keys(S.found).length + '|' + ren + '|' + Object.keys(S.wm || {}).map((f) => f + Math.floor(Math.sqrt(famXp(f)) / 20)).join() + S.arms.map((a) => a.ref + '.' + a.awk).join() + '|' + Math.floor(Math.log2(1 + S.bounty)); };
 const hkSig = () => Object.keys(S.items).length + '|' + Object.values(S.tech.lv).reduce((a, b) => a + b, 0) + loadout().join() + '|' + (S.fruit || '') + fruitRank() + '|' + S.energy.capLv + S.energy.powLv
   + '|' + Object.values(S.shop).reduce((a, b) => a + b, 0) + '|' + Object.keys(S.gates).length + '|' + S.goal + '|' + (S.ki.form || '') + '|' + (S.companions || []).join();
 const OPT = { maxH: 800, q: 50, sessions: [[8, 9], [13, 14], [20, 21]], dayStart: 8, cap: 7200, minDt: 1, stuckH: 72 };

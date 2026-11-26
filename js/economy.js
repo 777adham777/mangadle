@@ -15,7 +15,7 @@
       battles, its voyages) plus one older material, so earlier skills stay useful.
       Quantities come from a cost budget split in shares; boss parts and gems are fixed.
    4. Value follows the stage too: it sets the ingots a weapon is refined with (REF_INGOT)
-      and the souls its awakening burns (RELEASE_COST).
+      and the souls its awakening burns (forge.js AWK_SOULS).
    ========================================================================== */
 
 // Stage → power. Interpolated between whole stages.
@@ -389,7 +389,7 @@ function applyFirstForge() {
 
 // P2 + P4 · Prices. Transforming always pays a little: an ingot is worth its inputs + 5% (level 1) to 10%
 // (level 99); a crafted piece sells for its materials + a margin that depends on the piece. Nothing is
-// salvaged any more (no recycling: user rule). Forge costs keep the stage bands (it.tv, weapons.js forgeVal).
+// salvaged any more (no recycling: user rule). Forge costs keep the stage bands (it.tv, forge.js forgeVal).
 const SELL_MARGIN = { craft: 0.05, util: 0.05, schem: 0.07, set: 0.08, frag: 0.1 };
 const inValue = (inp) => Object.keys(inp || {}).reduce((t, k) => t + (ITEMS[k] ? ITEMS[k].value * inp[k] : 0), 0);
 function applyPrices() {
