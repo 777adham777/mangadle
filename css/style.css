@@ -844,6 +844,7 @@ button.acard:hover { border-color: color-mix(in srgb, var(--rc) 60%, var(--line)
 .ovs-ring { width: 40px; height: 40px; font-size: 19px; color: var(--rc); }
 .ovs-ring::before { inset: 3px; }
 .ovs-ring .gi { position: relative; }
+.ovs-ring .gi.sk-art { width: 28px; height: 28px; }   /* painted skill icons (js/skill-icons.js) need room for their detail */
 .fm-ring { width: 66px; height: 66px; }
 .fm-ring::before { inset: 4px; }
 .fm-ring .tile { --ts: 50px; position: relative; border-radius: 50%; box-shadow: none; }

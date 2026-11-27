@@ -32,8 +32,13 @@ function icName(kind, id) {
   return n && GI[n] ? n : (ICONS.ui && GI[ICONS.ui.info] ? ICONS.ui.info : null);
 }
 // Technique icons carry data-ttip: hovering one anywhere shows the technique's tooltip (tooltips.js).
-const ic = (kind, id, cls) => (kind === 'item' ? itemIc(id, cls) : gi(icName(kind, kind === 'goal' && typeof id === 'number' && GOALS[id] ? GOALS[id].id : id), cls, kind === 'technique' ? `data-ttip="${id}"` : ''));
+const ic = (kind, id, cls) => (kind === 'item' ? itemIc(id, cls) : kind === 'skill' && skillArt(id) ? skillArtIc(id, cls) : gi(icName(kind, kind === 'goal' && typeof id === 'number' && GOALS[id] ? GOALS[id].id : id), cls, kind === 'technique' ? `data-ttip="${id}"` : ''));
 const ui = (k, cls) => ic('ui', k, cls);
+// Painted skill icons (skill-icons.js): an <svg class="gi"> like the glyphs, so every place sizes them the same.
+function skillArt(id) { return typeof SKILL_ICON_ART !== 'undefined' && SKILL_ICON_ART && SKILL_ICON_PATHS[id]; }
+function skillArtIc(id, cls) {
+  return `<svg class="gi sk-art${cls ? ' ' + cls : ''}" viewBox="0 0 64 64" aria-hidden="true"><image href="${skillArt(id)}" width="64" height="64"/></svg>`;
+}
 // Item art: the item's own glyph in its own colour (ICON_COLOR, icons.js); schematics are drawn as blueprints.
 function itemIc(id, cls) {
   if (id === 'FRUIT') return ui('fruit', cls);
@@ -268,7 +273,7 @@ function drawRail() {
   }
   // Combat sits under the starting world: you fish and cook before you fight.
   if (featureOpen('battle')) groups.splice(Math.min(2, groups.length), 0, `<div class="nav-group"><div class="nav-sec" style="--rc:${rc('combat')}">${ui('battle')}Combat</div>
-    ${navRow('battle', ui('battle'), 'Combat', { color: rc('combat'), busy: S.combat.zone != null, skill: 'character', note: S.combat.zone != null ? ZONES[S.combat.zone].name : '' })}</div>`);
+    ${navRow('battle', skillArt('character') ? ic('skill', 'character') : ui('battle'), 'Combat', { color: rc('combat'), busy: S.combat.zone != null, skill: 'character', note: S.combat.zone != null ? ZONES[S.combat.zone].name : '' })}</div>`);
   $('#rail').innerHTML = `<div class="nav-quest" id="navquest">${goalHTML()}</div>${groups.join('')}${nextUnlockHTML('nav-next')}`;
   $('#tabbar').innerHTML = [
     `<button class="tab-btn" data-menu>${ui('menu')}<span>Menu</span></button>`,
