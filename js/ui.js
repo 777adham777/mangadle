@@ -46,7 +46,8 @@ function itemIc(id, cls) {
   const bp = ITEMS[id] && ITEMS[id].type === 'schematic';
   // Illustrated art (item-art.js, js/art/*.js) first; the old one-colour glyph only as a fallback.
   const a = typeof artId === 'function' ? artId(id) : null;
-  if (a) return `<svg class="gi ic ia${bp ? ' bp' : ''}${cls ? ' ' + cls : ''}" data-tip="${id}" aria-hidden="true"><use href="#ia-${a}"/></svg>`;
+  const crack = a && a !== id && ITEMS[id] && ITEMS[id].shardOf === a ? '<use href="#ia-crack"/>' : '';
+  if (a) return `<svg class="gi ic ia${bp ? ' bp' : ''}${crack ? ' shard' : ''}${cls ? ' ' + cls : ''}" data-tip="${id}" aria-hidden="true"><use href="#ia-${a}"/>${crack}</svg>`;
   const n = icName('item', id);
   if (!n) return '';
   const c = typeof itemColor === 'function' ? itemColor(id) : null;

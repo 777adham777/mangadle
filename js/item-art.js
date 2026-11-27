@@ -91,8 +91,15 @@ function artSymbols() {
       ? `<image href="${images[id]}" width="64" height="64" preserveAspectRatio="xMidYMid meet"/>`
       : ART[id];
     return `<symbol id="ia-${id}" viewBox="0 0 64 64">${body}</symbol>`;
-  }).join('');
+  }).join('') + SHARD_CRACK;
 }
+// Weapon shards wear their weapon's art under this crack: a split across it and a shard badge.
+const SHARD_CRACK = '<symbol id="ia-crack" viewBox="0 0 64 64">'
+  + '<path d="M38 3 L31 17 L37 23 L27 35 L33 41 L24 55" fill="none" stroke="#2a0d1e" stroke-width="5" stroke-linejoin="round" stroke-linecap="round"/>'
+  + '<path d="M38 3 L31 17 L37 23 L27 35 L33 41 L24 55" fill="none" stroke="#e8f6ff" stroke-width="1.8" stroke-linejoin="round" stroke-linecap="round"/>'
+  + '<circle cx="11" cy="11" r="10" fill="#2a0d1e"/><circle cx="11" cy="11" r="8" fill="#3a2a5a"/>'
+  + '<path d="M11 3.5 L16 10 L12 18.5 L6 11.5 Z" fill="#9fd8ff" stroke="#e8f6ff" stroke-width="0.9" stroke-linejoin="round"/>'
+  + '<path d="M11 3.5 L12 18.5" stroke="#5aa0d8" stroke-width="1"/></symbol>';
 const artDefs = () => Object.values(ART_DEFS).join('');
 // The art id for an item: its own, or its base item's (quality variants)
 function artId(id) {
@@ -102,5 +109,6 @@ function artId(id) {
   const it = typeof ITEMS !== 'undefined' && ITEMS[id];
   if (it && it.base && (images[it.base] || ART[it.base])) return it.base;
   if (it && it.type === 'schematic' && (images[it.teaches] || ART[it.teaches])) return it.teaches;
+  if (it && it.shardOf && (images[it.shardOf] || ART[it.shardOf])) return it.shardOf;   // drawn with the crack (ui.js itemIc)
   return null;
 }

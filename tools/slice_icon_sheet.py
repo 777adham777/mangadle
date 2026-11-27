@@ -5,6 +5,7 @@
     python tools/slice_icon_sheet.py path.png 3      # any file, as batch 3
     python tools/slice_icon_sheet.py --check         # are all 53 armory icons there, 256x256 RGBA, registered?
     python tools/slice_icon_sheet.py --depth [n]     # the skill-depth sheets (art-incoming/depth/, docs/DEPTH-ICONS.md)
+    python tools/slice_icon_sheet.py --missing [n]   # 8-icon 4x2 sheets (art-incoming/missing/, docs/MISSING-ICONS.md)
     options: --dry (preview only)  --holes (on a white/grey background, also clear enclosed pockets of it)
 
 Batch <n> lists the 6 item ids in reading order (left to right, top row first): docs/ARMORY-ICONS.md
@@ -61,6 +62,14 @@ if "--depth" in sys.argv:
 FOLDER = {i: ("soul" if w == "rift" else w) for w, ids in WORLD.items() for i in ids}   # Rift gear sits with the Eye of the Rift
 ORDER = [i for ids in WORLD.values() for i in ids]
 BATCHES = {n + 1: ORDER[k:k + 6] for n, k in enumerate(range(0, len(ORDER), 6))}
+# --missing: the 8-per-sheet batches (4x2) of docs/MISSING-ICONS.md, written by tools/missing_icons.js.
+if "--missing" in sys.argv:
+    import json
+    spec = json.loads((ROOT / "tools" / "missing_icons.json").read_text(encoding="utf8"))
+    COLS, ROWS, INCOMING = spec["cols"], spec["rows"], ROOT / "art-incoming" / "missing"
+    BATCHES = {n + 1: [i for i, _ in s] for n, s in enumerate(spec["sheets"])}
+    FOLDER = {i: f for s in spec["sheets"] for i, f in s}
+    ORDER = [i for s in spec["sheets"] for i, _ in s]
 
 
 # ------------------------------------------------------------------ background
