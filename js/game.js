@@ -200,15 +200,16 @@ function skPerk(skill, k) {
   return v;
 }
 const skillXpMult = (id) => xpMult() * (hasPetFor(id) ? 1.05 : 1) * (1 + synergyBonus('xp', id)) * hmul('xp', id) * (1 + skPerk(id, 'xp'));
-// Onboarding: the first levels of every skill go faster. A gain counts ×top at level 1, tapering to ×1 at level
-// `end` (each level's share of a gain uses that level's factor, so nothing past `end` changes).
-// Skills: ×2 → ×1 at level 5 (2026-11-24). Character: ×8 → ×1 at level 15 (2026-11-27): its foes give whole XP on
-// a curve sized for 4 h a stage, so at the start it earned ~10× less per hour than a gathering skill and
-// level 10 took 2.4 h of fighting (now ~25 min); levels 15+ and every stage's XP are unchanged.
-const EARLY = { character: [15, 8], other: [5, 2] };
+// Onboarding: the first levels must fly by (that is where a new player is hooked). A gain counts ×top up to
+// level `hold`, then the factor fades geometrically to ×1 at level `end` (each level's share of a gain uses that
+// level's factor, so nothing from `end` on changes).
+// 2026-11-27, user: "level 1 to 10 is atrociously slow". Character foes give whole XP on a curve sized for 4 h a
+// stage, so unboosted, levels 1-9 cost ~17 min of fighting each (2.4 h to level 10). Now: Character 10 in ~8 min,
+// 17 in ~70 min; every other skill 10 in ~5 min (was ~13).
+const EARLY = { character: { top: 20, hold: 10, end: 17 }, other: { top: 3, hold: 10, end: 12 } };
 const earlyXp = (id) => {
-  const [end, top] = EARLY[id] || EARLY.other, L = skillLv(id);
-  return L >= end ? 1 : 1 + (top - 1) * (end - L) / (end - 1);
+  const E = EARLY[id] || EARLY.other, L = skillLv(id);
+  return L >= E.end ? 1 : L < E.hold ? E.top : Math.pow(E.top, (E.end - L) / (E.end - E.hold));
 };
 // Adds `gain` XP to skill `id` with the onboarding factor (shared with tools/sim).
 function boostXp(id, gain) {

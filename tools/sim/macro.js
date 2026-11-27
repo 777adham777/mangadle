@@ -96,7 +96,7 @@ function backgroundRates(R) {
 /* ------------------------------------------------------------ events */
 const LV_MATTERS = {};
 for (const k in SKILLS) {
-  const m = LV_MATTERS[k] = new Set([(EARLY[k] || EARLY.other)[0]]);
+  const m = LV_MATTERS[k] = new Set([(EARLY[k] || EARLY.other).end]);
   for (const a of SKILLS[k].actions || []) m.add(a.level);
   for (const p of SKILL_PERKS[k] || []) m.add(p.lv);
   for (const x of MILESTONES || []) m.add(x.lv);
