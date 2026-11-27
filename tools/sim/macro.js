@@ -96,7 +96,7 @@ function backgroundRates(R) {
 /* ------------------------------------------------------------ events */
 const LV_MATTERS = {};
 for (const k in SKILLS) {
-  const m = LV_MATTERS[k] = new Set([EARLY_LV]);
+  const m = LV_MATTERS[k] = new Set([(EARLY[k] || EARLY.other)[0]]);
   for (const a of SKILLS[k].actions || []) m.add(a.level);
   for (const p of SKILL_PERKS[k] || []) m.add(p.lv);
   for (const x of MILESTONES || []) m.add(x.lv);
@@ -108,9 +108,8 @@ const levelMatters = (s, L) => LV_MATTERS[s] && LV_MATTERS[s].has(L) && (!DENSE.
 // Character levels that open something (technique slots 8 / 20, unlock thresholds)
 const UNLOCK_LV = new Set([8, 20]);
 for (const u of UNLOCKS) { const m = /charLv\(\)\s*>=\s*(\d+)|skillLv\('character'\)\s*>=\s*(\d+)/.exec(String(u.need)); if (m) UNLOCK_LV.add(+(m[1] || m[2])); }
-const XPCAP = () => XP_TABLE[EARLY_LV];
-// XP rate as counted by the bar (the onboarding ×1.5 below level 5)
-const effXp = (s, rate) => rate * (S.skills[s].xp < XPCAP() ? EARLY_XP : 1);
+// XP rate as counted by the bar (the onboarding factor of the current level, game.js earlyXp)
+const effXp = (s, rate) => rate * earlyXp(s);
 function nextEvent(R, task, pace) {
   const ev = [];
   const push = (dtSim, why) => { if (dtSim > 0 && isFinite(dtSim)) ev.push([dtSim / pace, why]); };
@@ -121,7 +120,7 @@ function nextEvent(R, task, pace) {
     const L = skillLv(s);
     let to = L + 1;
     if (s !== 'character') while (to < L + 60 && XP_TABLE[to + 1] != null && !levelMatters(s, to) && !(I0.lvl === s && to >= st0.g.n)) to++;
-    else while (to < L + 3 && XP_TABLE[to + 1] != null && !(I0.lvl === s && to >= st0.g.n) && !(s === 'character' && UNLOCK_LV.has(to))) to++;   // Character: every 3 levels
+    else while (to < L + 3 && earlyXp(s) === 1 && XP_TABLE[to + 1] != null && !(I0.lvl === s && to >= st0.g.n) && !(s === 'character' && UNLOCK_LV.has(to))) to++;   // Character: every 3 levels
     if (XP_TABLE[to] != null) push((XP_TABLE[to] - S.skills[s].xp) / effXp(s, R.xp[s]), 'level ' + s);
   }
   const net = {};
@@ -171,11 +170,8 @@ function giveItem(id, n) {
   addItem(id, n);
 }
 function gainXp(s, amt) {
-  const x = S.skills[s].xp, cap = XPCAP();
-  let g = amt;
-  if (x < cap) g = Math.min(amt * EARLY_XP, cap - x) + Math.max(0, amt - (cap - x) / EARLY_XP);
   const before = skillLv(s);
-  S.skills[s].xp += g;
+  boostXp(s, amt);
   if (skillLv(s) > before) { MAC.levels.push([+(MAC.t / 3600).toFixed(2), s, skillLv(s)]); emit('levelup', { skill: s, level: skillLv(s) }); }
 }
 function applyJump(R, dtSim) {

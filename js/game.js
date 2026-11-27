@@ -200,16 +200,30 @@ function skPerk(skill, k) {
   return v;
 }
 const skillXpMult = (id) => xpMult() * (hasPetFor(id) ? 1.05 : 1) * (1 + synergyBonus('xp', id)) * hmul('xp', id) * (1 + skPerk(id, 'xp'));
-// Onboarding (2026-11-24): the first levels of every skill go faster. Below level EARLY_LV each XP gain counts
-// ×EARLY_XP, only up to the level-5 threshold (the rest of a gain that crosses it counts normally), so level 5 costs
-// a third less effort and nothing from level 5 on changes (the 5→6 step stays the same).
-const EARLY_LV = 5, EARLY_XP = 1.5;
-const earlyXp = (id) => (skillLv(id) < EARLY_LV ? EARLY_XP : 1);   // for "next level in" estimates
+// Onboarding: the first levels of every skill go faster. A gain counts ×top at level 1, tapering to ×1 at level
+// `end` (each level's share of a gain uses that level's factor, so nothing past `end` changes).
+// Skills: ×2 → ×1 at level 5 (2026-11-24). Character: ×8 → ×1 at level 15 (2026-11-27): its foes give whole XP on
+// a curve sized for 4 h a stage, so at the start it earned ~10× less per hour than a gathering skill and
+// level 10 took 2.4 h of fighting (now ~25 min); levels 15+ and every stage's XP are unchanged.
+const EARLY = { character: [15, 8], other: [5, 2] };
+const earlyXp = (id) => {
+  const [end, top] = EARLY[id] || EARLY.other, L = skillLv(id);
+  return L >= end ? 1 : 1 + (top - 1) * (end - L) / (end - 1);
+};
+// Adds `gain` XP to skill `id` with the onboarding factor (shared with tools/sim).
+function boostXp(id, gain) {
+  const sk = S.skills[id];
+  while (gain > 1e-9) {
+    const m = earlyXp(id);
+    if (m === 1) { sk.xp += gain; return; }
+    const room = XP_TABLE[skillLv(id) + 1] - sk.xp, g = Math.min(gain * m, room);
+    sk.xp += g; gain -= g / m;
+    if (g < room) return;
+  }
+}
 function addXp(id, amt) {
-  const before = skillLv(id), x = S.skills[id].xp, cap = XP_TABLE[EARLY_LV];
-  let gain = amt * skillXpMult(id);
-  if (x < cap) gain = Math.min(gain * EARLY_XP, cap - x) + Math.max(0, gain - (cap - x) / EARLY_XP);
-  S.skills[id].xp += gain;
+  const before = skillLv(id);
+  boostXp(id, amt * skillXpMult(id));
   const after = skillLv(id);
   if (after > before) { emit('levelup', { skill: id, level: after }); dirty = true; }
 }
