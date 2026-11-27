@@ -1811,6 +1811,8 @@ function showOffline(secs, before, rested) {
   openModal(obtainedHTML('Welcome back', awaySub(secs, rested), tiles, rows) + usedRowHTML(used));
 }
 
+// The Welcome back recap only for a real break: shorter gaps still simulate, silently.
+const RECAP_AFTER = 600;
 let lastTopKey = '';
 function boot() {
   installSprite();
@@ -1836,7 +1838,8 @@ function boot() {
     fillChamber(away - secs);   // time beyond the offline limit goes to the Time Chamber
     if (typeof awayBegin === 'function') awayBegin();
     SIM = true; RESTING = true; advance(secs); SIM = false; RESTING = false;
-    showOffline(secs, before, true);
+    if (away >= RECAP_AFTER) showOffline(secs, before, true);
+    else if (typeof awayDrop === 'function') awayDrop();
   }
   S.last = Date.now();
   lastTick = Date.now();
@@ -1883,7 +1886,7 @@ function boot() {
     if (document.hidden) { hiddenAt = Date.now(); hiddenSnap = snapshot(); if (typeof awayBegin === 'function') awayBegin(); saveGame(); }
     else if (hiddenSnap) {
       const away = (Date.now() - hiddenAt) / 1000;
-      if (away > 60 && !$('#modal').classList.contains('show')) showOffline(offlineSeconds(away), hiddenSnap);
+      if (away >= RECAP_AFTER && !$('#modal').classList.contains('show')) showOffline(offlineSeconds(away), hiddenSnap);
       else if (typeof awayDrop === 'function') awayDrop();
       hiddenSnap = null;
     }
