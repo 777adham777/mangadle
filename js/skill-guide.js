@@ -7,7 +7,7 @@
    2. The loop: what comes in (and from which skill) → this skill → what it makes → which skills use it.
    3. Three first steps, written for that skill, each with a big icon.
    4. Your route: the next unlocks and perks on a level track, you-are-here marked.
-   5. One tip worth knowing, then what makes it faster.
+   5. One tip worth knowing. Tools sit on the route's header.
    Words are hand-written per skill (GUIDE_SK); everything else comes from the game data.
    Only skills you have opened are named, so nothing is spoiled.
    A page's guide opens by itself, full screen, the first time you visit it (S.ui.guideSeen); this
@@ -138,11 +138,11 @@ function sgLoop(skill) {
   return `<section class="sg-loop">
     <div class="sg-col"><small>${inList.length ? 'Takes' : 'Needs'}</small>
       ${inList.length ? `<div class="sg-its">${inList.slice(0, 6).map(sgItem).join('')}</div>${from.size ? `<div class="sg-sks">${skills(from)}</div>` : ''}`
-      : `<div class="sg-free">${ui('time')}<b>Only time</b><span>no materials</span></div>`}</div>
+      : `<div class="sg-free">${ui('time')}<b>Only time</b></div>`}</div>
     <span class="sg-arr"></span>
-    <div class="sg-core">${ic('skill', skill)}<b>${esc(SKILLS[skill].name)}</b></div>
+    <div class="sg-core" title="${esc(SKILLS[skill].name)}">${ic('skill', skill)}</div>
     <span class="sg-arr"></span>
-    <div class="sg-col"><small>Makes</small><div class="sg-its">${outList.map(sgItem).join('')}</div></div>
+    <div class="sg-col mk"><small>Makes</small><div class="sg-its">${outList.map(sgItem).join('')}</div></div>
     ${to.size || hidden ? `<span class="sg-arr"></span><div class="sg-col"><small>Feeds</small><div class="sg-sks">${skills(to)}${hidden ? `<span class="sg-sk mute">${ui('lock')}<b>More later</b></span>` : ''}</div></div>` : ''}
   </section>`;
 }
@@ -157,7 +157,7 @@ function sgRoute(skill) {
   const nextI = nodes.findIndex((n) => n.lv > L), start = nextI < 0 ? Math.max(0, nodes.length - 7) : Math.max(0, nextI - 2);
   const win = nodes.slice(start, start + 7);
   const nx = nextI >= 0 ? nodes[nextI] : null;
-  return `<section class="sg-sec"><h4>Your route <small>Level ${L}${nx ? ` · next at ${nx.lv}` : ' · everything open'}</small></h4>
+  return `<section class="sg-sec"><h4><span>Route</span>${sgTools(skill)}</h4>
     <div class="sg-route">${win.map((n) => {
       const done = n.lv <= L, cls = `sg-node ${done ? 'done' : ''} ${n === nx ? 'next' : ''}`;
       const inner = `<span class="sg-dot">${n.icon}</span><em>Lv ${n.lv}</em><b>${esc(n.name)}</b>`;
@@ -165,36 +165,33 @@ function sgRoute(skill) {
     }).join('')}</div></section>`;
 }
 
-/* ---- 5. what makes it faster */
-function sgBoost(skill) {
-  const chips = [];
-  if (SKILLS[skill].realm !== 'combat') {
-    chips.push(`<span class="pill" title="Action speed: tools, perks and pets raise it">${ui('spd')} Speed <b>×${skillSpeed(skill).toFixed(2)}</b></span>`, `<span class="pill" title="XP multiplier">${ui('xp')} XP <b>×${skillXpMult(skill).toFixed(2)}</b></span>`);
-  }
+/* ---- tools and bait for this skill, owned ones lit */
+function sgTools(skill) {
   const tools = Object.values(ITEMS).filter((it) => it.type === 'tool' && it.toolFor === skill).sort((a, b) => a.tier - b.tier);
   const baits = Object.values(ITEMS).filter((it) => it.type === 'bait' && it.baitFor === skill);
   const have = typeof toolTier === 'function' ? toolTier(skill) : 0;
-  if (tools.length) chips.push(`<span class="sg-tools" title="Tools (made in Crafting): each tier +15% speed">${ui('gadget')}<span>Tools</span>${tools.map((it) => `<i class="${have >= it.tier ? 'got' : ''}" data-tip="${it.id}">${itemIc(it.id)}</i>`).join('')}</span>`);
-  if (baits.length) chips.push(`<span class="sg-tools" title="Bait: +50% rare finds and +10% doubles while you carry some">${ui('bait')}<span>Bait</span>${baits.map((it) => `<i class="got" data-tip="${it.id}">${itemIc(it.id)}</i>`).join('')}</span>`);
-  return chips.length ? `<div class="sg-boost">${chips.join('')}</div>` : '';
+  const row = (label, hint, list, got) => `<span class="sg-tools" title="${hint}"><em>${label}</em>${list.map((it) => `<i class="${got(it) ? 'got' : ''}" data-tip="${it.id}">${itemIc(it.id)}</i>`).join('')}</span>`;
+  return (tools.length ? row('Tools', 'Made in Crafting: each tier +15% speed', tools, (it) => have >= it.tier) : '')
+    + (baits.length ? row('Bait', 'Carry some: +50% rare finds, +10% doubles', baits, () => true) : '');
 }
+
+const sgHero = (bg, kick, title, tag, lvl) => `<header class="sg-hero" style="background-image:url('${bg}')">
+    <div class="sg-hero-t"><small>${esc(kick)}</small><h2>${esc(title)}</h2><p>${esc(tag)}</p></div>
+    ${lvl ? `<div class="sg-lvl" style="--p:${lvl.p}" title="Level ${lvl.L}"><b>${lvl.L}</b><small>Lv</small></div>` : ''}
+    <button class="sg-x" data-sgclose title="Close (Esc)" aria-label="Close"></button>
+  </header>`;
+const sgSteps = (steps) => (steps.length ? `<section class="sg-steps" style="--n:${steps.length}">${steps.map(([icn, t, d], i) =>
+  `<div class="sg-step"><span class="sg-big">${sgIc(icn)}</span><div><b><small>0${i + 1}</small>${esc(t)}</b><p>${esc(d)}</p></div></div>`).join('')}</section>` : '');
 
 function skillGuideHTML(skill) {
   const s = SKILLS[skill], G = GUIDE_SK[skill] || { tag: s.desc || '', steps: [], tip: null }, b = xpInfo(skill);
-  const realmName = REALMS[s.realm] ? REALMS[s.realm].name : 'Combat';
-  return `<div class="sg" style="--rc:${rc(s.realm === 'combat' ? 'combat' : s.realm)}">
-    <header class="sg-hero" style="background-image:url('${sgBg(skill)}')">
-      <span class="sg-ic">${ic('skill', skill)}</span>
-      <div class="sg-hero-t"><small>${esc(realmName)} · Guide</small><h2>${esc(s.name)}</h2><p>${esc(G.tag)}</p></div>
-      <div class="sg-lvl"><b>${b.L}</b><small>Level</small><i style="--p:${b.p}"></i></div>
-      <button class="sg-x" data-sgclose title="Close (Esc)">${ui('close')}</button>
-    </header>
-    ${s.realm === 'combat' ? '' : sgLoop(skill)}
-    ${G.steps.length ? `<section class="sg-steps">${G.steps.map(([icn, t, d], i) => `<div class="sg-step"><span class="sg-n">${i + 1}</span><span class="sg-big">${sgIc(icn)}</span><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('')}</section>` : ''}
-    ${s.realm === 'combat' ? '' : sgRoute(skill)}
-    ${G.tip ? `<div class="sg-pro"><span class="sg-big">${sgIc(G.tip[0])}</span><div><small>Good to know</small><p>${esc(G.tip[1])}</p></div></div>` : ''}
-    ${sgBoost(skill)}
-    <p class="sg-foot">${ui('info')}<span>Hover anything for details. On an item, press <kbd>Shift</kbd> to pin its card and jump to where it comes from.</span></p>
+  const realmName = REALMS[s.realm] ? REALMS[s.realm].name : 'Combat', cb = s.realm === 'combat';
+  return `<div class="sg" style="--rc:${rc(cb ? 'combat' : s.realm)}">
+    ${sgHero(sgBg(skill), realmName, s.name, G.tag, b)}
+    ${cb ? '' : sgLoop(skill)}
+    ${sgSteps(G.steps)}
+    ${cb ? '' : sgRoute(skill)}
+    ${G.tip ? `<div class="sg-pro">${sgIc(G.tip[0])}<p>${esc(G.tip[1])}</p></div>` : ''}
   </div>`;
 }
 
@@ -217,12 +214,8 @@ const GUIDE_PG = {
 function pageGuideHTML(k) {
   const G = GUIDE_PG[k];
   return `<div class="sg sg-pg" style="--rc:${rc(G.bg)}">
-    <header class="sg-hero" style="background-image:url('assets/backgrounds/combat/${G.bg}.webp')">
-      <span class="sg-ic">${sgIc(G.icon)}</span>
-      <div class="sg-hero-t"><small>${esc(G.kick)} · Guide</small><h2>${esc(G.title)}</h2><p>${esc(G.tag)}</p></div>
-      <button class="sg-x" data-sgclose title="Close (Esc)">${ui('close')}</button>
-    </header>
-    <section class="sg-steps">${G.steps.map(([icn, t, d], i) => `<div class="sg-step"><span class="sg-n">${i + 1}</span><span class="sg-big">${sgIc(icn)}</span><b>${esc(t)}</b><p>${esc(d)}</p></div>`).join('')}</section>
+    ${sgHero(`assets/backgrounds/combat/${G.bg}.webp`, G.kick, G.title, G.tag)}
+    ${sgSteps(G.steps)}
   </div>`;
 }
 const guideHTML = (k) => (SKILLS[k] ? skillGuideHTML(k) : pageGuideHTML(k));

@@ -13,8 +13,8 @@ const BETA = {
   notice: 1,                 // bump to show the pre-alpha notice again to everyone
   worlds: 3,                 // worlds open in this build (Infinity = all)
   feedback: '',              // Discord invite or form URL: shown in Settings and in the bug report
-  build: 184,                // keep equal to the number in sw.js VERSION (bump both on deploy)
-  date: '26 Nov',            // day of that build
+  build: 185,                // keep equal to the number in sw.js VERSION (bump both on deploy)
+  date: '27 Nov',            // day of that build
   version: location.protocol === 'file:' ? 'local' : 'unknown',   // cache name the service worker reports (play data, bug report)
 };
 const betaVersion = () => `build ${BETA.build} · ${BETA.date}`;
