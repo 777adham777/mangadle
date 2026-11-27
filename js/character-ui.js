@@ -19,16 +19,20 @@ const chSlotIds = () => [...CH_GEAR.map((x) => x[0]), ...(chFoodOn() ? ['food'] 
 /* ------------------------------------------------------------ Power */
 // One number for how strong you are: damage per second (crits counted) times how much you can take,
 // square-rooted so it grows like your other numbers. Gear swaps and the hero header read it.
-function heroPower() {
+// Damage: average damage per second (crits and speed counted).
+function heroDps() {
   const crit = typeof critChance === 'function' ? critChance() : 0, cm = typeof critMult === 'function' ? critMult() : 1.5;
-  const dps = 0.75 * pMaxHit() * (1 + crit * (cm - 1)) / pSpeed();
-  const ehp = pMaxHp() / mitig(pDef()) / Math.max(0.2, 1 - pDodge());
-  return Math.round(Math.sqrt(dps * ehp));
+  return 0.75 * pMaxHit() * (1 + crit * (cm - 1)) / pSpeed();
 }
+// Toughness: how much raw foe damage you can take before falling (HP, defense, dodge, damage-taken perks).
+function heroTough() {
+  return pMaxHp() / mitig(pDef()) / Math.max(0.2, 1 - pDodge()) / Math.max(0.05, hmul('taken'));
+}
+function heroPower() { return Math.round(Math.sqrt(heroDps() * heroTough())); }
 
 /* ------------------------------------------------------------ stat change of a swap */
 function chSnap() {
-  return { power: heroPower(), atk: pMaxHit(), def: pDef(), hp: pMaxHp(), spd: pSpeed(), crit: typeof critChance === 'function' ? critChance() : 0, dodge: pDodge(), luck: statLuck(), gold: goldMult() };
+  return { power: heroPower(), dps: heroDps(), tough: heroTough(), atk: pMaxHit(), def: pDef(), hp: pMaxHp(), spd: pSpeed(), crit: typeof critChance === 'function' ? critChance() : 0, dodge: pDodge(), luck: statLuck(), gold: goldMult() };
 }
 // Your numbers with `cand` in `slot` (weapon: a copy, else an item id; null = empty). Nothing is kept.
 function chWith(slot, cand) {
@@ -52,13 +56,20 @@ const CH_DELTA = [
   ['gold', 'gold', (d) => sgnAbs(d, pct), 1, 0.0005, 1],
 ];
 const CH_TIP = { atk: 'Max hit', def: 'Defense', hp: 'Max HP', spd: 'Attack speed', crit: 'Crit chance', dodge: 'Dodge', luck: 'Luck', gold: 'Gold bonus' };
-// Better or worse, said once: the Power change leads (it weighs damage and toughness together),
-// then each stat that moves. Luck and gold (not in Power) add a little to the score.
+// Better or worse, said in fight terms first: Damage and Toughness changes (the sort score weighs
+// both, as Power does), then each stat that moves. Luck and gold add a little to the score.
+const CH_SUM = [
+  ['dps', 'battle', 'Damage', 'Damage per second, crits and attack speed counted'],
+  ['tough', 'def', 'Toughness', 'How many hits you can take before falling: HP, defense, dodge and damage-taken perks'],
+];
 function chDiff(base, next) {
   const pd = base.power ? (next.power - base.power) / base.power : 0;
   let score = pd;
   const chips = [];
-  if (Math.abs(pd) >= 0.005) chips.push(`<span class="chd pw ${pd > 0 ? 'up' : 'dn'}" title="Power: damage and staying power together">${ui('battle')}Power ${pd > 0 ? '+' : '−'}${pct(Math.abs(pd))}</span>`);
+  for (const [k, icn, name, tip] of CH_SUM) {
+    const d = base[k] ? (next[k] - base[k]) / base[k] : 0;
+    if (Math.abs(d) >= 0.005) chips.push(`<span class="chd pw ${d > 0 ? 'up' : 'dn'}" title="${tip}">${ui(icn)}${name} ${d > 0 ? '+' : '−'}${pct(Math.abs(d))}</span>`);
+  }
   for (const [k, icn, f, dir, eps, w] of CH_DELTA) {
     const d = next[k] - base[k];
     if (Math.abs(d) < eps) continue;
@@ -67,7 +78,7 @@ function chDiff(base, next) {
   }
   return { score, html: chips.length ? chips.join('') : '<span class="chd eq">No change</span>' };
 }
-const chPerks = (id) => (typeof PERKS === 'undefined' ? [] : Object.keys(ITEMS[id].stats || {}).filter((k) => PERKS[k]).map((k) => PERKS[k].name));
+const chPerks = (id) => (typeof PERKS === 'undefined' ? [] : Object.keys(ITEMS[id].stats || {}).filter((k) => PERKS[k]).map((k) => `${PERKS[k].name} ${typeof perkVal === 'function' ? perkVal(k, itemStat(id, k)) : ''}`.trim()));
 // Base stats with their icon; perks by name ("Opening strike +100%"), so a perk never reads as more Attack.
 const chStatLine = (id) => statRows(Object.fromEntries(Object.keys(ITEMS[id].stats || {}).map((k) => [k, itemStat(id, k)])))
   .map(([icn, name, v]) => (icn.startsWith('pk_') && PERKS[icn.slice(3)] ? `<span class="ch-perk" title="${esc(PERKS[icn.slice(3)].tip || name)}">${esc(name)} ${v}</span>` : `<span>${ui(icn)}${v}</span>`)).join('');
