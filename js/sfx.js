@@ -12,14 +12,12 @@
 const SOUNDS = {
   hit_normal: [4, 0.5, 45, 3, 0.06],
   hit_crit: [3, 0.7, 70, 2, 0.05],
-  foe_death: [3, 0.55, 150, 2, 0.04],
-  loot_common: [3, 0.5, 90, 2, 0.05],
+  foe_death: [3, 0.6, 150, 2, 0.04],
   loot_rare: [1, 0.75, 250, 1, 0],
   loot_epic: [1, 0.85, 400, 1, 0],
   loot_legendary: [1, 1, 800, 1, 0],
-  level_up: [1, 0.8, 1200, 1, 0],
+  level_up: [1, 0.6, 1200, 1, 0],
   ui_click: [3, 0.45, 35, 2, 0.04],
-  ui_tab: [2, 0.5, 60, 1, 0.04],
 };
 UXSET.sound = { label: 'Sound', help: '', opts: [['off', 'Off'], ['30', 'Low'], ['60', 'Medium'], ['100', 'High']], def: '60' };
 
@@ -73,12 +71,14 @@ function sfxPlay(name, o) {
 }
 
 // Several finds in one tick (a kill's loot + its 'rare' event, a chest...) play one sound: the best one.
+// Common and Uncommon finds stay silent: a kill is already a hit and a light fade (2026-11-27 feedback).
 let sfxLootR = 0;
 function sfxLoot(r) {
+  if (r < 3) return;
   if (!sfxLootR) setTimeout(() => {
     const best = sfxLootR;
     sfxLootR = 0;
-    sfxPlay(best >= 5 ? 'loot_legendary' : best >= 4 ? 'loot_epic' : best >= 3 ? 'loot_rare' : 'loot_common', { delay: 0.12 });
+    sfxPlay(best >= 5 ? 'loot_legendary' : best >= 4 ? 'loot_epic' : 'loot_rare', { delay: 0.12 });
   }, 0);
   sfxLootR = Math.max(sfxLootR, r);
 }
@@ -91,8 +91,8 @@ on('hit', (d) => {
 });
 on('kill', (d) => {
   const ids = Object.keys(d.loot || {}), r = ids.length ? Math.max(...ids.map(rarity)) : 0;
-  if (inBattleView()) sfxPlay('foe_death');
-  if (r && (inBattleView() || r >= 3)) sfxLoot(r);
+  if (inBattleView()) sfxPlay('foe_death', { delay: 0.08 });   // just after the killing blow's own hit
+  sfxLoot(r);
 });
 on('rare', (d) => sfxLoot(rarity(d.id)));
 on('schematic', () => sfxLoot(4));
@@ -100,13 +100,13 @@ on('pet', () => sfxLoot(5));
 on('levelup', () => sfxPlay('level_up'));
 
 /* ---------------------------------------------------------------- the interface */
-// A page change the player asked for turns a page; any other button gives a wooden click.
+// Buttons give a wooden click; changing page stays silent (2026-11-27 feedback: the page turn was too much).
 {
   const base = setView;
   setView = function (v) {
     const was = S.ui.view;
     base(v);
-    if (S.ui.view !== was && performance.now() - sfx.gesture < 600) { sfx.tabAt = performance.now(); sfxPlay('ui_tab'); }
+    if (S.ui.view !== was) sfx.tabAt = performance.now();
   };
 }
 const sfxGesture = () => { sfx.gesture = performance.now(); sfxStart(); };
@@ -114,7 +114,7 @@ document.addEventListener('pointerdown', sfxGesture, true);
 document.addEventListener('keydown', sfxGesture, true);
 document.addEventListener('click', (ev) => {
   const t = ev.target.closest('button, a[href], [role="button"], [data-nav], summary');
-  if (!t || t.disabled) return;
+  if (!t || t.disabled || t.closest('[data-nav]')) return;
   const set = t.dataset && t.dataset.uxset && t.dataset.uxset.startsWith('sound:');
   setTimeout(() => {
     if (set) { sfxStart(); if (sfx.out) sfx.out.gain.value = sfxVol(); }

@@ -164,12 +164,15 @@ def taiko(f0, rng, dur=1.6, vel=1.0):
     return np.tanh(1.6 * x) / np.tanh(1.6)
 
 
-def bell(f0, rng, dur=4.0, size=1.0, hum=False):
-    """Singing bowl / temple bell. size stretches decays. Each partial is a beating pair."""
+def bell(f0, rng, dur=4.0, size=1.0, hum=False, felt=False):
+    """Singing bowl / temple bell. size stretches decays. Each partial is a beating pair.
+    felt: struck with a padded mallet (no click, soft onset, dull upper partials)."""
     t = T(dur)
     ratios = [1, 2.71, 5.06, 8.0, 11.4]
     t60s = [5.0, 3.0, 1.6, 0.9, 0.5]
     amps = [1, 0.55, 0.32, 0.18, 0.1]
+    if felt:
+        amps = [a * 0.35 ** k for k, a in enumerate(amps)]
     x = np.zeros_like(t)
     for r, d, a in zip(ratios, t60s, amps):
         f = f0 * r
@@ -180,6 +183,8 @@ def bell(f0, rng, dur=4.0, size=1.0, hum=False):
             x += 0.5 * a * expenv(t, d * size) * np.sin(2 * np.pi * (f + sgn * beat / 2) * t + rng.uniform(0, 0.4))
     if hum:
         x += 0.5 * expenv(t, 7 * size) * np.sin(2 * np.pi * f0 * 0.5 * t) * (1 - np.exp(-t / 0.04))
+    if felt:
+        return x * (1 - np.exp(-t / 0.004))
     strike = filt(noise(dur, rng), 'highpass', 3000) * expenv(t, 0.006)
     return ramp_in(x + 0.25 * strike, 0.4)
 
@@ -377,14 +382,12 @@ def hit_crit(v):
 
 def foe_death(v):
     rng = np.random.default_rng(300 + v)
-    m = Mix(1.6)
-    m.add(thump(rng, rng.uniform(100, 120), 40, 0.03, 0.25, 1.6), gain=0.55)
-    m.add(puff(rng, rng.uniform(0.5, 0.65), f_start=2400), at=0.01, gain=0.38)
-    scale = ['D6', 'E6', 'G6', 'A6', 'B6', 'D7']
-    i0 = int(rng.integers(0, 3))
-    for k, (at, g) in enumerate([(0.08, 0.2), (0.17, 0.15), (0.29, 0.11)]):
-        m.add(glass(NOTE[scale[i0 + k]], rng), at=at + rng.uniform(-0.015, 0.015), gain=g, pan=rng.uniform(-0.5, 0.5))
-    finish(m, f'foe_death_{v + 1}', -5, HALL, 0.32)
+    # Light on purpose: the killing blow already plays its hit. Just the foe fading out: a soft breath and one
+    # faint ping (2026-11-27 feedback: the old thump + 3 pings stacked on the hit).
+    m = Mix(0.9)
+    m.add(puff(rng, rng.uniform(0.26, 0.32), f_start=1600, f_end=200), gain=0.5)
+    m.add(glass(NOTE[['A6', 'B6', 'D7'][v]], rng, dur=0.5), at=0.05, gain=0.16, pan=rng.uniform(-0.3, 0.3))
+    finish(m, f'foe_death_{v + 1}', -12, ROOM_M, 0.2)
 
 
 def loot_common(v):
@@ -438,12 +441,11 @@ def loot_legendary():
 
 def level_up():
     rng = np.random.default_rng(800)
-    m = Mix(3.2)
-    m.add(taiko(86, rng, dur=1.4, vel=0.75), gain=0.7, pan=-0.1)
-    m.add(taiko(96, rng, dur=1.4, vel=0.95), at=0.16, gain=0.85, pan=0.1)
-    m.add(shakuhachi(rng, [(NOTE['A4'], 0.0, 0.22), (NOTE['D5'], 0.22, 1.15)], 1.5), at=0.14, gain=0.5)
-    m.add(bell(NOTE['D6'], rng, dur=2.4, size=0.45), at=0.37, gain=0.14, pan=0.2)
-    finish(m, 'level_up', -2, HALL, 0.35)
+    # Subtle (2026-11-27 feedback: taiko + flute was too intrusive): two felt-struck bowls, a fifth apart.
+    m = Mix(2.2)
+    m.add(bell(NOTE['G5'], rng, dur=2.0, size=0.3, felt=True), gain=0.6, pan=-0.15)
+    m.add(bell(NOTE['D6'], rng, dur=2.0, size=0.32, felt=True), at=0.12, gain=0.5, pan=0.15)
+    finish(m, 'level_up', -10, HALL, 0.25)
 
 
 def ui_click(v):
@@ -468,10 +470,7 @@ if __name__ == '__main__':
     for v in range(3):
         hit_crit(v)
         foe_death(v)
-        loot_common(v)
         ui_click(v)
-    for v in range(2):
-        ui_tab(v)
     loot_rare()
     loot_epic()
     loot_legendary()
