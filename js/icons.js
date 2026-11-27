@@ -526,7 +526,7 @@ const ICONS = {
 // Path icons, by goal id.
 ICONS.goal = {
   chop10: 'wood-log', wc5: 'level-end-flag', sword: 'broad-dagger', equip_sword: 'broadsword', pills5: 'medicine-pills', food: 'herbs-bundle',
-  training10: 'target-dummy', tech1: 'scroll-unfurled', char10: 'concentration-orb', market: 'shop', mist10: 'smoking-orb', wear3: 'chest-armor',
+  training10: 'target-dummy', tech1: 'scroll-unfurled', char5: 'concentration-orb', kunai: 'broad-dagger', vest: 'chest-armor', market: 'shop', mist10: 'smoking-orb', wear3: 'chest-armor',
   techup: 'meditation', char20: 'biceps', energy: 'battery-100', arts20: 'hand-saw', schem: 'tied-scroll', ravine25: 'fangs',
   fox: 'fox', gate_seas: 'portal', minnow10: 'fishing-pole', fish5: 'level-end-flag', cook5: 'cooking-pot', cook10: 'fish-cooked',
   season5: 'salt-shaker', voyage3: 'sailboat', shoals10: 'broadsword', perfect: 'round-star', reef10: 'coral', storm10: 'big-wave',

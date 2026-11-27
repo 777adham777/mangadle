@@ -553,7 +553,9 @@ const GOALS = [
   gStep('food', 'Equip food for battle', 'character', 1, () => [S.combat.food ? 1 : 0], 60, { soldier_pill: 5 }, 'You eat on your own when your HP drops low.'),
   gStep('training10', 'Defeat 10 foes at the Training Grounds', 'battle', 10, gKills('training'), 60, { scroll_shinobi: 1 }, 'Ten wins open the next stage, the Misty Forest.'),
   gStep('tech1', 'Learn a technique', 'techniques', 1, () => [Object.keys(S.tech.lv).length], 150, { herb_pouch: 1 }, 'Foes drop scrolls. Read one on the Techniques page: it teaches a technique that fires on its own in battle.'),
-  gStep('char10', 'Reach Character level 10', 'battle', 10, () => [charLv()], 200, { crystal_kunai: 1 }, 'Every level raises your five stats. Fights give the XP.'),
+  gStep('char5', 'Reach Character level 5', 'battle', 5, () => [charLv()], 100, { chakra_shard: 5 }, 'Every level raises your five stats. Fights give the XP.'),
+  gStep('kunai', 'Craft a Crystal Kunai', 'realm:shinobi:arts', 1, gMade('crystal_kunai'), 150, { soldier_pill: 5 }, 'A sharper blade than wood. Wear it: foes fall faster.'),
+  gStep('vest', 'Craft a Flak Vest', 'realm:shinobi:arts', 1, gMade('flak_vest'), 200, { healing_leaf: 10 }, 'Your first armour. Wear it: foes hit you less.'),
   gStep('market', 'Buy any upgrade in the Market', 'market', 1, () => [['tools_shinobi', 'tools_soul', 'tools_seas', 'abundance', 'satchel', 'lucky_coin'].reduce((a, k) => a + (S.shop[k] || 0), 0)], 300, { sealed_scroll: 1 }, 'Gold buys tools that make a whole world faster.'),
   stage10('mist10', 'mist', 'the Misty Forest', 400, { mist_steel: 2 }, 'Opens Fang Ravine. Its steel goes into better blades.'),
   gStep('wear3', 'Wear three pieces of gear', 'character', 3, () => [GEAR_SLOTS.filter((s) => S.equip[s]).length], 450, { chakra_orb: 6 }, 'A weapon and six armour slots. Crafting makes all of them.'),
@@ -645,7 +647,8 @@ const GOALS = [
   gStep('cleaver', 'Forge the Rift Cleaver', 'realm:shinobi:arts', 1, gMade('rift_cleaver'), 500000, {}, 'The blade that cuts between worlds.'),
   gStep('col75', 'Fill 75% of the Collection Log', 'hero:collection', 75, () => [Math.floor(collectionPct() * 100)], 500000, {}, 'Every world still keeps secrets.'),
 ].filter(Boolean);
-// The path before 2026-11-25 (saves store an index into it): its ids in order.
+// The path before 2026-11-25 (saves store an index into it): its ids in order. Path v3 (2026-11-27): 'char10'
+// became 'char5' + 'kunai' + 'vest' (game.js shifts v2 indexes).
 const OLD_GOAL_IDS = ['chop10', 'wc5', 'sword', 'equip_sword', 'pills5', 'food', 'training10', 'tech1', 'char10', 'market', 'mist10', 'techup', 'char20', 'energy', 'schem', 'fox', 'gate_seas',
   'minnow10', 'fish5', 'cook5', 'cook10', 'season5', 'voyage3', 'shoals10', 'perfect', 'reef10', 'shiny', 'admiral', 'gate_soul',
   'ore20', 'ingot10', 'districts10', 'katana', 'refine1', 'awaken', 'reiatsu10', 'renown25', 'sovereign', 'gate_ki',

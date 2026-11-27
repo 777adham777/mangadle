@@ -49,7 +49,7 @@ function defaultState() {
     stats: { kills: 0, actions: 0, playtime: 0, deaths: 0, bossKills: 0, made: {}, voyages: 0, opened: 0 },
     found: {},                          // collection log: item id -> 1 once ever obtained
     pets: {},                           // pet id -> 1
-    goal: 0, goalV: 2,
+    goal: 0, goalV: 3,
     hero: { name: '' },                 // the name on your Wanted poster (poster.js)
     unlocked: {},                       // unlock id -> 1 (see UNLOCKS)
     gates: {},                          // world id -> 1 once its gate is opened (see GATES)
@@ -200,16 +200,16 @@ function skPerk(skill, k) {
   return v;
 }
 const skillXpMult = (id) => xpMult() * (hasPetFor(id) ? 1.05 : 1) * (1 + synergyBonus('xp', id)) * hmul('xp', id) * (1 + skPerk(id, 'xp'));
-// Onboarding: the first levels must fly by (that is where a new player is hooked). A gain counts ×top up to
-// level `hold`, then the factor fades geometrically to ×1 at level `end` (each level's share of a gain uses that
-// level's factor, so nothing from `end` on changes).
-// 2026-11-27, user: "level 1 to 10 is atrociously slow". Character foes give whole XP on a curve sized for 4 h a
-// stage, so unboosted, levels 1-9 cost ~17 min of fighting each (2.4 h to level 10). Now: Character 10 in ~8 min,
-// 17 in ~70 min; every other skill 10 in ~5 min (was ~13).
-const EARLY = { character: { top: 20, hold: 10, end: 17 }, other: { top: 3, hold: 10, end: 12 } };
+// Onboarding: the first levels go faster, and the pace slows down smoothly (no wall): a gain counts ×top at
+// level 1 and the factor fades geometrically to ×1 at level `end`, so each level takes ~30% longer than the one
+// before (each level's share of a gain uses that level's factor; nothing from `end` on changes).
+// 2026-11-27, user: levels 1-10 far too slow, but the climb must stay natural. Unboosted, Character levels 1-9
+// cost ~17 min of fighting each (its foes give whole XP on a curve sized for 4 h a stage). Now Character 5 in
+// ~5 min, 10 in ~20 min (the path fills 5 → 10 with steps), normal from 18; other skills 10 in ~8 min.
+const EARLY = { character: { top: 20, end: 18 }, other: { top: 3, end: 12 } };
 const earlyXp = (id) => {
   const E = EARLY[id] || EARLY.other, L = skillLv(id);
-  return L >= E.end ? 1 : L < E.hold ? E.top : Math.pow(E.top, (E.end - L) / (E.end - E.hold));
+  return L >= E.end ? 1 : Math.pow(E.top, (E.end - L) / (E.end - 1));
 };
 // Adds `gain` XP to skill `id` with the onboarding factor (shared with tools/sim).
 function boostXp(id, gain) {
@@ -916,7 +916,9 @@ function loadFrom(json) {
     for (const D of DUNGEONS) if (d.combat && (d.combat.kills[D.guard] || 0) > 0 && !(d.dg || {})[D.id] && !d.items[dgKey(D.id)]) d.items[dgKey(D.id)] = 1;
     d.dgV = 1;
   }
-  if ((d.goalV || 1) < 2) { const id = OLD_GOAL_IDS[d.goal]; d.goal = id != null && GOAL_BY[id] != null ? GOAL_BY[id] : d.goal >= OLD_GOAL_IDS.length ? GOALS.length : 0; d.goalV = 2; }
+  if ((d.goalV || 1) < 2) { const id = OLD_GOAL_IDS[d.goal] === 'char10' ? 'char5' : OLD_GOAL_IDS[d.goal]; d.goal = id != null && GOAL_BY[id] != null ? GOAL_BY[id] : d.goal >= OLD_GOAL_IDS.length ? GOALS.length : 0; d.goalV = 3; }
+  // Path v3 (2026-11-27): 'Reach Character level 10' became three steps (level 5, Crystal Kunai, Flak Vest) at its place.
+  if (d.goalV === 2) { if (d.goal > GOAL_BY.char5) d.goal += 2; d.goalV = 3; }
   // The avatar was removed (2026-11-24): only its name (the poster's) is kept.
   if (d.avatar) { if (!d.hero && d.avatar.name) d.hero = { name: String(d.avatar.name) }; delete d.avatar; }
   // Techniques were reworked on 2026-11-25 (rarity scrolls, 3 Active / 3 Passive / 1 Ultimate): techniques.js converts the save.

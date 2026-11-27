@@ -21,6 +21,8 @@ const GUIDE = {
   food: { food: true, nav: 'Open your <b>Character</b>.' },
   training10: { zone: 0, nav: 'Open <b>Combat</b>.', start: 'Pick the <b>Training Grounds</b>.' },
   tech1: { scroll: true, nav: 'Open <b>Techniques</b>.' },
+  kunai: { act: 'arts:crystal_kunai', nav: 'Open <b>Crafting</b>.', start: `Click <b>${ITEMS.crystal_kunai.name}</b>.` },
+  vest: { act: 'arts:flak_vest', nav: 'Open <b>Crafting</b>.', start: `Click <b>${ITEMS.flak_vest.name}</b>.` },
 };
 const GUIDE_N = Object.keys(GUIDE).length;
 const STUCK_S = 15;   // seconds without input or progress before a hint shows
